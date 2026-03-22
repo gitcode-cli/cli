@@ -2,9 +2,11 @@
 package delete
 
 import (
+	"bufio"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -80,11 +82,58 @@ func deleteRun(opts *DeleteOptions) error {
 	}
 	client.SetToken(token, "environment")
 
-	// TODO: Implement API call to delete release
-	_ = client
+	// Get repository
+	owner, repo, err := parseRepo(opts.Repository)
+	if err != nil {
+		return err
+	}
+
+	// Get release for confirmation
+	release, err := api.GetRelease(client, owner, repo, opts.TagName)
+	if err != nil {
+		return fmt.Errorf("failed to get release: %w", err)
+	}
+
+	title := release.TagName
+	if release.Name != "" {
+		title = release.Name
+	}
+
+	// Confirm deletion
+	if !opts.Yes {
+		fmt.Fprintf(opts.IO.ErrOut, "! This will delete release %s\n", cs.Bold(title))
+		fmt.Fprintf(opts.IO.ErrOut, "Type the tag name to confirm: ")
+
+		reader := bufio.NewReader(os.Stdin)
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		if input != opts.TagName {
+			return fmt.Errorf("confirmation did not match tag name")
+		}
+	}
+
+	// Delete release
+	err = api.DeleteReleaseByTag(client, owner, repo, opts.TagName)
+	if err != nil {
+		return fmt.Errorf("failed to delete release: %w", err)
+	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Deleted release %s\n", cs.Red("✓"), opts.TagName)
 	return nil
+}
+
+func parseRepo(repo string) (string, string, error) {
+	if repo == "" {
+		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
+	}
+
+	for i := 0; i < len(repo); i++ {
+		if repo[i] == '/' {
+			return repo[:i], repo[i+1:], nil
+		}
+	}
+	return "", "", fmt.Errorf("invalid repository format: %s", repo)
 }
 
 func getEnvToken() string {

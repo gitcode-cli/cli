@@ -6,6 +6,8 @@ import (
 
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/label"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/milestone"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/version"
@@ -41,6 +43,8 @@ It provides convenient access to GitCode features including:
 	cmd.AddCommand(repo.NewCmdRepo(f))
 	cmd.AddCommand(issue.NewCmdIssue(f))
 	cmd.AddCommand(pr.NewCmdPR(f))
+	cmd.AddCommand(label.NewCmdLabel(f))
+	cmd.AddCommand(milestone.NewCmdMilestone(f))
 
 	return cmd
 }

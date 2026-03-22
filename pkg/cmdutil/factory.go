@@ -31,3 +31,20 @@ func NewFactory() *Factory {
 		},
 	}
 }
+
+// TestFactory creates a Factory for testing
+func TestFactory() *Factory {
+	io, _, _, _ := iostreams.Test()
+	return &Factory{
+		IOStreams: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{}, nil
+		},
+		Config: func() (config.Config, error) {
+			return config.New(), nil
+		},
+		Branch: func() (string, error) {
+			return "main", nil
+		},
+	}
+}

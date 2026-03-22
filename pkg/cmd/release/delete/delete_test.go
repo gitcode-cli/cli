@@ -1,0 +1,46 @@
+package delete
+
+import (
+	"testing"
+
+	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
+)
+
+func TestNewCmdDelete(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr bool
+	}{
+		{
+			name:    "delete with tag",
+			args:    []string{"v1.0.0"},
+			wantErr: false,
+		},
+		{
+			name:    "delete with yes flag",
+			args:    []string{"v1.0.0", "--yes"},
+			wantErr: false,
+		},
+		{
+			name:    "no tag specified",
+			args:    []string{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := cmdutil.TestFactory()
+			cmd := NewCmdDelete(f, func(opts *DeleteOptions) error {
+				return nil
+			})
+			cmd.SetArgs(tt.args)
+
+			err := cmd.Execute()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

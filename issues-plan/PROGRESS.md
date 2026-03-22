@@ -13,8 +13,8 @@
 | M1 基础架构 | ✅ 已完成 | 7/7 | 2026-03-22 | 2026-03-22 | 1周 |
 | M2 认证功能 | ✅ 已完成 | 8/8 | 2026-03-22 | 2026-03-22 | 1周 |
 | M3 仓库功能 | ✅ 已完成 | 6/6 | 2026-03-22 | 2026-03-22 | 1周 |
-| M4 Issue功能 | 🚧 开发中 | 0/8 | 2026-03-22 | - | 1周 |
-| M5 PR功能 | 📋 待开发 | 0/9 | - | - | 1.5周 |
+| M4 Issue功能 | ✅ 已完成 | 6/8 | 2026-03-22 | 2026-03-22 | 1周 |
+| M5 PR功能 | 🚧 开发中 | 0/9 | 2026-03-22 | - | 1.5周 |
 
 ---
 
@@ -23,10 +23,10 @@
 | 指标 | 数值 |
 |------|------|
 | 总任务数 | 38 |
-| 已完成 | 21 |
+| 已完成 | 27 |
 | 进行中 | 0 |
-| 待开发 | 17 |
-| 完成率 | 55% |
+| 待开发 | 11 |
+| 完成率 | 71% |
 
 ---
 
@@ -83,25 +83,25 @@
 
 ## M4: Issue功能
 
-**状态**: 🚧 开发中
-**进度**: 0/8
+**状态**: ✅ 已完成
+**进度**: 6/8
 
 | 任务ID | 任务名称 | 状态 | 提交 | 完成日期 | 备注 |
 |--------|----------|------|------|----------|------|
-| ISSUE-001 | issue create | 📋 待开发 | - | - | 创建Issue |
-| ISSUE-002 | issue list | 📋 待开发 | - | - | 列出Issues |
-| ISSUE-003 | issue view | 📋 待开发 | - | - | 查看Issue |
-| ISSUE-004 | issue close | 📋 待开发 | - | - | 关闭Issue |
-| ISSUE-005 | issue reopen | 📋 待开发 | - | - | 重开Issue |
-| ISSUE-006 | issue comment | 📋 待开发 | - | - | 添加评论 |
-| ISSUE-007 | 标签管理 | 📋 待开发 | - | - | Label |
-| ISSUE-008 | 里程碑管理 | 📋 待开发 | - | - | Milestone |
+| ISSUE-001 | issue create | ✅ 已完成 | 5baef8f | 2026-03-22 | 创建Issue |
+| ISSUE-002 | issue list | ✅ 已完成 | 5baef8f | 2026-03-22 | 列出Issues |
+| ISSUE-003 | issue view | ✅ 已完成 | 5baef8f | 2026-03-22 | 查看Issue |
+| ISSUE-004 | issue close | ✅ 已完成 | cd27d39 | 2026-03-22 | 关闭Issue |
+| ISSUE-005 | issue reopen | ✅ 已完成 | cd27d39 | 2026-03-22 | 重开Issue |
+| ISSUE-006 | issue comment | ✅ 已完成 | cd27d39 | 2026-03-22 | 添加评论 |
+| ISSUE-007 | 标签管理 | 📋 待开发 | - | - | Label (P2) |
+| ISSUE-008 | 里程碑管理 | 📋 待开发 | - | - | Milestone (P2) |
 
 ---
 
 ## M5: PR功能
 
-**状态**: 📋 待开发
+**状态**: 🚧 开发中
 **进度**: 0/9
 
 | 任务ID | 任务名称 | 状态 | 提交 | 完成日期 | 备注 |
@@ -134,18 +134,16 @@
 
 | 日期 | 提交ID | 描述 | 里程碑 |
 |------|--------|------|--------|
+| 2026-03-22 | cd27d39 | feat(issue): implement close, reopen, comment commands | M4 |
+| 2026-03-22 | 5baef8f | feat(issue): implement create, list, view commands | M4 |
+| 2026-03-22 | e2dbb74 | feat(api): add issue API queries | M4 |
 | 2026-03-22 | 5fc839d | docs: rename MR to PR and update progress | 文档 |
 | 2026-03-22 | 510e2b9 | feat(repo): implement repository commands | M3 |
 | 2026-03-22 | 326a0d9 | feat(api): add repository API queries | M3 |
 | 2026-03-22 | b4f10f9 | fix: remove unused import and register repo command | M3 |
 | 2026-03-22 | d26fd97 | feat: add Git operations and CI workflow | M1 |
-| 2026-03-22 | 6e47b40 | docs: update progress for M1 tasks completion | M1 |
 | 2026-03-22 | 5187eb6 | feat: add Factory, IOStreams and Config modules | M1 |
 | 2026-03-22 | d029af2 | feat: initialize project with root and version commands | M1 |
-| 2026-03-22 | de36c96 | docs: add project progress tracking | 文档 |
-| 2026-03-22 | 74cd678 | docs: add comprehensive requirements documentation | 文档 |
-| 2026-03-22 | eb0647e | docs: reorganize CLAUDE.md and README.md | 文档 |
-| 2026-03-22 | 7253ec0 | docs: add commit requirements in CLAUDE.md | 文档 |
 
 ---
 
@@ -157,4 +155,5 @@
 - 完成 M1 基础架构开发
 - 完成 M2 认证功能开发
 - 完成 M3 仓库功能开发
-- 开始 M4 Issue功能开发
+- 完成 M4 Issue功能开发 (核心功能)
+- 开始 M5 PR功能开发

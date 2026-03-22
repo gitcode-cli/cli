@@ -18,6 +18,7 @@ const (
 	blue    = "\033[34m"
 	magenta = "\033[35m"
 	cyan    = "\033[36m"
+	gray    = "\033[90m"
 	bold    = "\033[1m"
 	reset   = "\033[0m"
 )
@@ -68,6 +69,14 @@ func (c *ColorScheme) Magenta(text string) string {
 		return text
 	}
 	return fmt.Sprintf("%s%s%s", magenta, text, reset)
+}
+
+// Gray returns the text in gray
+func (c *ColorScheme) Gray(text string) string {
+	if c.noColor {
+		return text
+	}
+	return fmt.Sprintf("%s%s%s", gray, text, reset)
 }
 
 // Bold returns the text in bold

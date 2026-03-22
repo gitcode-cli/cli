@@ -1,0 +1,25 @@
+name: "gc"
+arch: "arm64"
+platform: "linux"
+version: "0.1.0"
+section: "default"
+priority: "extra"
+maintainer: "GitCode Team <support@gitcode.com>"
+description: |
+  GitCode CLI - Command line tool for GitCode
+  Provides convenient access to GitCode features including:
+  - Authentication management
+  - Repository operations
+  - Issue and PR management
+vendor: "GitCode"
+homepage: "https://gitcode.com"
+license: "MIT"
+contents:
+  - src: ./dist/gc_linux_arm64
+    dst: /usr/bin/gc
+  - src: ./completions/gc.bash
+    dst: /usr/share/bash-completion/completions/gc
+  - src: ./completions/gc.zsh
+    dst: /usr/share/zsh/vendor-completions/_gc
+  - src: ./completions/gc.fish
+    dst: /usr/share/fish/completions/gc.fish

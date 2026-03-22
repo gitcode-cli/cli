@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/version"
 	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
 )
@@ -27,7 +28,7 @@ It provides convenient access to GitCode features including:
   • Authentication management (auth login, auth status)
   • Repository operations (repo clone, repo create)
   • Issue management (issue create, issue list)
-  • Merge Request management (mr create, mr review)`,
+  • Pull Request management (pr create, pr review)`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
@@ -35,6 +36,7 @@ It provides convenient access to GitCode features including:
 	// Add subcommands
 	cmd.AddCommand(version.NewCmdVersion(ver, commit, date))
 	cmd.AddCommand(auth.NewCmdAuth(f))
+	cmd.AddCommand(repo.NewCmdRepo(f))
 
 	return cmd
 }

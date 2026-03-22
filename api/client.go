@@ -13,7 +13,7 @@ import (
 
 const (
 	// DefaultHost is the default GitCode host
-	DefaultHost = "gitcode.com"
+	DefaultHost = "api.gitcode.com"
 	// DefaultAPIVersion is the default API version
 	DefaultAPIVersion = "v5"
 )
@@ -87,7 +87,7 @@ func (c *Client) REST(method, path string, body interface{}, response interface{
 
 	// Add authentication
 	if c.token != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", c.token))
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
 	}
 
 	resp, err := c.httpClient.Do(req)

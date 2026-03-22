@@ -265,6 +265,15 @@ go test -tags=integration ./...            # 集成测试
 - [API 客户端](./issues-plan/07-api-client.md)
 - [GitHub CLI 源码](https://github.com/cli/cli)
 
+### API 开发参考（重要）
+
+开发 API 相关功能时，必须参考以下验证过的文档：
+
+- **gc-api-doc/test/** - 所有 API 测试用例，已验证通过
+- **gc-api-doc/doc/** - API 说明文档
+
+这些文档包含正确的 API 端点、请求格式、响应格式和认证方式。
+
 ---
 
 **最后更新**: 2026-03-22

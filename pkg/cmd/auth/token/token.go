@@ -55,7 +55,7 @@ func NewCmdToken(f *cmdutil.Factory, runF func(*TokenOptions) error) *cobra.Comm
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "h", "", "The hostname to get the token for")
+	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "The hostname to get the token for")
 
 	return cmd
 }

@@ -7,13 +7,18 @@ import (
 
 // User represents a GitCode user
 type User struct {
-	ID        int    `json:"id"`
-	Username  string `json:"username"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	AvatarURL string `json:"avatar_url"`
-	HTMLURL   string `json:"html_url"`
-	CreatedAt string `json:"created_at"`
+	ID        interface{} `json:"id"`
+	Login     string      `json:"login"`
+	Name      string      `json:"name"`
+	Email     string      `json:"email"`
+	AvatarURL string      `json:"avatar_url"`
+	HTMLURL   string      `json:"html_url"`
+	CreatedAt string      `json:"created_at"`
+}
+
+// Username returns the user's login name
+func (u *User) Username() string {
+	return u.Login
 }
 
 // CurrentUser fetches the current authenticated user

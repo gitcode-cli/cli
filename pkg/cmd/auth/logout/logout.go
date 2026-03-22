@@ -51,7 +51,7 @@ func NewCmdLogout(f *cmdutil.Factory, runF func(*LogoutOptions) error) *cobra.Co
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "h", "", "The hostname of the GitCode instance to log out of")
+	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "The hostname of the GitCode instance to log out of")
 	cmd.Flags().StringVarP(&opts.Username, "username", "u", "", "The username to log out of")
 
 	return cmd

@@ -2,9 +2,6 @@
 package root
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth"

@@ -78,7 +78,7 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "h", "", "The hostname of the GitCode instance to authenticate with")
+	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "The hostname of the GitCode instance to authenticate with")
 	cmd.Flags().StringVarP(&opts.Token, "token", "t", "", "An authentication token for GitCode")
 	cmd.Flags().BoolVar(&opts.WithToken, "with-token", false, "Read token from standard input")
 	cmd.Flags().StringVarP(&opts.GitProtocol, "git-protocol", "p", "https", "The Git protocol to use for operations (https/ssh)")
@@ -127,7 +127,7 @@ func loginWithTokenFlag(opts *LoginOptions) error {
 
 	// Token is valid - in memory only, not persisted to file
 	// In a real implementation, this would be stored in keyring
-	fmt.Fprintf(opts.IO.Out, "%s Logged in as %s\n", opts.IO.ColorScheme().Green("✓"), user.Username)
+	fmt.Fprintf(opts.IO.Out, "%s Logged in as %s\n", opts.IO.ColorScheme().Green("✓"), user.Login)
 	fmt.Fprintf(opts.IO.Out, "  Host: %s\n", opts.Hostname)
 	fmt.Fprintf(opts.IO.Out, "  Git protocol: %s\n", opts.GitProtocol)
 	fmt.Fprintf(opts.IO.Out, "\n")

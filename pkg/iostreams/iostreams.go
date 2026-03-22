@@ -98,7 +98,14 @@ func isTerminal(w io.Writer) bool {
 
 // IsStdinTTY returns true if stdin is a terminal
 func (s *IOStreams) IsStdinTTY() bool {
-	return s.isTerminal(s.In)
+	if f, ok := s.In.(*os.File); ok {
+		fi, err := f.Stat()
+		if err != nil {
+			return false
+		}
+		return (fi.Mode() & os.ModeCharDevice) != 0
+	}
+	return false
 }
 
 // IsStdoutTTY returns true if stdout is a terminal

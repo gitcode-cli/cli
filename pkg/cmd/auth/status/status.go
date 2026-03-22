@@ -55,7 +55,7 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "h", "", "Check a specific hostname")
+	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "Check a specific hostname")
 	cmd.Flags().BoolVar(&opts.ShowToken, "show-token", false, "Display the auth token")
 
 	return cmd
@@ -101,7 +101,7 @@ func statusRun(opts *StatusOptions) error {
 	}
 
 	// Display logged in status
-	fmt.Fprintf(opts.IO.Out, "  %s Logged in as %s (%s)\n", cs.Green("✓"), user.Username, tokenSource)
+	fmt.Fprintf(opts.IO.Out, "  %s Logged in as %s (%s)\n", cs.Green("✓"), user.Login, tokenSource)
 	fmt.Fprintf(opts.IO.Out, "  %s Git operations protocol: https\n", cs.Green("✓"))
 
 	if opts.ShowToken {

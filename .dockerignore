@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+bin/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test files
+*_test.go
+testdata/
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Development files
+.goreleaser.yaml
+docker-compose.yml
+Makefile
+
+# Completions (will be copied separately)
+completions/
+
+# Scripts (will be copied separately)
+scripts/
+
+# Test utilities
+pkg/testutil/
+
+# Config files
+.editorconfig
+.pre-commit-config.yaml
+
+# Temporary files
+*.tmp
+*.log

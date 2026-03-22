@@ -1,0 +1,28 @@
+# Scoop manifest for GitCode CLI
+# This file is a template - Goreleaser will generate the actual manifest
+
+{
+    "version": "0.1.0",
+    "description": "GitCode CLI - Command line tool for GitCode",
+    "homepage": "https://gitcode.com",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/gitcode-com/gitcode-cli/releases/download/v0.1.0/gc_0.1.0_windows_amd64.zip",
+            "bin": [
+                "gc.exe"
+            ]
+        }
+    },
+    "checkver": "github",
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/gitcode-com/gitcode-cli/releases/download/v$version/gc_$version_windows_amd64.zip"
+            }
+        },
+        "hash": {
+            "url": "$baseurl/gc_$version_checksums.txt"
+        }
+    }
+}

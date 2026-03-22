@@ -1,0 +1,55 @@
+# Docker Compose for GitCode CLI development
+version: '3.8'
+
+services:
+  gc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: dev
+        COMMIT: local
+        DATE: ""
+    image: gitcode/gc:dev
+    container_name: gc-cli
+    volumes:
+      - ~/.config/gc:/home/gc/.config/gc
+      - .:/app:ro
+    environment:
+      - GC_TOKEN=${GC_TOKEN:-}
+      - GITCODE_TOKEN=${GITCODE_TOKEN:-}
+    entrypoint: ["gc"]
+    command: ["--help"]
+
+  gc-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: gc-test
+    volumes:
+      - .:/app
+    working_dir: /app
+    entrypoint: ["go"]
+    command: ["test", "-v", "./..."]
+
+  gc-build:
+    image: golang:1.22-alpine
+    container_name: gc-build
+    volumes:
+      - .:/app
+      - go-modules:/go/pkg/mod
+    working_dir: /app
+    environment:
+      - CGO_ENABLED=0
+      - GOOS=linux
+      - GOARCH=amd64
+    command: >
+      sh -c "
+        go mod download &&
+        go build -ldflags='-s -w' -o bin/gc ./cmd/gc &&
+        echo 'Binary built at bin/gc'
+      "
+
+volumes:
+  go-modules:

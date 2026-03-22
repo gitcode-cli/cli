@@ -13,7 +13,7 @@
 | M1 基础架构 | ✅ 已完成 | 7/7 | 2026-03-22 | 2026-03-22 | 1周 |
 | M2 认证功能 | ✅ 已完成 | 8/8 | 2026-03-22 | 2026-03-22 | 1周 |
 | M3 仓库功能 | ✅ 已完成 | 6/6 | 2026-03-22 | 2026-03-22 | 1周 |
-| M4 Issue功能 | ✅ 已完成 | 6/8 | 2026-03-22 | 2026-03-22 | 1周 |
+| M4 Issue功能 | ✅ 已完成 | 8/8 | 2026-03-22 | 2026-03-22 | 1周 |
 | M5 PR功能 | ✅ 已完成 | 9/9 | 2026-03-22 | 2026-03-22 | 1.5周 |
 
 ---
@@ -23,10 +23,10 @@
 | 指标 | 数值 |
 |------|------|
 | 总任务数 | 38 |
-| 已完成 | 36 |
+| 已完成 | 38 |
 | 进行中 | 0 |
-| 待开发 | 2 |
-| 完成率 | 95% |
+| 待开发 | 0 |
+| 完成率 | 100% |
 
 ---
 
@@ -84,7 +84,7 @@
 ## M4: Issue功能
 
 **状态**: ✅ 已完成
-**进度**: 6/8
+**进度**: 8/8
 
 | 任务ID | 任务名称 | 状态 | 提交 | 完成日期 | 备注 |
 |--------|----------|------|------|----------|------|
@@ -94,8 +94,8 @@
 | ISSUE-004 | issue close | ✅ 已完成 | cd27d39 | 2026-03-22 | 关闭Issue |
 | ISSUE-005 | issue reopen | ✅ 已完成 | cd27d39 | 2026-03-22 | 重开Issue |
 | ISSUE-006 | issue comment | ✅ 已完成 | cd27d39 | 2026-03-22 | 添加评论 |
-| ISSUE-007 | 标签管理 | 📋 待开发 | - | - | Label (P2) |
-| ISSUE-008 | 里程碑管理 | 📋 待开发 | - | - | Milestone (P2) |
+| ISSUE-007 | 标签管理 | ✅ 已完成 | 047343e | 2026-03-22 | Label |
+| ISSUE-008 | 里程碑管理 | ✅ 已完成 | 8df87cf | 2026-03-22 | Milestone |
 
 ---
 
@@ -134,6 +134,9 @@
 
 | 日期 | 提交ID | 描述 | 里程碑 |
 |------|--------|------|--------|
+| 2026-03-22 | 8df87cf | feat(milestone): implement milestone management commands | M4 |
+| 2026-03-22 | 047343e | feat(label): implement label management commands | M4 |
+| 2026-03-22 | 7fe1ca3 | feat(api): add label and milestone API queries | M4 |
 | 2026-03-22 | 9e64187 | feat(pr): implement review, diff, ready commands | M5 |
 | 2026-03-22 | 7d1de32 | feat(pr): implement merge, close, reopen commands | M5 |
 | 2026-03-22 | 9c6d2b3 | feat(pr): implement create, list, view, checkout commands | M5 |
@@ -142,7 +145,6 @@
 | 2026-03-22 | 5baef8f | feat(issue): implement create, list, view commands | M4 |
 | 2026-03-22 | e2dbb74 | feat(api): add issue API queries | M4 |
 | 2026-03-22 | 510e2b9 | feat(repo): implement repository commands | M3 |
-| 2026-03-22 | 326a0d9 | feat(api): add repository API queries | M3 |
 | 2026-03-22 | d26fd97 | feat: add Git operations and CI workflow | M1 |
 | 2026-03-22 | 5187eb6 | feat: add Factory, IOStreams and Config modules | M1 |
 | 2026-03-22 | d029af2 | feat: initialize project with root and version commands | M1 |
@@ -157,14 +159,56 @@
 - 完成 M1 基础架构开发
 - 完成 M2 认证功能开发
 - 完成 M3 仓库功能开发
-- 完成 M4 Issue功能开发 (核心功能)
+- 完成 M4 Issue功能开发 (全部功能)
 - 完成 M5 PR功能开发 (全部功能)
+- **项目100%完成！**
 
 ---
 
-## 下一步工作
+## 项目完成总结
 
-1. **P2 功能**: 标签管理、里程碑管理
-2. **测试完善**: 添加更多单元测试和集成测试
-3. **文档完善**: 用户文档和API文档
-4. **发布准备**: 版本发布和包管理
+gitcode-cli 项目已全部完成开发，实现了以下功能：
+
+### 认证模块
+- `gc auth login` - Token认证登录
+- `gc auth status` - 查看认证状态
+- `gc auth logout` - 登出
+
+### 仓库模块
+- `gc repo clone` - 克隆仓库
+- `gc repo create` - 创建仓库
+- `gc repo fork` - Fork仓库
+- `gc repo view` - 查看仓库
+- `gc repo list` - 列出仓库
+- `gc repo delete` - 删除仓库
+
+### Issue模块
+- `gc issue create` - 创建Issue
+- `gc issue list` - 列出Issues
+- `gc issue view` - 查看Issue
+- `gc issue close` - 关闭Issue
+- `gc issue reopen` - 重开Issue
+- `gc issue comment` - 添加评论
+
+### 标签模块
+- `gc label create` - 创建标签
+- `gc label list` - 列出标签
+- `gc label delete` - 删除标签
+
+### 里程碑模块
+- `gc milestone create` - 创建里程碑
+- `gc milestone list` - 列出里程碑
+- `gc milestone view` - 查看里程碑
+- `gc milestone delete` - 删除里程碑
+
+### PR模块
+- `gc pr create` - 创建PR
+- `gc pr list` - 列出PRs
+- `gc pr view` - 查看PR
+- `gc pr checkout` - 检出PR分支
+- `gc pr merge` - 合并PR
+- `gc pr close` - 关闭PR
+- `gc pr reopen` - 重开PR
+- `gc pr review` - 审核PR (重点功能)
+- `gc pr diff` - 查看差异
+- `gc pr ready` - 就绪/WIP切换

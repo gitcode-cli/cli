@@ -431,7 +431,7 @@ All notable changes to this project will be documented in this file.
 - `gc repo clone` - Clone repositories
 - `gc repo create` - Create repositories
 - `gc issue create/list/view` - Issue management
-- `gc mr create/list/view/review` - MR management
+- `gc pr create/list/view/review` - PR management
 
 ### Changed
 -

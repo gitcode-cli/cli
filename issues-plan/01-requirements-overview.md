@@ -9,7 +9,7 @@
 | 认证 (auth) | 6 | 6 | 0 | 0 | 0/6 ✅ |
 | 仓库 (repo) | 6 | 5 | 1 | 0 | 0/6 ✅ |
 | Issue | 7 | 5 | 2 | 0 | 0/7 ✅ |
-| MR | 10 | 8 | 2 | 0 | 0/10 ✅ |
+| PR | 10 | 8 | 2 | 0 | 0/10 ✅ |
 | API客户端 | 5 | 5 | 0 | 0 | 0/5 ✅ |
 | 配置管理 | 4 | 3 | 1 | 0 | 0/4 ✅ |
 | 测试 | 4 | 4 | 0 | 0 | 0/4 ✅ |
@@ -58,20 +58,20 @@
 
 ---
 
-## MR 模块
+## PR 模块
 
 | ID | 需求 | 优先级 | 状态 | 详细文档 |
 |----|------|--------|------|----------|
-| MR-001 | mr create 创建 MR | P0 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-002 | mr list 列出 MRs | P0 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-003 | mr view 查看 MR | P0 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-004 | mr checkout 检出 MR 分支 | P0 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-005 | mr merge 合并 MR | P0 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-006 | mr close 关闭 MR | P0 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-007 | mr reopen 重开 MR | P0 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-008 | mr review 代码检视（重点功能） | P0 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-009 | mr diff 查看 MR 差异 | P1 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
-| MR-010 | mr ready 标记为就绪/WIP | P1 | 📋 待开发 | [06-module-mr.md](./06-module-mr.md) |
+| PR-001 | pr create 创建 PR | P0 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-002 | pr list 列出 PRs | P0 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-003 | pr view 查看 PR | P0 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-004 | pr checkout 检出 PR 分支 | P0 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-005 | pr merge 合并 PR | P0 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-006 | pr close 关闭 PR | P0 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-007 | pr reopen 重开 PR | P0 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-008 | pr review 代码检视（重点功能） | P0 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-009 | pr diff 查看 PR 差异 | P1 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
+| PR-010 | pr ready 标记为就绪/WIP | P1 | 📋 待开发 | [06-module-pr.md](./06-module-pr.md) |
 
 ---
 

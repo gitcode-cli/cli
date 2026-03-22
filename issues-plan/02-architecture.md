@@ -18,7 +18,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              命令层 (pkg/cmd/)                           │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐     │
-│  │   auth   │ │   repo   │ │  issue   │ │    mr    │ │  config  │     │
+│  │   auth   │ │   repo   │ │  issue   │ │    pr    │ │  config  │     │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘     │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                   │
 │  │   user   │ │   api    │ │extension │ │  root    │                   │
@@ -203,7 +203,7 @@ graph TB
         C[auth]
         D[repo]
         E[issue]
-        F[mr]
+        F[pr]
         G[config]
     end
 
@@ -346,7 +346,7 @@ GitCode API 基于 GitLab API，与 GitHub API 有以下主要差异：
 | 功能 | GitHub | GitCode/GitLab |
 |------|--------|----------------|
 | Issue 编号 | #123 | #123 (iid) |
-| MR/PR | pull request | merge request |
+| PR | pull request | pull request |
 | API 版本 | v3/graphql | v4/v5 |
 | 认证 | OAuth/Token | OAuth/Token |
 | 端点格式 | /repos/owner/repo | /projects/owner%2Frepo |

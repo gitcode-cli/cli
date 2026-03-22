@@ -19,8 +19,8 @@
 | P0 | 认证 (auth) | Token认证、OAuth Device Flow、多账户支持 |
 | P0 | 仓库 (repo) | 克隆、创建、查看仓库 |
 | P0 | Issue 管理 | 创建、列表、查看、关闭 Issue |
-| P0 | Merge Request | 创建、列表、检出、合并 MR |
-| P0 | 代码检视 | 审阅 MR，添加评论，批准或请求修改 |
+| P0 | Pull Request | 创建、列表、检出、合并 PR |
+| P0 | 代码检视 | 审阅 PR，添加评论，批准或请求修改 |
 
 ## 技术栈
 
@@ -58,7 +58,7 @@ gitcode-cli/
 │   │   ├── auth/            # 认证命令
 │   │   ├── repo/            # 仓库命令
 │   │   ├── issue/           # Issue 命令
-│   │   ├── mr/              # MR 命令
+│   │   ├── pr/              # PR 命令
 │   │   ├── user/            # 用户命令
 │   │   ├── config/          # 配置命令
 │   │   ├── api/             # API 命令
@@ -72,7 +72,7 @@ gitcode-cli/
 │   ├── http_client.go       # HTTP 客户端
 │   ├── queries_repo.go      # 仓库查询
 │   ├── queries_issue.go     # Issue 查询
-│   ├── queries_mr.go        # MR 查询
+│   ├── queries_pr.go        # PR 查询
 │   └── query_builder.go     # GraphQL 查询构建
 ├── git/                      # Git 操作封装
 ├── context/                  # 上下文管理
@@ -120,18 +120,18 @@ gc issue reopen   # 重开 Issue
 gc issue comment  # 添加评论
 ```
 
-### MR 命令
+### PR 命令
 
 ```bash
-gc mr create      # 创建 MR
-gc mr list        # 列出 MRs
-gc mr view        # 查看 MR
-gc mr checkout    # 检出 MR 分支
-gc mr merge       # 合并 MR
-gc mr close       # 关闭 MR
-gc mr review      # 代码检视（重点功能）
-gc mr diff        # 查看 MR 差异
-gc mr ready       # 标记为就绪/WIP
+gc pr create      # 创建 PR
+gc pr list        # 列出 PRs
+gc pr view        # 查看 PR
+gc pr checkout    # 检出 PR 分支
+gc pr merge       # 合并 PR
+gc pr close       # 关闭 PR
+gc pr review      # 代码检视（重点功能）
+gc pr diff        # 查看 PR 差异
+gc pr ready       # 标记为就绪/WIP
 ```
 
 ## 环境变量

@@ -13,7 +13,7 @@ issues-plan/
 ├── 03-module-auth.md              # 认证模块需求
 ├── 04-module-repo.md              # 仓库模块需求
 ├── 05-module-issue.md             # Issue模块需求
-├── 06-module-mr.md                # MR模块需求
+├── 06-module-pr.md                # PR模块需求
 ├── 07-api-client.md               # API客户端需求
 ├── 08-config.md                   # 配置管理需求
 ├── 09-testing.md                  # 测试需求
@@ -23,7 +23,7 @@ issues-plan/
     ├── m2-auth.md                 # 里程碑2：认证功能
     ├── m3-repo.md                 # 里程碑3：仓库功能
     ├── m4-issue.md                # 里程碑4：Issue功能
-    └── m5-mr.md                   # 里程碑5：MR功能
+    └── m5-pr.md                   # 里程碑5：PR功能
 ```
 
 ## 文档索引
@@ -36,7 +36,7 @@ issues-plan/
 | [03-module-auth.md](./03-module-auth.md) | 认证模块详细需求 |
 | [04-module-repo.md](./04-module-repo.md) | 仓库模块详细需求 |
 | [05-module-issue.md](./05-module-issue.md) | Issue模块详细需求 |
-| [06-module-mr.md](./06-module-mr.md) | MR模块详细需求（重点：代码检视） |
+| [06-module-pr.md](./06-module-pr.md) | PR模块详细需求（重点：代码检视） |
 | [07-api-client.md](./07-api-client.md) | API客户端设计需求 |
 | [08-config.md](./08-config.md) | 配置管理设计需求 |
 | [09-testing.md](./09-testing.md) | 测试策略和测试需求 |

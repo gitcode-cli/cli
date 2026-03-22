@@ -14,7 +14,7 @@ api/
 ├── http_client.go      # HTTP 客户端封装
 ├── queries_repo.go     # 仓库相关查询
 ├── queries_issue.go    # Issue 相关查询
-├── queries_mr.go       # MR 相关查询
+├── queries_pr.go        # PR 相关查询
 ├── queries_user.go     # 用户相关查询
 └── query_builder.go    # GraphQL 查询构建
 ```
@@ -148,8 +148,8 @@ func cacheKey(req *http.Request) string
 |----------|----------|------|
 | 用户信息 | 5 分钟 | 相对稳定 |
 | 仓库信息 | 1 分钟 | 可能变化 |
-| Issue/MR 列表 | 30 秒 | 频繁变化 |
-| Issue/MR 详情 | 1 分钟 | 可能变化 |
+| Issue/PR 列表 | 30 秒 | 频繁变化 |
+| Issue/PR 详情 | 1 分钟 | 可能变化 |
 
 ### 验收标准
 

@@ -112,7 +112,7 @@ func createRun(opts *CreateOptions) error {
 		return fmt.Errorf("failed to create issue: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Created issue #%d in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
+	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
 	return nil
 }

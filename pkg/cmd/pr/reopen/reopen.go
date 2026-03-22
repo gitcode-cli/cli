@@ -101,12 +101,12 @@ func reopenRun(opts *ReopenOptions) error {
 	}
 
 	// Reopen PR
-	pr, err := api.ReopenPullRequest(client, owner, repo, opts.Number)
+	_, err = api.ReopenPullRequest(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to reopen PR: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Reopened PR #%d in %s/%s\n", cs.Green("✓"), pr.Number, owner, repo)
+	fmt.Fprintf(opts.IO.Out, "%s Reopened PR #%d in %s/%s\n", cs.Green("✓"), opts.Number, owner, repo)
 	return nil
 }
 

@@ -1,11 +1,14 @@
 package api
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Issue represents a GitCode issue
 type Issue struct {
 	ID          interface{} `json:"id"`
-	Number      int         `json:"number"`
+	Number      string      `json:"number"`
 	Title       string      `json:"title"`
 	Body        string      `json:"body"`
 	State       string      `json:"state"`
@@ -31,7 +34,7 @@ type Label struct {
 // Milestone represents a GitCode milestone
 type Milestone struct {
 	ID          interface{} `json:"id"`
-	Number      int         `json:"number"`
+	Number      string      `json:"number"`
 	Title       string      `json:"title"`
 	Description string      `json:"description"`
 	State       string      `json:"state"`
@@ -69,12 +72,13 @@ type CreateIssueOptions struct {
 
 // UpdateIssueOptions represents options for updating an issue
 type UpdateIssueOptions struct {
-	Title     string   `json:"title,omitempty"`
-	Body      string   `json:"body,omitempty"`
-	State     string   `json:"state,omitempty"`
-	Assignees []string `json:"assignees,omitempty"`
-	Labels    []string `json:"labels,omitempty"`
-	Milestone int      `json:"milestone,omitempty"`
+	Title      string   `json:"title,omitempty"`
+	Body       string   `json:"body,omitempty"`
+	State      string   `json:"state,omitempty"`
+	StateEvent string   `json:"state_event,omitempty"`
+	Assignees  []string `json:"assignees,omitempty"`
+	Labels     []string `json:"labels,omitempty"`
+	Milestone  int      `json:"milestone,omitempty"`
 }
 
 // CreateCommentOptions represents options for creating a comment
@@ -132,12 +136,30 @@ func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIss
 
 // CloseIssue closes an issue
 func CloseIssue(client *Client, owner, repo string, number int) (*Issue, error) {
-	return UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{State: "closed"})
+	// GitCode API requires at least one other field along with state_event
+	// Get current issue to preserve its title
+	issue, err := GetIssue(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get issue: %w", err)
+	}
+	return UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
+		StateEvent: "close",
+		Title:      issue.Title,
+	})
 }
 
 // ReopenIssue reopens a closed issue
 func ReopenIssue(client *Client, owner, repo string, number int) (*Issue, error) {
-	return UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{State: "open"})
+	// GitCode API requires at least one other field along with state_event
+	// Get current issue to preserve its title
+	issue, err := GetIssue(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get issue: %w", err)
+	}
+	return UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
+		StateEvent: "reopen",
+		Title:      issue.Title,
+	})
 }
 
 // ListIssueComments lists comments on an issue

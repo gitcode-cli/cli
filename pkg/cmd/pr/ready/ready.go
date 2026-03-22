@@ -92,6 +92,12 @@ func readyRun(opts *ReadyOptions) error {
 		return err
 	}
 
+	// Get current PR to preserve title
+	pr, err := api.GetPullRequest(client, owner, repo, opts.Number)
+	if err != nil {
+		return fmt.Errorf("failed to get PR: %w", err)
+	}
+
 	// Determine draft status
 	draft := opts.WIP
 	if opts.Ready {
@@ -99,8 +105,9 @@ func readyRun(opts *ReadyOptions) error {
 	}
 
 	// Update PR
-	pr, err := api.UpdatePullRequest(client, owner, repo, opts.Number, &api.UpdatePROptions{
+	pr, err = api.UpdatePullRequest(client, owner, repo, opts.Number, &api.UpdatePROptions{
 		Draft: &draft,
+		Title: pr.Title,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update PR: %w", err)
@@ -108,9 +115,9 @@ func readyRun(opts *ReadyOptions) error {
 
 	// Output
 	if draft {
-		fmt.Fprintf(opts.IO.Out, "%s Marked PR #%d as work-in-progress\n", cs.Yellow("✓"), pr.Number)
+		fmt.Fprintf(opts.IO.Out, "%s Marked PR #%d as work-in-progress\n", cs.Yellow("✓"), opts.Number)
 	} else {
-		fmt.Fprintf(opts.IO.Out, "%s Marked PR #%d as ready for review\n", cs.Green("✓"), pr.Number)
+		fmt.Fprintf(opts.IO.Out, "%s Marked PR #%d as ready for review\n", cs.Green("✓"), opts.Number)
 	}
 	return nil
 }

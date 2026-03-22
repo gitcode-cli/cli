@@ -106,7 +106,7 @@ func closeRun(opts *CloseOptions) error {
 		return fmt.Errorf("failed to close issue: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Closed issue #%d in %s/%s\n", cs.Red("✗"), issue.Number, owner, repo)
+	fmt.Fprintf(opts.IO.Out, "%s Closed issue #%s in %s/%s\n", cs.Red("✗"), issue.Number, owner, repo)
 	return nil
 }
 

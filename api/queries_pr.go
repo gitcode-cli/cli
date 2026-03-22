@@ -1,6 +1,9 @@
 package api
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // PullRequest represents a GitCode pull request
 type PullRequest struct {
@@ -16,13 +19,13 @@ type PullRequest struct {
 	Head        *PRBranch   `json:"head"`
 	Base        *PRBranch   `json:"base"`
 	Merged      bool        `json:"merged"`
-	MergedAt    *time.Time  `json:"merged_at"`
+	MergedAt    *string     `json:"merged_at"`
 	Mergeable   *bool       `json:"mergeable"`
-	MergeState  string      `json:"mergeable_state"`
+	MergeState  interface{} `json:"mergeable_state"`
 	Draft       bool        `json:"draft"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`
-	ClosedAt    *time.Time  `json:"closed_at"`
+	ClosedAt    *string     `json:"closed_at"`
 	Comments    int         `json:"comments"`
 	Commits     int         `json:"commits"`
 	Additions   int         `json:"additions"`
@@ -83,11 +86,12 @@ type CreatePROptions struct {
 
 // UpdatePROptions represents options for updating a PR
 type UpdatePROptions struct {
-	Title string `json:"title,omitempty"`
-	Body  string `json:"body,omitempty"`
-	State string `json:"state,omitempty"`
-	Base  string `json:"base,omitempty"`
-	Draft *bool  `json:"draft,omitempty"`
+	Title      string `json:"title,omitempty"`
+	Body       string `json:"body,omitempty"`
+	State      string `json:"state,omitempty"`
+	StateEvent string `json:"state_event,omitempty"`
+	Base       string `json:"base,omitempty"`
+	Draft      *bool  `json:"draft,omitempty"`
 }
 
 // CreatePRCommentOptions represents options for creating a PR comment
@@ -169,12 +173,30 @@ func UpdatePullRequest(client *Client, owner, repo string, number int, opts *Upd
 
 // ClosePullRequest closes a PR
 func ClosePullRequest(client *Client, owner, repo string, number int) (*PullRequest, error) {
-	return UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{State: "closed"})
+	// GitCode API requires at least one other field along with state_event
+	// Get current PR to preserve its title
+	pr, err := GetPullRequest(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PR: %w", err)
+	}
+	return UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
+		StateEvent: "close",
+		Title:      pr.Title,
+	})
 }
 
 // ReopenPullRequest reopens a closed PR
 func ReopenPullRequest(client *Client, owner, repo string, number int) (*PullRequest, error) {
-	return UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{State: "open"})
+	// GitCode API requires at least one other field along with state_event
+	// Get current PR to preserve its title
+	pr, err := GetPullRequest(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PR: %w", err)
+	}
+	return UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
+		StateEvent: "reopen",
+		Title:      pr.Title,
+	})
 }
 
 // MergePullRequest merges a PR

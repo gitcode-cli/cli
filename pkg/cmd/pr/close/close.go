@@ -101,12 +101,12 @@ func closeRun(opts *CloseOptions) error {
 	}
 
 	// Close PR
-	pr, err := api.ClosePullRequest(client, owner, repo, opts.Number)
+	_, err = api.ClosePullRequest(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to close PR: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Closed PR #%d in %s/%s\n", cs.Red("✗"), pr.Number, owner, repo)
+	fmt.Fprintf(opts.IO.Out, "%s Closed PR #%d in %s/%s\n", cs.Red("✗"), opts.Number, owner, repo)
 	return nil
 }
 

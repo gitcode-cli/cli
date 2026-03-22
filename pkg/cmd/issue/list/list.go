@@ -117,7 +117,7 @@ func listRun(opts *ListOptions) error {
 		} else {
 			state = cs.Green("open")
 		}
-		fmt.Fprintf(opts.IO.Out, "#%-6d %s  %s\n", issue.Number, state, issue.Title)
+		fmt.Fprintf(opts.IO.Out, "#%-6s %s  %s\n", issue.Number, state, issue.Title)
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")
 

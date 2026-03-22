@@ -106,7 +106,7 @@ func reopenRun(opts *ReopenOptions) error {
 		return fmt.Errorf("failed to reopen issue: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Reopened issue #%d in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
+	fmt.Fprintf(opts.IO.Out, "%s Reopened issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	return nil
 }
 

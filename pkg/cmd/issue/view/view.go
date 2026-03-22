@@ -103,7 +103,7 @@ func viewRun(opts *ViewOptions) error {
 
 	// Output
 	fmt.Fprintf(opts.IO.Out, "\n")
-	fmt.Fprintf(opts.IO.Out, "%s #%d\n", cs.Bold(issue.Title), issue.Number)
+	fmt.Fprintf(opts.IO.Out, "%s #%s\n", cs.Bold(issue.Title), issue.Number)
 	fmt.Fprintf(opts.IO.Out, "  State: %s\n", issue.State)
 	if issue.User != nil {
 		fmt.Fprintf(opts.IO.Out, "  Author: %s\n", issue.User.Login)

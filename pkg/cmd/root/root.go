@@ -7,17 +7,20 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/version"
+	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
 )
 
 // Execute runs the root command
 func Execute(ver, commit, date string) error {
-	rootCmd := NewRootCmd(ver, commit, date)
+	f := cmdutil.NewFactory()
+	rootCmd := NewRootCmd(ver, commit, date, f)
 	return rootCmd.Execute()
 }
 
 // NewRootCmd creates the root command
-func NewRootCmd(ver, commit, date string) *cobra.Command {
+func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gc",
 		Short: "GitCode CLI - Command line tool for GitCode",
@@ -34,13 +37,7 @@ It provides convenient access to GitCode features including:
 
 	// Add subcommands
 	cmd.AddCommand(version.NewCmdVersion(ver, commit, date))
+	cmd.AddCommand(auth.NewCmdAuth(f))
 
 	return cmd
-}
-
-func checkErr(err error) {
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
 }

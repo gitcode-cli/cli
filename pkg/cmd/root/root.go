@@ -6,6 +6,7 @@ import (
 
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/version"
 	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
@@ -39,6 +40,7 @@ It provides convenient access to GitCode features including:
 	cmd.AddCommand(auth.NewCmdAuth(f))
 	cmd.AddCommand(repo.NewCmdRepo(f))
 	cmd.AddCommand(issue.NewCmdIssue(f))
+	cmd.AddCommand(pr.NewCmdPR(f))
 
 	return cmd
 }

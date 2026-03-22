@@ -1,0 +1,21 @@
+// Package main is the entry point for gitcode-cli
+package main
+
+import (
+	"os"
+
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/root"
+)
+
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
+func main() {
+	// Execute the root command
+	if err := root.Execute(version, commit, date); err != nil {
+		os.Exit(1)
+	}
+}

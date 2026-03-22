@@ -68,10 +68,20 @@ func GetRepo(client *Client, owner, name string) (*Repository, error) {
 	return &repo, nil
 }
 
-// CreateRepo creates a new repository
+// CreateRepo creates a new repository for the authenticated user
 func CreateRepo(client *Client, opts *CreateRepoOptions) (*Repository, error) {
 	var repo Repository
 	err := client.Post("/user/repos", opts, &repo)
+	if err != nil {
+		return nil, err
+	}
+	return &repo, nil
+}
+
+// CreateOrgRepo creates a new repository in an organization
+func CreateOrgRepo(client *Client, org string, opts *CreateRepoOptions) (*Repository, error) {
+	var repo Repository
+	err := client.Post("/orgs/"+org+"/repos", opts, &repo)
 	if err != nil {
 		return nil, err
 	}

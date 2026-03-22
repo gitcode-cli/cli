@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -87,12 +88,31 @@ func createRun(opts *CreateOptions) error {
 		private = false
 	}
 
-	repo, err := api.CreateRepo(client, &api.CreateRepoOptions{
-		Name:        opts.Name,
-		Description: opts.Description,
-		Private:     private,
-		AutoInit:    true,
-	})
+	// Check if name contains org prefix (org/repo format)
+	var repo *api.Repository
+	name := opts.Name
+
+	if strings.Contains(name, "/") {
+		parts := strings.SplitN(name, "/", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return fmt.Errorf("invalid repository name format: %s (expected 'repo' or 'org/repo')", name)
+		}
+		org, repoName := parts[0], parts[1]
+		repo, err = api.CreateOrgRepo(client, org, &api.CreateRepoOptions{
+			Name:        repoName,
+			Description: opts.Description,
+			Private:     private,
+			AutoInit:    true,
+		})
+	} else {
+		repo, err = api.CreateRepo(client, &api.CreateRepoOptions{
+			Name:        name,
+			Description: opts.Description,
+			Private:     private,
+			AutoInit:    true,
+		})
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to create repository: %w", err)
 	}

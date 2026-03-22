@@ -98,7 +98,7 @@ func deleteRun(opts *DeleteOptions) error {
 
 	// Confirm deletion
 	if !opts.Yes {
-		fmt.Fprintf(opts.IO.ErrOut, "! This will delete milestone #%d %s\n", ms.Number, cs.Bold(ms.Title))
+		fmt.Fprintf(opts.IO.ErrOut, "! This will delete milestone #%s %s\n", ms.Number, cs.Bold(ms.Title))
 		fmt.Fprintf(opts.IO.ErrOut, "Type the milestone number to confirm: ")
 		var input string
 		fmt.Scanln(&input)

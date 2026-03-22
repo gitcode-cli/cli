@@ -1,6 +1,9 @@
 package api
 
-import "time"
+import (
+	"net/url"
+	"time"
+)
 
 // CreateLabelOptions represents options for creating a label
 type CreateLabelOptions struct {
@@ -35,7 +38,15 @@ type UpdateMilestoneOptions struct {
 // CreateLabel creates a new label in a repository
 func CreateLabel(client *Client, owner, repo string, opts *CreateLabelOptions) (*Label, error) {
 	var label Label
-	err := client.Post("/repos/"+owner+"/"+repo+"/labels", opts, &label)
+	// GitCode API requires query parameters, not JSON body
+	path := "/repos/" + owner + "/" + repo + "/labels?name=" + url.QueryEscape(opts.Name)
+	if opts.Color != "" {
+		path += "&color=" + url.QueryEscape(opts.Color)
+	}
+	if opts.Description != "" {
+		path += "&description=" + url.QueryEscape(opts.Description)
+	}
+	err := client.Post(path, nil, &label)
 	if err != nil {
 		return nil, err
 	}

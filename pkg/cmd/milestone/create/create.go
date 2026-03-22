@@ -96,7 +96,7 @@ func createRun(opts *CreateOptions) error {
 		return fmt.Errorf("failed to create milestone: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Created milestone #%d %s in %s/%s\n", cs.Green("✓"), ms.Number, cs.Bold(ms.Title), owner, repo)
+	fmt.Fprintf(opts.IO.Out, "%s Created milestone #%s %s in %s/%s\n", cs.Green("✓"), ms.Number, cs.Bold(ms.Title), owner, repo)
 	return nil
 }
 

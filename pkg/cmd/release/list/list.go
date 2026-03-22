@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -61,6 +62,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 }
 
 func listRun(opts *ListOptions) error {
+	cs := opts.IO.ColorScheme()
+
 	httpClient, err := opts.HttpClient()
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
@@ -73,10 +76,76 @@ func listRun(opts *ListOptions) error {
 	}
 	client.SetToken(token, "environment")
 
-	// TODO: Implement API call and table output
-	_ = client
+	// Get repository
+	owner, repo, err := parseRepo(opts.Repository)
+	if err != nil {
+		return err
+	}
+
+	// List releases
+	releases, err := api.ListReleases(client, owner, repo, &api.ReleaseListOptions{
+		PerPage: opts.Limit,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list releases: %w", err)
+	}
+
+	if len(releases) == 0 {
+		fmt.Fprintf(opts.IO.Out, "No releases found in %s/%s\n", owner, repo)
+		return nil
+	}
+
+	// Output
+	fmt.Fprintf(opts.IO.Out, "\n")
+	for _, r := range releases {
+		tag := r.TagName
+		if r.Name != "" {
+			tag = r.Name
+		}
+
+		// Status indicators
+		var status string
+		if r.Draft {
+			status = cs.Gray("(draft)")
+		} else if r.Prerelease {
+			status = cs.Yellow("(pre-release)")
+		} else {
+			status = cs.Green("(latest)")
+		}
+
+		fmt.Fprintf(opts.IO.Out, "%s %s\n", cs.Bold(tag), status)
+		if r.Body != "" {
+			// Show first line of body
+			lines := strings.Split(r.Body, "\n")
+			if len(lines) > 0 && lines[0] != "" {
+				fmt.Fprintf(opts.IO.Out, "  %s\n", truncate(lines[0], 60))
+			}
+		}
+		fmt.Fprintf(opts.IO.Out, "  %s\n", r.HTMLURL)
+		fmt.Fprintf(opts.IO.Out, "\n")
+	}
 
 	return nil
+}
+
+func parseRepo(repo string) (string, string, error) {
+	if repo == "" {
+		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
+	}
+
+	for i := 0; i < len(repo); i++ {
+		if repo[i] == '/' {
+			return repo[:i], repo[i+1:], nil
+		}
+	}
+	return "", "", fmt.Errorf("invalid repository format: %s", repo)
+}
+
+func truncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
 }
 
 func getEnvToken() string {

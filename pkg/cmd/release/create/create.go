@@ -104,12 +104,21 @@ func createRun(opts *CreateOptions) error {
 		return err
 	}
 
-	// TODO: Implement API call to create release
-	_ = client
-	_ = owner
-	_ = repo
+	// Create release
+	release, err := api.CreateRelease(client, owner, repo, &api.CreateReleaseOptions{
+		TagName:         opts.TagName,
+		Name:            opts.Title,
+		Body:            opts.Notes,
+		Draft:           opts.Draft,
+		Prerelease:      opts.Prerelease,
+		TargetCommitish: opts.Target,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create release: %w", err)
+	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Created release %s\n", cs.Green("✓"), opts.TagName)
+	fmt.Fprintf(opts.IO.Out, "%s Created release %s\n", cs.Green("✓"), release.TagName)
+	fmt.Fprintf(opts.IO.Out, "  %s\n", release.HTMLURL)
 	return nil
 }
 

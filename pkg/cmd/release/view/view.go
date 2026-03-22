@@ -78,11 +78,84 @@ func viewRun(opts *ViewOptions) error {
 	}
 	client.SetToken(token, "environment")
 
-	// TODO: Implement API call
-	_ = client
+	// Get repository
+	owner, repo, err := parseRepo(opts.Repository)
+	if err != nil {
+		return err
+	}
 
-	fmt.Fprintf(opts.IO.Out, "%s\n", cs.Bold("Release: "+opts.TagName))
+	// Get release
+	release, err := api.GetRelease(client, owner, repo, opts.TagName)
+	if err != nil {
+		return fmt.Errorf("failed to get release: %w", err)
+	}
+
+	// Open in browser if requested
+	if opts.Web {
+		fmt.Fprintf(opts.IO.Out, "Opening %s in browser...\n", release.HTMLURL)
+		// TODO: implement browser opening
+		return nil
+	}
+
+	// Output
+	title := release.TagName
+	if release.Name != "" {
+		title = release.Name
+	}
+
+	fmt.Fprintf(opts.IO.Out, "\n")
+	fmt.Fprintf(opts.IO.Out, "%s\n", cs.Bold(title))
+	fmt.Fprintf(opts.IO.Out, "  Tag: %s\n", release.TagName)
+
+	// Status
+	if release.Draft {
+		fmt.Fprintf(opts.IO.Out, "  Status: %s\n", cs.Gray("draft"))
+	} else if release.Prerelease {
+		fmt.Fprintf(opts.IO.Out, "  Status: %s\n", cs.Yellow("pre-release"))
+	} else {
+		fmt.Fprintf(opts.IO.Out, "  Status: %s\n", cs.Green("published"))
+	}
+
+	// Dates
+	if release.PublishedAt != nil {
+		fmt.Fprintf(opts.IO.Out, "  Published: %s\n", release.PublishedAt.Format("2006-01-02 15:04:05"))
+	}
+	if !release.CreatedAt.IsZero() {
+		fmt.Fprintf(opts.IO.Out, "  Created: %s\n", release.CreatedAt.Format("2006-01-02 15:04:05"))
+	}
+
+	// URL
+	fmt.Fprintf(opts.IO.Out, "  URL: %s\n", release.HTMLURL)
+
+	// Body
+	if release.Body != "" {
+		fmt.Fprintf(opts.IO.Out, "\n")
+		fmt.Fprintf(opts.IO.Out, "%s\n", release.Body)
+	}
+
+	// Assets
+	if len(release.Assets) > 0 {
+		fmt.Fprintf(opts.IO.Out, "\n%s\n", cs.Bold("Assets:"))
+		for _, asset := range release.Assets {
+			fmt.Fprintf(opts.IO.Out, "  %s (%d bytes, %d downloads)\n", asset.Name, asset.Size, asset.Downloads)
+		}
+	}
+
+	fmt.Fprintf(opts.IO.Out, "\n")
 	return nil
+}
+
+func parseRepo(repo string) (string, string, error) {
+	if repo == "" {
+		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
+	}
+
+	for i := 0; i < len(repo); i++ {
+		if repo[i] == '/' {
+			return repo[:i], repo[i+1:], nil
+		}
+	}
+	return "", "", fmt.Errorf("invalid repository format: %s", repo)
 }
 
 func getEnvToken() string {

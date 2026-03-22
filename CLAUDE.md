@@ -176,14 +176,14 @@ go test -tags=integration ./...            # 集成测试
 
 | 功能 | GitHub | GitCode |
 |------|--------|---------|
-| MR/PR | pull request | merge request |
+| PR | pull request | pull request |
 | API 版本 | v3/graphql | v5 |
 | 端点 | /repos/owner/repo | /projects/owner%2Frepo |
 
 ## 开发优先级
 
-1. **P0**: `auth login`, `repo clone`, `issue create/list/view`, `mr create/list/view`, `mr review`
-2. **P1**: `mr checkout/merge`, `repo create/fork`, `config`
+1. **P0**: `auth login`, `repo clone`, `issue create/list/view`, `pr create/list/view`, `pr review`
+2. **P1**: `pr checkout/merge`, `repo create/fork`, `config`
 3. **P2**: `api`, `extension`, 自动补全
 
 ## 重要注意事项

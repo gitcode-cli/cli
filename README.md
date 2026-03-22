@@ -27,11 +27,11 @@ gc repo clone owner/repo
 # 创建 Issue
 gc issue create --title "Bug report"
 
-# 创建 MR
-gc mr create --title "New feature"
+# 创建 PR
+gc pr create --title "New feature"
 
 # 代码检视
-gc mr review 123 --approve
+gc pr review 123 --approve
 ```
 
 ## 功能特性
@@ -39,7 +39,7 @@ gc mr review 123 --approve
 - **认证管理**: OAuth Device Flow、Token 认证、多账户支持
 - **仓库操作**: 克隆、创建、Fork、查看仓库
 - **Issue 管理**: 创建、查看、列表、关闭 Issue
-- **MR 管理**: 创建、查看、检出、合并 MR
+- **PR 管理**: 创建、查看、检出、合并 PR
 - **代码检视**: 批准、请求修改、添加评论
 
 ## 命令概览
@@ -49,7 +49,7 @@ gc mr review 123 --approve
 | `gc auth` | 认证管理 |
 | `gc repo` | 仓库操作 |
 | `gc issue` | Issue 管理 |
-| `gc mr` | MR 管理 |
+| `gc pr` | PR 管理 |
 | `gc config` | 配置管理 |
 | `gc version` | 版本信息 |
 

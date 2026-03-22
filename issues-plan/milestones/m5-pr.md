@@ -55,20 +55,20 @@ $ gc pr create
 ? Source branch: feature-branch
 ? Target branch: main
 ? Reviewers: user1, user2
-✓ Created merge request !123
-https://gitcode.com/owner/repo/merge_requests/123
+✓ Created pull request !123
+https://gitcode.com/owner/repo/pull/123
 
 # 命令行创建
 $ gc pr create --title "Feature" --base main --head feature
-✓ Created merge request !124
+✓ Created pull request !124
 
 # 创建草稿
 $ gc pr create --title "WIP Feature" --draft
-✓ Created draft merge request !125
+✓ Created draft pull request !125
 
 # 自动推送
 $ gc pr create --push
-✓ Pushed branch and created merge request !126
+✓ Pushed branch and created pull request !126
 ```
 
 ---
@@ -152,7 +152,7 @@ Assignees: user3
 Merge status: Can be merged
 Comments: 5
 
-✓ View this PR: https://gitcode.com/owner/repo/merge_requests/123
+✓ View this PR: https://gitcode.com/owner/repo/pull/123
 
 $ gc pr view 123 --comments
 # 显示所有评论
@@ -228,13 +228,13 @@ api/queries_pr.go
 
 ```bash
 $ gc pr merge 123
-✓ Merged merge request !123
+✓ Merged pull request !123
 
 $ gc pr merge 123 --squash
-✓ Squash merged merge request !123
+✓ Squash merged pull request !123
 
 $ gc pr merge 123 --delete-branch
-✓ Merged merge request !123 and deleted branch feature
+✓ Merged pull request !123 and deleted branch feature
 ```
 
 ---
@@ -265,13 +265,13 @@ api/queries_pr.go
 
 ```bash
 $ gc pr close 123
-✓ Closed merge request !123
+✓ Closed pull request !123
 
 $ gc pr close 123 --comment "No longer needed"
-✓ Closed merge request !123 with comment
+✓ Closed pull request !123 with comment
 
 $ gc pr reopen 123
-✓ Reopened merge request !123
+✓ Reopened pull request !123
 ```
 
 ---
@@ -313,31 +313,31 @@ api/queries_review.go
 ```bash
 # 批准 PR
 $ gc pr review 123 --approve
-✓ Approved merge request !123
+✓ Approved pull request !123
 
 # 批准并添加评论
 $ gc pr review 123 --approve --body "LGTM! Good work."
-✓ Approved merge request !123 with comment
+✓ Approved pull request !123 with comment
 
 # 请求修改
 $ gc pr review 123 --request-changes --body "Please fix the following issues:
 1. Add unit tests
 2. Update documentation"
-✓ Requested changes on merge request !123
+✓ Requested changes on pull request !123
 
 # 仅评论
 $ gc pr review 123 --comment --body "I have some questions about the implementation"
-✓ Added comment to merge request !123
+✓ Added comment to pull request !123
 
 # 交互式审核
 $ gc pr review 123
 ? Review type: [Approve, Request changes, Comment]
 ? Body: [Opens editor]
-✓ Submitted review for merge request !123
+✓ Submitted review for pull request !123
 
 # 从文件读取
 $ gc pr review 123 --approve --body-file review.md
-✓ Approved merge request !123
+✓ Approved pull request !123
 ```
 
 **交互式审核流程**:
@@ -452,10 +452,10 @@ api/queries_pr.go
 
 ```bash
 $ gc pr ready 123
-✓ Marked merge request !123 as ready for review
+✓ Marked pull request !123 as ready for review
 
 $ gc pr ready 123 --wip
-✓ Marked merge request !123 as work in progress
+✓ Marked pull request !123 as work in progress
 ```
 
 ---

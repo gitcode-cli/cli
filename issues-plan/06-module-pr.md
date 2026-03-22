@@ -39,7 +39,7 @@ Commands:
 
 ### 功能描述
 
-创建新的 Merge Request。
+创建新的 Pull Request。
 
 ### 命令参数
 
@@ -111,7 +111,7 @@ gc pr create --web
 
 ### 功能描述
 
-列出仓库的 Merge Requests。
+列出仓库的 Pull Requests。
 
 ### 命令参数
 
@@ -183,7 +183,7 @@ ID    TITLE                         STATUS    AUTHOR      UPDATED
 
 ### 功能描述
 
-查看 Merge Request 的详细信息。
+查看 Pull Request 的详细信息。
 
 ### 命令参数
 
@@ -203,7 +203,7 @@ gc pr view 123
 gc pr view 123 --comments
 
 # 通过 URL 查看
-gc pr view https://gitcode.com/owner/repo/merge_requests/123
+gc pr view https://gitcode.com/owner/repo/pull/123
 
 # 查看当前分支关联的 PR
 gc pr view
@@ -229,7 +229,7 @@ Assignees: user3
 Merge status: Can be merged
 Comments: 5
 
-View this PR on GitCode: https://gitcode.com/owner/repo/merge_requests/123
+View this PR on GitCode: https://gitcode.com/owner/repo/pull/123
 ```
 
 ### 验收标准
@@ -306,7 +306,7 @@ gc pr checkout 123 --fetch
 
 ### 功能描述
 
-合并 Merge Request。
+合并 Pull Request。
 
 ### 命令参数
 
@@ -359,7 +359,7 @@ gc pr merge 123 --delete-branch
 
 ### 功能描述
 
-关闭 Merge Request（不合并）。
+关闭 Pull Request（不合并）。
 
 ### 命令参数
 
@@ -399,7 +399,7 @@ gc pr close 123 --comment "No longer needed"
 
 ### 功能描述
 
-重新打开已关闭的 Merge Request。
+重新打开已关闭的 Pull Request。
 
 ### 使用示例
 
@@ -425,7 +425,7 @@ gc pr reopen 123
 
 ### 功能描述
 
-对 Merge Request 进行代码检视，支持批准、请求修改或仅评论。
+对 Pull Request 进行代码检视，支持批准、请求修改或仅评论。
 
 ### 审核类型
 
@@ -522,7 +522,7 @@ gc pr review 123 --approve --body-file review.md
 
 ### 功能描述
 
-查看 Merge Request 的代码变更。
+查看 Pull Request 的代码变更。
 
 ### 使用示例
 

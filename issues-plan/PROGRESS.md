@@ -14,7 +14,7 @@
 | M2 认证功能 | ✅ 已完成 | 8/8 | 2026-03-22 | 2026-03-22 | 1周 |
 | M3 仓库功能 | ✅ 已完成 | 6/6 | 2026-03-22 | 2026-03-22 | 1周 |
 | M4 Issue功能 | ✅ 已完成 | 6/8 | 2026-03-22 | 2026-03-22 | 1周 |
-| M5 PR功能 | 🚧 开发中 | 0/9 | 2026-03-22 | - | 1.5周 |
+| M5 PR功能 | ✅ 已完成 | 9/9 | 2026-03-22 | 2026-03-22 | 1.5周 |
 
 ---
 
@@ -23,10 +23,10 @@
 | 指标 | 数值 |
 |------|------|
 | 总任务数 | 38 |
-| 已完成 | 27 |
+| 已完成 | 36 |
 | 进行中 | 0 |
-| 待开发 | 11 |
-| 完成率 | 71% |
+| 待开发 | 2 |
+| 完成率 | 95% |
 
 ---
 
@@ -101,20 +101,20 @@
 
 ## M5: PR功能
 
-**状态**: 🚧 开发中
-**进度**: 0/9
+**状态**: ✅ 已完成
+**进度**: 9/9
 
 | 任务ID | 任务名称 | 状态 | 提交 | 完成日期 | 备注 |
 |--------|----------|------|------|----------|------|
-| PR-001 | pr create | 📋 待开发 | - | - | 创建PR |
-| PR-002 | pr list | 📋 待开发 | - | - | 列出PRs |
-| PR-003 | pr view | 📋 待开发 | - | - | 查看PR |
-| PR-004 | pr checkout | 📋 待开发 | - | - | 检出PR分支 |
-| PR-005 | pr merge | 📋 待开发 | - | - | 合并PR |
-| PR-006 | pr close/reopen | 📋 待开发 | - | - | 关闭/重开 |
-| PR-007 | pr review | 📋 待开发 | - | - | **重点功能** |
-| PR-008 | pr diff | 📋 待开发 | - | - | 查看差异 |
-| PR-009 | pr ready | 📋 待开发 | - | - | 就绪/WIP标记 |
+| PR-001 | pr create | ✅ 已完成 | 9c6d2b3 | 2026-03-22 | 创建PR |
+| PR-002 | pr list | ✅ 已完成 | 9c6d2b3 | 2026-03-22 | 列出PRs |
+| PR-003 | pr view | ✅ 已完成 | 9c6d2b3 | 2026-03-22 | 查看PR |
+| PR-004 | pr checkout | ✅ 已完成 | 9c6d2b3 | 2026-03-22 | 检出PR分支 |
+| PR-005 | pr merge | ✅ 已完成 | 7d1de32 | 2026-03-22 | 合并PR |
+| PR-006 | pr close/reopen | ✅ 已完成 | 7d1de32 | 2026-03-22 | 关闭/重开 |
+| PR-007 | pr review | ✅ 已完成 | 9e64187 | 2026-03-22 | **重点功能** |
+| PR-008 | pr diff | ✅ 已完成 | 9e64187 | 2026-03-22 | 查看差异 |
+| PR-009 | pr ready | ✅ 已完成 | 9e64187 | 2026-03-22 | 就绪/WIP标记 |
 
 ---
 
@@ -134,13 +134,15 @@
 
 | 日期 | 提交ID | 描述 | 里程碑 |
 |------|--------|------|--------|
+| 2026-03-22 | 9e64187 | feat(pr): implement review, diff, ready commands | M5 |
+| 2026-03-22 | 7d1de32 | feat(pr): implement merge, close, reopen commands | M5 |
+| 2026-03-22 | 9c6d2b3 | feat(pr): implement create, list, view, checkout commands | M5 |
+| 2026-03-22 | 2a6049b | feat(api): add pull request API queries | M5 |
 | 2026-03-22 | cd27d39 | feat(issue): implement close, reopen, comment commands | M4 |
 | 2026-03-22 | 5baef8f | feat(issue): implement create, list, view commands | M4 |
 | 2026-03-22 | e2dbb74 | feat(api): add issue API queries | M4 |
-| 2026-03-22 | 5fc839d | docs: rename MR to PR and update progress | 文档 |
 | 2026-03-22 | 510e2b9 | feat(repo): implement repository commands | M3 |
 | 2026-03-22 | 326a0d9 | feat(api): add repository API queries | M3 |
-| 2026-03-22 | b4f10f9 | fix: remove unused import and register repo command | M3 |
 | 2026-03-22 | d26fd97 | feat: add Git operations and CI workflow | M1 |
 | 2026-03-22 | 5187eb6 | feat: add Factory, IOStreams and Config modules | M1 |
 | 2026-03-22 | d029af2 | feat: initialize project with root and version commands | M1 |
@@ -156,4 +158,13 @@
 - 完成 M2 认证功能开发
 - 完成 M3 仓库功能开发
 - 完成 M4 Issue功能开发 (核心功能)
-- 开始 M5 PR功能开发
+- 完成 M5 PR功能开发 (全部功能)
+
+---
+
+## 下一步工作
+
+1. **P2 功能**: 标签管理、里程碑管理
+2. **测试完善**: 添加更多单元测试和集成测试
+3. **文档完善**: 用户文档和API文档
+4. **发布准备**: 版本发布和包管理

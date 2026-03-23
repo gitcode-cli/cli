@@ -280,8 +280,10 @@ go test -tags=integration ./...            # 集成测试
 1. **提交 Issue**: 发现 BUG 或需要新特性后，首先在项目中创建 Issue
 2. **创建开发分支**: 从 main 分支创建对应类型的分支
 3. **在分支开发**: 不直接在 main 分支修改
-4. **提交 PR**: 开发完成后，创建 PR 合并到 main 分支
-5. **关联 Issue**: PR 描述中必须关联对应的 Issue（如 `Fixes #123` 或 `Closes #123`）
+4. **编写测试用例**: 为新功能或修复编写单元测试
+5. **本地测试**: 运行测试确保功能正常
+6. **提交 PR**: 开发完成后，创建 PR 合并到 main 分支
+7. **关联 Issue**: PR 描述中必须关联对应的 Issue（如 `Fixes #123` 或 `Closes #123`）
 
 ### 分支命名规范
 
@@ -289,6 +291,64 @@ go test -tags=integration ./...            # 集成测试
 |------|----------|------|
 | BUG 修复 | `bugfix/issue-<number>` | `bugfix/issue-3` |
 | 新特性 | `feature/issue-<number>` | `feature/issue-5` |
+
+### 测试要求
+
+#### 单元测试
+```bash
+# 运行所有测试
+go test ./...
+
+# 运行特定模块测试
+go test ./pkg/cmd/issue/...
+
+# 运行特定测试用例
+go test -run TestLabelCmd ./pkg/cmd/issue/label/...
+
+# 查看测试覆盖率
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+```
+
+#### 测试用例规范
+- 每个新命令必须有对应的测试文件（如 `label_test.go`）
+- 测试用例应覆盖：正常流程、边界条件、错误处理
+- 测试文件放在与源文件相同的目录
+
+#### 测试文件模板
+```go
+// xxx_test.go
+package xxx
+
+import (
+	"testing"
+)
+
+func TestXxxCommand(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr bool
+	}{
+		{
+			name:    "normal case",
+			args:    []string{"--flag", "value"},
+			wantErr: false,
+		},
+		{
+			name:    "error case",
+			args:    []string{},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// 测试逻辑
+		})
+	}
+}
+```
 
 ### 示例流程
 
@@ -298,22 +358,27 @@ git checkout main
 git pull
 
 # 2. 创建开发分支（BUG修复用 bugfix，新特性用 feature）
-git checkout -b bugfix/issue-3
-# 或
 git checkout -b feature/issue-5
 
-# 3. 开发代码并提交
+# 3. 开发代码
+# ... 编写代码 ...
+
+# 4. 编写测试用例
+# ... 创建 xxx_test.go ...
+
+# 5. 运行测试
+go test ./pkg/cmd/issue/label/...
+# 确保测试通过
+# ok  gitcode.com/gitcode-cli/cli/pkg/cmd/issue/label  0.123s
+
+# 6. 提交代码
 git add .
-git commit -m "fix(version): display correct version info"
-# 或
 git commit -m "feat(issue): add label command"
 
-# 4. 推送分支
-git push -u origin bugfix/issue-3
+# 7. 推送分支
+git push -u origin feature/issue-5
 
-# 5. 创建 PR（关联 Issue）
-gc pr create --title "fix: display correct version info" --body "Fixes #3" --base main
-# 或
+# 8. 创建 PR（关联 Issue）
 gc pr create --title "feat: add issue label command" --body "Closes #5" --base main
 ```
 
@@ -322,6 +387,8 @@ gc pr create --title "feat: add issue label command" --body "Closes #5" --base m
 - ❌ 直接在 main 分支开发
 - ❌ 不创建 Issue 直接开发
 - ❌ PR 不关联 Issue
+- ❌ 未编写测试用例就提交 PR
+- ❌ 测试未通过就提交 PR
 
 ## 参考文档
 

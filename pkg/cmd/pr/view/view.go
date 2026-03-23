@@ -129,8 +129,14 @@ func viewRun(opts *ViewOptions) error {
 		} else if len(comments) > 0 {
 			fmt.Fprintf(opts.IO.Out, "\n--- Comments (%d) ---\n", len(comments))
 			for _, c := range comments {
-				fmt.Fprintf(opts.IO.Out, "\n%s at %s:\n", c.User.Login, c.CreatedAt.Format("2006-01-02 15:04"))
-				fmt.Fprintf(opts.IO.Out, "%s\n", c.Body)
+				fmt.Fprintf(opts.IO.Out, "\n%s at %s", c.User.Login, c.CreatedAt.Format("2006-01-02 15:04"))
+				if c.CommentType != "" {
+					fmt.Fprintf(opts.IO.Out, " [%s]", c.CommentType)
+				}
+				if c.DiffFile != "" {
+					fmt.Fprintf(opts.IO.Out, " (%s)", c.DiffFile)
+				}
+				fmt.Fprintf(opts.IO.Out, ":\n%s\n", c.Body)
 			}
 		} else {
 			fmt.Fprintf(opts.IO.Out, "\n--- No comments ---\n")

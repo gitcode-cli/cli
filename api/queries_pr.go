@@ -46,13 +46,16 @@ type PRBranch struct {
 
 // PRComment represents a comment on a PR
 type PRComment struct {
-	ID        interface{} `json:"id"`
-	Body      string      `json:"body"`
-	User      *User       `json:"user"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
-	Path      string      `json:"path"`
-	Position  int         `json:"position"`
+	ID           interface{} `json:"id"`
+	DiscussionID string      `json:"discussion_id"`
+	Body         string      `json:"body"`
+	User         *User       `json:"user"`
+	CreatedAt    time.Time   `json:"created_at"`
+	UpdatedAt    time.Time   `json:"updated_at"`
+	CommentType  string      `json:"comment_type"`
+	Resolved     bool        `json:"resolved"`
+	DiffFile     string      `json:"diff_file"`
+	DiffPosition interface{} `json:"diff_position"`
 }
 
 // PRReview represents a review on a PR
@@ -211,8 +214,14 @@ func MergePullRequest(client *Client, owner, repo string, number int, opts *Merg
 
 // ListPRComments lists comments on a PR
 func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment, error) {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments"
+	if token != "" {
+		path += "?access_token=" + token
+	}
+
 	var comments []PRComment
-	err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/comments", &comments)
+	err := client.Get(path, &comments)
 	if err != nil {
 		return nil, err
 	}

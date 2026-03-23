@@ -286,8 +286,11 @@ go test -tags=integration ./...            # 集成测试
 7. **实际命令测试**: 使用 `gc` 命令在测试仓库进行实际功能验证
 8. **提交 PR**: 开发完成后，创建 PR 合并到 main 分支
 9. **关联 Issue**: PR 描述中必须关联对应的 Issue（如 `Fixes #123` 或 `Closes #123`）
-10. **关闭 Issue**: 测试通过后关闭关联的 Issue
-11. **合并 PR**: 确认所有测试通过后合并 PR
+10. **审查 PR 提交**: 检查 PR 的代码变更，确保质量
+11. **Issue 评论**: 在 Issue 中添加完成说明（如何解决的、做了哪些改动）
+12. **PR 审查评论**: 在 PR 中提交审查评论，说明改动内容和测试结果
+13. **关闭 Issue**: 审查通过后关闭关联的 Issue
+14. **合并 PR**: 确认所有测试通过后合并 PR
 
 ### 分支命名规范
 
@@ -427,13 +430,23 @@ export GC_TOKEN=your_token
 gc issue label 1 --add bug -R infra-test/gctest1
 gc issue label 1 --list -R infra-test/gctest1
 
-# 11. 测试通过后关闭 Issue
+# 11. 审查 PR 提交
+gc pr view <pr_number> -R gitcode-cli/cli
+gc pr diff <pr_number> -R gitcode-cli/cli
+
+# 12. 在 Issue 中添加完成评论
+gc issue comment 5 --body "已完成实现：\n- 新增 gc issue label 命令\n- 支持添加、移除、列出标签\n- 单元测试通过\n- 实际命令测试通过" -R gitcode-cli/cli
+
+# 13. 在 PR 中提交审查评论
+gc pr review <pr_number> --comment "## 审查结果\n\n### 改动内容\n- 新增 issue label 命令\n\n### 测试结果\n- [x] 单元测试通过\n- [x] 实际命令测试通过" -R gitcode-cli/cli
+
+# 14. 关闭 Issue
 gc issue close 5 -R gitcode-cli/cli
 
-# 12. 合并 PR
+# 15. 合并 PR
 gc pr merge <pr_number> -R gitcode-cli/cli
 
-# 13. 拉取最新代码
+# 16. 拉取最新代码
 git checkout main && git pull
 ```
 
@@ -445,6 +458,9 @@ git checkout main && git pull
 - [ ] 在测试仓库进行实际命令测试
 - [ ] Issue 已打标签
 - [ ] PR 已创建并关联 Issue
+- [ ] PR 提交已审查
+- [ ] Issue 已添加完成评论
+- [ ] PR 已提交审查评论
 - [ ] Issue 已关闭
 - [ ] PR 已合并
 
@@ -457,7 +473,9 @@ git checkout main && git pull
 - ❌ 未编写测试用例就提交 PR
 - ❌ 单元测试未通过就提交 PR
 - ❌ 未进行实际命令测试就合并 PR
-- ❌ PR 未合并就关闭 Issue（或反之）
+- ❌ 未审查 PR 提交就合并
+- ❌ 未添加 Issue 评论就关闭 Issue
+- ❌ 未提交 PR 审查评论就合并 PR
 
 ## 参考文档
 

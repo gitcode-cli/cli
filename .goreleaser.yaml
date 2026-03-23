@@ -141,20 +141,6 @@ snapcrafts:
       gc:
         command: gc
         completer: completions/gc.bash
-    parts:
-      gc:
-        plugin: go
-        source: .
-        source-type: local
-        build-snaps:
-          - go/latest/stable
-        build-packages:
-          - git
-        stage:
-          - bin/gc
-          - completions/*
-        organize:
-          bin/gc: bin/gc
 
 brews:
   - name: gc
@@ -198,7 +184,6 @@ winget:
   - name: gc
     publisher: GitCode
     short_description: GitCode CLI
-    long_description: GitCode CLI is a command line tool for GitCode.
     license: MIT
     repository:
       owner: gitcode-com

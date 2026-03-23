@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 )
 
@@ -138,8 +139,24 @@ func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIss
 		opts.Repo = repo
 	}
 
+	// Use form data for GitCode API compatibility
+	formValues := url.Values{}
+	formValues.Set("repo", opts.Repo)
+	if opts.Title != "" {
+		formValues.Set("title", opts.Title)
+	}
+	if opts.Body != "" {
+		formValues.Set("body", opts.Body)
+	}
+	if opts.State != "" {
+		formValues.Set("state", opts.State)
+	}
+	for _, label := range opts.Labels {
+		formValues.Add("labels[]", label)
+	}
+
 	var issue Issue
-	err := client.Patch(path, opts, &issue)
+	err := client.PatchForm(path, formValues, &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -207,6 +224,72 @@ func ListRepoLabels(client *Client, owner, repo string) ([]Label, error) {
 		return nil, err
 	}
 	return labels, nil
+}
+
+// AddIssueLabels adds labels to an issue by updating the issue
+func AddIssueLabels(client *Client, owner, repo string, number int, labels []string) ([]*Label, error) {
+	// Get current issue to preserve existing labels
+	issue, err := GetIssue(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get issue: %w", err)
+	}
+
+	// Merge existing labels with new ones
+	existingLabels := make([]string, len(issue.Labels))
+	for i, l := range issue.Labels {
+		existingLabels[i] = l.Name
+	}
+
+	// Add new labels (avoid duplicates)
+	labelMap := make(map[string]bool)
+	for _, l := range existingLabels {
+		labelMap[l] = true
+	}
+	for _, l := range labels {
+		labelMap[l] = true
+	}
+
+	allLabels := make([]string, 0, len(labelMap))
+	for l := range labelMap {
+		allLabels = append(allLabels, l)
+	}
+
+	// Update issue with new labels
+	updated, err := UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
+		Repo:   repo,
+		Title:  issue.Title,
+		Labels: allLabels,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return updated.Labels, nil
+}
+
+// RemoveIssueLabel removes a label from an issue by updating the issue
+func RemoveIssueLabel(client *Client, owner, repo string, number int, label string) error {
+	// Get current issue
+	issue, err := GetIssue(client, owner, repo, number)
+	if err != nil {
+		return fmt.Errorf("failed to get issue: %w", err)
+	}
+
+	// Filter out the label to remove
+	labels := make([]string, 0)
+	for _, l := range issue.Labels {
+		if l.Name != label {
+			labels = append(labels, l.Name)
+		}
+	}
+
+	// Update issue with remaining labels
+	_, err = UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
+		Repo:   repo,
+		Title:  issue.Title,
+		Labels: labels,
+	})
+	return err
 }
 
 // ListRepoMilestones lists milestones for a repository

@@ -298,6 +298,10 @@ make run
 
 [MIT License](./LICENSE)
 
+## 致谢
+
+本项目参考了 [GitHub CLI](https://github.com/cli/cli) 的设计与实现，感谢 GitHub 团队的开源贡献。
+
 ## 相关链接
 
 - [GitCode](https://gitcode.com) - GitCode 平台

@@ -1,5 +1,7 @@
 # GitCode CLI 命令使用指南
 
+> 项目概述和功能介绍请参阅 [README.md](../README.md)，开发指南请参阅 [CLAUDE.md](../CLAUDE.md)，打包发布请参阅 [PACKAGING.md](./PACKAGING.md)。
+
 本文档提供 `gc` 命令行工具所有命令的实际使用示例。
 
 ## 前置准备

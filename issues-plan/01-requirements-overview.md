@@ -15,7 +15,8 @@
 | 配置管理 | 4 | 3 | 1 | 0 | 4/4 ✅ |
 | 测试 | 4 | 4 | 0 | 0 | 4/4 ✅ |
 | 部署 | 3 | 3 | 0 | 0 | 3/3 ✅ |
-| **总计** | **51** | **43** | **8** | **0** | **51/51** |
+| 文档 | 5 | 5 | 0 | 0 | 5/5 ✅ |
+| **总计** | **56** | **48** | **8** | **0** | **56/56** |
 
 ---
 
@@ -80,12 +81,12 @@
 
 | ID | 需求 | 优先级 | 状态 | 详细文档 |
 |----|------|--------|------|----------|
-| REL-001 | release create 创建 Release | P0 | ✅ 已完成 | - |
-| REL-002 | release list 列出 Releases | P0 | ✅ 已完成 | - |
-| REL-003 | release view 查看 Release | P0 | ✅ 已完成 | - |
-| REL-004 | release delete 删除 Release | P0 | ✅ 已完成 | - |
-| REL-005 | release edit 编辑 Release | P1 | ✅ 已完成 | - |
-| REL-006 | release upload/download 资产管理 | P1 | ✅ 已完成 | - |
+| REL-001 | release create 创建 Release | P0 | ✅ 已完成 | [PACKAGING.md](../docs/PACKAGING.md) |
+| REL-002 | release list 列出 Releases | P0 | ✅ 已完成 | [COMMANDS.md](../docs/COMMANDS.md) |
+| REL-003 | release view 查看 Release | P0 | ✅ 已完成 | [COMMANDS.md](../docs/COMMANDS.md) |
+| REL-004 | release delete 删除 Release | P0 | ✅ 已完成 | [COMMANDS.md](../docs/COMMANDS.md) |
+| REL-005 | release edit 编辑 Release | P1 | ✅ 已完成 | [COMMANDS.md](../docs/COMMANDS.md) |
+| REL-006 | release upload/download 资产管理 | P1 | ✅ 已完成 | [PACKAGING.md](../docs/PACKAGING.md) |
 
 ---
 
@@ -133,9 +134,21 @@
 
 ---
 
+## 文档
+
+| ID | 需求 | 优先级 | 状态 | 详细文档 |
+|----|------|--------|------|----------|
+| DOC-001 | COMMANDS.md 命令使用指南 | P0 | ✅ 已完成 | [COMMANDS.md](../docs/COMMANDS.md) |
+| DOC-002 | PACKAGING.md 打包发布指南 | P0 | ✅ 已完成 | [PACKAGING.md](../docs/PACKAGING.md) |
+| DOC-003 | SECURITY.md 安全策略 | P0 | ✅ 已完成 | [SECURITY.md](../SECURITY.md) |
+| DOC-004 | LICENSE MIT许可证 | P0 | ✅ 已完成 | [LICENSE](../LICENSE) |
+| DOC-005 | 仓库迁移到 gitcode-cli/cli | P0 | ✅ 已完成 | - |
+
+---
+
 ## 状态图例
 
-- ✅ 已完成：需求已定义，等待开发
+- 📋 待开发：需求已定义，等待开发
 - 🚧 开发中：正在开发中
 - ✅ 已完成：功能已实现并通过验收
 - ⏸️ 暂停：开发暂停

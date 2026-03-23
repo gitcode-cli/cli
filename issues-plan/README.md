@@ -18,12 +18,14 @@ issues-plan/
 ├── 08-config.md                   # 配置管理需求
 ├── 09-testing.md                  # 测试需求
 ├── 10-deployment.md               # 部署发布需求
+├── PROGRESS.md                    # 项目交付进度跟踪
 └── milestones/                    # 里程碑追踪
     ├── m1-foundation.md           # 里程碑1：基础架构
     ├── m2-auth.md                 # 里程碑2：认证功能
     ├── m3-repo.md                 # 里程碑3：仓库功能
     ├── m4-issue.md                # 里程碑4：Issue功能
-    └── m5-pr.md                   # 里程碑5：PR功能
+    ├── m5-pr.md                   # 里程碑5：PR功能
+    └── m6-release.md              # 里程碑6：Release功能
 ```
 
 ## 文档索引
@@ -73,9 +75,12 @@ issues-plan/
 ## 相关文档
 
 - [CLAUDE.md](../CLAUDE.md) - AI 辅助开发指南
-- [gc-design](https://gitcode.com/afly-infra/gc-design) - 详细设计文档
-- [gc-api-doc](https://gitcode.com/afly-infra/gc-api-doc) - GitCode API 文档
+- [COMMANDS.md](../docs/COMMANDS.md) - 命令使用指南
+- [PACKAGING.md](../docs/PACKAGING.md) - 打包发布指南
+- [SECURITY.md](../SECURITY.md) - 安全策略
+- [gc-design](https://gitcode.com/gitcode-cli/gc-design) - 详细设计文档
+- [gc-api-doc](https://gitcode.com/gitcode-cli/gc-api-doc) - GitCode API 文档
 
 ---
 
-**最后更新**: 2026-03-22
+**最后更新**: 2026-03-23

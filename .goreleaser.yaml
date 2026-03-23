@@ -60,9 +60,6 @@ signs:
       - "${artifact}"
     artifacts: all
 
-sboms:
-  - artifacts: archive
-
 changelog:
   sort: asc
   use: github

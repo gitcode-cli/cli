@@ -210,7 +210,7 @@ gc pr review 456 --request-changes
 ### Release 管理
 
 ```bash
-# 创建 Release
+# 创建 Release（建议包含 --notes 参数）
 gc release create v1.0.0 --title "Version 1.0" --notes "Release notes"
 
 # 列出 Releases
@@ -230,6 +230,8 @@ gc release download v1.0.0 app.zip -R owner/repo -o ./downloads/
 # 删除 Release
 gc release delete v1.0.0 -R owner/repo
 ```
+
+> **注意**: `release create` 命令建议包含 `--notes` 参数，否则可能返回错误。
 
 ## 功能特性
 

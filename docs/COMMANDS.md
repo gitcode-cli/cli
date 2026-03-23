@@ -291,21 +291,20 @@ gc pr ready 1 -R infra-test/gctest1 --wip
 ### release create - 创建 Release
 
 ```bash
-# 创建 Release
-gc release create v1.0.0 -R infra-test/gctest1 --title "Version 1.0.0"
-
-# 创建带说明的 Release
-gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "First stable release"
-
-# 创建草稿 Release
-gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --draft
+# 创建 Release（建议包含 --notes 参数）
+gc release create v1.0.0 -R infra-test/gctest1 --title "Version 1.0.0" --notes "Release notes"
 
 # 创建预发布 Release
-gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0-beta" --prerelease
+gc release create v1.0.0-beta -R infra-test/gctest1 --title "v1.0.0 Beta" --notes "Beta release" --prerelease
+
+# 创建草稿 Release
+gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Draft" --draft
 
 # 指定目标分支
-gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --target main
+gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Release" --target main
 ```
+
+> **注意**: `--notes` 参数是必需的，不带此参数可能返回 400 错误。
 
 ### release list - 列出 Releases
 

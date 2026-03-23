@@ -120,8 +120,24 @@ func viewRun(opts *ViewOptions) error {
 		fmt.Fprintf(opts.IO.Out, "\n")
 	}
 	fmt.Fprintf(opts.IO.Out, "  %s\n", pr.HTMLURL)
-	fmt.Fprintf(opts.IO.Out, "\n")
 
+	// Get and display comments
+	if opts.Comments {
+		comments, err := api.ListPRComments(client, owner, repo, opts.Number)
+		if err != nil {
+			fmt.Fprintf(opts.IO.ErrOut, "%s Failed to get comments: %v\n", cs.Yellow("!"), err)
+		} else if len(comments) > 0 {
+			fmt.Fprintf(opts.IO.Out, "\n--- Comments (%d) ---\n", len(comments))
+			for _, c := range comments {
+				fmt.Fprintf(opts.IO.Out, "\n%s at %s:\n", c.User.Login, c.CreatedAt.Format("2006-01-02 15:04"))
+				fmt.Fprintf(opts.IO.Out, "%s\n", c.Body)
+			}
+		} else {
+			fmt.Fprintf(opts.IO.Out, "\n--- No comments ---\n")
+		}
+	}
+
+	fmt.Fprintf(opts.IO.Out, "\n")
 	return nil
 }
 

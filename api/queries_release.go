@@ -118,28 +118,16 @@ func DeleteRelease(client *Client, owner, repo string, id int64) error {
 }
 
 // DeleteReleaseByTag deletes a release by tag name
+// Note: GitCode API does not support DELETE method for releases
+// This function will return an error explaining the limitation
 func DeleteReleaseByTag(client *Client, owner, repo, tag string) error {
-	// First get the release to find its ID
-	release, err := GetRelease(client, owner, repo, tag)
-	if err != nil {
-		return err
-	}
-
-	// Extract ID
-	var id int64
-	switch v := release.ID.(type) {
-	case float64:
-		id = int64(v)
-	case int64:
-		id = v
-	case int:
-		id = int64(v)
-	default:
-		return ErrInvalidReleaseID
-	}
-
-	return DeleteRelease(client, owner, repo, id)
+	// GitCode API does not support deleting releases via API
+	// Returns an error to inform the user
+	return ErrDeleteNotSupported
 }
+
+// ErrDeleteNotSupported indicates that GitCode API does not support release deletion
+var ErrDeleteNotSupported = fmtError("GitCode API does not support deleting releases. Please delete the release manually from the web interface")
 
 // ErrInvalidReleaseID is returned when release ID is invalid
 var ErrInvalidReleaseID = fmtError("invalid release ID")

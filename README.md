@@ -8,47 +8,23 @@ GitCode 官方命令行工具，为 GitCode 用户提供便捷的命令行操作
 
 ## 安装
 
-### 预编译二进制文件
+### 从源码构建
 
-从 [Releases](https://gitcode.com/gitcode-cli/cli/releases) 页面下载对应平台的二进制文件：
-
-| 平台 | 架构 | 文件 |
-|------|------|------|
-| Linux | amd64 | `gc_X.X.X_linux_amd64.tar.gz` |
-| Linux | arm64 | `gc_X.X.X_linux_arm64.tar.gz` |
-| macOS | amd64 | `gc_X.X.X_darwin_amd64.tar.gz` |
-| macOS | arm64 (M1/M2) | `gc_X.X.X_darwin_arm64.tar.gz` |
-| Windows | amd64 | `gc_X.X.X_windows_amd64.zip` |
+**前置要求:**
+- Go 1.22+
 
 ```bash
-# Linux/macOS 解压并安装
-tar -xzf gc_X.X.X_linux_amd64.tar.gz
-sudo mv gc /usr/local/bin/
+# 克隆仓库
+git clone https://gitcode.com/gitcode-cli/cli.git
+cd cli
 
-# Windows 解压后将 gc.exe 放入 PATH 目录
-```
+# 构建
+go build -o gc ./cmd/gc
 
-### Homebrew (macOS/Linux)
-
-```bash
-# 添加 Tap
-brew tap gitcode-com/tap
-
-# 安装
-brew install gc
-
-# 或一键安装
-brew install gitcode-com/tap/gc
-```
-
-### Scoop (Windows)
-
-```bash
-# 添加 Bucket
-scoop bucket add gitcode-com https://github.com/gitcode-com/scoop-bucket
-
-# 安装
-scoop install gc
+# 安装到用户目录
+mkdir -p ~/.local/bin
+mv gc ~/.local/bin/
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ### Linux 包管理器
@@ -56,60 +32,31 @@ scoop install gc
 **DEB (Debian/Ubuntu):**
 
 ```bash
-# 下载 .deb 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/vX.X.X/gc_X.X.X_linux_amd64.deb
+# 从 Releases 下载 .deb 包
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.0/gc_0.2.0_amd64.deb
 
 # 安装
-sudo dpkg -i gc_X.X.X_linux_amd64.deb
+sudo dpkg -i gc_0.2.0_amd64.deb
 ```
 
 **RPM (RHEL/CentOS/Fedora):**
 
 ```bash
-# 下载 .rpm 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/vX.X.X/gc_X.X.X_linux_amd64.rpm
+# 从 Releases 下载 .rpm 包
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.0/gc-0.2.0-1.x86_64.rpm
 
 # 安装
-sudo rpm -i gc_X.X.X_linux_amd64.rpm
+sudo rpm -i gc-0.2.0-1.x86_64.rpm
 ```
 
-### Docker
+### 规划中的安装方式
 
-```bash
-# 拉取镜像
-docker pull gitcode/gc:latest
+以下安装方式正在开发中：
 
-# 或使用 GitHub Container Registry
-docker pull ghcr.io/gitcode-com/gc:latest
-
-# 运行
-docker run --rm -it gitcode/gc:latest version
-
-# 挂载配置目录
-docker run --rm -it -v ~/.config/gc:/root/.config/gc gitcode/gc:latest auth status
-```
-
-### 从源码构建
-
-**前置要求:**
-- Go 1.22+
-- Make (可选)
-
-```bash
-# 克隆仓库
-git clone https://gitcode.com/gitcode-cli/cli.git
-cd gitcode-cli
-
-# 安装依赖并构建
-make deps
-make build
-
-# 安装到系统
-make install
-
-# 或直接使用 go install
-go install ./cmd/gc
-```
+- [ ] 预编译二进制文件（Linux/macOS/Windows）
+- [ ] Homebrew (macOS/Linux)
+- [ ] Scoop (Windows)
+- [ ] Docker 镜像
 
 ## 快速开始
 

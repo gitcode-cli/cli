@@ -7,9 +7,12 @@ import (
 
 	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/create"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/list"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/view"
 	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/delete"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/download"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/edit"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/list"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/upload"
+	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/view"
 )
 
 // NewCmdRelease creates the release command
@@ -42,9 +45,12 @@ func NewCmdRelease(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
-	cmd.AddCommand(list.NewCmdList(f, nil))
-	cmd.AddCommand(view.NewCmdView(f, nil))
 	cmd.AddCommand(delete.NewCmdDelete(f, nil))
+	cmd.AddCommand(download.NewCmdDownload(f, nil))
+	cmd.AddCommand(edit.NewCmdEdit(f, nil))
+	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(upload.NewCmdUpload(f, nil))
+	cmd.AddCommand(view.NewCmdView(f, nil))
 
 	return cmd
 }

@@ -2,7 +2,7 @@
 
 本文档实时跟踪 gitcode-cli 项目的开发和验收进展。
 
-**最后更新**: 2026-03-22
+**最后更新**: 2026-03-23
 
 ---
 
@@ -15,6 +15,7 @@
 | M3 仓库功能 | ✅ 已完成 | 6/6 | 2026-03-22 | 2026-03-22 | 1周 |
 | M4 Issue功能 | ✅ 已完成 | 8/8 | 2026-03-22 | 2026-03-22 | 1周 |
 | M5 PR功能 | ✅ 已完成 | 9/9 | 2026-03-22 | 2026-03-22 | 1.5周 |
+| M6 Release功能 | ✅ 已完成 | 6/6 | 2026-03-23 | 2026-03-23 | 1天 |
 
 ---
 
@@ -22,8 +23,8 @@
 
 | 指标 | 数值 |
 |------|------|
-| 总任务数 | 38 |
-| 已完成 | 38 |
+| 总任务数 | 44 |
+| 已完成 | 44 |
 | 进行中 | 0 |
 | 待开发 | 0 |
 | 完成率 | 100% |
@@ -118,6 +119,22 @@
 
 ---
 
+## M6: Release功能
+
+**状态**: ✅ 已完成
+**进度**: 6/6
+
+| 任务ID | 任务名称 | 状态 | 提交 | 完成日期 | 备注 |
+|--------|----------|------|------|----------|------|
+| REL-001 | release create | ✅ 已完成 | 491592c | 2026-03-23 | 创建Release |
+| REL-002 | release list | ✅ 已完成 | 768b344 | 2026-03-23 | 列出Releases |
+| REL-003 | release view | ✅ 已完成 | 768b344 | 2026-03-23 | 查看Release |
+| REL-004 | release delete | ✅ 已完成 | f9db244 | 2026-03-23 | 删除Release |
+| REL-005 | release edit | ✅ 已完成 | ba8f52a | 2026-03-23 | 编辑Release |
+| REL-006 | release upload/download | ✅ 已完成 | ba8f52a | 2026-03-23 | 资产管理 |
+
+---
+
 ## 状态图例
 
 | 状态 | 图标 | 说明 |
@@ -134,6 +151,11 @@
 
 | 日期 | 提交ID | 描述 | 里程碑 |
 |------|--------|------|--------|
+| 2026-03-23 | ba8f52a | feat(release): add complete release management commands | M6 |
+| 2026-03-23 | 3b33a9c | fix(release): handle GitCode API limitation for release deletion | M6 |
+| 2026-03-23 | f9db244 | feat(release): implement release API and command functionality | M6 |
+| 2026-03-23 | 768b344 | feat(release): implement release API and complete command logic | M6 |
+| 2026-03-23 | 491592c | feat(release): add release command with create, list, view, delete subcommands | M6 |
 | 2026-03-22 | 8df87cf | feat(milestone): implement milestone management commands | M4 |
 | 2026-03-22 | 047343e | feat(label): implement label management commands | M4 |
 | 2026-03-22 | 7fe1ca3 | feat(api): add label and milestone API queries | M4 |
@@ -153,6 +175,11 @@
 
 ## 更新日志
 
+### 2026-03-23
+- 完成 M6 Release功能开发 (全部功能)
+  - release create/list/view/delete/edit/upload/download
+  - GitCode API 限制处理（release 无 ID 字段）
+
 ### 2026-03-22
 - 创建项目交付进度跟踪表
 - 完成需求文档编写
@@ -161,7 +188,6 @@
 - 完成 M3 仓库功能开发
 - 完成 M4 Issue功能开发 (全部功能)
 - 完成 M5 PR功能开发 (全部功能)
-- **项目100%完成！**
 
 ---
 
@@ -212,3 +238,12 @@ gitcode-cli 项目已全部完成开发，实现了以下功能：
 - `gc pr review` - 审核PR (重点功能)
 - `gc pr diff` - 查看差异
 - `gc pr ready` - 就绪/WIP切换
+
+### Release模块
+- `gc release create` - 创建Release
+- `gc release list` - 列出Releases
+- `gc release view` - 查看Release详情
+- `gc release edit` - 编辑Release
+- `gc release delete` - 删除Release
+- `gc release upload` - 上传资产
+- `gc release download` - 下载资产

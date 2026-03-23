@@ -276,15 +276,75 @@ type Commit struct {
 	Committer *User     `json:"committer"`
 }
 
-// GetPRDiff gets the diff of a PR
-func GetPRDiff(client *Client, owner, repo string, number int) (string, error) {
-	reqURL := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number)
-	var result struct {
-		Diff string `json:"diff"`
+// PRFilesResponse represents the response from PR files API
+type PRFilesResponse struct {
+	Code        int          `json:"code"`
+	AddedLines  int          `json:"added_lines"`
+	RemoveLines int          `json:"remove_lines"`
+	Count       int          `json:"count"`
+	DiffRefs    *PRDiffRefs  `json:"diff_refs"`
+	Diffs       []*PRDiff    `json:"diffs"`
+}
+
+// PRDiffRefs represents diff references
+type PRDiffRefs struct {
+	BaseSHA string `json:"base_sha"`
+	StartSHA string `json:"start_sha"`
+	HeadSHA  string `json:"head_sha"`
+}
+
+// PRDiff represents a single file diff
+type PRDiff struct {
+	NewBlobID string        `json:"new_blob_id"`
+	Statistic *PRStatistic  `json:"statistic"`
+	Type      string        `json:"type"`
+	Path      string        `json:"path"`
+	OldPath   string        `json:"old_path"`
+	NewPath   string        `json:"new_path"`
+	View      int           `json:"view"`
+	Head      *PRDiffHead   `json:"head"`
+	Content   *PRDiffContent `json:"content"`
+}
+
+// PRStatistic represents file change statistics
+type PRStatistic struct {
+	Additions int `json:"additions"`
+	Deletions int `json:"deletions"`
+}
+
+// PRDiffHead represents diff head info
+type PRDiffHead struct {
+	URL       string `json:"url"`
+	CommitID  string `json:"commit_id"`
+	Additions int    `json:"added_lines"`
+	Deletions int    `json:"remove_lines"`
+}
+
+// PRDiffContent represents diff content
+type PRDiffContent struct {
+	Text []*PRDiffLine `json:"text"`
+}
+
+// PRDiffLine represents a single diff line
+type PRDiffLine struct {
+	LineContent string      `json:"line_content"`
+	OldLine     interface{} `json:"old_line"` // can be string "..." or object
+	NewLine     interface{} `json:"new_line"` // can be string "..." or object
+	Type        string      `json:"type"`
+}
+
+// GetPRFiles gets the files and diffs of a PR
+func GetPRFiles(client *Client, owner, repo string, number int) (*PRFilesResponse, error) {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/files.json"
+	if token != "" {
+		path += "?access_token=" + token
 	}
-	err := client.Get(reqURL, &result)
+
+	var result PRFilesResponse
+	err := client.Get(path, &result)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return result.Diff, nil
+	return &result, nil
 }

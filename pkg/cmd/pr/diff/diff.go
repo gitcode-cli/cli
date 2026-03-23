@@ -81,16 +81,48 @@ func diffRun(opts *DiffOptions) error {
 		return err
 	}
 
-	// Get PR diff
+	// Get PR info
 	pr, err := api.GetPullRequest(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
-	// Output diff URL
+	// Get PR files and diffs
+	files, err := api.GetPRFiles(client, owner, repo, opts.Number)
+	if err != nil {
+		return fmt.Errorf("failed to get PR diff: %w", err)
+	}
+
+	// Output PR info
 	fmt.Fprintf(opts.IO.Out, "PR #%d: %s\n", pr.Number, pr.Title)
-	fmt.Fprintf(opts.IO.Out, "Diff: %s\n", pr.DiffURL)
-	fmt.Fprintf(opts.IO.Out, "Additions: +%d  Deletions: -%d  Files: %d\n", pr.Additions, pr.Deletions, pr.ChangedFiles)
+	fmt.Fprintf(opts.IO.Out, "Branch: %s -> %s\n", pr.Head.Ref, pr.Base.Ref)
+	fmt.Fprintf(opts.IO.Out, "Changes: +%d -%d in %d file(s)\n\n", files.AddedLines, files.RemoveLines, files.Count)
+
+	// Output diff for each file
+	for _, diff := range files.Diffs {
+		if diff.NewPath != "" {
+			if diff.OldPath != "" && diff.OldPath != diff.NewPath {
+				fmt.Fprintf(opts.IO.Out, "diff --git a/%s b/%s\n", diff.OldPath, diff.NewPath)
+			} else {
+				fmt.Fprintf(opts.IO.Out, "diff --git a/%s b/%s\n", diff.NewPath, diff.NewPath)
+			}
+		}
+
+		// Output diff content
+		if diff.Content != nil && len(diff.Content.Text) > 0 {
+			for _, line := range diff.Content.Text {
+				switch line.Type {
+				case "new":
+					fmt.Fprintf(opts.IO.Out, "+%s\n", line.LineContent)
+				case "old":
+					fmt.Fprintf(opts.IO.Out, "-%s\n", line.LineContent)
+				default:
+					fmt.Fprintf(opts.IO.Out, " %s\n", line.LineContent)
+				}
+			}
+		}
+		fmt.Fprintf(opts.IO.Out, "\n")
+	}
 
 	return nil
 }

@@ -263,6 +263,11 @@ release:
 
     ## Installation
 
+    ### PyPI (pip)
+    ```bash
+    pip install gitcode-cli
+    ```
+
     ### macOS (Homebrew)
     ```bash
     brew install gitcode-com/tap/gc

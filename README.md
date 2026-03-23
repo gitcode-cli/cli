@@ -255,6 +255,7 @@ source ~/.config/fish/config.fish
 ## 文档
 
 - [贡献指南](./CONTRIBUTING.md) - 开发和发布流程
+- [安全策略](./SECURITY.md) - 敏感信息保护和安全规范
 - [CLAUDE.md](./CLAUDE.md) - AI 辅助开发指南
 - [需求文档](./issues-plan/) - 完整需求规格和里程碑规划
 

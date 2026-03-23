@@ -28,3 +28,19 @@ Thumbs.db
 
 # Build
 dist/
+
+# 敏感文件 - 禁止提交
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed*
+.env
+.env.*
+*.secret
+credentials.json
+token.txt
+*.token
+secrets.yaml
+secrets.yml

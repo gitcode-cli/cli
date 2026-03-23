@@ -213,8 +213,11 @@ gc issue label 1 --list -R infra-test/gctest1
 ### pr create - 创建 PR
 
 ```bash
-# 创建 PR（需要先在分支上提交代码）
+# 创建 PR（自动检测当前分支作为 head）
 gc pr create -R infra-test/gctest1 --title "New feature" --body "Description"
+
+# 指定 head 分支
+gc pr create -R infra-test/gctest1 --head feature-branch --title "Feature" --body "Description"
 
 # 指定基础分支
 gc pr create -R infra-test/gctest1 --base main --title "Feature" --body "Description"
@@ -222,9 +225,14 @@ gc pr create -R infra-test/gctest1 --base main --title "Feature" --body "Descrip
 # 创建草稿 PR
 gc pr create -R infra-test/gctest1 --title "WIP: Feature" --draft
 
+# 创建跨仓库 PR（从 fork 到 upstream）
+gc pr create -R upstream/repo --fork myfork/repo --head feature-branch --title "Feature"
+
 # 从最后一次提交填充标题和内容
 gc pr create -R infra-test/gctest1 --fill
 ```
+
+> **说明**: `--head` 参数可选，未指定时自动检测当前 Git 分支。
 
 ### pr list - 列出 PRs
 

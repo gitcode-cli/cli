@@ -150,8 +150,11 @@ gc issue label 123 --add bug,enhancement
 ### Pull Request 管理
 
 ```bash
-# 创建 PR
+# 创建 PR（自动检测当前分支）
 gc pr create --title "New feature" --base main
+
+# 创建跨仓库 PR（从 fork 到 upstream）
+gc pr create -R upstream/repo --fork myfork/repo --title "Feature"
 
 # 列出 PR
 gc pr list --state open

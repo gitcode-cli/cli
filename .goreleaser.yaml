@@ -43,7 +43,6 @@ archives:
       - LICENSE
       - README.md
       - completions/*
-    strip_parent_binary_folder: true
 
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
@@ -125,23 +124,6 @@ nfpms:
     deb:
       compression: xz
 
-snapcrafts:
-  - name: gc
-    title: GitCode CLI
-    summary: Command line tool for GitCode
-    description: |
-      GitCode CLI is a command line tool for GitCode that provides
-      convenient access to GitCode features including authentication,
-      repository operations, issue management, and pull request management.
-    grade: stable
-    confinement: classic
-    license: MIT
-    base: core22
-    apps:
-      gc:
-        command: gc
-        completer: completions/gc.bash
-
 brews:
   - name: gc
     repository:
@@ -153,7 +135,6 @@ brews:
       name: goreleaserbot
       email: bot@goreleaser.com
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
-    folder: Formula
     homepage: https://gitcode.com
     description: GitCode CLI - Command line tool for GitCode
     license: MIT

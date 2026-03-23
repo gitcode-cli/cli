@@ -95,20 +95,9 @@ func uploadRun(opts *UploadOptions) error {
 		return err
 	}
 
-	// Get release to find its ID
-	release, err := api.GetRelease(client, owner, repo, opts.TagName)
-	if err != nil {
-		return fmt.Errorf("failed to get release: %w", err)
-	}
-
-	releaseID, err := release.GetID()
-	if err != nil {
-		return fmt.Errorf("cannot upload: %w", err)
-	}
-
-	// Upload each file
+	// Upload each file using two-step process
 	for _, file := range opts.Files {
-		err := uploadFile(client, owner, repo, releaseID, file, opts.Label, cs, opts.IO.Out)
+		err := uploadFile(client, owner, repo, opts.TagName, file, opts.Label, cs, opts.IO.Out)
 		if err != nil {
 			return err
 		}
@@ -117,7 +106,7 @@ func uploadRun(opts *UploadOptions) error {
 	return nil
 }
 
-func uploadFile(client *api.Client, owner, repo string, releaseID int64, filePath, label string, cs *iostreams.ColorScheme, out io.Writer) error {
+func uploadFile(client *api.Client, owner, repo, tag, filePath, label string, cs *iostreams.ColorScheme, out io.Writer) error {
 	// Open file
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -137,16 +126,13 @@ func uploadFile(client *api.Client, owner, repo string, releaseID int64, filePat
 	// Detect content type
 	contentType := detectContentType(filename, content)
 
-	// Upload
-	asset, err := api.UploadReleaseAsset(client, owner, repo, releaseID, filename, content, contentType)
+	// Upload using two-step process
+	err = api.UploadReleaseAssetByTag(client, owner, repo, tag, filename, content, contentType)
 	if err != nil {
 		return fmt.Errorf("failed to upload %s: %w", filename, err)
 	}
 
 	fmt.Fprintf(out, "%s Uploaded %s (%s)\n", cs.Green("✓"), filename, formatSize(len(content)))
-	if asset != nil && asset.BrowserDownloadURL != "" {
-		fmt.Fprintf(out, "  %s\n", asset.BrowserDownloadURL)
-	}
 
 	return nil
 }

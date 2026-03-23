@@ -37,6 +37,12 @@ type ReleaseAsset struct {
 	UpdatedAt          time.Time `json:"updated_at"`
 }
 
+// AssetUploadURL represents the response from getting upload URL
+type AssetUploadURL struct {
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers"`
+}
+
 // ReleaseListOptions represents options for listing releases
 type ReleaseListOptions struct {
 	PerPage int `url:"per_page,omitempty"`
@@ -216,12 +222,48 @@ func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error
 	return client.Delete("/repos/" + owner + "/" + repo + "/releases/assets/" + itoa64(assetID))
 }
 
+// GetReleaseUploadURL fetches the upload URL for a release asset
+func GetReleaseUploadURL(client *Client, owner, repo, tag, filename string) (*AssetUploadURL, error) {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/releases/" + tag + "/upload_url?file_name=" + filename
+	if token != "" {
+		path += "&access_token=" + token
+	}
+
+	var result AssetUploadURL
+	err := client.Get(path, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // UploadReleaseAsset uploads a file as a release asset
 func UploadReleaseAsset(client *Client, owner, repo string, releaseID int64, filename string, content []byte, contentType string) (*ReleaseAsset, error) {
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
 	return client.UploadAsset("/repos/"+owner+"/"+repo+"/releases/"+itoa64(releaseID)+"/assets", filename, content, contentType)
+}
+
+// UploadReleaseAssetByTag uploads a file to a release by tag name using two-step process
+func UploadReleaseAssetByTag(client *Client, owner, repo, tag, filename string, content []byte, contentType string) error {
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	// Step 1: Get upload URL and headers
+	uploadInfo, err := GetReleaseUploadURL(client, owner, repo, tag, filename)
+	if err != nil {
+		return fmtError("failed to get upload URL: " + err.Error())
+	}
+
+	if uploadInfo.URL == "" {
+		return fmtError("upload URL is empty")
+	}
+
+	// Step 2: Upload file to the returned URL with headers
+	return client.UploadToURL(uploadInfo.URL, filename, content, contentType, uploadInfo.Headers)
 }
 
 // ErrNoReleaseID is returned when release has no ID

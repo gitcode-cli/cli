@@ -60,7 +60,7 @@ func NewCmdDownload(f *cmdutil.Factory, runF func(*DownloadOptions) error) *cobr
 			# Download to a specific directory
 			$ gc release download v1.0.0 --output ./downloads/
 		`),
-		Args: cobra.MaximumNArgs(1),
+		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				opts.TagName = args[0]
@@ -141,7 +141,7 @@ func downloadRun(opts *DownloadOptions) error {
 
 	// Download each asset
 	for _, asset := range assets {
-		err := downloadAsset(asset, opts.Output, httpClient, cs, opts.IO.Out)
+		err := downloadAsset(asset, opts.Output, httpClient, cs, opts.IO.Out, client, owner, repo, release.TagName)
 		if err != nil {
 			return err
 		}
@@ -150,17 +150,17 @@ func downloadRun(opts *DownloadOptions) error {
 	return nil
 }
 
-func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Client, cs *iostreams.ColorScheme, out io.Writer) error {
-	if asset.BrowserDownloadURL == "" {
-		return nil
-	}
-
+func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Client, cs *iostreams.ColorScheme, out io.Writer, client *api.Client, owner, repo, tag string) error {
 	// Create output file
 	outputPath := filepath.Join(outputDir, asset.Name)
 	fmt.Fprintf(out, "%s Downloading %s...\n", cs.Blue("⬇"), asset.Name)
 
+	// Use GitCode API download endpoint
+	downloadURL := fmt.Sprintf("https://api.gitcode.com/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download?access_token=%s",
+		owner, repo, tag, asset.Name, client.Token())
+
 	// Create request
-	req, err := http.NewRequest("GET", asset.BrowserDownloadURL, nil)
+	req, err := http.NewRequest("GET", downloadURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

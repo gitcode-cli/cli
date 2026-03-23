@@ -146,6 +146,41 @@ func (c *Client) Delete(path string) error {
 	return c.REST("DELETE", path, nil, nil)
 }
 
+// UploadToURL uploads a file to an external URL with custom headers
+func (c *Client) UploadToURL(uploadURL, filename string, content []byte, contentType string, headers map[string]string) error {
+	req, err := http.NewRequest("PUT", uploadURL, bytes.NewReader(content))
+	if err != nil {
+		return fmt.Errorf("failed to create upload request: %w", err)
+	}
+
+	// Set Content-Type
+	req.Header.Set("Content-Type", contentType)
+
+	// Set custom headers from API response
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("upload failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Check for errors
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("upload failed: %s - %s", resp.Status, string(respBody))
+	}
+
+	return nil
+}
+
 // UploadAsset uploads a file to a release
 func (c *Client) UploadAsset(path, filename string, content []byte, contentType string) (*ReleaseAsset, error) {
 	reqURL := fmt.Sprintf("https://%s/api/%s%s?name=%s", c.host, DefaultAPIVersion, path, url.QueryEscape(filename))

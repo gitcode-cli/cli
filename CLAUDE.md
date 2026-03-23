@@ -278,12 +278,16 @@ go test -tags=integration ./...            # 集成测试
 ### 流程步骤
 
 1. **提交 Issue**: 发现 BUG 或需要新特性后，首先在项目中创建 Issue
-2. **创建开发分支**: 从 main 分支创建对应类型的分支
-3. **在分支开发**: 不直接在 main 分支修改
-4. **编写测试用例**: 为新功能或修复编写单元测试
-5. **本地测试**: 运行测试确保功能正常
-6. **提交 PR**: 开发完成后，创建 PR 合并到 main 分支
-7. **关联 Issue**: PR 描述中必须关联对应的 Issue（如 `Fixes #123` 或 `Closes #123`）
+2. **打标签**: Issue 创建后立即打上合适的标签（如 `bug`、`enhancement`）
+3. **创建开发分支**: 从 main 分支创建对应类型的分支
+4. **在分支开发**: 不直接在 main 分支修改
+5. **编写测试用例**: 为新功能或修复编写单元测试
+6. **本地测试**: 运行单元测试确保功能正常
+7. **实际命令测试**: 使用 `gc` 命令在测试仓库进行实际功能验证
+8. **提交 PR**: 开发完成后，创建 PR 合并到 main 分支
+9. **关联 Issue**: PR 描述中必须关联对应的 Issue（如 `Fixes #123` 或 `Closes #123`）
+10. **关闭 Issue**: 测试通过后关闭关联的 Issue
+11. **合并 PR**: 确认所有测试通过后合并 PR
 
 ### 分支命名规范
 
@@ -291,6 +295,16 @@ go test -tags=integration ./...            # 集成测试
 |------|----------|------|
 | BUG 修复 | `bugfix/issue-<number>` | `bugfix/issue-3` |
 | 新特性 | `feature/issue-<number>` | `feature/issue-5` |
+
+### 标签使用规范
+
+| 标签 | 使用场景 |
+|------|----------|
+| `bug` | 错误修复 |
+| `enhancement` | 功能增强/新特性 |
+| `documentation` | 文档更新 |
+| `help wanted` | 需要帮助 |
+| `question` | 需要讨论 |
 
 ### 测试要求
 
@@ -314,6 +328,30 @@ go tool cover -html=coverage.out
 - 每个新命令必须有对应的测试文件（如 `label_test.go`）
 - 测试用例应覆盖：正常流程、边界条件、错误处理
 - 测试文件放在与源文件相同的目录
+
+#### 实际命令测试（重要！）
+
+**单元测试无法覆盖所有场景，必须进行实际命令测试！**
+
+测试步骤：
+1. 在测试仓库（`infra-test/gctest1`）进行实际命令测试
+2. 验证命令的输入输出是否符合预期
+3. 检查 API 调用是否正确
+
+```bash
+# 设置 Token
+export GC_TOKEN=your_token
+
+# 示例：测试 PR edit 命令
+gc pr edit 2 --title "Test title" -R infra-test/gctest1
+gc pr view 2 -R infra-test/gctest1
+
+# 示例：测试 PR review 命令
+gc pr review 2 --approve -R infra-test/gctest1
+
+# 示例：测试 issue label 命令
+gc issue label 5 --add enhancement -R gitcode-cli/cli
+```
 
 #### 测试文件模板
 ```go
@@ -366,7 +404,7 @@ git checkout -b feature/issue-5
 # 4. 编写测试用例
 # ... 创建 xxx_test.go ...
 
-# 5. 运行测试
+# 5. 运行单元测试
 go test ./pkg/cmd/issue/label/...
 # 确保测试通过
 # ok  gitcode.com/gitcode-cli/cli/pkg/cmd/issue/label  0.123s
@@ -379,16 +417,47 @@ git commit -m "feat(issue): add label command"
 git push -u origin feature/issue-5
 
 # 8. 创建 PR（关联 Issue）
-gc pr create --title "feat: add issue label command" --body "Closes #5" --base main
+gc pr create --title "feat: add issue label command" --body "Closes #5" --base main -R gitcode-cli/cli
+
+# 9. 给 Issue 打标签
+gc issue label 5 --add enhancement -R gitcode-cli/cli
+
+# 10. 实际命令测试（在测试仓库验证功能）
+export GC_TOKEN=your_token
+gc issue label 1 --add bug -R infra-test/gctest1
+gc issue label 1 --list -R infra-test/gctest1
+
+# 11. 测试通过后关闭 Issue
+gc issue close 5 -R gitcode-cli/cli
+
+# 12. 合并 PR
+gc pr merge <pr_number> -R gitcode-cli/cli
+
+# 13. 拉取最新代码
+git checkout main && git pull
 ```
+
+### 完整工作流检查清单
+
+开发完成后必须确认：
+
+- [ ] 单元测试全部通过 (`go test ./...`)
+- [ ] 在测试仓库进行实际命令测试
+- [ ] Issue 已打标签
+- [ ] PR 已创建并关联 Issue
+- [ ] Issue 已关闭
+- [ ] PR 已合并
 
 ### 禁止行为
 
 - ❌ 直接在 main 分支开发
 - ❌ 不创建 Issue 直接开发
+- ❌ Issue 创建后不打标签
 - ❌ PR 不关联 Issue
 - ❌ 未编写测试用例就提交 PR
-- ❌ 测试未通过就提交 PR
+- ❌ 单元测试未通过就提交 PR
+- ❌ 未进行实际命令测试就合并 PR
+- ❌ PR 未合并就关闭 Issue（或反之）
 
 ## 参考文档
 
@@ -408,4 +477,4 @@ gc pr create --title "feat: add issue label command" --body "Closes #5" --base m
 
 ---
 
-**最后更新**: 2026-03-22
+**最后更新**: 2026-03-23

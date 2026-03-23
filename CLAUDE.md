@@ -271,24 +271,24 @@ go test -tags=integration ./...            # 集成测试
 - **原子提交**: 每个提交应是一个独立的、完整的功能或修复
 - **立即推送**: 每次提交后立即推送到远端，确保代码同步
 
-## BUG 修复工作流程（重要！）
+## 开发工作流程（重要！）
 
 **严格遵守以下流程，违反将导致代码管理混乱！**
 
 ### 流程步骤
 
-1. **提交 Issue**: 发现 BUG 后，首先在项目中创建 Issue，描述问题
-2. **创建 bugfix 分支**: 从 main 分支创建 `bugfix/issue-<number>` 分支
-3. **在分支修复**: 在 bugfix 分支中进行修复，不直接在 main 分支修改
-4. **提交 PR**: 修复完成后，创建 PR 合并到 main 分支
+1. **提交 Issue**: 发现 BUG 或需要新特性后，首先在项目中创建 Issue
+2. **创建开发分支**: 从 main 分支创建对应类型的分支
+3. **在分支开发**: 不直接在 main 分支修改
+4. **提交 PR**: 开发完成后，创建 PR 合并到 main 分支
 5. **关联 Issue**: PR 描述中必须关联对应的 Issue（如 `Fixes #123` 或 `Closes #123`）
 
 ### 分支命名规范
 
-```
-bugfix/issue-<number>    # 例如: bugfix/issue-3
-feature/issue-<number>   # 例如: feature/issue-5
-```
+| 类型 | 命名格式 | 示例 |
+|------|----------|------|
+| BUG 修复 | `bugfix/issue-<number>` | `bugfix/issue-3` |
+| 新特性 | `feature/issue-<number>` | `feature/issue-5` |
 
 ### 示例流程
 
@@ -297,24 +297,30 @@ feature/issue-<number>   # 例如: feature/issue-5
 git checkout main
 git pull
 
-# 2. 创建 bugfix 分支
+# 2. 创建开发分支（BUG修复用 bugfix，新特性用 feature）
 git checkout -b bugfix/issue-3
+# 或
+git checkout -b feature/issue-5
 
-# 3. 修复代码并提交
+# 3. 开发代码并提交
 git add .
 git commit -m "fix(version): display correct version info"
+# 或
+git commit -m "feat(issue): add label command"
 
 # 4. 推送分支
 git push -u origin bugfix/issue-3
 
 # 5. 创建 PR（关联 Issue）
 gc pr create --title "fix: display correct version info" --body "Fixes #3" --base main
+# 或
+gc pr create --title "feat: add issue label command" --body "Closes #5" --base main
 ```
 
 ### 禁止行为
 
-- ❌ 直接在 main 分支修复 BUG
-- ❌ 不创建 Issue 直接修复
+- ❌ 直接在 main 分支开发
+- ❌ 不创建 Issue 直接开发
 - ❌ PR 不关联 Issue
 
 ## 参考文档

@@ -115,13 +115,39 @@ go install ./cmd/gc
 
 ### 认证
 
+**方式一：设置环境变量（推荐）**
+
 ```bash
-# 交互式登录
+# 设置 Token 环境变量
+export GC_TOKEN="your_gitcode_token"
+
+# 或使用备用变量名
+export GITCODE_TOKEN="your_gitcode_token"
+
+# 添加到 shell 配置文件（永久生效）
+echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**方式二：交互式登录**
+
+```bash
+# 交互式登录（需输入 Token）
 gc auth login
 
-# 使用 Token 登录
+# 使用 Token 参数登录
 gc auth login --token YOUR_TOKEN
+```
 
+**获取 Token：**
+1. 登录 [GitCode](https://gitcode.com)
+2. 进入 设置 -> 私人令牌
+3. 点击"生成新令牌"，选择所需权限
+4. 复制生成的 Token
+
+**验证认证：**
+
+```bash
 # 查看认证状态
 gc auth status
 ```
@@ -185,16 +211,24 @@ gc pr review 456 --request-changes
 
 ```bash
 # 创建 Release
-gc release create v1.0.0 --title "Version 1.0"
+gc release create v1.0.0 --title "Version 1.0" --notes "Release notes"
 
 # 列出 Releases
-gc release list
+gc release list -R owner/repo
 
 # 查看 Release 详情
-gc release view v1.0.0
+gc release view v1.0.0 -R owner/repo
+
+# 上传资产到 Release
+gc release upload v1.0.0 app.zip -R owner/repo
+gc release upload v1.0.0 file1.tar.gz file2.rpm -R owner/repo
+
+# 下载 Release 资产
+gc release download v1.0.0 -R owner/repo
+gc release download v1.0.0 app.zip -R owner/repo -o ./downloads/
 
 # 删除 Release
-gc release delete v1.0.0
+gc release delete v1.0.0 -R owner/repo
 ```
 
 ## 功能特性
@@ -208,7 +242,7 @@ gc release delete v1.0.0
 | 👀 代码检视 | 批准、请求修改、添加评论 |
 | 🏷️ 标签管理 | 创建、列表、删除 |
 | 🎯 里程碑管理 | 创建、列表、查看、删除 |
-| 🚀 Release 管理 | 创建、列表、查看、删除 |
+| 🚀 Release 管理 | 创建、列表、查看、上传资产、下载资产 |
 
 ## 命令概览
 
@@ -222,7 +256,7 @@ Commands:
   pr          PR 管理 (create, list, view, checkout, merge, close, reopen, review, diff, ready)
   label       标签管理 (create, list, delete)
   milestone   里程碑管理 (create, list, view, delete)
-  release     Release 管理 (create, list, view, delete)
+  release     Release 管理 (create, list, view, upload, download, delete)
   version     显示版本信息
 ```
 

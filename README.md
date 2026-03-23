@@ -33,20 +33,20 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 # 从 Releases 下载 .deb 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.6/gc_0.2.6_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.7/gc_0.2.7_amd64.deb
 
 # 安装
-sudo dpkg -i gc_0.2.6_amd64.deb
+sudo dpkg -i gc_0.2.7_amd64.deb
 ```
 
 **RPM (RHEL/CentOS/Fedora):**
 
 ```bash
 # 从 Releases 下载 .rpm 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.6/gc-0.2.6-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.7/gc-0.2.7-1.x86_64.rpm
 
 # 安装
-sudo rpm -i gc-0.2.6-1.x86_64.rpm
+sudo rpm -i gc-0.2.7-1.x86_64.rpm
 ```
 
 ### 规划中的安装方式

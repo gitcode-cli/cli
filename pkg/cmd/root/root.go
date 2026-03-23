@@ -4,15 +4,15 @@ package root
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/label"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/milestone"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/version"
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/label"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/version"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // Execute runs the root command

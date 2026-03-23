@@ -222,22 +222,22 @@ class Gc < Formula
 
   on_macos do
     on_intel do
-      url "https://github.com/gitcode-com/gitcode-cli/releases/download/v#{version}/gc-darwin-amd64"
+      url "https://gitcode.com/gitcode-cli/cli/releases/download/v#{version}/gc-darwin-amd64"
       sha256 ""
     end
     on_arm do
-      url "https://github.com/gitcode-com/gitcode-cli/releases/download/v#{version}/gc-darwin-arm64"
+      url "https://gitcode.com/gitcode-cli/cli/releases/download/v#{version}/gc-darwin-arm64"
       sha256 ""
     end
   end
 
   on_linux do
     on_intel do
-      url "https://github.com/gitcode-com/gitcode-cli/releases/download/v#{version}/gc-linux-amd64"
+      url "https://gitcode.com/gitcode-cli/cli/releases/download/v#{version}/gc-linux-amd64"
       sha256 ""
     end
     on_arm do
-      url "https://github.com/gitcode-com/gitcode-cli/releases/download/v#{version}/gc-linux-arm64"
+      url "https://gitcode.com/gitcode-cli/cli/releases/download/v#{version}/gc-linux-arm64"
       sha256 ""
     end
   end
@@ -267,12 +267,12 @@ curl -sSL https://gitcode.com/install.sh | sh
 
 # 手动安装
 # Linux/macOS
-curl -L https://github.com/gitcode-com/gitcode-cli/releases/latest/download/gc-$(uname -s)-$(uname -m) -o gc
+curl -L https://gitcode.com/gitcode-cli/cli/releases/latest/download/gc-$(uname -s)-$(uname -m) -o gc
 chmod +x gc
 sudo mv gc /usr/local/bin/
 
 # Windows (PowerShell)
-Invoke-WebRequest -Uri https://github.com/gitcode-com/gitcode-cli/releases/latest/download/gc-windows-amd64.exe -OutFile gc.exe
+Invoke-WebRequest -Uri https://gitcode.com/gitcode-cli/cli/releases/latest/download/gc-windows-amd64.exe -OutFile gc.exe
 ```
 
 ### 安装脚本
@@ -297,9 +297,9 @@ echo "Installing gc for $OS/$ARCH..."
 
 # 下载
 if [ "$VERSION" = "latest" ]; then
-    URL="https://github.com/gitcode-com/gitcode-cli/releases/latest/download/gc-$OS-$ARCH"
+    URL="https://gitcode.com/gitcode-cli/cli/releases/latest/download/gc-$OS-$ARCH"
 else
-    URL="https://github.com/gitcode-com/gitcode-cli/releases/download/$VERSION/gc-$OS-$ARCH"
+    URL="https://gitcode.com/gitcode-cli/cli/releases/download/$VERSION/gc-$OS-$ARCH"
 fi
 
 curl -L "$URL" -o /tmp/gc

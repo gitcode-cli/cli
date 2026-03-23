@@ -5,11 +5,11 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/milestone/create"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/milestone/list"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/milestone/view"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/milestone/delete"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/view"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/delete"
 )
 
 // NewCmdMilestone creates the milestone command

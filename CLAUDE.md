@@ -216,7 +216,7 @@ go test -tags=integration ./...            # 集成测试
 
 **允许使用的测试仓库**:
 - `infra-test/gctest1`
-- `aflyingto/gitcode-cli`
+- `gitcode-cli/cli`
 
 **禁止行为**:
 - 不要使用个人仓库测试

@@ -17,7 +17,7 @@ func NewCmdVersion(ver, commit, date string) *cobra.Command {
 			fmt.Printf("gc version %s\n", ver)
 			fmt.Printf("  commit: %s\n", commit)
 			fmt.Printf("  built:  %s\n", date)
-			fmt.Println("https://gitcode.com/gitcode-com/gitcode-cli")
+			fmt.Println("https://gitcode.com/gitcode-cli/cli")
 		},
 	}
 

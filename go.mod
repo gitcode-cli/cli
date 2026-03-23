@@ -1,4 +1,4 @@
-module github.com/gitcode-com/gitcode-cli
+module gitcode.com/gitcode-cli/cli
 
 go 1.21
 

@@ -5,13 +5,13 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue/create"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue/list"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue/view"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue/close"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue/reopen"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/issue/comment"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/view"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/close"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/reopen"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/comment"
 )
 
 // NewCmdIssue creates the issue command

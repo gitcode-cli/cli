@@ -5,10 +5,10 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/label/create"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/label/list"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/label/delete"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/delete"
 )
 
 // NewCmdLabel creates the label command

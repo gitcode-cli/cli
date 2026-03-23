@@ -4,11 +4,11 @@ package auth
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth/login"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth/logout"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth/status"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/auth/token"
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/login"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/logout"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/status"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/token"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdAuth creates the auth command

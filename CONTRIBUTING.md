@@ -15,7 +15,7 @@ Thank you for your interest in contributing to GitCode CLI!
 
 ```bash
 # Clone the repository
-git clone https://github.com/gitcode-com/gitcode-cli.git
+git clone https://gitcode.com/gitcode-cli/cli.git
 cd gitcode-cli
 
 # Install dependencies

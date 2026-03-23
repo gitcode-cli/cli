@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 
-	"github.com/gitcode-com/gitcode-cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 // NewTestIOStreams creates IOStreams for testing

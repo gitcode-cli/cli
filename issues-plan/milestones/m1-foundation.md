@@ -24,7 +24,7 @@
 
 **验收标准**:
 
-- [ ] `go mod init github.com/gitcode-com/gitcode-cli`
+- [ ] `go mod init gitcode.com/gitcode-cli/cli`
 - [ ] 目录结构符合设计规范
 - [ ] 依赖配置完整
 
@@ -33,7 +33,7 @@
 ```bash
 mkdir -p gitcode-cli/{cmd/gc,pkg/cmd,pkg/cmdutil,pkg/iostreams,internal,api,git,context}
 cd gitcode-cli
-go mod init github.com/gitcode-com/gitcode-cli
+go mod init gitcode.com/gitcode-cli/cli
 ```
 
 ---

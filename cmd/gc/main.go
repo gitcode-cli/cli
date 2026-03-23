@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/root"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/root"
 )
 
 var (

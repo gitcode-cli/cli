@@ -5,14 +5,14 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/create"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/delete"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/download"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/edit"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/list"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/upload"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/release/view"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/delete"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/download"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/edit"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/upload"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/view"
 )
 
 // NewCmdRelease creates the release command

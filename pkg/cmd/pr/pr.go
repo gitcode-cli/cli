@@ -5,17 +5,17 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/create"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/list"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/view"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/checkout"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/merge"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/close"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/reopen"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/review"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/diff"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/pr/ready"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/view"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/checkout"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/merge"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/close"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/reopen"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/review"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/diff"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/ready"
 )
 
 // NewCmdPR creates the pr command

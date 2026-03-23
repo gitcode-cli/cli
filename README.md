@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/gitcode-com/gitcode-cli?include_prereleases)](https://github.com/gitcode-com/gitcode-cli/releases)
+[![Release](https://img.shields.io/github/v/release/gitcode-cli/cli?include_prereleases)](https://gitcode.com/gitcode-cli/cli/releases)
 
 GitCode 官方命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
 
@@ -10,7 +10,7 @@ GitCode 官方命令行工具，为 GitCode 用户提供便捷的命令行操作
 
 ### 预编译二进制文件
 
-从 [Releases](https://github.com/gitcode-com/gitcode-cli/releases) 页面下载对应平台的二进制文件：
+从 [Releases](https://gitcode.com/gitcode-cli/cli/releases) 页面下载对应平台的二进制文件：
 
 | 平台 | 架构 | 文件 |
 |------|------|------|
@@ -57,7 +57,7 @@ scoop install gc
 
 ```bash
 # 下载 .deb 包
-wget https://github.com/gitcode-com/gitcode-cli/releases/download/vX.X.X/gc_X.X.X_linux_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/vX.X.X/gc_X.X.X_linux_amd64.deb
 
 # 安装
 sudo dpkg -i gc_X.X.X_linux_amd64.deb
@@ -67,7 +67,7 @@ sudo dpkg -i gc_X.X.X_linux_amd64.deb
 
 ```bash
 # 下载 .rpm 包
-wget https://github.com/gitcode-com/gitcode-cli/releases/download/vX.X.X/gc_X.X.X_linux_amd64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/vX.X.X/gc_X.X.X_linux_amd64.rpm
 
 # 安装
 sudo rpm -i gc_X.X.X_linux_amd64.rpm
@@ -97,7 +97,7 @@ docker run --rm -it -v ~/.config/gc:/root/.config/gc gitcode/gc:latest auth stat
 
 ```bash
 # 克隆仓库
-git clone https://github.com/gitcode-com/gitcode-cli.git
+git clone https://gitcode.com/gitcode-cli/cli.git
 cd gitcode-cli
 
 # 安装依赖并构建
@@ -324,7 +324,7 @@ source ~/.config/fish/config.fish
 
 ```bash
 # 克隆仓库
-git clone https://github.com/gitcode-com/gitcode-cli.git
+git clone https://gitcode.com/gitcode-cli/cli.git
 cd gitcode-cli
 
 # 安装依赖
@@ -355,4 +355,4 @@ make run
 
 - [GitCode](https://gitcode.com) - GitCode 平台
 - [API 文档](https://gitcode.com/docs/api) - GitCode API 参考
-- [问题反馈](https://github.com/gitcode-com/gitcode-cli/issues) - 提交 Bug 或建议
+- [问题反馈](https://gitcode.com/gitcode-cli/cli/issues) - 提交 Bug 或建议

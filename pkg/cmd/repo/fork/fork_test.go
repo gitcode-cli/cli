@@ -3,7 +3,7 @@ package fork
 import (
 	"testing"
 
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 func TestNewCmdFork(t *testing.T) {

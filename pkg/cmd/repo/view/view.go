@@ -10,9 +10,9 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	"github.com/gitcode-com/gitcode-cli/api"
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
-	"github.com/gitcode-com/gitcode-cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/api"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 type ViewOptions struct {

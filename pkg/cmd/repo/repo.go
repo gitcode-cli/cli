@@ -4,13 +4,13 @@ package repo
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo/clone"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo/create"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo/delete"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo/fork"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo/list"
-	"github.com/gitcode-com/gitcode-cli/pkg/cmd/repo/view"
-	cmdutil "github.com/gitcode-com/gitcode-cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/clone"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/delete"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/fork"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/view"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdRepo creates the repo command

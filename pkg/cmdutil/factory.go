@@ -4,8 +4,8 @@ package cmdutil
 import (
 	"net/http"
 
-	"github.com/gitcode-com/gitcode-cli/internal/config"
-	"github.com/gitcode-com/gitcode-cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/internal/config"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 // Factory provides dependencies for commands

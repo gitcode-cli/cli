@@ -99,6 +99,10 @@ gc auth login --token YOUR_TOKEN
 gc auth status
 ```
 
+> 📖 **完整命令指南**: 查看 [COMMANDS.md](./docs/COMMANDS.md) 获取所有命令的详细使用说明和示例。
+
+## 命令示例
+
 ### 仓库操作
 
 ```bash
@@ -254,6 +258,8 @@ source ~/.config/fish/config.fish
 
 ## 文档
 
+- [命令指南](./docs/COMMANDS.md) - 所有命令的详细使用说明和示例
+- [打包发布](./docs/PACKAGING.md) - DEB/RPM 包构建和发布流程
 - [贡献指南](./CONTRIBUTING.md) - 开发和发布流程
 - [安全策略](./SECURITY.md) - 敏感信息保护和安全规范
 - [CLAUDE.md](./CLAUDE.md) - AI 辅助开发指南

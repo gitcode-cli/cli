@@ -173,6 +173,8 @@ dockers:
       - "--label=org.opencontainers.image.created={{ .Date }}"
       - "--label=org.opencontainers.image.source={{ .GitURL }}"
       - "--label=org.opencontainers.image.revision={{ .Commit }}"
+    extra_files:
+      - completions
   - id: gc-linux-arm64
     image_templates:
       - "gitcode/gc:{{ .Version }}-arm64"
@@ -187,6 +189,8 @@ dockers:
       - "--label=org.opencontainers.image.created={{ .Date }}"
       - "--label=org.opencontainers.image.source={{ .GitURL }}"
       - "--label=org.opencontainers.image.revision={{ .Commit }}"
+    extra_files:
+      - completions
 
 docker_manifests:
   - name_template: "gitcode/gc:{{ .Version }}"

@@ -441,9 +441,7 @@ gc help issue create
 | 功能 | 限制说明 |
 |------|----------|
 | `repo fork` | 在某些情况下可能返回 400 错误 |
-| `issue close/reopen` | 命令执行成功但状态可能不变化 |
-| `pr review` | 可能返回 404 错误 |
-| `milestone create/view` | 可能返回 400 错误 |
+| `milestone create/view` | 返回 400 错误，API 可能不支持 |
 | `release edit/delete` | GitCode API 不返回 release ID |
 
 ---

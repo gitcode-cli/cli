@@ -117,6 +117,13 @@ gc repo fork owner/repo
 gc repo fork owner/repo --clone
 ```
 
+### repo delete - 删除仓库
+
+```bash
+# 删除仓库（危险操作，需确认）
+gc repo delete owner/repo
+```
+
 ---
 
 ## Issue 命令 (issue)
@@ -182,6 +189,19 @@ gc issue reopen 1 -R infra-test/gctest1
 ```bash
 # 添加评论
 gc issue comment 1 -R infra-test/gctest1 --body "This is a comment"
+```
+
+### issue label - 管理 Issue 标签
+
+```bash
+# 添加标签
+gc issue label 1 --add bug,enhancement -R infra-test/gctest1
+
+# 移除标签
+gc issue label 1 --remove bug -R infra-test/gctest1
+
+# 列出标签
+gc issue label 1 --list -R infra-test/gctest1
 ```
 
 ---
@@ -394,6 +414,23 @@ gc release download v1.0.0 -R infra-test/gctest1 -o ./downloads/
 gc release download v1.0.0 app.zip -R infra-test/gctest1
 ```
 
+### release edit - 编辑 Release
+
+```bash
+# 修改标题
+gc release edit v1.0.0 --title "New title" -R infra-test/gctest1
+
+# 修改说明
+gc release edit v1.0.0 --notes "New release notes" -R infra-test/gctest1
+```
+
+### release delete - 删除 Release
+
+```bash
+# 删除 Release
+gc release delete v1.0.0 -R infra-test/gctest1
+```
+
 ---
 
 ## 标签命令 (label)
@@ -410,6 +447,13 @@ gc label list -R infra-test/gctest1
 ```bash
 # 创建标签
 gc label create "bug" -R infra-test/gctest1 --color "#ff0000" --description "Bug report"
+```
+
+### label delete - 删除标签
+
+```bash
+# 删除标签
+gc label delete bug -R infra-test/gctest1
 ```
 
 ---
@@ -491,6 +535,48 @@ gc help issue create
 | `repo fork` | 在某些情况下可能返回 400 错误 |
 | `milestone create/view` | 返回 400 错误，API 可能不支持 |
 | `release edit/delete` | GitCode API 不返回 release ID |
+
+---
+
+## 文档维护规范
+
+**重要**：每次修改命令相关代码时，必须同步更新本文档！
+
+### 同步更新要求
+
+| 代码改动类型 | 需要更新的文档 |
+|------------|--------------|
+| 新增命令 | docs/COMMANDS.md、README.md |
+| 新增子命令 | docs/COMMANDS.md |
+| 修改命令参数/flags | docs/COMMANDS.md、README.md |
+| 修改命令行为 | docs/COMMANDS.md |
+| 删除命令 | docs/COMMANDS.md、README.md |
+
+### 更新检查清单
+
+开发完成后，确认以下检查项：
+
+- [ ] 新命令已添加到 docs/COMMANDS.md
+- [ ] README.md 命令概览已更新（如有新命令）
+- [ ] 命令示例已验证可执行
+- [ ] 参数说明与代码实现一致
+- [ ] 已知限制表已更新（如有新的 API 限制）
+
+### 常见问题
+
+**Q: 如何确认文档与代码一致？**
+```bash
+# 查看所有命令
+gc help
+
+# 查看具体命令帮助
+gc pr --help
+gc issue --help
+```
+
+**Q: 文档更新顺序？**
+1. 先更新 docs/COMMANDS.md（完整文档）
+2. 再更新 README.md（概览文档）
 
 ---
 

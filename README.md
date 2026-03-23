@@ -117,6 +117,9 @@ gc repo view owner/repo
 
 # Fork 仓库
 gc repo fork owner/repo
+
+# 删除仓库
+gc repo delete owner/repo
 ```
 
 ### Issue 管理
@@ -133,6 +136,15 @@ gc issue view 123
 
 # 关闭 Issue
 gc issue close 123
+
+# 重开 Issue
+gc issue reopen 123
+
+# 添加评论
+gc issue comment 123 --body "Comment text"
+
+# 管理 Issue 标签
+gc issue label 123 --add bug,enhancement
 ```
 
 ### Pull Request 管理
@@ -153,9 +165,18 @@ gc pr checkout 456
 # 合并 PR
 gc pr merge 456 --squash
 
+# 关闭/重开 PR
+gc pr close 456
+gc pr reopen 456
+
+# 编辑 PR
+gc pr edit 456 --title "New title"
+gc pr edit 456 --draft true
+
 # 代码检视
 gc pr review 456 --approve
-gc pr review 456 --request-changes
+gc pr review 456 --request
+gc pr review 456 --comment "Review comment"
 ```
 
 ### Release 管理

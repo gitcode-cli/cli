@@ -146,6 +146,56 @@ func (c *Client) Delete(path string) error {
 	return c.REST("DELETE", path, nil, nil)
 }
 
+// PatchForm performs a PATCH request with form data
+func (c *Client) PatchForm(path string, formValues url.Values, response interface{}) error {
+	reqBody := formValues.Encode()
+
+	reqURL := fmt.Sprintf("https://%s/api/%s%s", c.host, DefaultAPIVersion, path)
+	req, err := http.NewRequest("PATCH", reqURL, bytes.NewReader([]byte(reqBody)))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// Add authentication
+	if c.token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Check for errors
+	if resp.StatusCode >= 400 {
+		var apiErr APIError
+		if err := json.Unmarshal(respBody, &apiErr); err == nil && apiErr.Message != "" {
+			return &apiErr
+		}
+		return fmt.Errorf("API error: %s", resp.Status)
+	}
+
+	// Parse response
+	if response != nil && len(respBody) > 0 {
+		if err := json.Unmarshal(respBody, response); err != nil {
+			return fmt.Errorf("failed to parse response: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // UploadToURL uploads a file to an external URL with custom headers
 func (c *Client) UploadToURL(uploadURL, filename string, content []byte, contentType string, headers map[string]string) error {
 	req, err := http.NewRequest("PUT", uploadURL, bytes.NewReader(content))

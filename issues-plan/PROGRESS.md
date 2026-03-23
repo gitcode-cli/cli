@@ -108,7 +108,7 @@
 
 | 任务ID | 任务名称 | 状态 | 提交 | 完成日期 | 备注 |
 |--------|----------|------|------|----------|------|
-| PR-001 | pr create | ✅ 已完成 | 9c6d2b3 | 2026-03-22 | 创建PR |
+| PR-001 | pr create | ✅ 已完成 | dbd323f | 2026-03-23 | 创建PR (含跨仓库PR支持) |
 | PR-002 | pr list | ✅ 已完成 | 9c6d2b3 | 2026-03-22 | 列出PRs |
 | PR-003 | pr view | ✅ 已完成 | bad7809 | 2026-03-23 | 查看PR (含 --comments) |
 | PR-004 | pr checkout | ✅ 已完成 | 9c6d2b3 | 2026-03-22 | 检出PR分支 |
@@ -167,6 +167,7 @@
 
 | 日期 | 提交ID | 描述 | 里程碑 |
 |------|--------|------|--------|
+| 2026-03-23 | dbd323f | fix(pr): auto-detect head branch and add cross-repo PR support | M5 |
 | 2026-03-23 | 4bbf812 | chore: release v0.2.1 | M6 |
 | 2026-03-23 | 5f8bba1 | fix(pr): update PRComment struct and add access_token | M5 |
 | 2026-03-23 | bad7809 | fix(pr): implement comments display for pr view --comments | M5 |
@@ -218,6 +219,9 @@
 - 添加 PACKAGING.md 打包发布指南
 - 添加 nfpm 配置支持 DEB/RPM 打包
 - 修复 pr view --comments 功能
+- 修复 pr create 命令 (Issue #15)
+  - --head 参数可选，自动检测当前分支
+  - 新增 --fork 参数支持跨仓库 PR
 - 发布 v0.2.1 版本
 
 ### 2026-03-22

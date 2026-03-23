@@ -562,8 +562,8 @@ go test -tags=integration ./pkg/cmd/pr/... -v
 ## 相关文档
 
 - [issues-plan/06-module-pr.md](../06-module-pr.md)
-- [gc-api-doc/doc/05-pull-requests.md](../../../gc-api-doc/doc/05-pull-requests.md)
-- [gc-api-doc/test/test_pull_requests.py](../../../gc-api-doc/test/test_pull_requests.py)
+- [gc-api-doc/doc/05-pull-requests.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/05-pull-requests.md)
+- [gc-api-doc/test/test_pull_requests.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py)
 
 ---
 

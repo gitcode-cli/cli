@@ -400,8 +400,8 @@ go test -tags=integration ./pkg/cmd/issue/... -v
 ## 相关文档
 
 - [issues-plan/05-module-issue.md](../05-module-issue.md)
-- [gc-api-doc/doc/04-issues.md](../../../gc-api-doc/doc/04-issues.md)
-- [gc-api-doc/test/test_issues.py](../../../gc-api-doc/test/test_issues.py)
+- [gc-api-doc/doc/04-issues.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/04-issues.md)
+- [gc-api-doc/test/test_issues.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py)
 
 ---
 

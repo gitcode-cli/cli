@@ -316,7 +316,7 @@ test-matrix:
 
 ## 现有测试用例集成
 
-从 gc-api-doc/test/ 目录集成以下测试：
+从 https://gitcode.com/afly-infra/gc-api-doc/tree/main/test/ 目录集成以下测试：
 
 | 测试文件 | 对应模块 |
 |----------|----------|
@@ -363,8 +363,8 @@ go test -bench=. ./...
 
 ## 相关文档
 
-- [gc-design/docs/testing/strategy.md](../../gc-design/docs/testing/strategy.md)
-- [gc-api-doc/test/](../../gc-api-doc/test/)
+- [gc-design/docs/testing/strategy.md](https://gitcode.com/afly-infra/gc-design/blob/main/docs/testing/strategy.md)
+- [gc-api-doc/test/](https://gitcode.com/afly-infra/gc-api-doc/tree/main/test/)
 
 ---
 

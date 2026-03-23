@@ -140,7 +140,7 @@ gc repo create my-repo --gitignore Go
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_repositories.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_repositories.py
 
 ---
 
@@ -192,7 +192,7 @@ gc repo fork owner/repo --remote
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_repositories.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_repositories.py
 
 ---
 
@@ -259,7 +259,7 @@ Repository description
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_repositories.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_repositories.py
 
 ---
 
@@ -321,7 +321,7 @@ owner/repo-2        Second repository        private     1 week ago
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_repositories.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_repositories.py
 
 ---
 
@@ -362,14 +362,14 @@ gc repo delete owner/repo --yes
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_repositories.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_repositories.py
 
 ---
 
 ## 相关文档
 
-- [gc-api-doc/doc/03-repositories.md](../../gc-api-doc/doc/03-repositories.md)
-- [gc-api-doc/test/test_repositories.py](../../gc-api-doc/test/test_repositories.py)
+- [gc-api-doc/doc/03-repositories.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/03-repositories.md)
+- [gc-api-doc/test/test_repositories.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_repositories.py)
 
 ---
 

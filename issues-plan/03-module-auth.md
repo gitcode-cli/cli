@@ -77,7 +77,7 @@ gc auth login --git-protocol ssh
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_users.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_users.py
 
 ---
 
@@ -322,8 +322,8 @@ gc auth switch --user another-user
 
 ## 相关文档
 
-- [gc-api-doc/doc/01-authentication.md](../../gc-api-doc/doc/01-authentication.md)
-- [gc-api-doc/test/test_users.py](../../gc-api-doc/test/test_users.py)
+- [gc-api-doc/doc/01-authentication.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/01-authentication.md)
+- [gc-api-doc/test/test_users.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_users.py)
 
 ---
 

@@ -407,7 +407,7 @@ go test -tags=integration ./pkg/cmd/auth/... -v
 ## 相关文档
 
 - [issues-plan/03-module-auth.md](../03-module-auth.md)
-- [gc-api-doc/doc/01-authentication.md](../../../gc-api-doc/doc/01-authentication.md)
+- [gc-api-doc/doc/01-authentication.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/01-authentication.md)
 
 ---
 

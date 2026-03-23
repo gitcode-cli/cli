@@ -73,8 +73,8 @@ issues-plan/
 ## 相关文档
 
 - [CLAUDE.md](../CLAUDE.md) - AI 辅助开发指南
-- [gc-design](../../gc-design/) - 详细设计文档
-- [gc-api-doc](../../gc-api-doc/) - GitCode API 文档
+- [gc-design](https://gitcode.com/afly-infra/gc-design) - 详细设计文档
+- [gc-api-doc](https://gitcode.com/afly-infra/gc-api-doc) - GitCode API 文档
 
 ---
 

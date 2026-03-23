@@ -89,7 +89,7 @@ gc issue create --web
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_issues.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py
 
 ---
 
@@ -163,8 +163,8 @@ ID    TITLE                        LABELS           ASSIGNEES    UPDATED
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_issues.py`
-- 参考 `gc-api-doc/test/test_labels.py`（标签）
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_labels.py（标签）
 
 ---
 
@@ -231,7 +231,7 @@ View this issue on GitCode: https://gitcode.com/owner/repo/issues/123
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_issues.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py
 
 ---
 
@@ -272,7 +272,7 @@ gc issue close 123 --comment "Fixed in commit abc123"
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_issues.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py
 
 ---
 
@@ -312,7 +312,7 @@ gc issue reopen 123 --comment "Issue still exists"
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_issues.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py
 
 ---
 
@@ -359,7 +359,7 @@ gc issue comment 123 --editor
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_issues.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py
 
 ---
 
@@ -413,16 +413,16 @@ gc issue edit 123 --remove-label needs-triage
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_issues.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py
 
 ---
 
 ## 相关文档
 
-- [gc-api-doc/doc/04-issues.md](../../gc-api-doc/doc/04-issues.md)
-- [gc-api-doc/test/test_issues.py](../../gc-api-doc/test/test_issues.py)
-- [gc-api-doc/test/test_labels.py](../../gc-api-doc/test/test_labels.py)
-- [gc-api-doc/test/test_milestones.py](../../gc-api-doc/test/test_milestones.py)
+- [gc-api-doc/doc/04-issues.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/04-issues.md)
+- [gc-api-doc/test/test_issues.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_issues.py)
+- [gc-api-doc/test/test_labels.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_labels.py)
+- [gc-api-doc/test/test_milestones.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_milestones.py)
 
 ---
 

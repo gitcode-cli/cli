@@ -63,7 +63,7 @@ func (c *Client) Delete(hostname, path string) error
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_*.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_*.py
 
 ---
 
@@ -259,7 +259,7 @@ func (e *APIError) Error() string {
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_error_codes.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_error_codes.py
 
 ---
 
@@ -310,9 +310,9 @@ endpoints:
 
 ## 相关文档
 
-- [gc-api-doc/doc/00-overview.md](../../gc-api-doc/doc/00-overview.md)
-- [gc-api-doc/doc/14-error-codes.md](../../gc-api-doc/doc/14-error-codes.md)
-- [gc-api-doc/test/test_error_codes.py](../../gc-api-doc/test/test_error_codes.py)
+- [gc-api-doc/doc/00-overview.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/00-overview.md)
+- [gc-api-doc/doc/14-error-codes.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/14-error-codes.md)
+- [gc-api-doc/test/test_error_codes.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_error_codes.py)
 
 ---
 

@@ -265,8 +265,8 @@ type ConfigEntry struct {
 
 ## 相关文档
 
-- [gc-design/docs/config/format.md](../../gc-design/docs/config/format.md)
-- [gc-design/docs/config/storage.md](../../gc-design/docs/config/storage.md)
+- [gc-design/docs/config/format.md](https://gitcode.com/afly-infra/gc-design/blob/main/docs/config/format.md)
+- [gc-design/docs/config/storage.md](https://gitcode.com/afly-infra/gc-design/blob/main/docs/config/storage.md)
 
 ---
 

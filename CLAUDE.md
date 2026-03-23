@@ -282,8 +282,8 @@ go test -tags=integration ./...            # 集成测试
 
 开发 API 相关功能时，必须参考以下验证过的文档：
 
-- **gc-api-doc/test/** - 所有 API 测试用例，已验证通过
-- **gc-api-doc/doc/** - API 说明文档
+- **https://gitcode.com/afly-infra/gc-api-doc/tree/main/test/** - 所有 API 测试用例，已验证通过
+- **https://gitcode.com/afly-infra/gc-api-doc/tree/main/doc/** - API 说明文档
 
 这些文档包含正确的 API 端点、请求格式、响应格式和认证方式。
 

@@ -447,8 +447,8 @@ All notable changes to this project will be documented in this file.
 
 ## 相关文档
 
-- [gc-design/docs/deployment/release.md](../../gc-design/docs/deployment/release.md)
-- [gc-design/docs/deployment/ci-cd.md](../../gc-design/docs/deployment/ci-cd.md)
+- [gc-design/docs/deployment/release.md](https://gitcode.com/afly-infra/gc-design/blob/main/docs/deployment/release.md)
+- [gc-design/docs/deployment/ci-cd.md](https://gitcode.com/afly-infra/gc-design/blob/main/docs/deployment/ci-cd.md)
 
 ---
 

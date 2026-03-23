@@ -103,7 +103,7 @@ gc pr create --web
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_pull_requests.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py
 
 ---
 
@@ -175,7 +175,7 @@ ID    TITLE                         STATUS    AUTHOR      UPDATED
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_pull_requests.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py
 
 ---
 
@@ -251,7 +251,7 @@ View this PR on GitCode: https://gitcode.com/owner/repo/pull/123
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_pull_requests.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py
 
 ---
 
@@ -298,7 +298,7 @@ gc pr checkout 123 --fetch
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_pull_requests.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py
 
 ---
 
@@ -351,7 +351,7 @@ gc pr merge 123 --delete-branch
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_pull_requests.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py
 
 ---
 
@@ -391,7 +391,7 @@ gc pr close 123 --comment "No longer needed"
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_pull_requests.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py
 
 ---
 
@@ -492,7 +492,7 @@ gc pr review 123 --approve --body-file review.md
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_pull_requests.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py
 
 ### 审核最佳实践
 
@@ -544,7 +544,7 @@ gc pr diff 123
 
 ### 测试用例映射
 
-- 参考 `gc-api-doc/test/test_pull_requests.py`
+- 参考 https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py
 
 ---
 
@@ -585,8 +585,8 @@ gc pr ready 123 --wip
 
 ## 相关文档
 
-- [gc-api-doc/doc/05-pull-requests.md](../../gc-api-doc/doc/05-pull-requests.md)
-- [gc-api-doc/test/test_pull_requests.py](../../gc-api-doc/test/test_pull_requests.py)
+- [gc-api-doc/doc/05-pull-requests.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/05-pull-requests.md)
+- [gc-api-doc/test/test_pull_requests.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_pull_requests.py)
 
 ---
 

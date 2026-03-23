@@ -379,8 +379,8 @@ go test -tags=integration ./pkg/cmd/repo/... -v
 ## 相关文档
 
 - [issues-plan/04-module-repo.md](../04-module-repo.md)
-- [gc-api-doc/doc/03-repositories.md](../../../gc-api-doc/doc/03-repositories.md)
-- [gc-api-doc/test/test_repositories.py](../../../gc-api-doc/test/test_repositories.py)
+- [gc-api-doc/doc/03-repositories.md](https://gitcode.com/afly-infra/gc-api-doc/blob/main/doc/03-repositories.md)
+- [gc-api-doc/test/test_repositories.py](https://gitcode.com/afly-infra/gc-api-doc/blob/main/test/test_repositories.py)
 
 ---
 

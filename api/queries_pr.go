@@ -89,12 +89,15 @@ type CreatePROptions struct {
 
 // UpdatePROptions represents options for updating a PR
 type UpdatePROptions struct {
-	Title      string `json:"title,omitempty"`
-	Body       string `json:"body,omitempty"`
-	State      string `json:"state,omitempty"`
-	StateEvent string `json:"state_event,omitempty"`
-	Base       string `json:"base,omitempty"`
-	Draft      *bool  `json:"draft,omitempty"`
+	Title             string   `json:"title,omitempty"`
+	Body              string   `json:"body,omitempty"`
+	State             string   `json:"state,omitempty"`
+	StateEvent        string   `json:"state_event,omitempty"`
+	Base              string   `json:"base,omitempty"`
+	Draft             *bool    `json:"draft,omitempty"`
+	MilestoneNumber   int      `json:"milestone_number,omitempty"`
+	Labels            []string `json:"labels,omitempty"`
+	CloseRelatedIssue *bool    `json:"close_related_issue,omitempty"`
 }
 
 // CreatePRCommentOptions represents options for creating a PR comment
@@ -246,6 +249,119 @@ func CreatePRReview(client *Client, owner, repo string, number int, opts *Create
 		return nil, err
 	}
 	return &review, nil
+}
+
+// ReviewPROptions represents options for reviewing a PR
+type ReviewPROptions struct {
+	Force bool `json:"force,omitempty"` // Force approval (admin only)
+}
+
+// ReviewPR handles PR review (approve/force pass)
+func ReviewPR(client *Client, owner, repo string, number int, opts *ReviewPROptions) error {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/review"
+	if token != "" {
+		path += "?access_token=" + token
+	}
+
+	return client.Post(path, opts, nil)
+}
+
+// EditPR updates a PR's information
+func EditPR(client *Client, owner, repo string, number int, opts *UpdatePROptions) (*PullRequest, error) {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number)
+	if token != "" {
+		path += "?access_token=" + token
+	}
+
+	var pr PullRequest
+	err := client.Patch(path, opts, &pr)
+	if err != nil {
+		return nil, err
+	}
+	return &pr, nil
+}
+
+// TestPROptions represents options for PR test
+type TestPROptions struct {
+	Force bool `json:"force,omitempty"` // Force test pass (admin only)
+}
+
+// TestPR handles PR test
+func TestPR(client *Client, owner, repo string, number int, opts *TestPROptions) error {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/test"
+	if token != "" {
+		path += "?access_token=" + token
+	}
+
+	return client.Post(path, opts, nil)
+}
+
+// EditPRCommentOptions represents options for editing a PR comment
+type EditPRCommentOptions struct {
+	Body string `json:"body"`
+}
+
+// EditPRComment edits a PR comment
+func EditPRComment(client *Client, owner, repo string, commentID int, opts *EditPRCommentOptions) (*PRComment, error) {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/comments/" + itoa(commentID)
+	if token != "" {
+		path += "?access_token=" + token
+	}
+
+	var comment PRComment
+	err := client.Patch(path, opts, &comment)
+	if err != nil {
+		return nil, err
+	}
+	return &comment, nil
+}
+
+// ReplyPRCommentOptions represents options for replying to a PR comment
+type ReplyPRCommentOptions struct {
+	Body string `json:"body"`
+}
+
+// ReplyPRCommentReply represents the response from replying to a PR comment
+type ReplyPRCommentReply struct {
+	ID      string `json:"id"`
+	NoteID  int    `json:"noteId"`
+	Body    string `json:"body"`
+}
+
+// ReplyPRComment replies to a PR comment discussion
+func ReplyPRComment(client *Client, owner, repo string, number int, discussionID string, opts *ReplyPRCommentOptions) (*ReplyPRCommentReply, error) {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/discussions/" + discussionID + "/comments"
+	if token != "" {
+		path += "?access_token=" + token
+	}
+
+	var result ReplyPRCommentReply
+	err := client.Post(path, opts, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ResolvePRCommentOptions represents options for resolving a PR comment
+type ResolvePRCommentOptions struct {
+	Resolved bool `json:"resolved"`
+}
+
+// ResolvePRComment updates the resolution status of a PR comment
+func ResolvePRComment(client *Client, owner, repo string, number int, discussionID string, opts *ResolvePRCommentOptions) error {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments/" + discussionID
+	if token != "" {
+		path += "?access_token=" + token
+	}
+
+	return client.Put(path, opts, nil)
 }
 
 // ListPRReviews lists reviews on a PR

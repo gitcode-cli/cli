@@ -119,7 +119,22 @@ func reviewRun(opts *ReviewOptions) error {
 		return nil
 	}
 
-	// Determine review event
+	// Handle comment only (GitCode uses /comments endpoint, not /reviews)
+	if opts.Comment != "" && !opts.Approve && !opts.Request {
+		comment, err := api.CreatePRComment(client, owner, repo, opts.Number, &api.CreatePRCommentOptions{
+			Body: opts.Comment,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to comment on PR: %w", err)
+		}
+		fmt.Fprintf(opts.IO.Out, "%s Commented on PR #%d\n", cs.Green("✓"), opts.Number)
+		if comment.Body != "" {
+			fmt.Fprintf(opts.IO.Out, "  %s\n", comment.Body)
+		}
+		return nil
+	}
+
+	// Handle approve/request changes (use review API)
 	event := "COMMENT"
 	if opts.Approve {
 		event = "APPROVE"

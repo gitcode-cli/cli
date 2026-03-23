@@ -233,8 +233,14 @@ func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment
 
 // CreatePRComment creates a comment on a PR
 func CreatePRComment(client *Client, owner, repo string, number int, opts *CreatePRCommentOptions) (*PRComment, error) {
+	token := client.Token()
+	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments"
+	if token != "" {
+		path += "?access_token=" + token
+	}
+
 	var comment PRComment
-	err := client.Post("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/comments", opts, &comment)
+	err := client.Post(path, opts, &comment)
 	if err != nil {
 		return nil, err
 	}

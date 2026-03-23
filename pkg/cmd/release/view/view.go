@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/pkg/browser"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -92,9 +93,8 @@ func viewRun(opts *ViewOptions) error {
 
 	// Open in browser if requested
 	if opts.Web {
-		fmt.Fprintf(opts.IO.Out, "Opening %s in browser...\n", release.HTMLURL)
-		// TODO: implement browser opening
-		return nil
+		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", release.HTMLURL)
+		return browser.Open(release.HTMLURL)
 	}
 
 	// Output

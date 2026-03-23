@@ -10,9 +10,9 @@ type Repository struct {
 	Description string      `json:"description"`
 	Private     bool        `json:"private"`
 	Owner       *User       `json:"owner"`
-	HTMLURL     string      `json:"html_url"`
-	CloneURL    string      `json:"clone_url"`
-	SSHURL      string      `json:"ssh_url"`
+	HTMLURL     string      `json:"web_url"`
+	CloneURL    string      `json:"http_url_to_repo"`
+	SSHURL      string      `json:"ssh_url_to_repo"`
 	DefaultBranch string    `json:"default_branch"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`

@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/pkg/browser"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -99,6 +100,12 @@ func viewRun(opts *ViewOptions) error {
 	issue, err := api.GetIssue(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to get issue: %w", err)
+	}
+
+	// Open in browser if --web flag is set
+	if opts.Web {
+		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", issue.HTMLURL)
+		return browser.Open(issue.HTMLURL)
 	}
 
 	// Output

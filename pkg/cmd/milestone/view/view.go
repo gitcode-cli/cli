@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/pkg/browser"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -91,6 +92,14 @@ func viewRun(opts *ViewOptions) error {
 	ms, err := api.GetMilestone(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to get milestone: %w", err)
+	}
+
+	milestoneURL := fmt.Sprintf("https://gitcode.com/%s/%s/milestones/%s", owner, repo, ms.Number)
+
+	// Open in browser if --web flag is set
+	if opts.Web {
+		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", milestoneURL)
+		return browser.Open(milestoneURL)
 	}
 
 	// Output

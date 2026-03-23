@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/pkg/browser"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -94,10 +95,18 @@ func viewRun(opts *ViewOptions) error {
 		return fmt.Errorf("failed to get repository: %w", err)
 	}
 
+	// Open in browser if --web flag is set
+	if opts.Web {
+		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", repo.HTMLURL)
+		return browser.Open(repo.HTMLURL)
+	}
+
 	// Output
 	fmt.Fprintf(opts.IO.Out, "\n")
 	fmt.Fprintf(opts.IO.Out, "%s\n", cs.Bold(repo.FullName))
-	fmt.Fprintf(opts.IO.Out, "  %s\n", repo.Description)
+	if repo.Description != "" {
+		fmt.Fprintf(opts.IO.Out, "  %s\n", repo.Description)
+	}
 	fmt.Fprintf(opts.IO.Out, "\n")
 	fmt.Fprintf(opts.IO.Out, "  Language: %s\n", repo.Language)
 	fmt.Fprintf(opts.IO.Out, "  Stars: %d  Forks: %d  Issues: %d\n", repo.StargazersCount, repo.ForksCount, repo.OpenIssuesCount)

@@ -16,6 +16,8 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/review"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/diff"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/ready"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/edit"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/test"
 )
 
 // NewCmdPR creates the pr command
@@ -56,6 +58,8 @@ func NewCmdPR(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(review.NewCmdReview(f, nil))
 	cmd.AddCommand(diff.NewCmdDiff(f, nil))
 	cmd.AddCommand(ready.NewCmdReady(f, nil))
+	cmd.AddCommand(edit.NewCmdEdit(f, nil))
+	cmd.AddCommand(test.NewCmdTest(f, nil))
 
 	return cmd
 }

@@ -28,6 +28,7 @@ type ReviewOptions struct {
 	Approve  bool
 	Request  bool
 	Comment  string
+	Force    bool // Force approval (admin only)
 }
 
 // NewCmdReview creates the review command
@@ -54,6 +55,9 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 
 			# Comment on a PR
 			$ gc pr review 123 --comment "Looks good to me"
+
+			# Force approve a PR (admin only)
+			$ gc pr review 123 --approve --force
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -74,6 +78,7 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 	cmd.Flags().BoolVarP(&opts.Approve, "approve", "a", false, "Approve the PR")
 	cmd.Flags().BoolVarP(&opts.Request, "request", "r", false, "Request changes on the PR")
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Comment body")
+	cmd.Flags().BoolVar(&opts.Force, "force", false, "Force approval (admin only)")
 
 	return cmd
 }
@@ -97,6 +102,21 @@ func reviewRun(opts *ReviewOptions) error {
 	owner, repo, err := parseRepo(opts.Repository)
 	if err != nil {
 		return err
+	}
+
+	// Handle force approval (admin only)
+	if opts.Force {
+		if !opts.Approve {
+			return fmt.Errorf("--force can only be used with --approve")
+		}
+		err := api.ReviewPR(client, owner, repo, opts.Number, &api.ReviewPROptions{
+			Force: true,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to force approve PR: %w", err)
+		}
+		fmt.Fprintf(opts.IO.Out, "%s %s PR #%d\n", cs.Green("✓"), cs.Green("force approved"), opts.Number)
+		return nil
 	}
 
 	// Determine review event

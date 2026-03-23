@@ -4,15 +4,15 @@ platform: "linux"
 version: "0.2.0"
 section: "default"
 priority: "extra"
-maintainer: "GitCode Team <support@gitcode.com>"
+maintainer: "gitcode-cli contributors"
 description: |
   GitCode CLI - Command line tool for GitCode
   Provides convenient access to GitCode features including:
   - Authentication management
   - Repository operations
   - Issue and PR management
-vendor: "GitCode"
-homepage: "https://gitcode.com"
+vendor: "gitcode-cli"
+homepage: "https://gitcode.com/gitcode-cli/cli"
 license: "MIT"
 contents:
   - src: ./dist/gc_linux_arm64

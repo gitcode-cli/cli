@@ -92,9 +92,9 @@ changelog:
 nfpms:
   - id: gc
     package_name: gc
-    vendor: GitCode
-    homepage: https://gitcode.com
-    maintainer: GitCode Team <support@gitcode.com>
+    vendor: gitcode-cli
+    homepage: https://gitcode.com/gitcode-cli/cli
+    maintainer: gitcode-cli contributors
     description: GitCode CLI - Command line tool for GitCode
     license: MIT
     formats:

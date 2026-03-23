@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/gitcode-cli/cli?include_prereleases)](https://gitcode.com/gitcode-cli/cli/releases)
 
-GitCode 官方命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
+GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
 
 ## 安装
 

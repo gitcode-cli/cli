@@ -284,6 +284,54 @@ gc pr ready 1 -R infra-test/gctest1
 gc pr ready 1 -R infra-test/gctest1 --wip
 ```
 
+### pr review - 评审 PR
+
+```bash
+# 评论 PR
+gc pr review 1 --comment "评审意见" -R infra-test/gctest1
+
+# 批准 PR
+gc pr review 1 --approve -R infra-test/gctest1
+
+# 请求修改
+gc pr review 1 --request -R infra-test/gctest1
+
+# 强制通过审批（管理员权限）
+gc pr review 1 --approve --force -R infra-test/gctest1
+```
+
+### pr edit - 编辑 PR
+
+```bash
+# 修改标题
+gc pr edit 1 --title "新标题" -R infra-test/gctest1
+
+# 修改描述
+gc pr edit 1 --body "新描述" -R infra-test/gctest1
+
+# 设置草稿状态
+gc pr edit 1 --draft true -R infra-test/gctest1
+
+# 取消草稿状态
+gc pr edit 1 --draft false -R infra-test/gctest1
+
+# 添加标签
+gc pr edit 1 --labels bug,enhancement -R infra-test/gctest1
+
+# 设置里程碑
+gc pr edit 1 --milestone 5 -R infra-test/gctest1
+```
+
+### pr test - 触发 PR 测试
+
+```bash
+# 触发测试
+gc pr test 1 -R infra-test/gctest1
+
+# 强制通过测试（管理员权限）
+gc pr test 1 --force -R infra-test/gctest1
+```
+
 ---
 
 ## Release 命令 (release)

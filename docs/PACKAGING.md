@@ -13,11 +13,28 @@
 [nfpm](https://github.com/goreleaser/nfpm) 是一个通用的包构建工具。
 
 ```bash
-# 方式一：使用 go install
+# 使用 go install（安装到 ~/go/bin/nfpm）
 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+```
 
-# 方式二：使用安装脚本
-curl -sfL https://install.goreleaser.com/github.com/goreleaser/nfpm.sh | sh -s -- -b ~/bin
+> **重要**：`go install` 会将 nfpm 安装到 `~/go/bin/` 目录。如果该目录不在 PATH 中，有以下解决方案：
+
+**方案一：添加到 PATH（推荐）**
+
+```bash
+# 临时添加（当前终端有效）
+export PATH="$HOME/go/bin:$PATH"
+
+# 永久添加（写入 shell 配置）
+echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**方案二：使用完整路径**
+
+```bash
+# 直接使用完整路径调用
+~/go/bin/nfpm --version
 ```
 
 ### 设置认证
@@ -98,21 +115,25 @@ sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-arm64.yaml
 ### 4. 构建 DEB 包
 
 ```bash
-# 构建 amd64 DEB
+# 如果 nfpm 在 PATH 中
 nfpm package -f nfpm-amd64.yaml -p deb -t dist/
-
-# 构建 arm64 DEB
 nfpm package -f nfpm-arm64.yaml -p deb -t dist/
+
+# 如果 nfpm 不在 PATH 中，使用完整路径
+~/go/bin/nfpm package -f nfpm-amd64.yaml -p deb -t dist/
+~/go/bin/nfpm package -f nfpm-arm64.yaml -p deb -t dist/
 ```
 
 ### 5. 构建 RPM 包
 
 ```bash
-# 构建 amd64 RPM
+# 如果 nfpm 在 PATH 中
 nfpm package -f nfpm-amd64.yaml -p rpm -t dist/
-
-# 构建 arm64 RPM
 nfpm package -f nfpm-arm64.yaml -p rpm -t dist/
+
+# 如果 nfpm 不在 PATH 中，使用完整路径
+~/go/bin/nfpm package -f nfpm-amd64.yaml -p rpm -t dist/
+~/go/bin/nfpm package -f nfpm-arm64.yaml -p rpm -t dist/
 ```
 
 ### 6. 查看构建结果
@@ -198,6 +219,11 @@ VERSION="0.2.0"
 REPO="owner/repo"
 TOKEN="your_token"
 
+# nfpm 路径（根据实际情况修改）
+# 如果 nfpm 在 PATH 中，使用: NFPAM="nfpm"
+# 如果 nfpm 不在 PATH 中，使用完整路径: NFPAM="$HOME/go/bin/nfpm"
+NFPAM="$HOME/go/bin/nfpm"
+
 # 设置 Token
 export GC_TOKEN="$TOKEN"
 
@@ -216,13 +242,13 @@ sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-arm64.yaml
 
 # 构建 DEB 包
 echo "Building DEB packages..."
-nfpm package -f nfpm-amd64.yaml -p deb -t dist/
-nfpm package -f nfpm-arm64.yaml -p deb -t dist/
+$NFPAM package -f nfpm-amd64.yaml -p deb -t dist/
+$NFPAM package -f nfpm-arm64.yaml -p deb -t dist/
 
 # 构建 RPM 包
 echo "Building RPM packages..."
-nfpm package -f nfpm-amd64.yaml -p rpm -t dist/
-nfpm package -f nfpm-arm64.yaml -p rpm -t dist/
+$NFPAM package -f nfpm-amd64.yaml -p rpm -t dist/
+$NFPAM package -f nfpm-arm64.yaml -p rpm -t dist/
 
 # 创建 Release
 echo "Creating release..."
@@ -302,11 +328,34 @@ gc release create v1.0.1 -R owner/repo --title "v1.0.1" --notes "..."
 
 ### Q: nfpm 找不到命令
 
-确保 nfpm 在 PATH 中：
+**原因**：`go install` 安装的程序默认放在 `~/go/bin/`，该目录可能不在 PATH 中。
+
+**解决方案一：添加到 PATH（推荐）**
+
 ```bash
-export PATH="$HOME/go/bin:$HOME/bin:$PATH"
-# 或添加到 shell 配置
-echo 'export PATH="$HOME/go/bin:$HOME/bin:$PATH"' >> ~/.bashrc
+# 检查 nfpm 是否存在
+ls ~/go/bin/nfpm
+
+# 添加到 PATH
+export PATH="$HOME/go/bin:$PATH"
+
+# 永久生效，添加到 shell 配置
+echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# 验证
+nfpm --version
+```
+
+**解决方案二：使用完整路径**
+
+```bash
+# 直接使用完整路径
+~/go/bin/nfpm --version
+
+# 或在脚本开头定义变量
+NFPAM="$HOME/go/bin/nfpm"
+$NFPAM package -f nfpm-amd64.yaml -p deb -t dist/
 ```
 
 ---

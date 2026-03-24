@@ -45,8 +45,6 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Build RPM/DEB packages
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=${{ steps.get_version.outputs.VERSION }}
           VERSION_NUM=${VERSION#v}
@@ -55,11 +53,8 @@ jobs:
           sed -i "s/version: .*/version: \"$VERSION_NUM\"/" nfpm-amd64.yaml
           sed -i "s/version: .*/version: \"$VERSION_NUM\"/" nfpm-arm64.yaml
 
-          # Download Linux binaries from release
+          # GoReleaser already built binaries in dist/
           cd dist
-          gh release download ${{ steps.get_version.outputs.VERSION }} \
-            --pattern 'gc_*_linux_amd64.tar.gz' \
-            --pattern 'gc_*_linux_arm64.tar.gz'
 
           # Extract amd64 binary
           tar -xzf gc_*_linux_amd64.tar.gz

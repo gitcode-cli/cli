@@ -283,6 +283,7 @@ source ~/.config/fish/config.fish
 ## 文档
 
 - [命令指南](./docs/COMMANDS.md) - 所有命令的详细使用说明和示例
+- [AI 操作指南](./docs/AI-GUIDE.md) - 使用 AI 助手操作 GitCode 的完整指南
 - [打包发布](./docs/PACKAGING.md) - DEB/RPM 包构建和发布流程
 - [贡献指南](./CONTRIBUTING.md) - 开发和发布流程
 - [安全策略](./SECURITY.md) - 敏感信息保护和安全规范

@@ -84,6 +84,7 @@ nfpms:
     formats:
       - deb
       - rpm
+    skip_upload: true
     contents:
       - src: ./completions/gc.bash
         dst: /usr/share/bash-completion/completions/gc
@@ -126,15 +127,6 @@ release:
     ### PyPI (pip)
     ```bash
     pip install gitcode-cli
-    ```
-
-    ### Linux (DEB/RPM)
-    ```bash
-    # DEB
-    sudo dpkg -i gc_*_linux_amd64.deb
-
-    # RPM
-    sudo rpm -i gc_*_linux_amd64.rpm
     ```
 
     ### Binary

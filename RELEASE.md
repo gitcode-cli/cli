@@ -31,47 +31,30 @@ git push origin v0.3.0
 
 ## 发布产物
 
-每次发布生成以下三类产物：
+每次发布生成以下产物：
 
-### 1. RPM 包（RedHat 系列）
+### 1. RPM/DEB 包（Linux）
 
-适用于 RHEL、CentOS、Fedora、openSUSE 等。
+构建后上传到 GitHub Artifacts，可在其他 workflow 中下载使用。
 
-| 架构 | 文件名 | 适用系统 |
-|------|--------|----------|
-| x86_64 | `gc-{version}-1.x86_64.rpm` | Intel/AMD 64 位系统 |
-| aarch64 | `gc-{version}-1.aarch64.rpm` | ARM 64 位系统 |
+| 产物类型 | 架构 | 文件名 |
+|---------|------|--------|
+| RPM | x86_64 | `gc-{version}-1.x86_64.rpm` |
+| RPM | aarch64 | `gc-{version}-1.aarch64.rpm` |
+| DEB | amd64 | `gc_{version}_amd64.deb` |
+| DEB | arm64 | `gc_{version}_arm64.deb` |
 
-**安装方式**：
-```bash
-# 下载并安装
-sudo rpm -i gc-0.3.0-1.x86_64.rpm
-
-# 或使用 yum/dnf
-sudo yum install gc-0.3.0-1.x86_64.rpm
+**在其他 workflow 中下载**：
+```yaml
+- name: Download packages
+  uses: actions/download-artifact@v4
+  with:
+    name: packages
 ```
 
-### 2. DEB 包（Debian 系列）
+### 2. PyPI 包（跨平台）
 
-适用于 Debian、Ubuntu、Linux Mint 等。
-
-| 架构 | 文件名 | 适用系统 |
-|------|--------|----------|
-| amd64 | `gc_{version}_amd64.deb` | Intel/AMD 64 位系统 |
-| arm64 | `gc_{version}_arm64.deb` | ARM 64 位系统 |
-
-**安装方式**：
-```bash
-# 下载并安装
-sudo dpkg -i gc_0.3.0_amd64.deb
-
-# 或使用 apt
-sudo apt install ./gc_0.3.0_amd64.deb
-```
-
-### 3. PyPI 包（Python）
-
-跨平台 Python 包，内置各平台二进制文件。
+发布到 PyPI，用户可通过 pip 安装。
 
 | 包名 | 安装命令 |
 |------|----------|
@@ -94,33 +77,32 @@ pip install gitcode-cli==0.3.0
 
 ## 发布产物汇总表
 
-| 产物类型 | 格式 | 架构 | 目标系统 | 发布位置 |
-|---------|------|------|---------|---------|
-| RPM | `.rpm` | x86_64 | RedHat/CentOS/Fedora | GitHub Release |
-| RPM | `.rpm` | aarch64 | RedHat/CentOS/Fedora (ARM) | GitHub Release |
-| DEB | `.deb` | amd64 | Debian/Ubuntu | GitHub Release |
-| DEB | `.deb` | arm64 | Debian/Ubuntu (ARM) | GitHub Release |
-| PyPI | wheel | all | 跨平台 | PyPI |
+| 产物类型 | 格式 | 架构 | 发布位置 |
+|---------|------|------|---------|
+| RPM | `.rpm` | x86_64, aarch64 | GitHub Artifacts |
+| DEB | `.deb` | amd64, arm64 | GitHub Artifacts |
+| 源码包 | `.tar.gz` / `.zip` | all | GitHub Release |
+| PyPI | wheel | 跨平台 | PyPI |
 
 ---
 
 ## 前置配置
 
-### GitHub Secrets 配置
+### PyPI Trusted Publishing
 
-发布前需在 GitHub 仓库设置以下 Secrets：
+已在 GitHub 配置 Environments → pypi，使用 OIDC 认证，无需配置 API Token。
 
-| Secret 名称 | 必需 | 用途 |
-|------------|------|------|
-| `GITHUB_TOKEN` | ✅ 自动 | GitHub Release 创建 |
-| `PYPI_API_TOKEN` | ✅ 必须 | PyPI 包发布 |
+**配置步骤**（已配置）：
+1. PyPI → Publishing settings → Add a new pending publisher
+2. 填写 PyPI 项目名、Owner、Repository name、Workflow name
+3. GitHub 仓库 → Settings → Environments → 创建 `pypi` environment
 
-### PyPI Token 获取
+### 无需配置的 Secrets
 
-1. 登录 [PyPI](https://pypi.org/)
-2. 进入 Account settings → API tokens
-3. 创建新 token，选择 "Entire account" 或指定项目
-4. 将 token 添加到 GitHub Secrets 的 `PYPI_API_TOKEN`
+| Secret | 说明 |
+|--------|------|
+| `GITHUB_TOKEN` | 自动提供 |
+| PyPI Token | 使用 Trusted Publishing，无需 token |
 
 ---
 
@@ -141,21 +123,18 @@ pip install gitcode-cli==0.3.0
                     ┌─────────┴─────────┐
                     ▼                   ▼
            ┌─────────────┐       ┌─────────────┐
-           │  GoReleaser │       │    PyPI     │
-           │   构建      │       │   发布      │
+           │    Build    │       │    PyPI     │
+           │  (GoReleaser)│       │   发布      │
            └─────────────┘       └─────────────┘
                     │                   │
                     ▼                   ▼
            ┌─────────────┐       ┌─────────────┐
-           │ GitHub      │       │ PyPI        │
-           │ Release     │       │ gitcode-cli │
-           │ - RPM x2    │       │             │
-           │ - DEB x2    │       │             │
-           │ - 源码包    │       │             │
+           │ - Artifacts │       │ PyPI        │
+           │   (RPM/DEB) │       │ gitcode-cli │
+           │ - Release   │       │             │
+           │   (源码包)  │       │             │
            └─────────────┘       └─────────────┘
 ```
-
-> **说明**：GoReleaser 负责构建 RPM/DEB 包并发布到 GitHub Release。PyPI 发布在 GoReleaser 完成后单独执行。
 
 ### 发布步骤详解
 
@@ -183,34 +162,16 @@ git tag -a v0.3.0 -m "Release v0.3.0"
 git push origin main --tags
 
 # 步骤 7: 监控 GitHub Actions 执行状态
-# https://github.com/your-org/your-repo/actions
 
 # 步骤 8: 发布完成后验证
 # - 检查 GitHub Release 页面
 # - 检查 PyPI: https://pypi.org/project/gitcode-cli/
+# - 检查 Artifacts 中的 RPM/DEB 包
 ```
 
 ---
 
 ## 发布后验证
-
-### 验证 RPM 包
-
-```bash
-# 在 RedHat/CentOS/Fedora 系统上
-wget https://github.com/your-org/your-repo/releases/download/v0.3.0/gc-0.3.0-1.x86_64.rpm
-sudo rpm -i gc-0.3.0-1.x86_64.rpm
-gc version
-```
-
-### 验证 DEB 包
-
-```bash
-# 在 Debian/Ubuntu 系统上
-wget https://github.com/your-org/your-repo/releases/download/v0.3.0/gc_0.3.0_amd64.deb
-sudo dpkg -i gc_0.3.0_amd64.deb
-gc version
-```
 
 ### 验证 PyPI 包
 
@@ -219,6 +180,20 @@ gc version
 python -m venv test-env
 source test-env/bin/activate
 pip install gitcode-cli==0.3.0
+gc version
+```
+
+### 验证 RPM/DEB 包
+
+从 GitHub Actions Artifacts 下载后：
+
+```bash
+# RPM
+sudo rpm -i gc-0.3.0-1.x86_64.rpm
+gc version
+
+# DEB
+sudo dpkg -i gc_0.3.0_amd64.deb
 gc version
 ```
 
@@ -239,14 +214,6 @@ v1.1.0         # 新功能版本
 v2.0.0         # 重大更新版本
 ```
 
-### 版本递增规则
-
-| 版本类型 | 递增条件 | 示例 |
-|---------|---------|------|
-| MAJOR | 不兼容的 API 修改 | v1.0.0 → v2.0.0 |
-| MINOR | 向后兼容的功能新增 | v1.0.0 → v1.1.0 |
-| PATCH | 向后兼容的问题修复 | v1.0.0 → v1.0.1 |
-
 ---
 
 ## 发布检查清单
@@ -262,40 +229,11 @@ v2.0.0         # 重大更新版本
 ### 文档更新
 - [ ] CHANGELOG.md 已更新
 - [ ] README.md 版本信息已更新（如需要）
-- [ ] 升级指南已更新（如需要）
-
-### 配置检查
-- [ ] GitHub Secrets 已正确配置
-- [ ] PyPI Token 有效
-- [ ] 版本号已更新
 
 ### 发布后验证
 - [ ] GitHub Release 页面正确
-- [ ] RPM 包可安装运行
-- [ ] DEB 包可安装运行
 - [ ] PyPI 包可安装运行
-
----
-
-## 故障排除
-
-### 问题：PyPI 发布失败
-
-**原因**：Token 无效或版本号已存在
-
-**解决方案**：
-1. 检查 `PYPI_API_TOKEN` 是否有效
-2. 确认版本号未被使用过
-3. PyPI 不允许重复发布同一版本
-
-### 问题：RPM/DEB 包安装失败
-
-**原因**：依赖缺失或架构不匹配
-
-**解决方案**：
-1. 确认系统架构 (`uname -m`)
-2. 检查是否缺少依赖包
-3. 使用正确的包管理器安装
+- [ ] Artifacts 中的 RPM/DEB 包存在
 
 ---
 
@@ -303,7 +241,6 @@ v2.0.0         # 重大更新版本
 
 - [CONTRIBUTING.md](./CONTRIBUTING.md) - 贡献指南
 - [docs/PACKAGING.md](./docs/PACKAGING.md) - 本地打包指南
-- [issues-plan/10-deployment.md](./issues-plan/10-deployment.md) - 部署需求
 
 ---
 

@@ -122,7 +122,8 @@ git push origin v1.0.0
 | Secret | Description |
 |--------|-------------|
 | `GITHUB_TOKEN` | Automatically provided by GitHub |
-| `PYPI_API_TOKEN` | PyPI API token for publishing |
+
+> PyPI 使用 Trusted Publishing（OIDC），无需配置 API Token。
 
 ## Directory Structure
 

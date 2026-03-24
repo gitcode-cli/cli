@@ -6,18 +6,19 @@ import (
 	"github.com/spf13/cobra"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/create"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/list"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/view"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/checkout"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/merge"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/close"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comments"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/diff"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/edit"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/merge"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/ready"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/reopen"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/review"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/diff"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/ready"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/edit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/test"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/view"
 )
 
 // NewCmdPR creates the pr command
@@ -51,6 +52,7 @@ func NewCmdPR(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(view.NewCmdView(f, nil))
+	cmd.AddCommand(comments.NewCmdComments(f, nil))
 	cmd.AddCommand(checkout.NewCmdCheckout(f, nil))
 	cmd.AddCommand(merge.NewCmdMerge(f, nil))
 	cmd.AddCommand(close.NewCmdClose(f, nil))

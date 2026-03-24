@@ -109,17 +109,18 @@ func listRun(opts *ListOptions) error {
 
 	fmt.Fprintf(opts.IO.Out, "\n")
 	for _, pr := range prs {
-		state := "open"
-		if pr.State == "closed" {
-			if pr.Merged {
-				state = cs.Magenta("merged")
+		var state string
+		switch pr.State {
+		case "merged":
+			state = cs.Magenta("merged")
+		case "closed":
+			state = cs.Red("closed")
+		default:
+			if pr.Draft {
+				state = cs.Gray("draft")
 			} else {
-				state = cs.Red("closed")
+				state = cs.Green("open")
 			}
-		} else if pr.Draft {
-			state = cs.Gray("draft")
-		} else {
-			state = cs.Green("open")
 		}
 		fmt.Fprintf(opts.IO.Out, "#%-6d %s  %s\n", pr.Number, state, pr.Title)
 	}

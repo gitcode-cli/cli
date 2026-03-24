@@ -2,7 +2,7 @@
 
 本文档实时跟踪 gitcode-cli 项目的开发和验收进展。
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-03-24
 
 ---
 
@@ -167,6 +167,7 @@
 
 | 日期 | 提交ID | 描述 | 里程碑 |
 |------|--------|------|--------|
+| 2026-03-24 | 3763697 | fix: gc version 命令显示具体版本号信息 (Issue #3) | INFRA |
 | 2026-03-23 | dbd323f | fix(pr): auto-detect head branch and add cross-repo PR support | M5 |
 | 2026-03-23 | 4bbf812 | chore: release v0.2.1 | M6 |
 | 2026-03-23 | 5f8bba1 | fix(pr): update PRComment struct and add access_token | M5 |
@@ -206,6 +207,12 @@
 ---
 
 ## 更新日志
+
+### 2026-03-24
+- 修复 gc version 命令未显示具体版本号信息 (Issue #3)
+  - 添加 scripts/build.sh 和 scripts/build-release.sh 构建脚本
+  - 构建时通过 ldflags 注入版本、commit、构建时间
+  - 添加 version 命令单元测试
 
 ### 2026-03-23
 - 完成 M6 Release功能开发 (全部功能)

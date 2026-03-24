@@ -108,7 +108,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p gc_cli/bin
           VERSION=${{ steps.get_version.outputs.VERSION }}
 
           # Download all binaries
@@ -120,16 +119,16 @@ jobs:
             --pattern 'gc_*_windows_amd64.zip' \
             --dir /tmp
 
+          # Create bin directory
+          mkdir -p $GITHUB_WORKSPACE/gc_cli/bin
+
           # Extract binaries
           cd /tmp
-          tar -xzf gc_*_linux_amd64.tar.gz && mv gc gc_cli/bin/gc-linux-amd64
-          tar -xzf gc_*_linux_arm64.tar.gz && mv gc gc_cli/bin/gc-linux-arm64
-          tar -xzf gc_*_darwin_amd64.tar.gz && mv gc gc_cli/bin/gc-darwin-amd64
-          tar -xzf gc_*_darwin_arm64.tar.gz && mv gc gc_cli/bin/gc-darwin-arm64
-          unzip -o gc_*_windows_amd64.zip && mv gc.exe gc_cli/bin/gc-windows-amd64.exe
-
-          # Move bin directory back
-          mv gc_cli/bin $GITHUB_WORKSPACE/gc_cli/bin
+          tar -xzf gc_*_linux_amd64.tar.gz && mv gc $GITHUB_WORKSPACE/gc_cli/bin/gc-linux-amd64
+          tar -xzf gc_*_linux_arm64.tar.gz && mv gc $GITHUB_WORKSPACE/gc_cli/bin/gc-linux-arm64
+          tar -xzf gc_*_darwin_amd64.tar.gz && mv gc $GITHUB_WORKSPACE/gc_cli/bin/gc-darwin-amd64
+          tar -xzf gc_*_darwin_arm64.tar.gz && mv gc $GITHUB_WORKSPACE/gc_cli/bin/gc-darwin-arm64
+          unzip -o gc_*_windows_amd64.zip && mv gc.exe $GITHUB_WORKSPACE/gc_cli/bin/gc-windows-amd64.exe
 
       - name: Update version in pyproject.toml
         run: |

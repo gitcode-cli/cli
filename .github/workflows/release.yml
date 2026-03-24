@@ -37,6 +37,44 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install nfpm
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build RPM/DEB packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          VERSION_NUM=${VERSION#v}
+
+          # Update version in nfpm configs
+          sed -i "s/version: .*/version: \"$VERSION_NUM\"/" nfpm-amd64.yaml
+          sed -i "s/version: .*/version: \"$VERSION_NUM\"/" nfpm-arm64.yaml
+
+          # Download Linux binaries from release
+          cd dist
+          gh release download ${{ steps.get_version.outputs.VERSION }} \
+            --pattern 'gc_*_linux_amd64.tar.gz' \
+            --pattern 'gc_*_linux_arm64.tar.gz'
+
+          # Extract amd64 binary
+          tar -xzf gc_*_linux_amd64.tar.gz
+          mv gc gc_linux_amd64
+
+          # Extract arm64 binary
+          tar -xzf gc_*_linux_arm64.tar.gz
+          mv gc gc_linux_arm64
+
+          # Build packages
+          ~/go/bin/nfpm package -f ../nfpm-amd64.yaml -p deb -t .
+          ~/go/bin/nfpm package -f ../nfpm-amd64.yaml -p rpm -t .
+          ~/go/bin/nfpm package -f ../nfpm-arm64.yaml -p deb -t .
+          ~/go/bin/nfpm package -f ../nfpm-arm64.yaml -p rpm -t .
+
       - name: Upload RPM/DEB artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -78,16 +116,14 @@ jobs:
           mkdir -p gc_cli/bin
           VERSION=${{ steps.get_version.outputs.VERSION }}
 
-          # Download Linux binaries
-          gh release download $VERSION --pattern 'gc_*_linux_amd64.tar.gz' --dir /tmp
-          gh release download $VERSION --pattern 'gc_*_linux_arm64.tar.gz' --dir /tmp
-
-          # Download macOS binaries
-          gh release download $VERSION --pattern 'gc_*_darwin_amd64.tar.gz' --dir /tmp
-          gh release download $VERSION --pattern 'gc_*_darwin_arm64.tar.gz' --dir /tmp
-
-          # Download Windows binary
-          gh release download $VERSION --pattern 'gc_*_windows_amd64.zip' --dir /tmp
+          # Download all binaries
+          gh release download $VERSION \
+            --pattern 'gc_*_linux_amd64.tar.gz' \
+            --pattern 'gc_*_linux_arm64.tar.gz' \
+            --pattern 'gc_*_darwin_amd64.tar.gz' \
+            --pattern 'gc_*_darwin_arm64.tar.gz' \
+            --pattern 'gc_*_windows_amd64.zip' \
+            --dir /tmp
 
           # Extract binaries
           cd /tmp

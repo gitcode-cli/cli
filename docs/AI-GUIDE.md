@@ -27,11 +27,12 @@ go build -o gc ./cmd/gc
 ## 2. 认证配置
 
 ```bash
-# 方式一：交互式登录
-gc auth login
-
-# 方式二：设置环境变量
+# 设置 Token 环境变量
 export GC_TOKEN=your_gitcode_token
+
+# 添加到 shell 配置文件（永久生效）
+echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 **获取 Token：**

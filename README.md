@@ -164,6 +164,12 @@ gc pr list --state open
 # 查看 PR 详情
 gc pr view 456
 
+# 查看 PR 评论
+gc pr comments 456
+
+# 回复 PR 评论
+gc pr reply 456 --discussion <discussion_id> --body "Reply text"
+
 # 检出 PR 分支
 gc pr checkout 456
 

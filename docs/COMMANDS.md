@@ -263,6 +263,28 @@ gc pr view 1 -R infra-test/gctest1 --comments
 gc pr view 1 -R infra-test/gctest1 --web
 ```
 
+### pr comments - 查看 PR 评论
+
+```bash
+# 查看 PR 评论列表
+gc pr comments 1 -R infra-test/gctest1
+
+# 限制评论数量
+gc pr comments 1 --limit 5 -R infra-test/gctest1
+```
+
+评论列表会显示 DiscussionID，可用于回复评论。
+
+### pr reply - 回复 PR 评论
+
+```bash
+# 回复评论讨论
+gc pr reply 1 --discussion <discussion_id> --body "回复内容" -R infra-test/gctest1
+
+# 使用简写
+gc pr reply 1 -d <discussion_id> -b "回复内容" -R owner/repo
+```
+
 ### pr diff - 查看 PR 差异
 
 ```bash

@@ -114,8 +114,6 @@ pip install gitcode-cli==0.3.0
 |------------|------|------|
 | `GITHUB_TOKEN` | ✅ 自动 | GitHub Release 创建 |
 | `PYPI_API_TOKEN` | ✅ 必须 | PyPI 包发布 |
-| `HOMEBREW_TAP_GITHUB_TOKEN` | ⚠️ 可选 | Homebrew tap 更新 |
-| `SCOOP_BUCKET_GITHUB_TOKEN` | ⚠️ 可选 | Scoop bucket 更新 |
 
 ### PyPI Token 获取
 

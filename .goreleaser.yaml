@@ -107,55 +107,6 @@ nfpms:
     deb:
       compression: xz
 
-brews:
-  - name: gc
-    repository:
-      owner: gitcode-com
-      name: homebrew-tap
-      branch: main
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    commit_author:
-      name: goreleaserbot
-      email: bot@goreleaser.com
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
-    homepage: https://gitcode.com
-    description: GitCode CLI - Command line tool for GitCode
-    license: MIT
-    skip_upload: false
-    test: |
-      system "#{bin}/gc version"
-    install: |-
-      bin.install "gc"
-      bash_completion.install "completions/gc.bash" => "gc"
-      zsh_completion.install "completions/gc.zsh" => "_gc"
-      fish_completion.install "completions/gc.fish"
-
-scoops:
-  - name: gc
-    repository:
-      owner: gitcode-com
-      name: scoop-bucket
-      token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
-    commit_author:
-      name: goreleaserbot
-      email: bot@goreleaser.com
-    commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
-    homepage: https://gitcode.com
-    description: GitCode CLI - Command line tool for GitCode
-    license: MIT
-
-winget:
-  - name: gc
-    publisher: GitCode
-    short_description: GitCode CLI
-    license: MIT
-    repository:
-      owner: gitcode-com
-      name: winget-pkgs
-      branch: main
-      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
-    skip_upload: false
-
 release:
   github:
     owner: gitcode-com
@@ -177,11 +128,6 @@ release:
     pip install gitcode-cli
     ```
 
-    ### macOS (Homebrew)
-    ```bash
-    brew install gitcode-com/tap/gc
-    ```
-
     ### Linux (DEB/RPM)
     ```bash
     # DEB
@@ -189,12 +135,6 @@ release:
 
     # RPM
     sudo rpm -i gc_*_linux_amd64.rpm
-    ```
-
-    ### Windows (Scoop)
-    ```powershell
-    scoop bucket add gitcode-com https://github.com/gitcode-com/scoop-bucket
-    scoop install gc
     ```
 
     ### Binary

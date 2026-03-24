@@ -122,11 +122,7 @@ git push origin v1.0.0
 | Secret | Description |
 |--------|-------------|
 | `GITHUB_TOKEN` | Automatically provided by GitHub |
-| `DOCKER_USERNAME` | Docker Hub username |
-| `DOCKER_PASSWORD` | Docker Hub password/access token |
 | `PYPI_API_TOKEN` | PyPI API token for publishing |
-| `HOMEBREW_TAP_GITHUB_TOKEN` | Token for homebrew-tap repo |
-| `SCOOP_BUCKET_GITHUB_TOKEN` | Token for scoop-bucket repo |
 
 ## Directory Structure
 

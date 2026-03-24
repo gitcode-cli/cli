@@ -14,10 +14,11 @@ func NewCmdVersion(ver, commit, date string) *cobra.Command {
 		Short: "Print gc version",
 		Long:  "Print the version information of gc.",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("gc version %s\n", ver)
-			fmt.Printf("  commit: %s\n", commit)
-			fmt.Printf("  built:  %s\n", date)
-			fmt.Println("https://gitcode.com/gitcode-cli/cli")
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "gc version %s\n", ver)
+			fmt.Fprintf(out, "  commit: %s\n", commit)
+			fmt.Fprintf(out, "  built:  %s\n", date)
+			fmt.Fprintln(out, "https://gitcode.com/gitcode-cli/cli")
 		},
 	}
 

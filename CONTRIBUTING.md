@@ -102,57 +102,31 @@ scoop install gc
 
 ## Release Process
 
-### Prerequisites
+> 详细发布流程请参阅 [RELEASE.md](./RELEASE.md)。
 
-1. GitHub repository with write access
-2. Docker Hub account (for Docker images)
-3. GitHub tokens for Homebrew tap and Scoop bucket
-
-### Create a Release
+### Quick Start
 
 ```bash
-# 1. Update version in files
-# 2. Commit changes
-git commit -am "chore: prepare for release vX.Y.Z"
+# 创建并推送标签触发自动发布
+git tag v1.0.0
+git push origin v1.0.0
 
-# 3. Create and push tag
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push origin main --tags
-
-# 4. GitHub Actions will automatically:
-#    - Run tests
-#    - Build binaries for all platforms
-#    - Create DEB/RPM packages
-#    - Build and push Docker images
-#    - Update Homebrew tap
-#    - Update Scoop bucket
+# GitHub Actions 自动执行：
+# - 构建 RPM/DEB 包（x86_64, arm64）
+# - 发布到 GitHub Release
+# - 发布 PyPI 包 (pip install gitcode-cli)
 ```
 
-### Manual Release
-
-```bash
-# Install goreleaser
-go install github.com/goreleaser/goreleaser/v2@latest
-
-# Create release
-make release
-
-# Or create local snapshot
-make release-local
-```
-
-## Required Secrets
-
-For automated releases, configure these secrets in GitHub:
+### Required Secrets
 
 | Secret | Description |
 |--------|-------------|
 | `GITHUB_TOKEN` | Automatically provided by GitHub |
 | `DOCKER_USERNAME` | Docker Hub username |
 | `DOCKER_PASSWORD` | Docker Hub password/access token |
+| `PYPI_API_TOKEN` | PyPI API token for publishing |
 | `HOMEBREW_TAP_GITHUB_TOKEN` | Token for homebrew-tap repo |
 | `SCOOP_BUCKET_GITHUB_TOKEN` | Token for scoop-bucket repo |
-| `GPG_FINGERPRINT` | GPG key for signing (optional) |
 
 ## Directory Structure
 

@@ -82,10 +82,8 @@ nfpms:
     description: GitCode CLI - Command line tool for GitCode
     license: MIT
     formats:
-      - apk
       - deb
       - rpm
-      - archlinux
     contents:
       - src: ./completions/gc.bash
         dst: /usr/share/bash-completion/completions/gc
@@ -158,50 +156,6 @@ winget:
       token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
     skip_upload: false
 
-dockers:
-  - id: gc-linux-amd64
-    image_templates:
-      - "gitcode/gc:{{ .Version }}-amd64"
-      - "gitcode/gc:latest-amd64"
-    use: buildx
-    dockerfile: Dockerfile
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-      - "--label=org.opencontainers.image.description=GitCode CLI"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.created={{ .Date }}"
-      - "--label=org.opencontainers.image.source={{ .GitURL }}"
-      - "--label=org.opencontainers.image.revision={{ .Commit }}"
-    extra_files:
-      - completions
-  - id: gc-linux-arm64
-    image_templates:
-      - "gitcode/gc:{{ .Version }}-arm64"
-      - "gitcode/gc:latest-arm64"
-    use: buildx
-    dockerfile: Dockerfile
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-      - "--label=org.opencontainers.image.description=GitCode CLI"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.created={{ .Date }}"
-      - "--label=org.opencontainers.image.source={{ .GitURL }}"
-      - "--label=org.opencontainers.image.revision={{ .Commit }}"
-    extra_files:
-      - completions
-
-docker_manifests:
-  - name_template: "gitcode/gc:{{ .Version }}"
-    image_templates:
-      - "gitcode/gc:{{ .Version }}-amd64"
-      - "gitcode/gc:{{ .Version }}-arm64"
-  - name_template: "gitcode/gc:latest"
-    image_templates:
-      - "gitcode/gc:latest-amd64"
-      - "gitcode/gc:latest-arm64"
-
 release:
   github:
     owner: gitcode-com
@@ -241,11 +195,6 @@ release:
     ```powershell
     scoop bucket add gitcode-com https://github.com/gitcode-com/scoop-bucket
     scoop install gc
-    ```
-
-    ### Docker
-    ```bash
-    docker pull gitcode/gc:latest
     ```
 
     ### Binary

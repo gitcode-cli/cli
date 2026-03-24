@@ -48,37 +48,17 @@ gc auth status
 
 ## 4. 安装 gitcode-cli Skill
 
-在 Claude Code 中安装 gitcode-cli skill，让 AI 自动使用 `gc` 命令操作 GitCode：
+将本项目的 skill 文件安装到你的 Claude Code 配置目录：
 
-**方式一：在项目中配置**
-
-在项目根目录创建或编辑 `.claude/settings.json`：
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(gc *)"
-    ]
-  }
-}
+```bash
+# 复制 skill 文件到 Claude Code 配置目录
+mkdir -p ~/.claude/skills
+cp skills/gitcode-cli.md ~/.claude/skills/
 ```
 
-**方式二：使用 Skill 文件**
+安装后，AI 会自动识别并使用 `gc` 命令操作 GitCode。
 
-将以下内容添加到项目的 `CLAUDE.md` 文件中：
-
-```markdown
-## GitCode CLI
-
-使用 `gc` 命令操作 GitCode 仓库，不要使用 `gh`（GitHub CLI）。
-
-常用命令：
-- `gc issue create/list/view/close/comment`
-- `gc pr create/list/view/merge/review`
-- `gc release create/list/upload`
-- `gc repo clone/view/create`
-```
+> **Skill 文件位置**: [skills/gitcode-cli.md](../skills/gitcode-cli.md)
 
 ## 完成后的使用方式
 

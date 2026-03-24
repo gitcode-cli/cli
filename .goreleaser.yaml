@@ -74,9 +74,6 @@ changelog:
       order: 999
 
 release:
-  github:
-    owner: kerer-ai
-    name: gitcode-cli
   draft: false
   prerelease: auto
   mode: replace

@@ -80,11 +80,12 @@ type PRListOptions struct {
 
 // CreatePROptions represents options for creating a PR
 type CreatePROptions struct {
-	Title string `json:"title"`
-	Body  string `json:"body,omitempty"`
-	Head  string `json:"head"`
-	Base  string `json:"base"`
-	Draft bool   `json:"draft,omitempty"`
+	Title    string `json:"title"`
+	Body     string `json:"body,omitempty"`
+	Head     string `json:"head"`
+	Base     string `json:"base"`
+	Draft    bool   `json:"draft,omitempty"`
+	ForkPath string `json:"fork_path,omitempty"` // 跨仓库 PR：fork 项目路径【owner/repo】
 }
 
 // UpdatePROptions represents options for updating a PR

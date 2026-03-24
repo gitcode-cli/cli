@@ -1,12 +1,28 @@
+---
+name: gitcode-cli
+description: |
+  Use `gc` (GitCode CLI) for ALL GitCode repository operations. This is a custom CLI tool for GitCode platform, NOT GitHub's `gh` command.
+
+  TRIGGER when: working with gitcode.com repositories, creating/viewing PRs, issues, releases, or any GitCode operations. Even if user doesn't explicitly mention "gc" or "gitcode", default to `gc` for repository operations in this project.
+
+  IMPORTANT: Never use `gh` (GitHub CLI) for GitCode operations. The command is `gc`, not `gh`.
+---
+
 # GitCode CLI 命令使用指南
 
-> 项目概述和功能介绍请参阅 [README.md](../README.md)，开发指南请参阅 [CLAUDE.md](../CLAUDE.md)，打包发布请参阅 [PACKAGING.md](./PACKAGING.md)。
+## 核心规则
 
-本文档提供 `gc` 命令行工具所有命令的实际使用示例。
+**绝对禁止使用 `gh` 命令！** 这是 GitCode 项目，命令是 `gc`。
 
-## 前置准备
+| 错误 | 正确 |
+|------|------|
+| `gh pr create` | `gc pr create` |
+| `gh issue list` | `gc issue list` |
+| `gh repo view` | `gc repo view` |
 
-### 认证
+---
+
+## 认证
 
 ```bash
 # 方式一：设置环境变量（推荐）
@@ -19,11 +35,6 @@ source ~/.bashrc
 # 方式二：交互式登录
 gc auth login --token YOUR_TOKEN
 ```
-
-### 测试仓库
-
-本文档使用以下测试仓库：
-- `infra-test/gctest1`
 
 ---
 
@@ -43,13 +54,6 @@ gc auth login --token YOUR_TOKEN
 
 ```bash
 gc auth status
-```
-
-输出示例：
-```
-gitcode.com
-  ✓ Logged in as username (GC_TOKEN)
-  ✓ Git operations protocol: https
 ```
 
 ### auth token - 显示 Token
@@ -106,8 +110,6 @@ gc repo create my-repo --private
 # 创建带描述的仓库
 gc repo create my-repo --public --description "My project"
 ```
-
-> **注意**: 在组织下创建仓库需要有组织的相应权限。
 
 ### repo fork - Fork 仓库
 
@@ -545,49 +547,3 @@ gc help issue create
 | `repo fork` | 在某些情况下可能返回 400 错误 |
 | `milestone create/view` | 返回 400 错误，API 可能不支持 |
 | `release edit/delete` | GitCode API 不返回 release ID |
-
----
-
-## 文档维护规范
-
-**重要**：每次修改命令相关代码时，必须同步更新本文档！
-
-### 同步更新要求
-
-| 代码改动类型 | 需要更新的文档 |
-|------------|--------------|
-| 新增命令 | docs/COMMANDS.md、README.md |
-| 新增子命令 | docs/COMMANDS.md |
-| 修改命令参数/flags | docs/COMMANDS.md、README.md |
-| 修改命令行为 | docs/COMMANDS.md |
-| 删除命令 | docs/COMMANDS.md、README.md |
-
-### 更新检查清单
-
-开发完成后，确认以下检查项：
-
-- [ ] 新命令已添加到 docs/COMMANDS.md
-- [ ] README.md 命令概览已更新（如有新命令）
-- [ ] 命令示例已验证可执行
-- [ ] 参数说明与代码实现一致
-- [ ] 已知限制表已更新（如有新的 API 限制）
-
-### 常见问题
-
-**Q: 如何确认文档与代码一致？**
-```bash
-# 查看所有命令
-gc help
-
-# 查看具体命令帮助
-gc pr --help
-gc issue --help
-```
-
-**Q: 文档更新顺序？**
-1. 先更新 docs/COMMANDS.md（完整文档）
-2. 再更新 README.md（概览文档）
-
----
-
-**最后更新**: 2026-03-23

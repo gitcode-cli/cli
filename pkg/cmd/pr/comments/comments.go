@@ -1,0 +1,209 @@
+// Package comments implements the pr comments command
+package comments
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/MakeNowJust/heredoc/v2"
+	"github.com/spf13/cobra"
+
+	"gitcode.com/gitcode-cli/cli/api"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+)
+
+type CommentsOptions struct {
+	IO         *iostreams.IOStreams
+	HttpClient func() (*http.Client, error)
+
+	// Arguments
+	Repository string
+	Number     int
+
+	// Flags
+	Limit int
+}
+
+// NewCmdComments creates the comments command
+func NewCmdComments(f *cmdutil.Factory, runF func(*CommentsOptions) error) *cobra.Command {
+	opts := &CommentsOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+	}
+
+	cmd := &cobra.Command{
+		Use:   "comments <number>",
+		Short: "List comments on a pull request",
+		Long: heredoc.Doc(`
+			List comments on a pull request in a GitCode repository.
+
+			Displays comment ID, author, creation time, and content.
+			The comment ID can be used to reply to specific comments.
+		`),
+		Example: heredoc.Doc(`
+			# List all comments on a PR
+			$ gc pr comments 123 -R owner/repo
+
+			# List latest 5 comments
+			$ gc pr comments 123 --limit 5 -R owner/repo
+		`),
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			number, err := strconv.Atoi(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid PR number: %s", args[0])
+			}
+			opts.Number = number
+
+			if runF != nil {
+				return runF(opts)
+			}
+			return commentsRun(opts)
+		},
+	}
+
+	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
+	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 0, "Maximum number of comments to list (0 = all)")
+
+	return cmd
+}
+
+func commentsRun(opts *CommentsOptions) error {
+	cs := opts.IO.ColorScheme()
+
+	httpClient, err := opts.HttpClient()
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP client: %w", err)
+	}
+
+	client := api.NewClientFromHTTP(httpClient)
+	token := getEnvToken()
+	if token == "" {
+		return fmt.Errorf("not authenticated. Run: gc auth login")
+	}
+	client.SetToken(token, "environment")
+
+	// Get repository
+	owner, repo, err := parseRepo(opts.Repository)
+	if err != nil {
+		return err
+	}
+
+	// List PR comments
+	comments, err := api.ListPRComments(client, owner, repo, opts.Number)
+	if err != nil {
+		return fmt.Errorf("failed to list comments: %w", err)
+	}
+
+	// Output
+	if len(comments) == 0 {
+		fmt.Fprintf(opts.IO.Out, "No comments on PR #%d\n", opts.Number)
+		return nil
+	}
+
+	// Apply limit
+	if opts.Limit > 0 && len(comments) > opts.Limit {
+		// Show the latest comments (from the end)
+		comments = comments[len(comments)-opts.Limit:]
+	}
+
+	fmt.Fprintf(opts.IO.Out, "\nComments on PR #%d (%d total):\n\n", opts.Number, len(comments))
+
+	for i, comment := range comments {
+		// Format ID
+		commentID := formatID(comment.ID)
+
+		// Format author
+		author := "unknown"
+		if comment.User != nil {
+			author = comment.User.Login
+		}
+
+		// Format time
+		timeStr := formatTime(comment.CreatedAt)
+
+		// Print comment header
+		fmt.Fprintf(opts.IO.Out, "%s) ID: %s\n", cs.Gray(fmt.Sprintf("#%d", i+1)), cs.Cyan(commentID))
+
+		// Print discussion ID if available (for reply)
+		if comment.DiscussionID != "" {
+			fmt.Fprintf(opts.IO.Out, "   DiscussionID: %s\n", cs.Yellow(comment.DiscussionID))
+		}
+
+		fmt.Fprintf(opts.IO.Out, "   Author: %s at %s\n", cs.Bold(author), timeStr)
+
+		// Print comment type if available
+		if comment.CommentType != "" {
+			fmt.Fprintf(opts.IO.Out, "   Type: %s", comment.CommentType)
+			if comment.Resolved {
+				fmt.Fprintf(opts.IO.Out, " %s", cs.Green("[resolved]"))
+			}
+			fmt.Fprintln(opts.IO.Out)
+		}
+
+		// Print file location if available
+		if comment.DiffFile != "" {
+			fmt.Fprintf(opts.IO.Out, "   File: %s\n", cs.Magenta(comment.DiffFile))
+		}
+
+		// Print body
+		if comment.Body != "" {
+			fmt.Fprintf(opts.IO.Out, "\n")
+			// Indent body lines
+			bodyLines := strings.Split(comment.Body, "\n")
+			for _, line := range bodyLines {
+				fmt.Fprintf(opts.IO.Out, "   %s\n", line)
+			}
+		}
+
+		fmt.Fprintf(opts.IO.Out, "\n")
+	}
+
+	return nil
+}
+
+func formatID(id interface{}) string {
+	switch v := id.(type) {
+	case string:
+		return v
+	case float64:
+		return strconv.FormatInt(int64(v), 10)
+	case int:
+		return strconv.Itoa(v)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	default:
+		return fmt.Sprintf("%v", id)
+	}
+}
+
+func formatTime(t time.Time) string {
+	if t.IsZero() {
+		return "unknown"
+	}
+	return t.Format("2006-01-02 15:04")
+}
+
+func parseRepo(repo string) (string, string, error) {
+	if repo == "" {
+		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
+	}
+
+	parts := strings.Split(repo, "/")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid repository format: %s", repo)
+	}
+	return parts[0], parts[1], nil
+}
+
+func getEnvToken() string {
+	if token := os.Getenv("GC_TOKEN"); token != "" {
+		return token
+	}
+	return os.Getenv("GITCODE_TOKEN")
+}

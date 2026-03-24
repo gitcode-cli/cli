@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -30,6 +31,7 @@ type CreateOptions struct {
 	Draft     bool
 	Fill      bool
 	Web       bool
+	Fork      string // 跨仓库 PR：fork 项目路径【owner/repo】
 }
 
 // NewCmdCreate creates the create command
@@ -46,17 +48,17 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 			Create a new pull request in a GitCode repository.
 		`),
 		Example: heredoc.Doc(`
-			# Create a PR interactively
-			$ gc pr create
+			# Create a PR with title and body (uses current branch as head)
+			$ gc pr create -R owner/repo --title "Feature" --body "Description"
 
-			# Create a PR with title and body
-			$ gc pr create --title "Feature" --body "Description"
+			# Create a PR with specific head and base branches
+			$ gc pr create -R owner/repo --head feature-branch --base main --title "Feature" --body "Description"
 
 			# Create a draft PR
-			$ gc pr create --draft
+			$ gc pr create -R owner/repo --title "Feature" --draft
 
-			# Create a PR from current branch
-			$ gc pr create --fill
+			# Create a cross-repo PR (from fork to upstream)
+			$ gc pr create -R upstream/repo --fork myfork/repo --head feature-branch --title "Feature"
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -69,11 +71,12 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Title, "title", "t", "", "Title for the PR")
 	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "Body for the PR")
-	cmd.Flags().StringVarP(&opts.Head, "head", "H", "", "Head branch")
+	cmd.Flags().StringVarP(&opts.Head, "head", "H", "", "Head branch (default: current branch)")
 	cmd.Flags().StringVarP(&opts.Base, "base", "B", "main", "Base branch")
 	cmd.Flags().BoolVarP(&opts.Draft, "draft", "d", false, "Create as draft")
 	cmd.Flags().BoolVarP(&opts.Fill, "fill", "f", false, "Fill from last commit")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
+	cmd.Flags().StringVarP(&opts.Fork, "fork", "F", "", "Fork repository path for cross-repo PR (owner/repo)")
 
 	return cmd
 }
@@ -103,17 +106,29 @@ func createRun(opts *CreateOptions) error {
 	if opts.Title == "" {
 		return fmt.Errorf("title is required. Use --title flag")
 	}
-	if opts.Head == "" {
-		return fmt.Errorf("head branch is required. Use --head flag")
+
+	// Auto-detect head branch if not specified
+	head := opts.Head
+	if head == "" {
+		// Try to get current branch from git
+		output, err := execGitCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
+		if err != nil {
+			return fmt.Errorf("head branch is required. Use --head flag")
+		}
+		head = strings.TrimSpace(output)
+		if head == "" || head == "HEAD" {
+			return fmt.Errorf("could not determine current branch. Use --head flag")
+		}
 	}
 
 	// Create PR
 	pr, err := api.CreatePullRequest(client, owner, repo, &api.CreatePROptions{
-		Title: opts.Title,
-		Body:  opts.Body,
-		Head:  opts.Head,
-		Base:  opts.Base,
-		Draft: opts.Draft,
+		Title:    opts.Title,
+		Body:     opts.Body,
+		Head:     head,
+		Base:     opts.Base,
+		Draft:    opts.Draft,
+		ForkPath: opts.Fork,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create PR: %w", err)
@@ -122,6 +137,15 @@ func createRun(opts *CreateOptions) error {
 	fmt.Fprintf(opts.IO.Out, "%s Created PR #%d in %s/%s\n", cs.Green("✓"), pr.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", pr.HTMLURL)
 	return nil
+}
+
+func execGitCommand(name string, args ...string) (string, error) {
+	cmd := exec.Command(name, args...)
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return string(output), nil
 }
 
 func parseRepo(repo string) (string, string, error) {

@@ -2,6 +2,19 @@
 
 Thank you for your interest in contributing to GitCode CLI!
 
+## Documentation
+
+Before contributing, please read the following documentation:
+
+| Document | Description |
+|----------|-------------|
+| [COMMANDS.md](./docs/COMMANDS.md) | Command usage guide - update when adding/modifying commands |
+| [PACKAGING.md](./docs/PACKAGING.md) | Packaging and release guide - DEB/RPM build instructions |
+| [CLAUDE.md](./CLAUDE.md) | AI-assisted development guide - coding conventions and workflow |
+| [README.md](./README.md) | Project overview and installation guide |
+
+> **Important**: When modifying command-related code, you MUST sync updates to `docs/COMMANDS.md`. See the documentation maintenance section in COMMANDS.md for details.
+
 ## Development Setup
 
 ### Prerequisites

@@ -1,5 +1,7 @@
 # GitCode CLI
 
+[![AI 操作指南](https://img.shields.io/badge/📖_使用_AI_操作_GitCode_指南-点击查看-FF6B6B?style=for-the-badge)](./docs/AI-GUIDE.md)
+
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/gitcode-cli/cli?include_prereleases)](https://gitcode.com/gitcode-cli/cli/releases)
@@ -33,20 +35,20 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 # 从 Releases 下载 .deb 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.5/gc_0.2.5_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.8/gc_0.2.8_amd64.deb
 
 # 安装
-sudo dpkg -i gc_0.2.5_amd64.deb
+sudo dpkg -i gc_0.2.8_amd64.deb
 ```
 
 **RPM (RHEL/CentOS/Fedora):**
 
 ```bash
 # 从 Releases 下载 .rpm 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.5/gc-0.2.5-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.8/gc-0.2.8-1.x86_64.rpm
 
 # 安装
-sudo rpm -i gc-0.2.5-1.x86_64.rpm
+sudo rpm -i gc-0.2.8-1.x86_64.rpm
 ```
 
 ### PyPI (跨平台)
@@ -160,8 +162,11 @@ gc issue label 123 --add bug,enhancement
 ### Pull Request 管理
 
 ```bash
-# 创建 PR
+# 创建 PR（自动检测当前分支）
 gc pr create --title "New feature" --base main
+
+# 创建跨仓库 PR（从 fork 到 upstream）
+gc pr create -R upstream/repo --fork myfork/repo --title "Feature"
 
 # 列出 PR
 gc pr list --state open
@@ -291,6 +296,7 @@ source ~/.config/fish/config.fish
 
 - [命令指南](./docs/COMMANDS.md) - 所有命令的详细使用说明和示例
 - [版本发布](./RELEASE.md) - 发布流程和产物说明
+- [AI 操作指南](./docs/AI-GUIDE.md) - 使用 AI 助手操作 GitCode 的完整指南
 - [打包发布](./docs/PACKAGING.md) - DEB/RPM 包构建和发布流程
 - [贡献指南](./CONTRIBUTING.md) - 开发和发布流程
 - [安全策略](./SECURITY.md) - 敏感信息保护和安全规范

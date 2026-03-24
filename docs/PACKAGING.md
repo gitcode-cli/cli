@@ -1,5 +1,7 @@
 # 本地打包和发布指南
 
+> 项目概述和功能介绍请参阅 [README.md](../README.md)，命令使用请参阅 [COMMANDS.md](./COMMANDS.md)，开发指南请参阅 [CLAUDE.md](../CLAUDE.md)。
+
 本文档说明如何在本地构建 DEB/RPM 包并使用 `gc` 命令发布 Release。
 
 ## 重要流程

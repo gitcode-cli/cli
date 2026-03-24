@@ -52,13 +52,13 @@ gc auth status
 
 ```bash
 # 复制 skill 文件到 Claude Code 配置目录
-mkdir -p ~/.claude/skills
-cp skills/gitcode-cli.md ~/.claude/skills/
+mkdir -p ~/.claude/skills/gitcode-cli
+cp .claude/skills/gitcode-cli/SKILL.md ~/.claude/skills/gitcode-cli/
 ```
 
 安装后，AI 会自动识别并使用 `gc` 命令操作 GitCode。
 
-> **Skill 文件位置**: [skills/gitcode-cli.md](../skills/gitcode-cli.md)
+> **Skill 文件位置**: [.claude/skills/gitcode-cli/SKILL.md](../.claude/skills/gitcode-cli/SKILL.md)
 
 ## 完成后的使用方式
 

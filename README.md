@@ -4,7 +4,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/gitcode-cli/cli?include_prereleases)](https://gitcode.com/gitcode-cli/cli/releases)
+[![Release](https://img.shields.io/badge/Release-v0.2.10-blue)](https://gitcode.com/gitcode-cli/cli/releases)
 
 GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
 

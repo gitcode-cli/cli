@@ -1,7 +1,7 @@
 name: "gc"
 arch: "amd64"
 platform: "linux"
-version: "0.2.9"
+version: "0.2.10"
 section: "default"
 priority: "extra"
 maintainer: "gitcode-cli contributors"

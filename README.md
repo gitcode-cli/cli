@@ -157,6 +157,9 @@ gc issue comment 123 --body "Comment text"
 
 # 管理 Issue 标签
 gc issue label 123 --add bug,enhancement
+
+# 查看 Issue 关联的 PRs
+gc issue prs 123
 ```
 
 ### Pull Request 管理

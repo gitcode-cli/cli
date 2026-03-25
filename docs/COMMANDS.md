@@ -206,6 +206,16 @@ gc issue label 1 --remove bug -R infra-test/gctest1
 gc issue label 1 --list -R infra-test/gctest1
 ```
 
+### issue prs - 查看 Issue 关联的 PRs
+
+```bash
+# 查看 Issue 关联的 Pull Requests
+gc issue prs 123 -R infra-test/gctest1
+
+# 获取增强信息（包含可合并状态）
+gc issue prs 123 --mode 1 -R infra-test/gctest1
+```
+
 ---
 
 ## Pull Request 命令 (pr)
@@ -612,4 +622,4 @@ gc issue --help
 
 ---
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-03-25

@@ -53,13 +53,21 @@ type IssueComment struct {
 
 // IssueListOptions represents options for listing issues
 type IssueListOptions struct {
-	State     string `url:"state,omitempty"`
-	Labels    string `url:"labels,omitempty"`
-	Sort      string `url:"sort,omitempty"`
-	Direction string `url:"direction,omitempty"`
-	Since     string `url:"since,omitempty"`
-	PerPage   int    `url:"per_page,omitempty"`
-	Page      int    `url:"page,omitempty"`
+	State         string `url:"state,omitempty"`
+	Labels        string `url:"labels,omitempty"`
+	Sort          string `url:"sort,omitempty"`
+	Direction     string `url:"direction,omitempty"`
+	Since         string `url:"since,omitempty"`
+	PerPage       int    `url:"per_page,omitempty"`
+	Page          int    `url:"page,omitempty"`
+	Milestone     string `url:"milestone,omitempty"`
+	Assignee      string `url:"assignee,omitempty"`
+	Creator       string `url:"creator,omitempty"`
+	CreatedAfter  string `url:"created_after,omitempty"`
+	CreatedBefore string `url:"created_before,omitempty"`
+	UpdatedAfter  string `url:"updated_after,omitempty"`
+	UpdatedBefore string `url:"updated_before,omitempty"`
+	Search        string `url:"search,omitempty"`
 }
 
 // CreateIssueOptions represents options for creating an issue
@@ -90,10 +98,59 @@ type CreateCommentOptions struct {
 // ListRepoIssues lists issues for a repository
 func ListRepoIssues(client *Client, owner, repo string, opts *IssueListOptions) ([]Issue, error) {
 	path := "/repos/" + owner + "/" + repo + "/issues"
-	if opts != nil && opts.PerPage > 0 {
-		path = path + "?per_page=" + itoa(opts.PerPage)
+
+	// Build query parameters
+	if opts != nil {
+		params := url.Values{}
+
 		if opts.State != "" {
-			path = path + "&state=" + opts.State
+			params.Set("state", opts.State)
+		}
+		if opts.Labels != "" {
+			params.Set("labels", opts.Labels)
+		}
+		if opts.Sort != "" {
+			params.Set("sort", opts.Sort)
+		}
+		if opts.Direction != "" {
+			params.Set("direction", opts.Direction)
+		}
+		if opts.Since != "" {
+			params.Set("since", opts.Since)
+		}
+		if opts.PerPage > 0 {
+			params.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			params.Set("page", itoa(opts.Page))
+		}
+		if opts.Milestone != "" {
+			params.Set("milestone", opts.Milestone)
+		}
+		if opts.Assignee != "" {
+			params.Set("assignee", opts.Assignee)
+		}
+		if opts.Creator != "" {
+			params.Set("creator", opts.Creator)
+		}
+		if opts.CreatedAfter != "" {
+			params.Set("created_after", opts.CreatedAfter)
+		}
+		if opts.CreatedBefore != "" {
+			params.Set("created_before", opts.CreatedBefore)
+		}
+		if opts.UpdatedAfter != "" {
+			params.Set("updated_after", opts.UpdatedAfter)
+		}
+		if opts.UpdatedBefore != "" {
+			params.Set("updated_before", opts.UpdatedBefore)
+		}
+		if opts.Search != "" {
+			params.Set("search", opts.Search)
+		}
+
+		if len(params) > 0 {
+			path = path + "?" + params.Encode()
 		}
 	}
 

@@ -32,6 +32,51 @@ func TestNewCmdList(t *testing.T) {
 			args:    []string{"--label", "bug"},
 			wantErr: false,
 		},
+		{
+			name:    "list with milestone",
+			args:    []string{"--milestone", "v1.0"},
+			wantErr: false,
+		},
+		{
+			name:    "list with assignee",
+			args:    []string{"--assignee", "username"},
+			wantErr: false,
+		},
+		{
+			name:    "list with creator",
+			args:    []string{"--creator", "username"},
+			wantErr: false,
+		},
+		{
+			name:    "list with sort",
+			args:    []string{"--sort", "updated"},
+			wantErr: false,
+		},
+		{
+			name:    "list with direction",
+			args:    []string{"--direction", "asc"},
+			wantErr: false,
+		},
+		{
+			name:    "list with search",
+			args:    []string{"--search", "bug"},
+			wantErr: false,
+		},
+		{
+			name:    "list with created-after",
+			args:    []string{"--created-after", "2024-01-01"},
+			wantErr: false,
+		},
+		{
+			name:    "list with updated-after",
+			args:    []string{"--updated-after", "2024-01-01"},
+			wantErr: false,
+		},
+		{
+			name:    "list with combined filters",
+			args:    []string{"--state", "open", "--sort", "updated", "--direction", "desc"},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

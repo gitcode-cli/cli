@@ -51,6 +51,16 @@ wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.10/gc-0.2.10-1.x
 sudo rpm -i gc-0.2.10-1.x86_64.rpm
 ```
 
+### PyPI (跨平台)
+
+```bash
+# 使用 pip 安装
+pip install gitcode-cli
+
+# 或指定版本
+pip install gitcode-cli==0.2.5
+```
+
 ### 规划中的安装方式
 
 以下安装方式正在开发中：
@@ -291,6 +301,7 @@ source ~/.config/fish/config.fish
 ## 文档
 
 - [命令指南](./docs/COMMANDS.md) - 所有命令的详细使用说明和示例
+- [版本发布](./RELEASE.md) - 发布流程和产物说明
 - [AI 操作指南](./docs/AI-GUIDE.md) - 使用 AI 助手操作 GitCode 的完整指南
 - [打包发布](./docs/PACKAGING.md) - DEB/RPM 包构建和发布流程
 - [贡献指南](./CONTRIBUTING.md) - 开发和发布流程

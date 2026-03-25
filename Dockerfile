@@ -1,28 +1,6 @@
-# Build stage
-FROM golang:1.22-alpine AS builder
+# GitCode CLI Docker Image
+# Uses pre-built binary from GoReleaser
 
-RUN apk add --no-cache git ca-certificates tzdata
-
-WORKDIR /app
-
-# Copy go mod files
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy source code
-COPY . .
-
-# Build arguments for version info
-ARG VERSION=dev
-ARG COMMIT=unknown
-ARG DATE=unknown
-
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" \
-    -o /gc ./cmd/gc
-
-# Final stage
 FROM alpine:3.19
 
 RUN apk add --no-cache \
@@ -38,14 +16,15 @@ RUN addgroup -g 1000 gc && \
 
 WORKDIR /home/gc
 
-# Copy binary from builder
-COPY --from=builder /gc /usr/local/bin/gc
+# Copy pre-built binary (provided by GoReleaser)
+COPY gc /usr/local/bin/gc
 
 # Copy completions
-COPY --from=builder /app/completions /usr/share/completions
+COPY completions /usr/share/completions
 
 # Set ownership
-RUN chown -R gc:gc /home/gc
+RUN chown -R gc:gc /home/gc && \
+    chmod +x /usr/local/bin/gc
 
 # Switch to non-root user
 USER gc

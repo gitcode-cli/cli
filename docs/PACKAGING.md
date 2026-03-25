@@ -272,6 +272,115 @@ echo "Done! Release v$VERSION published."
 
 ---
 
+## 构建 PyPI 包
+
+### 1. 前置要求
+
+确保系统安装了 Python 3.8+ 和 pip。
+
+```bash
+# 检查 Python 版本
+python3 --version
+
+# 安装 build 工具（推荐使用虚拟环境）
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade build wheel setuptools
+```
+
+### 2. 准备二进制文件
+
+PyPI 包依赖预编译的二进制文件，需要先构建对应平台的二进制：
+
+```bash
+# 创建输出目录
+mkdir -p gc_cli/bin
+
+# 构建 Linux amd64
+GOOS=linux GOARCH=amd64 go build -o gc_cli/bin/gc-linux-amd64 ./cmd/gc
+
+# 构建 Linux arm64
+GOOS=linux GOARCH=arm64 go build -o gc_cli/bin/gc-linux-arm64 ./cmd/gc
+
+# 构建 macOS amd64
+GOOS=darwin GOARCH=amd64 go build -o gc_cli/bin/gc-darwin-amd64 ./cmd/gc
+
+# 构建 macOS arm64
+GOOS=darwin GOARCH=arm64 go build -o gc_cli/bin/gc-darwin-arm64 ./cmd/gc
+
+# 构建 Windows amd64
+GOOS=windows GOARCH=amd64 go build -o gc_cli/bin/gc-windows-amd64.exe ./cmd/gc
+```
+
+### 3. 更新版本号
+
+确保 `pyproject.toml` 和 `gc_cli/__init__.py` 中的版本号一致：
+
+```bash
+VERSION="0.2.5"
+
+# 更新 pyproject.toml
+sed -i "s/version = \".*/version = \"$VERSION\"/" pyproject.toml
+
+# 更新 gc_cli/__init__.py
+sed -i "s/__version__ = \".*/__version__ = \"$VERSION\"/" gc_cli/__init__.py
+```
+
+### 4. 构建包
+
+```bash
+# 激活虚拟环境（如果使用）
+source .venv/bin/activate
+
+# 构建 wheel 和 sdist
+python -m build --wheel --sdist
+```
+
+构建产物位于 `dist/` 目录：
+
+```
+dist/
+├── gitcode_cli-0.2.5-py3-none-any.whl
+└── gitcode_cli-0.2.5.tar.gz
+```
+
+### 5. 本地测试安装
+
+```bash
+# 创建测试虚拟环境
+python -m venv /tmp/gc-test-env
+source /tmp/gc-test-env/bin/activate
+
+# 安装 wheel
+pip install dist/gitcode_cli-0.2.5-py3-none-any.whl
+
+# 测试命令
+gc version
+
+# 清理测试环境
+deactivate
+rm -rf /tmp/gc-test-env
+```
+
+### 6. 上传到 PyPI（CI 自动化）
+
+发布到 PyPI 由 GitHub Actions 自动完成，无需手动上传。详见 [RELEASE.md](../RELEASE.md)。
+
+如需手动上传到 TestPyPI 进行测试：
+
+```bash
+# 安装 twine
+pip install twine
+
+# 上传到 TestPyPI
+twine upload --repository testpypi dist/*
+
+# 从 TestPyPI 安装测试
+pip install --index-url https://test.pypi.org/simple/ gitcode-cli
+```
+
+---
+
 ## 安装指南
 
 ### DEB (Debian/Ubuntu)
@@ -362,4 +471,4 @@ $NFPAM package -f nfpm-amd64.yaml -p deb -t dist/
 
 ---
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-03-25

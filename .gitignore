@@ -1,5 +1,6 @@
 # Binaries
 bin/
+!gc_cli/bin/
 /gc
 *.exe
 *.exe~

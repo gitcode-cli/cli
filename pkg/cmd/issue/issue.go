@@ -9,6 +9,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/create"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/label"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/prs"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/view"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/close"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/reopen"
@@ -47,6 +48,7 @@ func NewCmdIssue(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(reopen.NewCmdReopen(f, nil))
 	cmd.AddCommand(comment.NewCmdComment(f, nil))
 	cmd.AddCommand(label.NewCmdLabel(f, nil))
+	cmd.AddCommand(prs.NewCmdPrs(f, nil))
 
 	return cmd
 }

@@ -292,6 +292,22 @@ func RemoveIssueLabel(client *Client, owner, repo string, number int, label stri
 	return err
 }
 
+// IssuePR represents a Pull Request associated with an issue
+type IssuePR struct {
+	ID        interface{} `json:"id"`
+	HTMLURL   string      `json:"html_url"`
+	Number    int         `json:"number"`
+	State     string      `json:"state"`
+	Title     string      `json:"title"`
+	Body      string      `json:"body"`
+	Labels    []*Label    `json:"labels"`
+	User      *User       `json:"user"`
+	Head      *PRBranch   `json:"head"`
+	Base      *PRBranch   `json:"base"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+}
+
 // ListRepoMilestones lists milestones for a repository
 func ListRepoMilestones(client *Client, owner, repo string) ([]Milestone, error) {
 	var milestones []Milestone
@@ -300,4 +316,14 @@ func ListRepoMilestones(client *Client, owner, repo string) ([]Milestone, error)
 		return nil, err
 	}
 	return milestones, nil
+}
+
+// GetIssuePullRequests gets Pull Requests associated with an issue
+func GetIssuePullRequests(client *Client, owner, repo string, number int) ([]IssuePR, error) {
+	var prs []IssuePR
+	err := client.Get("/repos/"+owner+"/"+repo+"/issues/"+itoa(number)+"/pull_requests", &prs)
+	if err != nil {
+		return nil, err
+	}
+	return prs, nil
 }

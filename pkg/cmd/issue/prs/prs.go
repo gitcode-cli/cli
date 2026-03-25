@@ -23,6 +23,9 @@ type PrsOptions struct {
 	// Arguments
 	Repository string
 	Number     int
+
+	// Flags
+	Mode int
 }
 
 // NewCmdPrs creates the prs command
@@ -37,10 +40,15 @@ func NewCmdPrs(f *cmdutil.Factory, runF func(*PrsOptions) error) *cobra.Command 
 		Short: "List Pull Requests associated with an issue",
 		Long: heredoc.Doc(`
 			List Pull Requests associated with an issue in a GitCode repository.
+
+			Use --mode 1 to get enhanced information including mergeable status.
 		`),
 		Example: heredoc.Doc(`
 			# List PRs for an issue
 			$ gc issue prs 123 -R owner/repo
+
+			# Get enhanced info including mergeable status
+			$ gc issue prs 123 --mode 1 -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -58,6 +66,7 @@ func NewCmdPrs(f *cmdutil.Factory, runF func(*PrsOptions) error) *cobra.Command 
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
+	cmd.Flags().IntVar(&opts.Mode, "mode", 0, "Mode: 0 (default), 1 (enhanced with mergeable status)")
 
 	return cmd
 }
@@ -84,7 +93,7 @@ func prsRun(opts *PrsOptions) error {
 	}
 
 	// Get issue PRs
-	prs, err := api.GetIssuePullRequests(client, owner, repo, opts.Number)
+	prs, err := api.GetIssuePullRequests(client, owner, repo, opts.Number, opts.Mode)
 	if err != nil {
 		return fmt.Errorf("failed to get issue pull requests: %w", err)
 	}
@@ -115,6 +124,24 @@ func prsRun(opts *PrsOptions) error {
 		}
 		if pr.Head != nil && pr.Base != nil {
 			fmt.Fprintf(opts.IO.Out, "  Branch: %s -> %s\n", pr.Head.Ref, pr.Base.Ref)
+		}
+		// Show assignees if present
+		if len(pr.Assignees) > 0 {
+			assignees := make([]string, len(pr.Assignees))
+			for i, a := range pr.Assignees {
+				assignees[i] = a.Login
+			}
+			fmt.Fprintf(opts.IO.Out, "  Assignees: %s\n", strings.Join(assignees, ", "))
+		}
+		// Show mergeable status in enhanced mode
+		if opts.Mode == 1 {
+			mergeable := "unknown"
+			if pr.CanMergeCheck {
+				mergeable = cs.Green("can merge")
+			} else {
+				mergeable = cs.Yellow("cannot merge")
+			}
+			fmt.Fprintf(opts.IO.Out, "  Mergeable: %s\n", mergeable)
 		}
 		fmt.Fprintf(opts.IO.Out, "  %s\n", pr.HTMLURL)
 		fmt.Fprintf(opts.IO.Out, "\n")

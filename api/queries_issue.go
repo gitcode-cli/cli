@@ -294,18 +294,24 @@ func RemoveIssueLabel(client *Client, owner, repo string, number int, label stri
 
 // IssuePR represents a Pull Request associated with an issue
 type IssuePR struct {
-	ID        interface{} `json:"id"`
-	HTMLURL   string      `json:"html_url"`
-	Number    int         `json:"number"`
-	State     string      `json:"state"`
-	Title     string      `json:"title"`
-	Body      string      `json:"body"`
-	Labels    []*Label    `json:"labels"`
-	User      *User       `json:"user"`
-	Head      *PRBranch   `json:"head"`
-	Base      *PRBranch   `json:"base"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	ID            interface{} `json:"id"`
+	HTMLURL       string      `json:"html_url"`
+	DiffURL       string      `json:"diff_url"`
+	Number        int         `json:"number"`
+	State         string      `json:"state"`
+	Title         string      `json:"title"`
+	Body          string      `json:"body"`
+	Labels        []*Label    `json:"labels"`
+	User          *User       `json:"user"`
+	Head          *PRBranch   `json:"head"`
+	Base          *PRBranch   `json:"base"`
+	Assignees     []*User     `json:"assignees"`
+	Testers       []*User     `json:"testers"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
+	MergedAt      *time.Time  `json:"merged_at"`
+	ClosedAt      *time.Time  `json:"closed_at"`
+	CanMergeCheck bool        `json:"can_merge_check"`
 }
 
 // ListRepoMilestones lists milestones for a repository
@@ -319,9 +325,14 @@ func ListRepoMilestones(client *Client, owner, repo string) ([]Milestone, error)
 }
 
 // GetIssuePullRequests gets Pull Requests associated with an issue
-func GetIssuePullRequests(client *Client, owner, repo string, number int) ([]IssuePR, error) {
+// mode: 1 (enhanced mode, returns mergeable status), 0 (default, no mergeable status)
+func GetIssuePullRequests(client *Client, owner, repo string, number int, mode int) ([]IssuePR, error) {
+	path := "/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/pull_requests"
+	if mode == 1 {
+		path += "?mode=1"
+	}
 	var prs []IssuePR
-	err := client.Get("/repos/"+owner+"/"+repo+"/issues/"+itoa(number)+"/pull_requests", &prs)
+	err := client.Get(path, &prs)
 	if err != nil {
 		return nil, err
 	}

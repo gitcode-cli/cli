@@ -211,6 +211,9 @@ gc issue label 1 --list -R infra-test/gctest1
 ```bash
 # 查看 Issue 关联的 Pull Requests
 gc issue prs 123 -R infra-test/gctest1
+
+# 获取增强信息（包含可合并状态）
+gc issue prs 123 --mode 1 -R infra-test/gctest1
 ```
 
 ---

@@ -1,75 +1,75 @@
 ---
 name: gc-dev-setup
-description: Set up local development environment for gitcode-cli project. Use this skill when user says "初始化本地开发环境", "搭建本地开发环境", "init dev environment", "setup local dev", or when user has development needs and you should first check if local dev environment is ready. The check standard is: local code compiles without errors.
+description: 初始化 gitcode-cli 项目本地开发环境。当用户说"初始化本地开发环境"、"搭建本地开发环境"、"init dev environment"、"setup local dev"时触发，或用户有开发需求时首先检查本地开发环境是否就绪。检查标准：本地代码编译无错误。
 ---
 
-# GC Development Environment Setup
+# GC 开发环境初始化
 
-Set up the local development environment for the gitcode-cli (gc) project.
+为 gitcode-cli (gc) 项目初始化本地开发环境。
 
-## When to Use This Skill
+## 触发条件
 
-Trigger this skill proactively when:
-- User says "初始化本地开发环境" or "搭建本地开发环境"
-- User says "init dev environment", "setup local dev", "初始化开发环境"
-- User has development needs (creating features, fixing bugs) - first verify the environment is ready
-- User just pulled the code and needs to start working
+主动触发此 skill 的情况：
+- 用户说"初始化本地开发环境"或"搭建本地开发环境"
+- 用户说"init dev environment"、"setup local dev"、"初始化开发环境"
+- 用户有开发需求（创建功能、修复 Bug）- 先验证环境是否就绪
+- 用户刚拉取代码准备开始工作
 
-## Environment Check Standard
+## 环境就绪标准
 
-The local development environment is considered "ready" when:
-- Go is installed and accessible
-- Project builds successfully (`./gc` binary exists and runs)
-- No compilation errors
+本地开发环境被认为"就绪"的条件：
+- Go 已安装且可用
+- 项目构建成功（`./gc` 二进制文件存在且可运行）
+- 无编译错误
 
-## Workflow
+## 工作流程
 
-### Step 1: Pull Latest Code
+### 步骤 1：拉取最新代码
 
 ```bash
 git pull origin main
-# or current branch
+# 或当前分支
 git pull
 ```
 
-If not in a git repository or need to clone first, guide the user to clone the project.
+如果不在 git 仓库中或需要先克隆，引导用户克隆项目。
 
-### Step 2: Check Go Environment
+### 步骤 2：检查 Go 环境
 
-Verify Go is installed:
+验证 Go 是否已安装：
 
 ```bash
 go version
 ```
 
-If Go is not installed:
-1. On Ubuntu/Debian: `sudo apt update && sudo apt install -y golang-go`
-2. Or install from https://go.dev/dl/
-3. For China users, may need to set GOPROXY: `export GOPROXY=https://goproxy.cn,direct`
+如果 Go 未安装：
+1. Ubuntu/Debian: `sudo apt update && sudo apt install -y golang-go`
+2. 或从 https://go.dev/dl/ 下载安装
+3. 国内用户可能需要设置 GOPROXY: `export GOPROXY=https://goproxy.cn,direct`
 
-### Step 3: Build the Project
+### 步骤 3：构建项目
 
-Build the gc binary:
+构建 gc 二进制文件：
 
 ```bash
-# Set GOPROXY for China users if needed
+# 国内用户设置 GOPROXY
 export GOPROXY=https://goproxy.cn,direct
 
-# Build
+# 构建
 go build -o ./gc ./cmd/gc
 ```
 
-### Step 4: Verify Build
+### 步骤 4：验证构建
 
-Run the version command to verify:
+运行版本命令验证：
 
 ```bash
 ./gc version
 ```
 
-If the command runs without errors, the environment is ready. No need to check authentication status.
+如果命令执行无错误，则环境已就绪。无需检查认证状态。
 
-Expected output:
+预期输出：
 ```
 gc version dev
   commit: none
@@ -77,37 +77,37 @@ gc version dev
 https://gitcode.com/gitcode-cli/cli
 ```
 
-## Quick Environment Check
+## 快速环境检查
 
-Use this to quickly verify the environment is ready:
+快速验证环境是否就绪：
 
 ```bash
-# Do a fresh build and verify
+# 重新构建并验证
 GOPROXY=https://goproxy.cn,direct go build -o ./gc ./cmd/gc && ./gc version
 ```
 
-If no errors, the environment is ready.
+如果无错误，则环境已就绪。
 
-## Common Issues
+## 常见问题
 
-### Go not found
-- Install Go: `sudo apt install -y golang-go` (Ubuntu)
-- Or download from https://go.dev/dl/
+### Go 未找到
+- 安装 Go: `sudo apt install -y golang-go` (Ubuntu)
+- 或从 https://go.dev/dl/ 下载
 
-### Build fails with network errors
-- Set GOPROXY: `export GOPROXY=https://goproxy.cn,direct`
+### 构建失败（网络错误）
+- 设置 GOPROXY: `export GOPROXY=https://goproxy.cn,direct`
 
-### Permission denied
-- Make sure not using `sudo` for go build
-- Check file permissions
+### 权限被拒绝
+- 确保不使用 `sudo` 执行 go build
+- 检查文件权限
 
-### Old version in PATH
-- Do NOT copy `./gc` to `~/bin/` or other PATH directories
-- Always use `./gc` directly from the project directory
+### PATH 中存在旧版本
+- 不要将 `./gc` 复制到 `~/bin/` 或其他 PATH 目录
+- 始终在项目目录中直接使用 `./gc`
 
-## Output Format
+## 输出格式
 
-After setup, provide a simple summary:
+初始化完成后，提供简洁的摘要：
 
 ```
 ✓ 本地开发环境已就绪
@@ -116,4 +116,4 @@ After setup, provide a simple summary:
 - 状态: 构建成功，命令正常
 ```
 
-No need to check authentication status. The environment is considered ready once `./gc version` runs without errors.
+无需检查认证状态。只要 `./gc version` 执行无错误，环境即被认为就绪。

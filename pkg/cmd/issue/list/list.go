@@ -23,10 +23,21 @@ type ListOptions struct {
 	Repository string
 
 	// Flags
-	State    string
-	Limit    int
-	Labels   string
-	Assignee string
+	State         string
+	Limit         int
+	Labels        string
+	Assignee      string
+	Milestone     string
+	Creator       string
+	Sort          string
+	Direction     string
+	Since         string
+	CreatedAfter  string
+	CreatedBefore string
+	UpdatedAfter  string
+	UpdatedBefore string
+	Search        string
+	Page          int
 }
 
 // NewCmdList creates the list command
@@ -54,6 +65,27 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# List issues in a specific repository
 			$ gc issue list -R owner/repo
+
+			# Filter by milestone
+			$ gc issue list --milestone "v1.0"
+
+			# Filter by assignee
+			$ gc issue list --assignee username
+
+			# Filter by creator
+			$ gc issue list --creator username
+
+			# Sort by updated time
+			$ gc issue list --sort updated --direction asc
+
+			# Filter by creation time
+			$ gc issue list --created-after "2024-01-01"
+
+			# Search by keyword
+			$ gc issue list --search "bug"
+
+			# Combine multiple filters
+			$ gc issue list --state open --milestone "v1.0" --assignee username --sort updated
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -67,7 +99,18 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.State, "state", "s", "open", "Filter by state (open/closed/all)")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of issues to list")
 	cmd.Flags().StringVarP(&opts.Labels, "label", "l", "", "Filter by labels (comma separated)")
-	cmd.Flags().StringVarP(&opts.Assignee, "assignee", "a", "", "Filter by assignee")
+	cmd.Flags().StringVarP(&opts.Assignee, "assignee", "a", "", "Filter by assignee username")
+	cmd.Flags().StringVarP(&opts.Milestone, "milestone", "m", "", "Filter by milestone title")
+	cmd.Flags().StringVar(&opts.Creator, "creator", "", "Filter by creator username")
+	cmd.Flags().StringVar(&opts.Sort, "sort", "created", "Sort by (created/updated)")
+	cmd.Flags().StringVar(&opts.Direction, "direction", "desc", "Sort direction (asc/desc)")
+	cmd.Flags().StringVar(&opts.Since, "since", "", "Filter by update time (ISO 8601 format)")
+	cmd.Flags().StringVar(&opts.CreatedAfter, "created-after", "", "Filter issues created after this time")
+	cmd.Flags().StringVar(&opts.CreatedBefore, "created-before", "", "Filter issues created before this time")
+	cmd.Flags().StringVar(&opts.UpdatedAfter, "updated-after", "", "Filter issues updated after this time")
+	cmd.Flags().StringVar(&opts.UpdatedBefore, "updated-before", "", "Filter issues updated before this time")
+	cmd.Flags().StringVar(&opts.Search, "search", "", "Search by keyword in title or body")
+	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number for pagination")
 
 	return cmd
 }
@@ -95,9 +138,21 @@ func listRun(opts *ListOptions) error {
 
 	// List issues
 	issues, err := api.ListRepoIssues(client, owner, repo, &api.IssueListOptions{
-		State:   opts.State,
-		Labels:  opts.Labels,
-		PerPage: opts.Limit,
+		State:         opts.State,
+		Labels:        opts.Labels,
+		PerPage:       opts.Limit,
+		Page:          opts.Page,
+		Milestone:     opts.Milestone,
+		Assignee:      opts.Assignee,
+		Creator:       opts.Creator,
+		Sort:          opts.Sort,
+		Direction:     opts.Direction,
+		Since:         opts.Since,
+		CreatedAfter:  opts.CreatedAfter,
+		CreatedBefore: opts.CreatedBefore,
+		UpdatedAfter:  opts.UpdatedAfter,
+		UpdatedBefore: opts.UpdatedBefore,
+		Search:        opts.Search,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list issues: %w", err)

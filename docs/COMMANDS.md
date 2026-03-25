@@ -152,11 +152,39 @@ gc issue list -R infra-test/gctest1
 # 只列出已关闭的 Issues
 gc issue list -R infra-test/gctest1 --state closed
 
+# 列出所有状态的 Issues
+gc issue list -R infra-test/gctest1 --state all
+
 # 按标签筛选
-gc issue list -R infra-test/gctest1 --label bug
+gc issue list -R infra-test/gctest1 --label bug,enhancement
 
 # 限制数量
 gc issue list -R infra-test/gctest1 --limit 20
+
+# 按里程碑筛选
+gc issue list -R infra-test/gctest1 --milestone "v1.0"
+
+# 按受理人筛选
+gc issue list -R infra-test/gctest1 --assignee username
+
+# 按创建者筛选
+gc issue list -R infra-test/gctest1 --creator username
+
+# 按更新时间排序
+gc issue list -R infra-test/gctest1 --sort updated --direction desc
+
+# 按创建时间筛选
+gc issue list -R infra-test/gctest1 --created-after "2024-01-01"
+gc issue list -R infra-test/gctest1 --created-before "2024-12-31"
+
+# 按更新时间筛选
+gc issue list -R infra-test/gctest1 --updated-after "2024-01-01"
+
+# 关键字搜索
+gc issue list -R infra-test/gctest1 --search "bug"
+
+# 组合使用
+gc issue list -R infra-test/gctest1 --state open --milestone "v1.0" --sort updated
 ```
 
 ### issue view - 查看 Issue

@@ -7,7 +7,7 @@ name = "gitcode-cli"
 version = "0.2.5"
 description = "GitCode CLI - Command line tool for GitCode"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "GitCode CLI Contributors", email = "support@gitcode.com"}
 ]
@@ -19,7 +19,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",

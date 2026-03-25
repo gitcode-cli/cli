@@ -8,12 +8,26 @@
 
 ```bash
 # DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/latest/download/gc_0.2.8_amd64.deb
-sudo dpkg -i gc_0.2.8_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.12/gc_0.2.12_amd64.deb
+sudo dpkg -i gc_0.2.12_amd64.deb
 
 # RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/latest/download/gc-0.2.8-1.x86_64.rpm
-sudo rpm -i gc-0.2.8-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.12/gc-0.2.12-1.x86_64.rpm
+sudo rpm -i gc-0.2.12-1.x86_64.rpm
+```
+
+**PyPI (跨平台):**
+
+> ⚠️ **重要**: 请使用官方 PyPI 源安装，国内镜像同步可能有延迟
+
+```bash
+# 创建虚拟环境
+python3 -m venv myenv
+source myenv/bin/activate  # Linux/macOS
+# myenv\Scripts\activate   # Windows
+
+# 使用官方 PyPI 源安装
+pip install -i https://pypi.org/simple/ gitcode-cli
 ```
 
 **从源码构建:**
@@ -80,4 +94,4 @@ AI 会自动使用 `gc` 命令执行操作。
 
 ---
 
-**最后更新**: 2026-03-24
+**最后更新**: 2026-03-25

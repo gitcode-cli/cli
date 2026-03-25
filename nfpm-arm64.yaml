@@ -17,9 +17,9 @@ license: "MIT"
 contents:
   - src: ./gc_linux_arm64
     dst: /usr/bin/gc
-  - src: ../completions/gc.bash
+  - src: ./completions/gc.bash
     dst: /usr/share/bash-completion/completions/gc
-  - src: ../completions/gc.zsh
+  - src: ./completions/gc.zsh
     dst: /usr/share/zsh/vendor-completions/_gc
-  - src: ../completions/gc.fish
+  - src: ./completions/gc.fish
     dst: /usr/share/fish/completions/gc.fish

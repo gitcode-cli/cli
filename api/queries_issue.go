@@ -35,11 +35,11 @@ type Label struct {
 // Milestone represents a GitCode milestone
 type Milestone struct {
 	ID          interface{} `json:"id"`
-	Number      string      `json:"number"`
+	Number      int         `json:"number"`
 	Title       string      `json:"title"`
 	Description string      `json:"description"`
 	State       string      `json:"state"`
-	DueOn       *time.Time  `json:"due_on"`
+	DueOn       string      `json:"due_on"`
 }
 
 // IssueComment represents a comment on an issue

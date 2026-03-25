@@ -94,7 +94,7 @@ func viewRun(opts *ViewOptions) error {
 		return fmt.Errorf("failed to get milestone: %w", err)
 	}
 
-	milestoneURL := fmt.Sprintf("https://gitcode.com/%s/%s/milestones/%s", owner, repo, ms.Number)
+	milestoneURL := fmt.Sprintf("https://gitcode.com/%s/%s/milestones/%d", owner, repo, ms.Number)
 
 	// Open in browser if --web flag is set
 	if opts.Web {
@@ -104,17 +104,17 @@ func viewRun(opts *ViewOptions) error {
 
 	// Output
 	fmt.Fprintf(opts.IO.Out, "\n")
-	fmt.Fprintf(opts.IO.Out, "%s #%s\n", cs.Bold(ms.Title), ms.Number)
+	fmt.Fprintf(opts.IO.Out, "%s #%d\n", cs.Bold(ms.Title), ms.Number)
 	fmt.Fprintf(opts.IO.Out, "  State: %s\n", ms.State)
-	if ms.DueOn != nil {
-		fmt.Fprintf(opts.IO.Out, "  Due: %s\n", ms.DueOn.Format("2006-01-02"))
+	if ms.DueOn != "" {
+		fmt.Fprintf(opts.IO.Out, "  Due: %s\n", ms.DueOn)
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")
 	if ms.Description != "" {
 		fmt.Fprintf(opts.IO.Out, "%s\n", ms.Description)
 		fmt.Fprintf(opts.IO.Out, "\n")
 	}
-	fmt.Fprintf(opts.IO.Out, "  https://gitcode.com/%s/%s/milestones/%s\n", owner, repo, ms.Number)
+	fmt.Fprintf(opts.IO.Out, "  https://gitcode.com/%s/%s/milestones/%d\n", owner, repo, ms.Number)
 	fmt.Fprintf(opts.IO.Out, "\n")
 
 	return nil

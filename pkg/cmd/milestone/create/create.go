@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -42,11 +43,14 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 			Create a new milestone in a GitCode repository.
 		`),
 		Example: heredoc.Doc(`
-			# Create a milestone
+			# Create a milestone (due date defaults to 30 days from now)
 			$ gc milestone create "v1.0" -R owner/repo
 
+			# Create with specific due date
+			$ gc milestone create "v1.0" --due-date "2024-12-31" -R owner/repo
+
 			# Create with description
-			$ gc milestone create "v2.0" --description "Next release"
+			$ gc milestone create "v2.0" --description "Next release" --due-date "2025-01-31" -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,16 +91,30 @@ func createRun(opts *CreateOptions) error {
 		return err
 	}
 
+	// Parse due date (required by GitCode API)
+	var dueOn string
+	if opts.DueDate != "" {
+		_, err := time.Parse("2006-01-02", opts.DueDate)
+		if err != nil {
+			return fmt.Errorf("invalid due date format, use YYYY-MM-DD: %w", err)
+		}
+		dueOn = opts.DueDate
+	} else {
+		// Default to 30 days from now
+		dueOn = time.Now().AddDate(0, 0, 30).Format("2006-01-02")
+	}
+
 	// Create milestone
 	ms, err := api.CreateMilestone(client, owner, repo, &api.CreateMilestoneOptions{
 		Title:       opts.Title,
 		Description: opts.Description,
+		DueOn:       dueOn,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create milestone: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Created milestone #%s %s in %s/%s\n", cs.Green("✓"), ms.Number, cs.Bold(ms.Title), owner, repo)
+	fmt.Fprintf(opts.IO.Out, "%s Created milestone #%d %s in %s/%s\n", cs.Green("✓"), ms.Number, cs.Bold(ms.Title), owner, repo)
 	return nil
 }
 

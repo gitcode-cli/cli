@@ -101,7 +101,7 @@ func listRun(opts *ListOptions) error {
 		if ms.State == "closed" {
 			state = cs.Red("closed")
 		}
-		fmt.Fprintf(opts.IO.Out, "#%-6s %s  %s\n", ms.Number, state, ms.Title)
+		fmt.Fprintf(opts.IO.Out, "#%-6d %s  %s\n", ms.Number, state, ms.Title)
 		if ms.Description != "" {
 			fmt.Fprintf(opts.IO.Out, "        %s\n", ms.Description)
 		}

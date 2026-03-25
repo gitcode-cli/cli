@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/url"
-	"time"
 )
 
 // CreateLabelOptions represents options for creating a label
@@ -21,18 +20,18 @@ type UpdateLabelOptions struct {
 
 // CreateMilestoneOptions represents options for creating a milestone
 type CreateMilestoneOptions struct {
-	Title       string     `json:"title"`
-	Description string     `json:"description,omitempty"`
-	State       string     `json:"state,omitempty"`
-	DueOn       *time.Time `json:"due_on,omitempty"`
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+	State       string `json:"state,omitempty"`
+	DueOn       string `json:"due_on,omitempty"`
 }
 
 // UpdateMilestoneOptions represents options for updating a milestone
 type UpdateMilestoneOptions struct {
-	Title       string     `json:"title,omitempty"`
-	Description string     `json:"description,omitempty"`
-	State       string     `json:"state,omitempty"`
-	DueOn       *time.Time `json:"due_on,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	State       string `json:"state,omitempty"`
+	DueOn       string `json:"due_on,omitempty"`
 }
 
 // CreateLabel creates a new label in a repository

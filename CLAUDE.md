@@ -306,19 +306,48 @@ sudo rpm -i gc-0.2.7-1.x86_64.rpm
 
 | 代码改动类型 | 需要更新的文档 |
 |------------|--------------|
-| 新增命令 | `docs/COMMANDS.md`、`README.md` |
-| 新增子命令 | `docs/COMMANDS.md` |
-| 修改命令参数/flags | `docs/COMMANDS.md`、`README.md` |
-| 修改命令行为 | `docs/COMMANDS.md` |
-| 删除命令 | `docs/COMMANDS.md`、`README.md` |
+| 新增命令 | `docs/COMMANDS.md`、`README.md`、`.claude/skills/gitcode-cli/references/*.md` |
+| 新增子命令 | `docs/COMMANDS.md`、`.claude/skills/gitcode-cli/references/*.md` |
+| 修改命令参数/flags | `docs/COMMANDS.md`、`README.md`、`.claude/skills/gitcode-cli/references/*.md` |
+| 修改命令行为 | `docs/COMMANDS.md`、`.claude/skills/gitcode-cli/references/*.md` |
+| 删除命令 | `docs/COMMANDS.md`、`README.md`、`.claude/skills/gitcode-cli/references/*.md` |
 
 **文档更新检查清单：**
 - [ ] `docs/COMMANDS.md` 已更新命令说明和示例
 - [ ] `README.md` 已更新命令概览（如有新命令）
+- [ ] `.claude/skills/gitcode-cli/references/*.md` 已更新相关命令示例
 - [ ] 命令示例已验证可执行
 - [ ] 参数说明与代码实现一致
 
 详细要求参见 `docs/COMMANDS.md` 中的"文档维护规范"章节。
+
+### Release 发布规范
+
+**每次发布新版本时，必须同步更新以下文件中的版本号：**
+
+1. **`nfpm-amd64.yaml` 和 `nfpm-arm64.yaml`**: 包版本号
+2. **`README.md`**:
+   - 下载链接中的版本号（如 `gc_0.2.10_amd64.deb`）
+   - Release badge 版本号（如 `[![Release](https://img.shields.io/badge/Release-v0.2.10-blue)]`）
+
+**发布流程：**
+```bash
+# 1. 更新 nfpm 配置中的版本号
+# 2. 构建发布版本
+./scripts/build-release.sh v0.2.10
+
+# 3. 构建 DEB/RPM 包
+~/go/bin/nfpm pkg -f nfpm-amd64.yaml -p deb -t dist/gc_0.2.10_amd64.deb
+~/go/bin/nfpm pkg -f nfpm-amd64.yaml -p rpm -t dist/gc-0.2.10-1.x86_64.rpm
+~/go/bin/nfpm pkg -f nfpm-arm64.yaml -p deb -t dist/gc_0.2.10_arm64.deb
+~/go/bin/nfpm pkg -f nfpm-arm64.yaml -p rpm -t dist/gc-0.2.10-1.aarch64.rpm
+
+# 4. 创建 release 并上传包
+gc release create v0.2.10 --title "v0.2.10" --notes "Release notes" -R gitcode-cli/cli
+gc release upload v0.2.10 dist/gc_0.2.10_amd64.deb dist/gc-0.2.10-1.x86_64.rpm -R gitcode-cli/cli
+
+# 5. 更新 README.md 中的版本号（下载链接和 badge）
+```
 
 ## 开发工作流程（重要！）
 
@@ -544,4 +573,4 @@ git checkout main && git pull
 
 ---
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-03-25

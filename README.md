@@ -53,12 +53,44 @@ sudo rpm -i gc-0.2.11-1.x86_64.rpm
 
 ### PyPI (跨平台)
 
+**方式一：pipx 安装（推荐）**
+
 ```bash
-# 使用 pip 安装
-pip install gitcode-cli
+# 使用 pipx 安装（自动管理虚拟环境）
+pipx install gitcode-cli
 
 # 或指定版本
-pip install gitcode-cli==0.2.5
+pipx install gitcode-cli==0.2.11
+```
+
+**方式二：虚拟环境安装**
+
+```bash
+# 创建虚拟环境
+python3 -m venv myenv
+source myenv/bin/activate  # Linux/macOS
+# myenv\Scripts\activate   # Windows
+
+# 安装
+pip install gitcode-cli
+```
+
+**方式三：系统安装（需 --break-system-packages）**
+
+> ⚠️ Python 3.11+ 受 PEP 668 限制，需要额外参数
+
+```bash
+pip install gitcode-cli --break-system-packages
+```
+
+**Windows 用户**
+
+```powershell
+# PowerShell 安装
+pip install gitcode-cli
+
+# 或使用 pipx
+pipx install gitcode-cli
 ```
 
 ### 规划中的安装方式

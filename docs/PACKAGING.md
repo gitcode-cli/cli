@@ -2,11 +2,53 @@
 
 > 项目概述和功能介绍请参阅 [README.md](../README.md)，命令使用请参阅 [COMMANDS.md](./COMMANDS.md)，开发指南请参阅 [CLAUDE.md](../CLAUDE.md)。
 
-本文档说明如何在本地构建 DEB/RPM 包并使用 `gc` 命令发布 Release。
+本文档说明如何在本地构建 DEB/RPM/PyPI 包并使用 `gc` 命令发布 Release。
 
 ## 重要流程
 
 **每次打包发布后，必须同步更新 README.md 中的下载版本信息！**
+
+## 快速开始
+
+### 一键打包（推荐）
+
+使用 `scripts/package.sh` 脚本一键完成版本同步和打包：
+
+```bash
+# 构建所有包（DEB + RPM + PyPI）
+./scripts/package.sh v0.2.12
+
+# 仅构建 Linux 包（DEB + RPM）
+./scripts/package.sh v0.2.12 linux
+
+# 仅构建 DEB 包
+./scripts/package.sh v0.2.12 deb
+
+# 仅构建 PyPI 包
+./scripts/package.sh v0.2.12 pypi
+
+# 发布用（DEB + RPM + PyPI）
+./scripts/package.sh v0.2.12 release
+```
+
+### 构建目标
+
+| 目标 | 说明 |
+|------|------|
+| `all` | 构建所有包（默认） |
+| `deb` | 仅构建 DEB 包 |
+| `rpm` | 仅构建 RPM 包 |
+| `linux` | 构建 DEB + RPM 包 |
+| `pypi` | 仅构建 PyPI 包 |
+| `release` | 构建 DEB + RPM + PyPI（发布用） |
+
+### 版本自动同步
+
+脚本会自动同步版本号到以下文件：
+- `nfpm-amd64.yaml`
+- `nfpm-arm64.yaml`
+- `pyproject.toml`
+- `gc_cli/__init__.py`
 
 ## 前置要求
 

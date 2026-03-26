@@ -254,12 +254,13 @@ sudo mv gc_linux_arm64 /usr/local/bin/gc
 
 ### Wheel 包（推荐）
 \`\`\`
-# 方式一：从 Release 直接安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
+# 创建虚拟环境
+python3 -m venv .venv
+source .venv/bin/activate       # Linux/macOS
+# .venv\Scripts\activate       # Windows
 
-# 方式二：下载后安装
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
-pip install gitcode_cli-0.3.2-py3-none-any.whl
+# 安装（一行命令）
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
 \`\`\`
 
 ### DEB (Debian/Ubuntu)
@@ -374,7 +375,9 @@ RELEASE_NOTES="## 更新内容
 wget https://gitcode.com/gitcode-cli/cli/releases/download/v${VERSION}/gc_linux_amd64
 chmod +x gc_linux_amd64 && sudo mv gc_linux_amd64 /usr/local/bin/gc
 
-#### Wheel 包
+#### Wheel 包（推荐）
+python3 -m venv .venv
+source .venv/bin/activate       # Linux/macOS
 pip install https://gitcode.com/gitcode-cli/cli/releases/download/v${VERSION}/gitcode_cli-${VERSION}-py3-none-any.whl"
 
 gc release create v$VERSION -R $REPO \

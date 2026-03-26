@@ -80,14 +80,14 @@
 
 ```bash
 dist/
-├── gc_0.3.2_amd64.deb              # DEB amd64
-├── gc_0.3.2_arm64.deb              # DEB arm64
-├── gc-0.3.2-1.x86_64.rpm           # RPM x86_64
-├── gc-0.3.2-1.aarch64.rpm          # RPM aarch64
+├── gc_0.3.3_amd64.deb              # DEB amd64
+├── gc_0.3.3_arm64.deb              # DEB arm64
+├── gc-0.3.3-1.x86_64.rpm           # RPM x86_64
+├── gc-0.3.3-1.aarch64.rpm          # RPM aarch64
 ├── gc_linux_amd64                  # Linux 二进制 amd64
 ├── gc_linux_arm64                  # Linux 二进制 arm64
-├── gitcode_cli-0.3.2-py3-none-any.whl  # PyPI wheel
-└── gitcode_cli-0.3.2.tar.gz        # PyPI sdist
+├── gitcode_cli-0.3.3-py3-none-any.whl  # PyPI wheel
+└── gitcode_cli-0.3.3.tar.gz        # PyPI sdist
 ```
 
 ---
@@ -143,29 +143,29 @@ gc release create v0.3.2 -R gitcode-cli/cli \
 
 ## 安装方式
 
-### Linux 二进制文件
-# AMD64
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_amd64
-chmod +x gc_linux_amd64
-sudo mv gc_linux_amd64 /usr/local/bin/gc
-
-# ARM64
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_arm64
-chmod +x gc_linux_arm64
-sudo mv gc_linux_arm64 /usr/local/bin/gc
-
 ### Wheel 包（推荐）
 python3 -m venv .venv
 source .venv/bin/activate
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gitcode_cli-0.3.3-py3-none-any.whl
 
 ### DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_amd64.deb
-sudo dpkg -i gc_0.3.2_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc_0.3.3_amd64.deb
+sudo dpkg -i gc_0.3.3_amd64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.x86_64.rpm
-sudo rpm -i gc-0.3.2-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc-0.3.3-1.x86_64.rpm
+sudo rpm -i gc-0.3.3-1.x86_64.rpm
+
+### Linux 二进制文件
+#### AMD64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc_linux_amd64
+chmod +x gc_linux_amd64
+sudo mv gc_linux_amd64 /usr/local/bin/gc
+
+#### ARM64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc_linux_arm64
+chmod +x gc_linux_arm64
+sudo mv gc_linux_arm64 /usr/local/bin/gc
 EOF
 )"
 
@@ -173,11 +173,11 @@ EOF
 gc release upload v0.3.2 \
   dist/gc_linux_amd64 \
   dist/gc_linux_arm64 \
-  dist/gc_0.3.2_amd64.deb \
-  dist/gc_0.3.2_arm64.deb \
-  dist/gc-0.3.2-1.x86_64.rpm \
-  dist/gc-0.3.2-1.aarch64.rpm \
-  dist/gitcode_cli-0.3.2-py3-none-any.whl \
+  dist/gc_0.3.3_amd64.deb \
+  dist/gc_0.3.3_arm64.deb \
+  dist/gc-0.3.3-1.x86_64.rpm \
+  dist/gc-0.3.3-1.aarch64.rpm \
+  dist/gitcode_cli-0.3.3-py3-none-any.whl \
   -R gitcode-cli/cli
 ```
 
@@ -214,27 +214,27 @@ gc release download v0.3.2 -R gitcode-cli/cli
 python3 -m venv .venv
 source .venv/bin/activate
 
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gitcode_cli-0.3.3-py3-none-any.whl
 ```
 
 ### DEB (Debian/Ubuntu)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_amd64.deb
-sudo dpkg -i gc_0.3.2_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc_0.3.3_amd64.deb
+sudo dpkg -i gc_0.3.3_amd64.deb
 ```
 
 ### RPM (RHEL/CentOS/Fedora)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.x86_64.rpm
-sudo rpm -i gc-0.3.2-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc-0.3.3-1.x86_64.rpm
+sudo rpm -i gc-0.3.3-1.x86_64.rpm
 ```
 
 ### Linux 二进制
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_amd64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc_linux_amd64
 chmod +x gc_linux_amd64
 sudo mv gc_linux_amd64 /usr/local/bin/gc
 ```

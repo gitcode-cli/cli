@@ -4,7 +4,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v0.2.12-blue)](https://gitcode.com/gitcode-cli/cli/releases)
+[![Release](https://img.shields.io/badge/Release-v0.3.0-blue)](https://gitcode.com/gitcode-cli/cli/releases)
 
 GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
 
@@ -35,20 +35,20 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 # 从 Releases 下载 .deb 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.12/gc_0.2.12_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gc_0.3.0_amd64.deb
 
 # 安装
-sudo dpkg -i gc_0.2.12_amd64.deb
+sudo dpkg -i gc_0.3.0_amd64.deb
 ```
 
 **RPM (RHEL/CentOS/Fedora):**
 
 ```bash
 # 从 Releases 下载 .rpm 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.12/gc-0.2.12-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gc-0.3.0-1.x86_64.rpm
 
 # 安装
-sudo rpm -i gc-0.2.11-1.x86_64.rpm
+sudo rpm -i gc-0.3.0-1.x86_64.rpm
 ```
 
 ### Wheel 包（跨平台，推荐）
@@ -57,10 +57,10 @@ sudo rpm -i gc-0.2.11-1.x86_64.rpm
 
 ```bash
 # 下载 wheel 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.12/gitcode_cli-0.2.12-py3-none-any.whl
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gitcode_cli-0.3.0-py3-none-any.whl
 
 # 安装
-pip install gitcode_cli-0.2.12-py3-none-any.whl
+pip install gitcode_cli-0.3.0-py3-none-any.whl
 ```
 
 ### PyPI（备选）

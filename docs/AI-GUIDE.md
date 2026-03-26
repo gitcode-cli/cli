@@ -8,12 +8,12 @@
 
 ```bash
 # DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.12/gc_0.2.12_amd64.deb
-sudo dpkg -i gc_0.2.12_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gc_0.3.0_amd64.deb
+sudo dpkg -i gc_0.3.0_amd64.deb
 
 # RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.12/gc-0.2.12-1.x86_64.rpm
-sudo rpm -i gc-0.2.12-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gc-0.3.0-1.x86_64.rpm
+sudo rpm -i gc-0.3.0-1.x86_64.rpm
 ```
 
 **Wheel 包（跨平台，推荐）:**
@@ -22,10 +22,10 @@ sudo rpm -i gc-0.2.12-1.x86_64.rpm
 
 ```bash
 # 下载 wheel 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.12/gitcode_cli-0.2.12-py3-none-any.whl
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gitcode_cli-0.3.0-py3-none-any.whl
 
 # 安装
-pip install gitcode_cli-0.2.12-py3-none-any.whl
+pip install gitcode_cli-0.3.0-py3-none-any.whl
 ```
 
 **PyPI（备选）:**

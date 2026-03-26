@@ -5,7 +5,7 @@
 ## 流程概览
 
 ```
-提交 Issue → 打标签 → 创建分支 → 分支开发 → 编写测试 → 本地测试 → 实际命令测试 → 提交 PR → Issue 评论 → PR 审查评论 → 关闭 Issue → 合并 PR
+提交 Issue → 打标签 → 创建分支 → 分支开发 → 编写测试 → 本地测试 → 实际命令测试 → 安全审查 → 提交 PR → Issue 评论 → PR 审查评论 → 关闭 Issue → 合并 PR
 ```
 
 ## 完整流程步骤
@@ -75,7 +75,32 @@ export GC_TOKEN=your_token
 ./gc issue list -R infra-test/gctest1
 ```
 
-### 8. 提交代码
+### 8. 安全审查
+
+**提交代码前必须进行安全审查！**
+
+检查以下项目：
+
+- [ ] 没有硬编码的 Token 或密钥
+- [ ] 配置文件中不包含敏感信息
+- [ ] `.gitignore` 已忽略敏感文件
+- [ ] 测试代码不包含真实 Token
+- [ ] 文档中不包含真实凭证
+
+```bash
+# 检查即将提交的内容
+git diff --cached
+
+# 检查是否有敏感信息
+git diff --cached | grep -iE "token|password|secret|api_key"
+
+# 检查是否有敏感文件被追踪
+git ls-files | grep -iE "\.pem|\.key|\.env|credentials|secret"
+```
+
+详细安全规范参见 [安全规范](./security.md)。
+
+### 9. 提交代码
 
 提交代码，commit 信息关联 Issue。
 
@@ -88,13 +113,13 @@ Closes #<number>
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ```
 
-### 9. 推送分支
+### 10. 推送分支
 
 ```bash
 git push -u origin feature/issue-<number>
 ```
 
-### 10. 创建 PR
+### 11. 创建 PR
 
 创建 PR 合并到 main，描述中关联 Issue。
 
@@ -102,7 +127,7 @@ git push -u origin feature/issue-<number>
 gc pr create --title "feat: add xxx command" --body "Closes #<number>" --base main -R gitcode-cli/cli
 ```
 
-### 11. Issue 评论
+### 12. Issue 评论
 
 在 Issue 中添加完成说明。
 
@@ -117,7 +142,7 @@ gc issue comment <number> --body "## 修复完成
 - [x] 实际命令测试通过" -R gitcode-cli/cli
 ```
 
-### 12. PR 审查评论
+### 13. PR 审查评论
 
 在 PR 中提交审查评论。
 
@@ -132,7 +157,7 @@ gc pr review <pr_number> --comment "## 审查结果
 - [x] 实际命令测试通过" -R gitcode-cli/cli
 ```
 
-### 13. 关闭 Issue
+### 14. 关闭 Issue
 
 审查通过后关闭关联的 Issue。
 
@@ -140,7 +165,7 @@ gc pr review <pr_number> --comment "## 审查结果
 gc issue close <number> -R gitcode-cli/cli
 ```
 
-### 14. 合并 PR
+### 15. 合并 PR
 
 确认所有测试通过后合并 PR。
 
@@ -148,7 +173,7 @@ gc issue close <number> -R gitcode-cli/cli
 gc pr merge <pr_number> -R gitcode-cli/cli
 ```
 
-### 15. 拉取最新代码
+### 16. 拉取最新代码
 
 ```bash
 git checkout main && git pull
@@ -196,6 +221,7 @@ git checkout main && git pull
 
 开发完成后必须确认：
 
+### 功能检查
 - [ ] 单元测试全部通过 (`go test ./...`)
 - [ ] 在测试仓库进行实际命令测试
 - [ ] Issue 已打标签
@@ -205,8 +231,16 @@ git checkout main && git pull
 - [ ] Issue 已关闭
 - [ ] PR 已合并
 
+### 安全检查
+- [ ] 没有硬编码的 Token 或密钥
+- [ ] 配置文件中不包含敏感信息
+- [ ] `.gitignore` 已忽略敏感文件
+- [ ] 测试代码不包含真实 Token
+- [ ] 文档中不包含真实凭证
+
 ## 禁止行为
 
+### 流程相关
 - ❌ 直接在 main 分支开发
 - ❌ 不创建 Issue 直接开发
 - ❌ Issue 创建后不打标签
@@ -217,14 +251,22 @@ git checkout main && git pull
 - ❌ 未添加 Issue 评论就关闭 Issue
 - ❌ 未提交 PR 审查评论就合并 PR
 
+### 安全相关
+- ❌ 硬编码 Token 或密钥到代码中
+- ❌ 将敏感文件提交到版本控制
+- ❌ 在测试代码中使用真实 Token
+- ❌ 在文档中记录真实凭证
+- ❌ 使用非授权的测试仓库
+
 ## 详细流程文档
 
 | 文档 | 说明 |
 |------|------|
-| [Issue 流程](./issue-workflow.md) | Issue 创建、标签、验证、关闭 |
-| [PR 流程](./pr-workflow.md) | 分支创建、代码提交、PR 创建与合并 |
-| [评审流程](./review-workflow.md) | Issue 评论、PR 审查评论 |
-| [测试流程](./test-workflow.md) | 单元测试、实际命令测试 |
+| [Issue 流程](./workflows/issue-workflow.md) | Issue 创建、标签、验证、关闭 |
+| [PR 流程](./workflows/pr-workflow.md) | 分支创建、代码提交、PR 创建与合并 |
+| [评审流程](./workflows/review-workflow.md) | Issue 评论、PR 审查评论 |
+| [测试流程](./workflows/test-workflow.md) | 单元测试、实际命令测试 |
+| [安全规范](./security.md) | Token 管理、敏感信息保护、安全审查 |
 
 ## 完整流程示例
 
@@ -248,7 +290,11 @@ go test ./pkg/cmd/issue/label/...
 # 6. 实际命令测试
 ./gc issue label 1 --add bug -R infra-test/gctest1
 
-# 7. 提交代码
+# 7. 安全审查
+git diff | grep -iE "token|password|secret|api_key"
+# 确认无敏感信息
+
+# 8. 提交代码
 git add .
 git commit -m "feat(issue): add label command
 
@@ -256,16 +302,16 @@ Closes #23
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 
-# 8. 推送分支
+# 9. 推送分支
 git push -u origin feature/issue-23
 
-# 9. 创建 PR
+# 10. 创建 PR
 gc pr create --title "feat: add issue label command" --body "Closes #23" --base main -R gitcode-cli/cli
 
-# 10. 给 Issue 打标签
+# 11. 给 Issue 打标签
 gc issue label 23 --add enhancement -R gitcode-cli/cli
 
-# 11. 在 Issue 中添加完成评论
+# 12. 在 Issue 中添加完成评论
 gc issue comment 23 --body "## 实现完成
 
 - 新增 gc issue label 命令
@@ -273,23 +319,27 @@ gc issue comment 23 --body "## 实现完成
 - 单元测试通过
 - 实际命令测试通过" -R gitcode-cli/cli
 
-# 12. 在 PR 中提交审查评论
+# 13. 在 PR 中提交审查评论
 gc pr review <pr_number> --comment "## 审查结果
 
 ### 改动内容
 - 新增 issue label 命令
 
+### 安全检查
+- [x] 无硬编码 Token
+- [x] 无敏感信息泄露
+
 ### 测试结果
 - [x] 单元测试通过
 - [x] 实际命令测试通过" -R gitcode-cli/cli
 
-# 13. 关闭 Issue
+# 14. 关闭 Issue
 gc issue close 23 -R gitcode-cli/cli
 
-# 14. 合并 PR
+# 15. 合并 PR
 gc pr merge <pr_number> -R gitcode-cli/cli
 
-# 15. 拉取最新代码
+# 16. 拉取最新代码
 git checkout main && git pull
 ```
 

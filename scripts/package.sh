@@ -104,6 +104,35 @@ success "Updated pyproject.toml"
 sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" gc_cli/__init__.py
 success "Updated gc_cli/__init__.py"
 
+# Update README.md (Release badge and download links)
+sed -i "s/badge\/Release-v[0-9]\+\.[0-9]\+\.[0-9]\+/badge\/Release-v${VERSION}/g" README.md
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc_/v${VERSION}\/gc_/g" README.md
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc-/v${VERSION}\/gc-/g" README.md
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gitcode_cli/v${VERSION}\/gitcode_cli/g" README.md
+sed -i "s/gc_[0-9]\+\.[0-9]\+\.[0-9]\+/gc_${VERSION}/g" README.md
+sed -i "s/gc-[0-9]\+\.[0-9]\+\.[0-9]\+-1/gc-${VERSION}-1/g" README.md
+sed -i "s/gitcode_cli-[0-9]\+\.[0-9]\+\.[0-9]\+-py3/gitcode_cli-${VERSION}-py3/g" README.md
+success "Updated README.md"
+
+# Update docs/AI-GUIDE.md (Installation commands)
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc_/v${VERSION}\/gc_/g" docs/AI-GUIDE.md
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc-/v${VERSION}\/gc-/g" docs/AI-GUIDE.md
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gitcode_cli/v${VERSION}\/gitcode_cli/g" docs/AI-GUIDE.md
+sed -i "s/gc_[0-9]\+\.[0-9]\+\.[0-9]\+/gc_${VERSION}/g" docs/AI-GUIDE.md
+sed -i "s/gc-[0-9]\+\.[0-9]\+\.[0-9]\+-1/gc-${VERSION}-1/g" docs/AI-GUIDE.md
+sed -i "s/gitcode_cli-[0-9]\+\.[0-9]\+\.[0-9]\+-py3/gitcode_cli-${VERSION}-py3/g" docs/AI-GUIDE.md
+success "Updated docs/AI-GUIDE.md"
+
+# Update docs/PACKAGING.md (Example commands)
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc_/v${VERSION}\/gc_/g" docs/PACKAGING.md
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc-/v${VERSION}\/gc-/g" docs/PACKAGING.md
+sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gitcode_cli/v${VERSION}\/gitcode_cli/g" docs/PACKAGING.md
+sed -i "s/gc_[0-9]\+\.[0-9]\+\.[0-9]\+/gc_${VERSION}/g" docs/PACKAGING.md
+sed -i "s/gc-[0-9]\+\.[0-9]\+\.[0-9]\+-1/gc-${VERSION}-1/g" docs/PACKAGING.md
+sed -i "s/gitcode_cli-[0-9]\+\.[0-9]\+\.[0-9]\+-py3/gitcode_cli-${VERSION}-py3/g" docs/PACKAGING.md
+sed -i "s/gitcode_cli-[0-9]\+\.[0-9]\+\.[0-9]\+\.tar/gitcode_cli-${VERSION}.tar/g" docs/PACKAGING.md
+success "Updated docs/PACKAGING.md"
+
 # ============================================
 # Step 2: Create dist directory
 # ============================================

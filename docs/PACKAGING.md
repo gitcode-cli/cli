@@ -45,10 +45,17 @@
 ### 版本自动同步
 
 脚本会自动同步版本号到以下文件：
+
+**配置文件：**
 - `nfpm-amd64.yaml`
 - `nfpm-arm64.yaml`
 - `pyproject.toml`
 - `gc_cli/__init__.py`
+
+**文档文件：**
+- `README.md` - Release badge 和下载链接
+- `docs/AI-GUIDE.md` - 安装命令中的版本号
+- `docs/PACKAGING.md` - 示例命令中的版本号
 
 ## 前置要求
 

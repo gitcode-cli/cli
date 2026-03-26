@@ -6,14 +6,41 @@ Thank you for your interest in contributing to GitCode CLI!
 
 Before contributing, please read the following documentation:
 
+### Core Documentation
+
 | Document | Description |
 |----------|-------------|
-| [COMMANDS.md](./docs/COMMANDS.md) | Command usage guide - update when adding/modifying commands |
-| [PACKAGING.md](./docs/PACKAGING.md) | Packaging and release guide - DEB/RPM build instructions |
-| [CLAUDE.md](./CLAUDE.md) | AI-assisted development guide - coding conventions and workflow |
 | [README.md](./README.md) | Project overview and installation guide |
+| [CLAUDE.md](./CLAUDE.md) | AI-assisted development guide |
 
-> **Important**: When modifying command-related code, you MUST sync updates to `docs/COMMANDS.md`. See the documentation maintenance section in COMMANDS.md for details.
+### Development Specifications (spec/)
+
+| Document | Description |
+|----------|-------------|
+| [编码规范](./spec/coding-standards.md) | Naming, file structure, error handling |
+| [测试指南](./spec/testing-guide.md) | Unit tests, actual command testing |
+| [命令开发模板](./spec/command-template.md) | Command development template |
+| [安全规范](./spec/security.md) | Token management, sensitive info protection |
+
+### Development Workflows (spec/workflows/)
+
+| Document | Description |
+|----------|-------------|
+| [Issue 流程](./spec/workflows/issue-workflow.md) | Issue lifecycle management |
+| [PR 流程](./spec/workflows/pr-workflow.md) | PR creation and merge |
+| [评审流程](./spec/workflows/review-workflow.md) | Code review process |
+| [测试流程](./spec/workflows/test-workflow.md) | Testing workflow |
+| [构建打包流程](./spec/workflows/build-workflow.md) | Build and package |
+| [Release 流程](./spec/workflows/release-workflow.md) | Release process |
+
+### Other Documentation
+
+| Document | Description |
+|----------|-------------|
+| [docs/COMMANDS.md](./docs/COMMANDS.md) | Command usage guide |
+| [docs/PACKAGING.md](./docs/PACKAGING.md) | Packaging guide |
+
+> **Important**: When modifying command-related code, you MUST sync updates to `docs/COMMANDS.md`.
 
 ## Development Setup
 

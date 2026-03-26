@@ -215,7 +215,69 @@ gc release create v0.3.0 -R owner/repo \
 
 > **注意**：`--notes` 参数是必需的，不带此参数可能返回 400 错误。
 
-### 2. 上传资产
+### 2. Release Notes 模板
+
+创建 Release 时，**必须使用完整的下载路径**：
+
+```
+https://gitcode.com/gitcode-cli/cli/releases/download/v{VERSION}/{FILENAME}
+```
+
+**推荐模板**：
+
+```markdown
+## 更新内容
+
+### 新功能
+- 功能描述
+
+### Bug 修复
+- 修复描述
+
+### 修复的 Issue
+- Fixes #XX
+
+## 安装方式
+
+### Linux 二进制文件
+\`\`\`
+# AMD64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_amd64
+chmod +x gc_linux_amd64
+sudo mv gc_linux_amd64 /usr/local/bin/gc
+
+# ARM64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_arm64
+chmod +x gc_linux_arm64
+sudo mv gc_linux_arm64 /usr/local/bin/gc
+\`\`\`
+
+### Wheel 包（推荐）
+\`\`\`
+# 方式一：从 Release 直接安装（一行命令）
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
+
+# 方式二：下载后安装
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
+pip install gitcode_cli-0.3.2-py3-none-any.whl
+\`\`\`
+
+### DEB (Debian/Ubuntu)
+\`\`\`
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_amd64.deb
+sudo dpkg -i gc_0.3.2_amd64.deb
+\`\`\`
+
+### RPM (RHEL/CentOS/Fedora)
+\`\`\`
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.x86_64.rpm
+sudo rpm -i gc-0.3.2-1.x86_64.rpm
+\`\`\`
+```
+
+> **重要**：所有下载链接必须使用完整路径，禁止只写 `pip install xxx.whl` 不提供下载地址！
+
+### 3. 上传资产
 
 ```bash
 # 上传单个文件
@@ -302,11 +364,22 @@ echo "Building RPM packages..."
 $NFPAM package -f nfpm-amd64.yaml -p rpm -t dist/
 $NFPAM package -f nfpm-arm64.yaml -p rpm -t dist/
 
-# 创建 Release
+# 创建 Release（使用完整的 Release Notes）
 echo "Creating release..."
+RELEASE_NOTES="## 更新内容
+
+### 安装方式
+
+#### Linux 二进制
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v${VERSION}/gc_linux_amd64
+chmod +x gc_linux_amd64 && sudo mv gc_linux_amd64 /usr/local/bin/gc
+
+#### Wheel 包
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v${VERSION}/gitcode_cli-${VERSION}-py3-none-any.whl"
+
 gc release create v$VERSION -R $REPO \
   --title "gc v$VERSION" \
-  --notes "GitCode CLI v$VERSION release"
+  --notes "$RELEASE_NOTES"
 
 # 上传资产
 echo "Uploading assets..."

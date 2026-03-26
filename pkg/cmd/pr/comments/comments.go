@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -182,7 +181,7 @@ func formatID(id interface{}) string {
 	}
 }
 
-func formatTime(t time.Time) string {
+func formatTime(t api.FlexibleTime) string {
 	if t.IsZero() {
 		return "unknown"
 	}

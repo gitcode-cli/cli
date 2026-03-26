@@ -1,7 +1,5 @@
 package api
 
-import "time"
-
 // Repository represents a GitCode repository
 type Repository struct {
 	ID          interface{} `json:"id"`
@@ -14,8 +12,8 @@ type Repository struct {
 	CloneURL    string      `json:"http_url_to_repo"`
 	SSHURL      string      `json:"ssh_url_to_repo"`
 	DefaultBranch string    `json:"default_branch"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	CreatedAt   FlexibleTime `json:"created_at"`
+	UpdatedAt   FlexibleTime `json:"updated_at"`
 	StargazersCount int     `json:"stargazers_count"`
 	ForksCount  int         `json:"forks_count"`
 	OpenIssuesCount int     `json:"open_issues_count"`

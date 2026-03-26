@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"time"
 )
 
 // RepositoryCommit represents a detailed commit from the commits API
@@ -27,9 +26,9 @@ type CommitInfo struct {
 
 // CommitAuthor represents commit author info
 type CommitAuthor struct {
-	Name  string    `json:"name"`
-	Email string    `json:"email"`
-	Date  time.Time `json:"date"`
+	Name  string      `json:"name"`
+	Email string      `json:"email"`
+	Date  FlexibleTime `json:"date"`
 }
 
 // CommitStats represents commit statistics

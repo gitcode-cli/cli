@@ -157,10 +157,8 @@ build_linux_binaries() {
 build_deb() {
     info "Building DEB packages..."
 
-    cd dist
-    "$NFPMPATH" pkg -f ../nfpm-amd64.yaml -p deb -t "gc_${VERSION}_amd64.deb" 2>&1 | sed 's/^/  /'
-    "$NFPMPATH" pkg -f ../nfpm-arm64.yaml -p deb -t "gc_${VERSION}_arm64.deb" 2>&1 | sed 's/^/  /'
-    cd "${PROJECT_ROOT}"
+    "$NFPMPATH" pkg -f nfpm-amd64.yaml -p deb -t "dist/gc_${VERSION}_amd64.deb" 2>&1 | sed 's/^/  /'
+    "$NFPMPATH" pkg -f nfpm-arm64.yaml -p deb -t "dist/gc_${VERSION}_arm64.deb" 2>&1 | sed 's/^/  /'
 
     success "gc_${VERSION}_amd64.deb"
     success "gc_${VERSION}_arm64.deb"
@@ -172,10 +170,8 @@ build_deb() {
 build_rpm() {
     info "Building RPM packages..."
 
-    cd dist
-    "$NFPMPATH" pkg -f ../nfpm-amd64.yaml -p rpm -t "gc-${VERSION}-1.x86_64.rpm" 2>&1 | sed 's/^/  /'
-    "$NFPMPATH" pkg -f ../nfpm-arm64.yaml -p rpm -t "gc-${VERSION}-1.aarch64.rpm" 2>&1 | sed 's/^/  /'
-    cd "${PROJECT_ROOT}"
+    "$NFPMPATH" pkg -f nfpm-amd64.yaml -p rpm -t "dist/gc-${VERSION}-1.x86_64.rpm" 2>&1 | sed 's/^/  /'
+    "$NFPMPATH" pkg -f nfpm-arm64.yaml -p rpm -t "dist/gc-${VERSION}-1.aarch64.rpm" 2>&1 | sed 's/^/  /'
 
     success "gc-${VERSION}-1.x86_64.rpm"
     success "gc-${VERSION}-1.aarch64.rpm"

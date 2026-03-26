@@ -86,7 +86,13 @@ release:
 
     ## Installation
 
-    ### PyPI (pip)
+    ### Wheel Package (Recommended)
+    Download from Release assets and install:
+    ```bash
+    pip install gitcode_cli-{{ .Version }}-py3-none-any.whl
+    ```
+
+    ### PyPI
     ```bash
     pip install gitcode-cli
     ```

@@ -21,11 +21,13 @@ sudo rpm -i gc-0.3.0-1.x86_64.rpm
 从 Release 归档下载 wheel 包安装：
 
 ```bash
-# 下载 wheel 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gitcode_cli-0.3.0-py3-none-any.whl
+# 创建虚拟环境
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
 
-# 安装
-pip install gitcode_cli-0.3.0-py3-none-any.whl
+# 安装（一行命令）
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gitcode_cli-0.3.0-py3-none-any.whl
 ```
 
 **PyPI（备选）:**
@@ -34,9 +36,9 @@ pip install gitcode_cli-0.3.0-py3-none-any.whl
 
 ```bash
 # 创建虚拟环境
-python3 -m venv myenv
-source myenv/bin/activate  # Linux/macOS
-# myenv\Scripts\activate   # Windows
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
 
 # 使用官方 PyPI 源安装
 pip install -i https://pypi.org/simple/ gitcode-cli

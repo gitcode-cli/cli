@@ -4,9 +4,27 @@
 
 本文档说明如何在本地构建 DEB/RPM/PyPI 包并使用 `gc` 命令发布 Release。
 
+---
+
+## 目录
+
+- [快速开始](#快速开始)
+- [前置要求](#前置要求)
+- [构建 DEB/RPM 包](#构建-debrpm-包)
+- [构建 PyPI 包](#构建-pypi-包)
+- [发布 Release](#发布-release)
+- [完整示例](#完整示例)
+- [安装指南](#安装指南)
+- [常见问题](#常见问题)
+- [Release 说明编写规范](#release-说明编写规范)
+
+---
+
 ## 重要流程
 
 **每次打包发布后，必须同步更新 README.md 中的下载版本信息！**
+
+---
 
 ## 快速开始
 
@@ -56,6 +74,8 @@
 - `README.md` - Release badge 和下载链接
 - `docs/AI-GUIDE.md` - 安装命令中的版本号
 - `docs/PACKAGING.md` - 示例命令中的版本号
+
+---
 
 ## 前置要求
 
@@ -203,201 +223,6 @@ dist/gc-0.3.2-1.aarch64.rpm
 
 ---
 
-## 发布 Release
-
-### 1. 创建 Release
-
-```bash
-gc release create v0.3.0 -R owner/repo \
-  --title "gc v0.3.0" \
-  --notes "Release notes here"
-```
-
-> **注意**：`--notes` 参数是必需的，不带此参数可能返回 400 错误。
-
-### 2. Release Notes 模板
-
-创建 Release 时，**必须使用完整的下载路径**：
-
-```
-https://gitcode.com/gitcode-cli/cli/releases/download/v{VERSION}/{FILENAME}
-```
-
-**推荐模板**：
-
-```markdown
-## 更新内容
-
-### 新功能
-- 功能描述
-
-### Bug 修复
-- 修复描述
-
-### 修复的 Issue
-- Fixes #XX
-
-## 安装方式
-
-### Linux 二进制文件
-\`\`\`
-# AMD64
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_amd64
-chmod +x gc_linux_amd64
-sudo mv gc_linux_amd64 /usr/local/bin/gc
-
-# ARM64
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_arm64
-chmod +x gc_linux_arm64
-sudo mv gc_linux_arm64 /usr/local/bin/gc
-\`\`\`
-
-### Wheel 包（推荐）
-\`\`\`
-# 创建虚拟环境
-python3 -m venv .venv
-source .venv/bin/activate       # Linux/macOS
-# .venv\Scripts\activate       # Windows
-
-# 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
-\`\`\`
-
-### DEB (Debian/Ubuntu)
-\`\`\`
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_amd64.deb
-sudo dpkg -i gc_0.3.2_amd64.deb
-\`\`\`
-
-### RPM (RHEL/CentOS/Fedora)
-\`\`\`
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.x86_64.rpm
-sudo rpm -i gc-0.3.2-1.x86_64.rpm
-\`\`\`
-```
-
-> **重要**：所有下载链接必须使用完整路径，禁止只写 `pip install xxx.whl` 不提供下载地址！
-
-### 3. 上传资产
-
-```bash
-# 上传单个文件
-gc release upload v0.3.0 dist/gc_0.3.2_amd64.deb -R owner/repo
-
-# 上传所有包（包括 wheel）
-gc release upload v0.3.0 \
-  dist/gc_0.3.2_amd64.deb \
-  dist/gc_0.3.2_arm64.deb \
-  dist/gc-0.3.2-1.x86_64.rpm \
-  dist/gc-0.3.2-1.aarch64.rpm \
-  dist/gitcode_cli-0.3.2-py3-none-any.whl \
-  -R owner/repo
-```
-
-### 3. 查看 Release
-
-```bash
-gc release view v0.3.0 -R owner/repo
-```
-
-### 4. 列出所有 Releases
-
-```bash
-gc release list -R owner/repo
-```
-
-### 5. 下载资产
-
-```bash
-# 下载所有资产
-gc release download v0.3.0 -R owner/repo
-
-# 下载到指定目录
-gc release download v0.3.0 -R owner/repo -o ./downloads/
-
-# 下载指定文件
-gc release download v0.3.0 gc_0.3.2_amd64.deb -R owner/repo
-```
-
----
-
-## 完整示例
-
-以下是一个完整的打包和发布流程：
-
-```bash
-#!/bin/bash
-set -e
-
-# 配置
-VERSION="0.3.0"
-REPO="owner/repo"
-TOKEN="your_token"
-
-# nfpm 路径（根据实际情况修改）
-# 如果 nfpm 在 PATH 中，使用: NFPAM="nfpm"
-# 如果 nfpm 不在 PATH 中，使用完整路径: NFPAM="$HOME/go/bin/nfpm"
-NFPAM="$HOME/go/bin/nfpm"
-
-# 设置 Token
-export GC_TOKEN="$TOKEN"
-
-# 创建输出目录
-mkdir -p dist
-
-# 构建二进制文件
-echo "Building binaries..."
-GOOS=linux GOARCH=amd64 go build -o dist/gc_linux_amd64 ./cmd/gc
-GOOS=linux GOARCH=arm64 go build -o dist/gc_linux_arm64 ./cmd/gc
-
-# 更新版本号
-echo "Updating version..."
-sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-amd64.yaml
-sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-arm64.yaml
-
-# 构建 DEB 包
-echo "Building DEB packages..."
-$NFPAM package -f nfpm-amd64.yaml -p deb -t dist/
-$NFPAM package -f nfpm-arm64.yaml -p deb -t dist/
-
-# 构建 RPM 包
-echo "Building RPM packages..."
-$NFPAM package -f nfpm-amd64.yaml -p rpm -t dist/
-$NFPAM package -f nfpm-arm64.yaml -p rpm -t dist/
-
-# 创建 Release（使用完整的 Release Notes）
-echo "Creating release..."
-RELEASE_NOTES="## 更新内容
-
-### 安装方式
-
-#### Linux 二进制
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v${VERSION}/gc_linux_amd64
-chmod +x gc_linux_amd64 && sudo mv gc_linux_amd64 /usr/local/bin/gc
-
-#### Wheel 包（推荐）
-python3 -m venv .venv
-source .venv/bin/activate       # Linux/macOS
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v${VERSION}/gitcode_cli-${VERSION}-py3-none-any.whl"
-
-gc release create v$VERSION -R $REPO \
-  --title "gc v$VERSION" \
-  --notes "$RELEASE_NOTES"
-
-# 上传资产
-echo "Uploading assets..."
-gc release upload v$VERSION \
-  dist/gc_${VERSION}_amd64.deb \
-  dist/gc_${VERSION}_arm64.deb \
-  dist/gc-${VERSION}-1.x86_64.rpm \
-  dist/gc-${VERSION}-1.aarch64.rpm \
-  -R $REPO
-
-echo "Done! Release v$VERSION published."
-```
-
----
-
 ## 构建 PyPI 包
 
 ### 1. 前置要求
@@ -503,6 +328,201 @@ twine upload --repository testpypi dist/*
 
 # 从 TestPyPI 安装测试
 pip install --index-url https://test.pypi.org/simple/ gitcode-cli
+```
+
+---
+
+## 发布 Release
+
+### 1. 创建 Release
+
+```bash
+gc release create v0.3.0 -R owner/repo \
+  --title "gc v0.3.0" \
+  --notes "Release notes here"
+```
+
+> **注意**：`--notes` 参数是必需的，不带此参数可能返回 400 错误。
+
+### 2. Release Notes 模板
+
+创建 Release 时，**必须使用完整的下载路径**：
+
+```
+https://gitcode.com/gitcode-cli/cli/releases/download/v{VERSION}/{FILENAME}
+```
+
+**推荐模板**：
+
+```markdown
+## 更新内容
+
+### 新功能
+- 功能描述
+
+### Bug 修复
+- 修复描述
+
+### 修复的 Issue
+- Fixes #XX
+
+## 安装方式
+
+### Linux 二进制文件
+\`\`\`
+# AMD64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_amd64
+chmod +x gc_linux_amd64
+sudo mv gc_linux_amd64 /usr/local/bin/gc
+
+# ARM64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_arm64
+chmod +x gc_linux_arm64
+sudo mv gc_linux_arm64 /usr/local/bin/gc
+\`\`\`
+
+### Wheel 包（推荐）
+\`\`\`
+# 创建虚拟环境
+python3 -m venv .venv
+source .venv/bin/activate       # Linux/macOS
+# .venv\Scripts\activate       # Windows
+
+# 安装（一行命令）
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
+\`\`\`
+
+### DEB (Debian/Ubuntu)
+\`\`\`
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_amd64.deb
+sudo dpkg -i gc_0.3.2_amd64.deb
+\`\`\`
+
+### RPM (RHEL/CentOS/Fedora)
+\`\`\`
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.x86_64.rpm
+sudo rpm -i gc-0.3.2-1.x86_64.rpm
+\`\`\`
+```
+
+> **重要**：所有下载链接必须使用完整路径，禁止只写 `pip install xxx.whl` 不提供下载地址！
+
+### 3. 上传资产
+
+```bash
+# 上传单个文件
+gc release upload v0.3.0 dist/gc_0.3.2_amd64.deb -R owner/repo
+
+# 上传所有包（包括 wheel）
+gc release upload v0.3.0 \
+  dist/gc_0.3.2_amd64.deb \
+  dist/gc_0.3.2_arm64.deb \
+  dist/gc-0.3.2-1.x86_64.rpm \
+  dist/gc-0.3.2-1.aarch64.rpm \
+  dist/gitcode_cli-0.3.2-py3-none-any.whl \
+  -R owner/repo
+```
+
+### 4. 查看 Release
+
+```bash
+gc release view v0.3.0 -R owner/repo
+```
+
+### 5. 列出所有 Releases
+
+```bash
+gc release list -R owner/repo
+```
+
+### 6. 下载资产
+
+```bash
+# 下载所有资产
+gc release download v0.3.0 -R owner/repo
+
+# 下载到指定目录
+gc release download v0.3.0 -R owner/repo -o ./downloads/
+
+# 下载指定文件
+gc release download v0.3.0 gc_0.3.2_amd64.deb -R owner/repo
+```
+
+---
+
+## 完整示例
+
+以下是一个完整的打包和发布流程：
+
+```bash
+#!/bin/bash
+set -e
+
+# 配置
+VERSION="0.3.0"
+REPO="owner/repo"
+TOKEN="your_token"
+
+# nfpm 路径（根据实际情况修改）
+# 如果 nfpm 在 PATH 中，使用: NFPAM="nfpm"
+# 如果 nfpm 不在 PATH 中，使用完整路径: NFPAM="$HOME/go/bin/nfpm"
+NFPAM="$HOME/go/bin/nfpm"
+
+# 设置 Token
+export GC_TOKEN="$TOKEN"
+
+# 创建输出目录
+mkdir -p dist
+
+# 构建二进制文件
+echo "Building binaries..."
+GOOS=linux GOARCH=amd64 go build -o dist/gc_linux_amd64 ./cmd/gc
+GOOS=linux GOARCH=arm64 go build -o dist/gc_linux_arm64 ./cmd/gc
+
+# 更新版本号
+echo "Updating version..."
+sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-amd64.yaml
+sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-arm64.yaml
+
+# 构建 DEB 包
+echo "Building DEB packages..."
+$NFPAM package -f nfpm-amd64.yaml -p deb -t dist/
+$NFPAM package -f nfpm-arm64.yaml -p deb -t dist/
+
+# 构建 RPM 包
+echo "Building RPM packages..."
+$NFPAM package -f nfpm-amd64.yaml -p rpm -t dist/
+$NFPAM package -f nfpm-arm64.yaml -p rpm -t dist/
+
+# 创建 Release（使用完整的 Release Notes）
+echo "Creating release..."
+RELEASE_NOTES="## 更新内容
+
+### 安装方式
+
+#### Linux 二进制
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v${VERSION}/gc_linux_amd64
+chmod +x gc_linux_amd64 && sudo mv gc_linux_amd64 /usr/local/bin/gc
+
+#### Wheel 包（推荐）
+python3 -m venv .venv
+source .venv/bin/activate       # Linux/macOS
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v${VERSION}/gitcode_cli-${VERSION}-py3-none-any.whl"
+
+gc release create v$VERSION -R $REPO \
+  --title "gc v$VERSION" \
+  --notes "$RELEASE_NOTES"
+
+# 上传资产
+echo "Uploading assets..."
+gc release upload v$VERSION \
+  dist/gc_${VERSION}_amd64.deb \
+  dist/gc_${VERSION}_arm64.deb \
+  dist/gc-${VERSION}-1.x86_64.rpm \
+  dist/gc-${VERSION}-1.aarch64.rpm \
+  -R $REPO
+
+echo "Done! Release v$VERSION published."
 ```
 
 ---

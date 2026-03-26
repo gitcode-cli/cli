@@ -103,6 +103,82 @@ func ForkRepo(client *Client, owner, name string) (*Repository, error) {
 	return &repo, nil
 }
 
+// CommitStatistics represents code contribution statistics
+type CommitStatistics struct {
+	Commits    []CommitStatItem `json:"commits"`
+	Statistics []StatItem       `json:"statistics"`
+	Total      int              `json:"total"`
+}
+
+// CommitStatItem represents a single commit stat item
+type CommitStatItem struct {
+	Author  string `json:"author"`
+	Commits int    `json:"commits"`
+}
+
+// StatItem represents a statistics item
+type StatItem struct {
+	Author    string `json:"author"`
+	Additions int    `json:"additions"`
+	Deletions int    `json:"deletions"`
+	Total     int    `json:"total"`
+}
+
+// CommitStatsOptions represents options for getting commit statistics
+type CommitStatsOptions struct {
+	BranchName string `url:"branch_name,omitempty"`
+	Author     string `url:"author,omitempty"`
+	OnlySelf   bool   `url:"only_self,omitempty"`
+	Since      string `url:"since,omitempty"`
+	Until      string `url:"until,omitempty"`
+}
+
+// GetCommitStatistics gets code contribution statistics for a repository
+func GetCommitStatistics(client *Client, owner, repo string, opts *CommitStatsOptions) (*CommitStatistics, error) {
+	path := "/" + owner + "/" + repo + "/repository/commit_statistics"
+
+	// Build query string
+	params := []string{}
+	if opts != nil {
+		if opts.BranchName != "" {
+			params = append(params, "branch_name="+opts.BranchName)
+		}
+		if opts.Author != "" {
+			params = append(params, "author="+opts.Author)
+		}
+		if opts.OnlySelf {
+			params = append(params, "only_self=true")
+		}
+		if opts.Since != "" {
+			params = append(params, "since="+opts.Since)
+		}
+		if opts.Until != "" {
+			params = append(params, "until="+opts.Until)
+		}
+	}
+	if len(params) > 0 {
+		path += "?" + stringsJoin(params, "&")
+	}
+
+	var stats CommitStatistics
+	err := client.Get(path, &stats)
+	if err != nil {
+		return nil, err
+	}
+	return &stats, nil
+}
+
+func stringsJoin(s []string, sep string) string {
+	result := ""
+	for i, v := range s {
+		if i > 0 {
+			result += sep
+		}
+		result += v
+	}
+	return result
+}
+
 func itoa(i int) string {
 	if i <= 0 {
 		return "30"

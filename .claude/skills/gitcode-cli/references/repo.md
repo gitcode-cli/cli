@@ -55,3 +55,23 @@ gc repo fork owner/repo --clone
 # 删除仓库（危险操作，需确认）
 gc repo delete owner/repo
 ```
+
+## repo stats - 代码贡献统计
+
+```bash
+# 获取 main 分支代码贡献统计
+gc repo stats --branch main -R owner/repo
+
+# 按作者筛选
+gc repo stats --branch main --author username -R owner/repo
+
+# 仅显示个人统计
+gc repo stats --branch main --only-self -R owner/repo
+
+# 指定日期范围
+gc repo stats --branch main --since 2024-01-01 --until 2024-12-31 -R owner/repo
+```
+
+---
+
+**最后更新**: 2026-03-26

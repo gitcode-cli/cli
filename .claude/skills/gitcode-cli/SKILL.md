@@ -44,11 +44,14 @@ gc auth login --token YOUR_TOKEN
 |------|------|
 | `gc auth login` | 登录认证 |
 | `gc repo clone owner/repo` | 克隆仓库 |
+| `gc repo stats --branch main` | 代码贡献统计 |
 | `gc issue create -R owner/repo` | 创建 Issue |
 | `gc issue list -R owner/repo` | 列出 Issues |
 | `gc pr create -R owner/repo` | 创建 PR |
 | `gc pr list -R owner/repo` | 列出 PRs |
 | `gc pr review <n> --approve` | 批准 PR |
+| `gc commit view <sha>` | 查看提交 |
+| `gc commit comments create <sha>` | 创建提交评论 |
 | `gc release create <tag>` | 创建 Release |
 
 ---
@@ -61,6 +64,7 @@ gc auth login --token YOUR_TOKEN
 - [仓库命令](references/repo.md)
 - [Issue 命令](references/issue.md)
 - [PR 命令](references/pr.md)
+- [Commit 命令](references/commit.md)
 - [Release 命令](references/release.md)
 - [标签和里程碑](references/label.md)
 

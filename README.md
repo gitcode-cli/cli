@@ -263,9 +263,10 @@ gc <command> <subcommand> [flags]
 
 Commands:
   auth        认证管理 (login, logout, status, token)
-  repo        仓库操作 (clone, create, list, view, fork, delete)
+  repo        仓库操作 (clone, create, list, view, fork, delete, stats)
   issue       Issue 管理 (create, list, view, close, reopen, comment)
   pr          PR 管理 (create, list, view, checkout, merge, close, reopen, review, diff, ready)
+  commit      Commit 管理 (view, diff, patch, comments)
   label       标签管理 (create, list, delete)
   milestone   里程碑管理 (create, list, view, delete)
   release     Release 管理 (create, list, view, upload, download, delete)

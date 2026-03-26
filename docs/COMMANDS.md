@@ -126,6 +126,22 @@ gc repo fork owner/repo --clone
 gc repo delete owner/repo
 ```
 
+### repo stats - 代码贡献统计
+
+```bash
+# 获取 main 分支代码贡献统计
+gc repo stats --branch main -R infra-test/gctest1
+
+# 按作者筛选
+gc repo stats --branch main --author username -R infra-test/gctest1
+
+# 仅显示个人统计
+gc repo stats --branch main --only-self -R infra-test/gctest1
+
+# 指定日期范围
+gc repo stats --branch main --since 2024-01-01 --until 2024-12-31 -R infra-test/gctest1
+```
+
 ---
 
 ## Issue 命令 (issue)
@@ -499,6 +515,78 @@ gc release edit v1.0.0 --notes "New release notes" -R infra-test/gctest1
 ```bash
 # 删除 Release
 gc release delete v1.0.0 -R infra-test/gctest1
+```
+
+---
+
+## Commit 命令 (commit)
+
+### commit view - 查看提交
+
+```bash
+# 查看提交详情
+gc commit view abc123 -R infra-test/gctest1
+
+# 显示变更文件
+gc commit view abc123 -R infra-test/gctest1 --show-diff
+
+# 输出 JSON 格式
+gc commit view abc123 -R infra-test/gctest1 --json
+
+# 在浏览器打开
+gc commit view abc123 -R infra-test/gctest1 --web
+```
+
+### commit diff - 获取提交差异
+
+```bash
+# 获取提交 diff
+gc commit diff abc123 -R infra-test/gctest1
+```
+
+### commit patch - 获取提交补丁
+
+```bash
+# 获取提交 patch
+gc commit patch abc123 -R infra-test/gctest1
+```
+
+### commit comments create - 创建提交评论
+
+```bash
+# 创建评论
+gc commit comments create abc123 --body "Nice work!" -R infra-test/gctest1
+```
+
+### commit comments view - 查看提交评论
+
+```bash
+# 查看指定评论
+gc commit comments view 123 -R infra-test/gctest1
+```
+
+### commit comments edit - 编辑提交评论
+
+```bash
+# 编辑评论
+gc commit comments edit 123 --body "Updated comment" -R infra-test/gctest1
+```
+
+### commit comments list - 列出仓库所有评论
+
+```bash
+# 列出所有评论
+gc commit comments list -R infra-test/gctest1
+
+# 分页
+gc commit comments list -R infra-test/gctest1 --page 1 --per-page 50
+```
+
+### commit comments list-by-sha - 列出指定提交的评论
+
+```bash
+# 列出某提交的所有评论
+gc commit comments list-by-sha abc123 -R infra-test/gctest1
 ```
 
 ---

@@ -195,10 +195,10 @@ ls -la dist/*.deb dist/*.rpm
 
 输出示例：
 ```
-dist/gc_0.3.0_amd64.deb
-dist/gc_0.3.0_arm64.deb
-dist/gc-0.3.0-1.x86_64.rpm
-dist/gc-0.3.0-1.aarch64.rpm
+dist/gc_0.3.1_amd64.deb
+dist/gc_0.3.1_arm64.deb
+dist/gc-0.3.1-1.x86_64.rpm
+dist/gc-0.3.1-1.aarch64.rpm
 ```
 
 ---
@@ -219,15 +219,15 @@ gc release create v0.3.0 -R owner/repo \
 
 ```bash
 # 上传单个文件
-gc release upload v0.3.0 dist/gc_0.3.0_amd64.deb -R owner/repo
+gc release upload v0.3.0 dist/gc_0.3.1_amd64.deb -R owner/repo
 
 # 上传所有包（包括 wheel）
 gc release upload v0.3.0 \
-  dist/gc_0.3.0_amd64.deb \
-  dist/gc_0.3.0_arm64.deb \
-  dist/gc-0.3.0-1.x86_64.rpm \
-  dist/gc-0.3.0-1.aarch64.rpm \
-  dist/gitcode_cli-0.3.0-py3-none-any.whl \
+  dist/gc_0.3.1_amd64.deb \
+  dist/gc_0.3.1_arm64.deb \
+  dist/gc-0.3.1-1.x86_64.rpm \
+  dist/gc-0.3.1-1.aarch64.rpm \
+  dist/gitcode_cli-0.3.1-py3-none-any.whl \
   -R owner/repo
 ```
 
@@ -253,7 +253,7 @@ gc release download v0.3.0 -R owner/repo
 gc release download v0.3.0 -R owner/repo -o ./downloads/
 
 # 下载指定文件
-gc release download v0.3.0 gc_0.3.0_amd64.deb -R owner/repo
+gc release download v0.3.0 gc_0.3.1_amd64.deb -R owner/repo
 ```
 
 ---
@@ -390,8 +390,8 @@ python -m build --wheel --sdist
 
 ```
 dist/
-├── gitcode_cli-0.3.0-py3-none-any.whl
-└── gitcode_cli-0.3.0.tar.gz
+├── gitcode_cli-0.3.1-py3-none-any.whl
+└── gitcode_cli-0.3.1.tar.gz
 ```
 
 ### 5. 本地测试安装
@@ -402,7 +402,7 @@ python -m venv /tmp/gc-test-env
 source /tmp/gc-test-env/bin/activate
 
 # 安装 wheel
-pip install dist/gitcode_cli-0.3.0-py3-none-any.whl
+pip install dist/gitcode_cli-0.3.1-py3-none-any.whl
 
 # 测试命令
 gc version
@@ -444,7 +444,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gitcode_cli-0.3.0-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.1/gitcode_cli-0.3.1-py3-none-any.whl
 ```
 
 ### PyPI（备选）
@@ -465,24 +465,24 @@ pip install -i https://pypi.org/simple/ gitcode-cli
 
 ```bash
 # 下载并安装
-wget https://gitcode.com/owner/repo/releases/download/v0.3.0/gc_0.3.0_amd64.deb
-sudo dpkg -i gc_0.3.0_amd64.deb
+wget https://gitcode.com/owner/repo/releases/download/v0.3.1/gc_0.3.1_amd64.deb
+sudo dpkg -i gc_0.3.1_amd64.deb
 
 # 或使用 gc 命令下载
-gc release download v0.3.0 gc_0.3.0_amd64.deb -R owner/repo
-sudo dpkg -i gc_0.3.0_amd64.deb
+gc release download v0.3.0 gc_0.3.1_amd64.deb -R owner/repo
+sudo dpkg -i gc_0.3.1_amd64.deb
 ```
 
 ### RPM (RHEL/CentOS/Fedora)
 
 ```bash
 # 下载并安装
-wget https://gitcode.com/owner/repo/releases/download/v0.3.0/gc-0.3.0-1.x86_64.rpm
-sudo rpm -i gc-0.3.0-1.x86_64.rpm
+wget https://gitcode.com/owner/repo/releases/download/v0.3.1/gc-0.3.1-1.x86_64.rpm
+sudo rpm -i gc-0.3.1-1.x86_64.rpm
 
 # 或使用 gc 命令下载
-gc release download v0.3.0 gc-0.3.0-1.x86_64.rpm -R owner/repo
-sudo rpm -i gc-0.3.0-1.x86_64.rpm
+gc release download v0.3.0 gc-0.3.1-1.x86_64.rpm -R owner/repo
+sudo rpm -i gc-0.3.1-1.x86_64.rpm
 ```
 
 ### 验证安装

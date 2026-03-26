@@ -16,19 +16,19 @@
 
 ```bash
 # 构建所有包（DEB + RPM + PyPI）
-./scripts/package.sh v0.2.12
+./scripts/package.sh v0.3.0
 
 # 仅构建 Linux 包（DEB + RPM）
-./scripts/package.sh v0.2.12 linux
+./scripts/package.sh v0.3.0 linux
 
 # 仅构建 DEB 包
-./scripts/package.sh v0.2.12 deb
+./scripts/package.sh v0.3.0 deb
 
 # 仅构建 PyPI 包
-./scripts/package.sh v0.2.12 pypi
+./scripts/package.sh v0.3.0 pypi
 
 # 发布用（DEB + RPM + PyPI）
-./scripts/package.sh v0.2.12 release
+./scripts/package.sh v0.3.0 release
 ```
 
 ### 构建目标
@@ -122,7 +122,7 @@ GOOS=linux GOARCH=arm64 go build -o dist/gc_linux_arm64 ./cmd/gc
 name: "gc"
 arch: "amd64"
 platform: "linux"
-version: "0.2.0"
+version: "0.3.0"
 section: "default"
 priority: "extra"
 maintainer: "gitcode-cli contributors"
@@ -149,7 +149,7 @@ contents:
 ### 3. 更新版本号
 
 ```bash
-VERSION="0.2.0"
+VERSION="0.3.0"
 
 # 更新 nfpm 配置文件中的版本号
 sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-amd64.yaml
@@ -188,10 +188,10 @@ ls -la dist/*.deb dist/*.rpm
 
 输出示例：
 ```
-dist/gc_0.2.0_amd64.deb
-dist/gc_0.2.0_arm64.deb
-dist/gc-0.2.0-1.x86_64.rpm
-dist/gc-0.2.0-1.aarch64.rpm
+dist/gc_0.3.0_amd64.deb
+dist/gc_0.3.0_arm64.deb
+dist/gc-0.3.0-1.x86_64.rpm
+dist/gc-0.3.0-1.aarch64.rpm
 ```
 
 ---
@@ -201,8 +201,8 @@ dist/gc-0.2.0-1.aarch64.rpm
 ### 1. 创建 Release
 
 ```bash
-gc release create v0.2.0 -R owner/repo \
-  --title "gc v0.2.0" \
+gc release create v0.3.0 -R owner/repo \
+  --title "gc v0.3.0" \
   --notes "Release notes here"
 ```
 
@@ -212,22 +212,22 @@ gc release create v0.2.0 -R owner/repo \
 
 ```bash
 # 上传单个文件
-gc release upload v0.2.0 dist/gc_0.2.0_amd64.deb -R owner/repo
+gc release upload v0.3.0 dist/gc_0.3.0_amd64.deb -R owner/repo
 
 # 上传所有包（包括 wheel）
-gc release upload v0.2.0 \
-  dist/gc_0.2.0_amd64.deb \
-  dist/gc_0.2.0_arm64.deb \
-  dist/gc-0.2.0-1.x86_64.rpm \
-  dist/gc-0.2.0-1.aarch64.rpm \
-  dist/gitcode_cli-0.2.0-py3-none-any.whl \
+gc release upload v0.3.0 \
+  dist/gc_0.3.0_amd64.deb \
+  dist/gc_0.3.0_arm64.deb \
+  dist/gc-0.3.0-1.x86_64.rpm \
+  dist/gc-0.3.0-1.aarch64.rpm \
+  dist/gitcode_cli-0.3.0-py3-none-any.whl \
   -R owner/repo
 ```
 
 ### 3. 查看 Release
 
 ```bash
-gc release view v0.2.0 -R owner/repo
+gc release view v0.3.0 -R owner/repo
 ```
 
 ### 4. 列出所有 Releases
@@ -240,13 +240,13 @@ gc release list -R owner/repo
 
 ```bash
 # 下载所有资产
-gc release download v0.2.0 -R owner/repo
+gc release download v0.3.0 -R owner/repo
 
 # 下载到指定目录
-gc release download v0.2.0 -R owner/repo -o ./downloads/
+gc release download v0.3.0 -R owner/repo -o ./downloads/
 
 # 下载指定文件
-gc release download v0.2.0 gc_0.2.0_amd64.deb -R owner/repo
+gc release download v0.3.0 gc_0.3.0_amd64.deb -R owner/repo
 ```
 
 ---
@@ -260,7 +260,7 @@ gc release download v0.2.0 gc_0.2.0_amd64.deb -R owner/repo
 set -e
 
 # 配置
-VERSION="0.2.0"
+VERSION="0.3.0"
 REPO="owner/repo"
 TOKEN="your_token"
 
@@ -360,7 +360,7 @@ GOOS=windows GOARCH=amd64 go build -o gc_cli/bin/gc-windows-amd64.exe ./cmd/gc
 确保 `pyproject.toml` 和 `gc_cli/__init__.py` 中的版本号一致：
 
 ```bash
-VERSION="0.2.5"
+VERSION="0.3.0"
 
 # 更新 pyproject.toml
 sed -i "s/version = \".*/version = \"$VERSION\"/" pyproject.toml
@@ -383,8 +383,8 @@ python -m build --wheel --sdist
 
 ```
 dist/
-├── gitcode_cli-0.2.5-py3-none-any.whl
-└── gitcode_cli-0.2.5.tar.gz
+├── gitcode_cli-0.3.0-py3-none-any.whl
+└── gitcode_cli-0.3.0.tar.gz
 ```
 
 ### 5. 本地测试安装
@@ -395,7 +395,7 @@ python -m venv /tmp/gc-test-env
 source /tmp/gc-test-env/bin/activate
 
 # 安装 wheel
-pip install dist/gitcode_cli-0.2.5-py3-none-any.whl
+pip install dist/gitcode_cli-0.3.0-py3-none-any.whl
 
 # 测试命令
 gc version
@@ -432,14 +432,14 @@ pip install --index-url https://test.pypi.org/simple/ gitcode-cli
 
 ```bash
 # 下载 wheel 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.0/gitcode_cli-0.2.0-py3-none-any.whl
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.0/gitcode_cli-0.3.0-py3-none-any.whl
 
 # 安装
-pip install gitcode_cli-0.2.0-py3-none-any.whl
+pip install gitcode_cli-0.3.0-py3-none-any.whl
 
 # 或使用 gc 命令下载
-gc release download v0.2.0 gitcode_cli-0.2.0-py3-none-any.whl -R gitcode-cli/cli
-pip install gitcode_cli-0.2.0-py3-none-any.whl
+gc release download v0.3.0 gitcode_cli-0.3.0-py3-none-any.whl -R gitcode-cli/cli
+pip install gitcode_cli-0.3.0-py3-none-any.whl
 ```
 
 ### PyPI（备选）
@@ -460,24 +460,24 @@ pip install -i https://pypi.org/simple/ gitcode-cli
 
 ```bash
 # 下载并安装
-wget https://gitcode.com/owner/repo/releases/download/v0.2.0/gc_0.2.0_amd64.deb
-sudo dpkg -i gc_0.2.0_amd64.deb
+wget https://gitcode.com/owner/repo/releases/download/v0.3.0/gc_0.3.0_amd64.deb
+sudo dpkg -i gc_0.3.0_amd64.deb
 
 # 或使用 gc 命令下载
-gc release download v0.2.0 gc_0.2.0_amd64.deb -R owner/repo
-sudo dpkg -i gc_0.2.0_amd64.deb
+gc release download v0.3.0 gc_0.3.0_amd64.deb -R owner/repo
+sudo dpkg -i gc_0.3.0_amd64.deb
 ```
 
 ### RPM (RHEL/CentOS/Fedora)
 
 ```bash
 # 下载并安装
-wget https://gitcode.com/owner/repo/releases/download/v0.2.0/gc-0.2.0-1.x86_64.rpm
-sudo rpm -i gc-0.2.0-1.x86_64.rpm
+wget https://gitcode.com/owner/repo/releases/download/v0.3.0/gc-0.3.0-1.x86_64.rpm
+sudo rpm -i gc-0.3.0-1.x86_64.rpm
 
 # 或使用 gc 命令下载
-gc release download v0.2.0 gc-0.2.0-1.x86_64.rpm -R owner/repo
-sudo rpm -i gc-0.2.0-1.x86_64.rpm
+gc release download v0.3.0 gc-0.3.0-1.x86_64.rpm -R owner/repo
+sudo rpm -i gc-0.3.0-1.x86_64.rpm
 ```
 
 ### 验证安装

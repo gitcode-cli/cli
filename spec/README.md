@@ -7,6 +7,7 @@
 ```
 spec/
 ├── README.md                # 本文件：文档索引
+├── development-workflow.md  # 开发工作流程（重要！）
 ├── coding-standards.md      # 编码规范
 ├── testing-guide.md         # 测试指南
 ├── command-template.md      # 命令开发模板
@@ -21,6 +22,12 @@ spec/
 ```
 
 ## 快速导航
+
+### 开发工作流程（重要！）
+
+| 文档 | 说明 |
+|------|------|
+| [开发工作流程](./development-workflow.md) | **完整流程、分支规范、禁止行为、检查清单** |
 
 ### 规范文档
 

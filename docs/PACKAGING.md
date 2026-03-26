@@ -549,4 +549,46 @@ $NFPAM package -f nfpm-amd64.yaml -p deb -t dist/
 
 ---
 
-**最后更新**: 2026-03-25
+## Release 说明编写规范
+
+### GitCode Markdown 渲染问题
+
+**已知问题**：GitCode 的 Markdown 渲染器会错误地将代码块内的 `#` 渲染成标题。
+
+**错误示例**：
+
+```bash
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
+```
+
+渲染后 `# Windows` 会显示为一级标题，导致格式混乱。
+
+**正确做法**：
+
+1. **移除语法高亮**：使用普通代码块，不指定 `bash`
+2. **注释单独成行**：将 `#` 注释放在单独一行
+3. **避免行内注释**：不要在命令后使用 `# 注释` 格式
+
+**推荐格式**：
+
+```
+# 创建虚拟环境
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Windows 用户使用
+.venv\Scripts\activate
+```
+
+或使用纯文本说明：
+
+```
+python3 -m venv .venv
+source .venv/bin/activate       Linux/macOS
+.venv\Scripts\activate          Windows
+```
+
+---
+
+**最后更新**: 2026-03-26

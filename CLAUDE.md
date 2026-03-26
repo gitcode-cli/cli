@@ -15,10 +15,11 @@
 ## 关键要求（必须遵守）
 
 1. **命名规范**: 命令名 `gc`，禁止使用 `gt`；环境变量 `GC_*`
-2. **测试仓库**: 只能用 `infra-test/gctest1` 和 `gitcode-cli/cli`
-3. **开发流程**: Issue → 分支 → 开发 → 测试 → PR → 合并
-4. **安全**: Token 必须使用环境变量，禁止硬编码
-5. **提交限制**: 单次提交不超过 800 行
+2. **测试仓库**: 只能用 `infra-test/gctest1` 或 `infra-test` 组织下的仓库
+3. **测试要求**: 代码修改后必须运行单元测试 + 实际命令测试
+4. **开发流程**: Issue → 分支 → 开发 → 测试 → PR → 合并
+5. **安全**: Token 必须使用环境变量，禁止硬编码
+6. **提交限制**: 单次提交不超过 800 行
 
 ---
 
@@ -64,6 +65,7 @@
 | [开发工作流程](./spec/development-workflow.md) | 完整流程、分支规范、禁止行为 |
 | [编码规范](./spec/coding-standards.md) | 命名、文件结构、错误处理 |
 | [测试指南](./spec/testing-guide.md) | 单元测试、实际命令测试 |
+| [测试流程](./spec/workflows/test-workflow.md) | 测试仓库限制、测试检查清单 |
 | [命令开发模板](./spec/command-template.md) | 新命令开发模板和示例 |
 | [安全规范](./spec/security.md) | Token 管理、敏感信息保护 |
 
@@ -75,11 +77,13 @@
 # 构建
 go build -o ./gc ./cmd/gc
 
-# 测试
+# 单元测试
 go test ./...
 
-# 实际命令测试
-./gc issue list -R infra-test/gctest1
+# 实际命令测试（使用测试仓库 infra-test/gctest1）
+./gc issue list -R infra-test/gctest1 --state open
+./gc pr list -R infra-test/gctest1 --state all
+./gc repo view infra-test/gctest1
 ```
 
 ## 参考资源

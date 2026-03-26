@@ -2,6 +2,21 @@
 
 本文档定义测试的完整流程，与 [测试指南](../testing-guide.md) 配合使用。
 
+## ⚠️ 重要：测试仓库限制
+
+**必须使用以下测试仓库进行实际命令测试：**
+
+| 仓库 | 用途 |
+|------|------|
+| `infra-test/gctest1` | 功能测试、集成测试（首选） |
+| `infra-test` 组织下其他仓库 | 其他测试场景 |
+
+**禁止行为：**
+- ❌ 使用个人仓库测试
+- ❌ 使用其他组织或用户的仓库测试
+- ❌ 使用 `gitcode-cli/cli` 测试
+- ❌ 在生产环境仓库测试
+
 ## 流程概览
 
 ```
@@ -51,7 +66,7 @@ export GC_TOKEN=your_token
 ./gc auth status
 
 # 3. 确认测试仓库
-# 只能使用：infra-test/gctest1 或 gitcode-cli/cli
+# 只能使用：infra-test/gctest1 或 infra-test 组织下仓库
 ```
 
 ### 测试步骤

@@ -63,12 +63,13 @@ secrets.yaml
 
 | 仓库 | 用途 |
 |------|------|
-| `infra-test/gctest1` | 主要测试仓库 |
-| `gitcode-cli/cli` | 项目自身测试 |
+| `infra-test/gctest1` | 主要测试仓库（首选） |
+| `infra-test` 组织下其他仓库 | 其他测试场景 |
 
 **禁止行为：**
 - ❌ 使用个人仓库测试
 - ❌ 使用其他组织或用户的仓库测试
+- ❌ 使用 `gitcode-cli/cli` 测试
 
 ### 测试 Token 来源
 

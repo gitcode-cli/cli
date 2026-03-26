@@ -39,8 +39,8 @@
 
 | 场景 | 文档 | 说明 |
 |------|------|------|
-| 发布版本 | [RELEASE.md](./RELEASE.md) | GitHub Actions 自动发布流程 |
-| 构建打包 | [docs/PACKAGING.md](./docs/PACKAGING.md) | DEB/RPM/PyPI 打包 |
+| CI 自动发布 | [RELEASE.md](./RELEASE.md) | GitHub Actions 自动发布流程 |
+| 本地打包发布 | [docs/PACKAGING.md](./docs/PACKAGING.md) | 本地构建 DEB/RPM/PyPI 包 |
 | 安全策略 | [SECURITY.md](./SECURITY.md) | Token 管理、敏感信息保护 |
 
 ### 完整开发流程

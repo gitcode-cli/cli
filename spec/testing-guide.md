@@ -1,0 +1,219 @@
+# 测试指南
+
+本文档说明 gitcode-cli 项目的测试方法和规范。
+
+## 单元测试
+
+### 运行测试
+
+```bash
+# 运行所有测试
+go test ./...
+
+# 运行特定包的测试
+go test ./pkg/cmd/issue/...
+
+# 运行特定测试用例
+go test -run TestLabelCmd ./pkg/cmd/issue/label/...
+
+# 查看测试覆盖率
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+
+# 运行集成测试
+go test -tags=integration ./...
+```
+
+### 测试文件命名
+- 测试文件与源文件同目录
+- 命名格式：`<source>_test.go`
+
+```
+pkg/cmd/issue/label/
+├── label.go        # 源文件
+└── label_test.go   # 测试文件
+```
+
+### 测试函数命名
+- 函数名以 `Test` 开头
+- 描述测试场景
+
+```go
+func TestLabelCmd(t *testing.T) {}
+func TestLabelCmdWithMultipleLabels(t *testing.T) {}
+func TestLabelCmdWithError(t *testing.T) {}
+```
+
+### 测试用例模板
+
+```go
+func TestXxxCommand(t *testing.T) {
+    tests := []struct {
+        name    string
+        args    []string
+        wantErr bool
+    }{
+        {
+            name:    "normal case",
+            args:    []string{"--flag", "value"},
+            wantErr: false,
+        },
+        {
+            name:    "error case",
+            args:    []string{},
+            wantErr: true,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // 测试逻辑
+        })
+    }
+}
+```
+
+### 测试覆盖率要求
+- 新功能代码覆盖率 ≥ 70%
+- 核心模块覆盖率 ≥ 80%
+
+## 实际命令测试
+
+**重要：单元测试无法覆盖所有场景，必须进行实际命令测试！**
+
+### 测试仓库
+
+**只能使用以下测试仓库：**
+
+| 仓库 | 用途 |
+|------|------|
+| `infra-test/gctest1` | 主要测试仓库 |
+| `gitcode-cli/cli` | 项目自身测试 |
+
+**禁止行为：**
+- ❌ 使用个人仓库测试
+- ❌ 使用其他组织或用户的仓库测试
+- ❌ 在生产环境测试
+
+### 测试前准备
+
+```bash
+# 设置 Token
+export GC_TOKEN=your_token
+
+# 验证认证状态
+./gc auth status
+```
+
+### 测试步骤
+
+1. **构建本地版本**
+   ```bash
+   go build -o ./gc ./cmd/gc
+   ```
+
+2. **执行测试命令**
+   ```bash
+   # 示例：测试 Issue label 命令
+   ./gc issue label 1 --add bug -R infra-test/gctest1
+   ./gc issue label 1 --list -R infra-test/gctest1
+
+   # 示例：测试 PR 创建
+   ./gc pr create --title "Test PR" --body "Test body" -R infra-test/gctest1
+   ```
+
+3. **验证结果**
+   - 检查命令输出是否正确
+   - 在 Web 界面验证操作结果
+   - 检查错误信息是否清晰
+
+### 测试检查清单
+
+- [ ] 正常流程测试通过
+- [ ] 边界条件测试通过
+- [ ] 错误处理测试通过
+- [ ] 输出格式正确
+- [ ] 错误信息清晰
+
+## 测试用例规范
+
+### 覆盖范围
+每个新命令的测试用例应覆盖：
+
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| 正常流程 | 正常使用场景 | `--flag value` |
+| 边界条件 | 极端输入 | 空值、最大值、特殊字符 |
+| 错误处理 | 预期错误 | 缺少参数、无效输入 |
+
+### 示例
+
+```go
+func TestIssueCreate(t *testing.T) {
+    tests := []struct {
+        name    string
+        args    []string
+        wantErr bool
+    }{
+        {
+            name:    "create with title and body",
+            args:    []string{"--title", "Test", "--body", "Body"},
+            wantErr: false,
+        },
+        {
+            name:    "create without title",
+            args:    []string{"--body", "Body"},
+            wantErr: true,  // 缺少必填参数
+        },
+        {
+            name:    "create with empty title",
+            args:    []string{"--title", "", "--body", "Body"},
+            wantErr: true,  // 标题为空
+        },
+    }
+    // ...
+}
+```
+
+## 测试工具
+
+### 表格驱动测试
+推荐使用表格驱动测试：
+
+```go
+tests := []struct {
+    name string
+    input string
+    want string
+}{
+    {"case1", "input1", "output1"},
+    {"case2", "input2", "output2"},
+}
+
+for _, tt := range tests {
+    t.Run(tt.name, func(t *testing.T) {
+        got := process(tt.input)
+        if got != tt.want {
+            t.Errorf("got %q, want %q", got, tt.want)
+        }
+    })
+}
+```
+
+### Mock 和 Stub
+对于外部依赖，使用接口和 mock：
+
+```go
+type MockClient struct {
+    response *Response
+    err      error
+}
+
+func (m *MockClient) Do(req *Request) (*Response, error) {
+    return m.response, m.err
+}
+```
+
+---
+
+**最后更新**: 2026-03-26

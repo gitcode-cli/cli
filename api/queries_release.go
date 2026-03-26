@@ -1,40 +1,36 @@
 package api
 
-import (
-	"time"
-)
-
 // Release represents a GitCode release
 type Release struct {
-	ID              interface{}    `json:"id"`
-	TagName         string         `json:"tag_name"`
-	TargetCommitish string         `json:"target_commitish"`
-	Name            string         `json:"name"`
-	Body            string         `json:"body"`
-	Draft           bool           `json:"draft"`
-	Prerelease      bool           `json:"prerelease"`
-	HTMLURL         string         `json:"html_url"`
-	AssetsURL       string         `json:"assets_url"`
-	UploadURL       string         `json:"upload_url"`
-	CreatedAt       time.Time      `json:"created_at"`
-	PublishedAt     *time.Time     `json:"published_at"`
-	Author          *User          `json:"author"`
+	ID              interface{}   `json:"id"`
+	TagName         string        `json:"tag_name"`
+	TargetCommitish string        `json:"target_commitish"`
+	Name            string        `json:"name"`
+	Body            string        `json:"body"`
+	Draft           bool          `json:"draft"`
+	Prerelease      bool          `json:"prerelease"`
+	HTMLURL         string        `json:"html_url"`
+	AssetsURL       string        `json:"assets_url"`
+	UploadURL       string        `json:"upload_url"`
+	CreatedAt       FlexibleTime  `json:"created_at"`
+	PublishedAt     *FlexibleTime `json:"published_at"`
+	Author          *User         `json:"author"`
 	Assets          []ReleaseAsset `json:"assets"`
 }
 
 // ReleaseAsset represents an asset in a release
 type ReleaseAsset struct {
-	ID                 int       `json:"id"`
-	Name               string    `json:"name"`
-	Label              string    `json:"label"`
-	State              string    `json:"state"`
-	ContentType        string    `json:"content_type"`
-	Size               int       `json:"size"`
-	Downloads          int       `json:"download_count"`
-	URL                string    `json:"url"`
-	BrowserDownloadURL string    `json:"browser_download_url"`
-	CreatedAt          time.Time `json:"created_at"`
-	UpdatedAt          time.Time `json:"updated_at"`
+	ID                 int          `json:"id"`
+	Name               string       `json:"name"`
+	Label              string       `json:"label"`
+	State              string       `json:"state"`
+	ContentType        string       `json:"content_type"`
+	Size               int          `json:"size"`
+	Downloads          int          `json:"download_count"`
+	URL                string       `json:"url"`
+	BrowserDownloadURL string       `json:"browser_download_url"`
+	CreatedAt          FlexibleTime `json:"created_at"`
+	UpdatedAt          FlexibleTime `json:"updated_at"`
 }
 
 // AssetUploadURL represents the response from getting upload URL

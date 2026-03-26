@@ -140,7 +140,7 @@ func TestMilestone_Unmarshal(t *testing.T) {
 	// Sample milestone response
 	jsonResp := `{
 		"id": 1,
-		"number": "1",
+		"number": 1,
 		"title": "v1.0.0",
 		"description": "First release",
 		"state": "open"
@@ -152,8 +152,8 @@ func TestMilestone_Unmarshal(t *testing.T) {
 		t.Fatalf("Failed to unmarshal Milestone: %v", err)
 	}
 
-	if milestone.Number != "1" {
-		t.Errorf("Expected Number '1', got '%s'", milestone.Number)
+	if milestone.Number != 1 {
+		t.Errorf("Expected Number 1, got '%d'", milestone.Number)
 	}
 	if milestone.Title != "v1.0.0" {
 		t.Errorf("Expected Title 'v1.0.0', got '%s'", milestone.Title)

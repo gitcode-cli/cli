@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"time"
 )
 
 // PullRequest represents a GitCode pull request
@@ -23,8 +22,8 @@ type PullRequest struct {
 	Mergeable   *bool       `json:"mergeable"`
 	MergeState  interface{} `json:"mergeable_state"`
 	Draft       bool        `json:"draft"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	CreatedAt   FlexibleTime `json:"created_at"`
+	UpdatedAt   FlexibleTime `json:"updated_at"`
 	ClosedAt    *string     `json:"closed_at"`
 	Comments    int         `json:"comments"`
 	Commits     int         `json:"commits"`
@@ -46,25 +45,25 @@ type PRBranch struct {
 
 // PRComment represents a comment on a PR
 type PRComment struct {
-	ID           interface{} `json:"id"`
-	DiscussionID string      `json:"discussion_id"`
-	Body         string      `json:"body"`
-	User         *User       `json:"user"`
-	CreatedAt    time.Time   `json:"created_at"`
-	UpdatedAt    time.Time   `json:"updated_at"`
-	CommentType  string      `json:"comment_type"`
-	Resolved     bool        `json:"resolved"`
-	DiffFile     string      `json:"diff_file"`
-	DiffPosition interface{} `json:"diff_position"`
+	ID           interface{}  `json:"id"`
+	DiscussionID string       `json:"discussion_id"`
+	Body         string       `json:"body"`
+	User         *User        `json:"user"`
+	CreatedAt    FlexibleTime `json:"created_at"`
+	UpdatedAt    FlexibleTime `json:"updated_at"`
+	CommentType  string       `json:"comment_type"`
+	Resolved     bool         `json:"resolved"`
+	DiffFile     string       `json:"diff_file"`
+	DiffPosition interface{}  `json:"diff_position"`
 }
 
 // PRReview represents a review on a PR
 type PRReview struct {
-	ID          interface{} `json:"id"`
-	User        *User       `json:"user"`
-	Body        string      `json:"body"`
-	State       string      `json:"state"`
-	SubmittedAt time.Time   `json:"submitted_at"`
+	ID          interface{}  `json:"id"`
+	User        *User        `json:"user"`
+	Body        string       `json:"body"`
+	State       string       `json:"state"`
+	SubmittedAt FlexibleTime `json:"submitted_at"`
 }
 
 // PRListOptions represents options for listing PRs

@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/url"
-	"time"
 )
 
 // Issue represents a GitCode issue
@@ -18,9 +17,9 @@ type Issue struct {
 	Assignees   []*User     `json:"assignees"`
 	Labels      []*Label    `json:"labels"`
 	Milestone   *Milestone  `json:"milestone"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
-	ClosedAt    *time.Time  `json:"closed_at"`
+	CreatedAt   FlexibleTime `json:"created_at"`
+	UpdatedAt   FlexibleTime `json:"updated_at"`
+	ClosedAt    *FlexibleTime `json:"closed_at"`
 	Comments    int         `json:"comments"`
 }
 
@@ -44,11 +43,11 @@ type Milestone struct {
 
 // IssueComment represents a comment on an issue
 type IssueComment struct {
-	ID        interface{} `json:"id"`
-	Body      string      `json:"body"`
-	User      *User       `json:"user"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	ID        interface{}  `json:"id"`
+	Body      string       `json:"body"`
+	User      *User        `json:"user"`
+	CreatedAt FlexibleTime `json:"created_at"`
+	UpdatedAt FlexibleTime `json:"updated_at"`
 }
 
 // IssueListOptions represents options for listing issues
@@ -351,24 +350,24 @@ func RemoveIssueLabel(client *Client, owner, repo string, number int, label stri
 
 // IssuePR represents a Pull Request associated with an issue
 type IssuePR struct {
-	ID            interface{} `json:"id"`
-	HTMLURL       string      `json:"html_url"`
-	DiffURL       string      `json:"diff_url"`
-	Number        int         `json:"number"`
-	State         string      `json:"state"`
-	Title         string      `json:"title"`
-	Body          string      `json:"body"`
-	Labels        []*Label    `json:"labels"`
-	User          *User       `json:"user"`
-	Head          *PRBranch   `json:"head"`
-	Base          *PRBranch   `json:"base"`
-	Assignees     []*User     `json:"assignees"`
-	Testers       []*User     `json:"testers"`
-	CreatedAt     time.Time   `json:"created_at"`
-	UpdatedAt     time.Time   `json:"updated_at"`
-	MergedAt      *time.Time  `json:"merged_at"`
-	ClosedAt      *time.Time  `json:"closed_at"`
-	CanMergeCheck bool        `json:"can_merge_check"`
+	ID            interface{}   `json:"id"`
+	HTMLURL       string        `json:"html_url"`
+	DiffURL       string        `json:"diff_url"`
+	Number        int           `json:"number"`
+	State         string        `json:"state"`
+	Title         string        `json:"title"`
+	Body          string        `json:"body"`
+	Labels        []*Label      `json:"labels"`
+	User          *User         `json:"user"`
+	Head          *PRBranch     `json:"head"`
+	Base          *PRBranch     `json:"base"`
+	Assignees     []*User       `json:"assignees"`
+	Testers       []*User       `json:"testers"`
+	CreatedAt     FlexibleTime  `json:"created_at"`
+	UpdatedAt     FlexibleTime  `json:"updated_at"`
+	MergedAt      *FlexibleTime `json:"merged_at"`
+	ClosedAt      *FlexibleTime `json:"closed_at"`
+	CanMergeCheck bool          `json:"can_merge_check"`
 }
 
 // ListRepoMilestones lists milestones for a repository

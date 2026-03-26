@@ -258,16 +258,6 @@ git checkout main && git pull
 - ❌ 在文档中记录真实凭证
 - ❌ 使用非授权的测试仓库
 
-## 详细流程文档
-
-| 文档 | 说明 |
-|------|------|
-| [Issue 流程](./workflows/issue-workflow.md) | Issue 创建、标签、验证、关闭 |
-| [PR 流程](./workflows/pr-workflow.md) | 分支创建、代码提交、PR 创建与合并 |
-| [评审流程](./workflows/review-workflow.md) | Issue 评论、PR 审查评论 |
-| [测试流程](./workflows/test-workflow.md) | 单元测试、实际命令测试 |
-| [安全规范](./security.md) | Token 管理、敏感信息保护、安全审查 |
-
 ## 完整流程示例
 
 ```bash

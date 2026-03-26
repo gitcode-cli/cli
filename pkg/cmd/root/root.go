@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth"
+	commitcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/commit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone"
@@ -44,6 +45,7 @@ It provides convenient access to GitCode features including:
 	cmd.AddCommand(repo.NewCmdRepo(f))
 	cmd.AddCommand(issue.NewCmdIssue(f))
 	cmd.AddCommand(pr.NewCmdPR(f))
+	cmd.AddCommand(commitcmd.NewCmdCommit(f))
 	cmd.AddCommand(label.NewCmdLabel(f))
 	cmd.AddCommand(milestone.NewCmdMilestone(f))
 	cmd.AddCommand(release.NewCmdRelease(f))

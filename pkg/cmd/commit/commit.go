@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/comments"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/diff"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/patch"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/view"
@@ -39,6 +40,7 @@ func NewCmdCommit(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(view.NewCmdView(f, nil))
 	cmd.AddCommand(diff.NewCmdDiff(f, nil))
 	cmd.AddCommand(patch.NewCmdPatch(f, nil))
+	cmd.AddCommand(comments.NewCmdComments(f))
 
 	return cmd
 }

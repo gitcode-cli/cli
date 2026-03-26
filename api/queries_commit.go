@@ -89,3 +89,97 @@ func GetCommitPatch(client *Client, owner, repo, sha string) (string, error) {
 
 	return fmt.Sprintf("%v", result), nil
 }
+
+// CommitComment represents a commit comment
+type CommitComment struct {
+	ID        int     `json:"id"`
+	Body      string  `json:"body"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	User      *User   `json:"user"`
+	Target    *Commit `json:"target"`
+}
+
+// CreateCommitComment creates a comment on a commit
+func CreateCommitComment(client *Client, owner, repo, sha, body string) (*CommitComment, error) {
+	path := "/repos/" + owner + "/" + repo + "/commits/" + sha + "/comments"
+	payload := map[string]string{"body": body}
+
+	var comment CommitComment
+	err := client.Post(path, payload, &comment)
+	if err != nil {
+		return nil, err
+	}
+	return &comment, nil
+}
+
+// GetCommitComment fetches a single commit comment
+func GetCommitComment(client *Client, owner, repo string, id int) (*CommitComment, error) {
+	path := fmt.Sprintf("/repos/%s/%s/comments/%d", owner, repo, id)
+
+	var comment CommitComment
+	err := client.Get(path, &comment)
+	if err != nil {
+		return nil, err
+	}
+	return &comment, nil
+}
+
+// UpdateCommitComment updates a commit comment
+func UpdateCommitComment(client *Client, owner, repo string, id int, body string) (*CommitComment, error) {
+	path := fmt.Sprintf("/repos/%s/%s/comments/%d", owner, repo, id)
+	payload := map[string]string{"body": body}
+
+	var comment CommitComment
+	err := client.Patch(path, payload, &comment)
+	if err != nil {
+		return nil, err
+	}
+	return &comment, nil
+}
+
+// ListCommitComments lists all commit comments in a repository
+func ListCommitComments(client *Client, owner, repo string, opts *ListOptions) ([]CommitComment, error) {
+	path := "/repos/" + owner + "/" + repo + "/comments"
+	if opts != nil && opts.PerPage > 0 {
+		path += fmt.Sprintf("?per_page=%d&page=%d", opts.PerPage, opts.Page)
+		if opts.Order != "" {
+			path += "&order=" + opts.Order
+		}
+	}
+
+	var comments []CommitComment
+	err := client.Get(path, &comments)
+	if err != nil {
+		return nil, err
+	}
+	return comments, nil
+}
+
+// ListCommentsForCommit lists comments for a specific commit
+func ListCommentsForCommit(client *Client, owner, repo, sha string, opts *ListOptions) ([]CommitComment, error) {
+	path := "/repos/" + owner + "/" + repo + "/commits/" + sha + "/comments"
+	if opts != nil && opts.PerPage > 0 {
+		path += fmt.Sprintf("?per_page=%d&page=%d", opts.PerPage, opts.Page)
+	}
+
+	var comments []CommitComment
+	err := client.Get(path, &comments)
+	if err != nil {
+		return nil, err
+	}
+	return comments, nil
+}
+
+// ListOptions represents common list options
+type ListOptions struct {
+	Page    int
+	PerPage int
+	Order   string
+}
+
+// CommitCommentsBySHAOptions represents options for listing comments by SHA
+type CommitCommentsBySHAOptions struct {
+	Page    int
+	PerPage int
+}

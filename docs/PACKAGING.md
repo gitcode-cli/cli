@@ -444,8 +444,16 @@ pip install gitcode_cli-0.2.0-py3-none-any.whl
 
 ### PyPI（备选）
 
+> ⚠️ **注意**: PyPI 官方源可能有同步延迟，推荐使用上方 wheel 包下载
+
 ```bash
-pip install gitcode-cli
+# 创建虚拟环境
+python3 -m venv myenv
+source myenv/bin/activate  # Linux/macOS
+# myenv\Scripts\activate   # Windows
+
+# 使用官方 PyPI 源安装
+pip install -i https://pypi.org/simple/ gitcode-cli
 ```
 
 ### DEB (Debian/Ubuntu)

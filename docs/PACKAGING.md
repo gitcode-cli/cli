@@ -214,12 +214,13 @@ gc release create v0.2.0 -R owner/repo \
 # 上传单个文件
 gc release upload v0.2.0 dist/gc_0.2.0_amd64.deb -R owner/repo
 
-# 上传多个文件
+# 上传所有包（包括 wheel）
 gc release upload v0.2.0 \
   dist/gc_0.2.0_amd64.deb \
   dist/gc_0.2.0_arm64.deb \
   dist/gc-0.2.0-1.x86_64.rpm \
   dist/gc-0.2.0-1.aarch64.rpm \
+  dist/gitcode_cli-0.2.0-py3-none-any.whl \
   -R owner/repo
 ```
 
@@ -424,6 +425,28 @@ pip install --index-url https://test.pypi.org/simple/ gitcode-cli
 ---
 
 ## 安装指南
+
+### Wheel 包（跨平台，推荐）
+
+> **推荐**: 从 Release 归档下载 wheel 包，版本与发布一致。
+
+```bash
+# 下载 wheel 包
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.2.0/gitcode_cli-0.2.0-py3-none-any.whl
+
+# 安装
+pip install gitcode_cli-0.2.0-py3-none-any.whl
+
+# 或使用 gc 命令下载
+gc release download v0.2.0 gitcode_cli-0.2.0-py3-none-any.whl -R gitcode-cli/cli
+pip install gitcode_cli-0.2.0-py3-none-any.whl
+```
+
+### PyPI（备选）
+
+```bash
+pip install gitcode-cli
+```
 
 ### DEB (Debian/Ubuntu)
 

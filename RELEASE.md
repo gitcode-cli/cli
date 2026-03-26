@@ -79,10 +79,11 @@ pip install gitcode-cli==0.3.0
 
 | 产物类型 | 格式 | 架构 | 发布位置 |
 |---------|------|------|---------|
-| RPM | `.rpm` | x86_64, aarch64 | GitHub Artifacts |
-| DEB | `.deb` | amd64, arm64 | GitHub Artifacts |
+| RPM | `.rpm` | x86_64, aarch64 | GitHub Release |
+| DEB | `.deb` | amd64, arm64 | GitHub Release |
+| Wheel | `.whl` | 跨平台 | GitHub Release |
 | 源码包 | `.tar.gz` / `.zip` | all | GitHub Release |
-| PyPI | wheel | 跨平台 | PyPI |
+| PyPI | wheel | 跨平台 | PyPI 官方源 |
 
 ---
 

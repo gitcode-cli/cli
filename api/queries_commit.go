@@ -1,6 +1,9 @@
 package api
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // RepositoryCommit represents a detailed commit from the commits API
 type RepositoryCommit struct {
@@ -58,4 +61,31 @@ func GetCommit(client *Client, owner, repo, sha string, showDiff bool) (*Reposit
 		return nil, err
 	}
 	return &commit, nil
+}
+
+// GetCommitDiff fetches the diff of a commit
+func GetCommitDiff(client *Client, owner, repo, sha string) (string, error) {
+	path := "/repos/" + owner + "/" + repo + "/commit/" + sha + "/diff"
+
+	var result map[string]interface{}
+	err := client.Get(path, &result)
+	if err != nil {
+		return "", err
+	}
+
+	// Return formatted diff
+	return fmt.Sprintf("%v", result), nil
+}
+
+// GetCommitPatch fetches the patch of a commit
+func GetCommitPatch(client *Client, owner, repo, sha string) (string, error) {
+	path := "/repos/" + owner + "/" + repo + "/commit/" + sha + "/patch"
+
+	var result map[string]interface{}
+	err := client.Get(path, &result)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%v", result), nil
 }

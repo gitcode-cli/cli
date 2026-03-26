@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/diff"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/patch"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/view"
 )
 
@@ -23,8 +25,11 @@ func NewCmdCommit(f *cmdutil.Factory) *cobra.Command {
 			# View a commit
 			$ gc commit view abc123 -R owner/repo
 
-			# View commit with diff
+			# View commit with diff files
 			$ gc commit view abc123 -R owner/repo --show-diff
+
+			# Get commit diff
+			$ gc commit diff abc123 -R owner/repo
 		`),
 		Annotations: map[string]string{
 			"IsCore": "true",
@@ -32,6 +37,8 @@ func NewCmdCommit(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(view.NewCmdView(f, nil))
+	cmd.AddCommand(diff.NewCmdDiff(f, nil))
+	cmd.AddCommand(patch.NewCmdPatch(f, nil))
 
 	return cmd
 }

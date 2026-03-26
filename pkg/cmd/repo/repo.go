@@ -9,6 +9,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/delete"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/fork"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/stats"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/view"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
@@ -35,6 +36,7 @@ Available commands:
 	cmd.AddCommand(view.NewCmdView(f, nil))
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(delete.NewCmdDelete(f, nil))
+	cmd.AddCommand(stats.NewCmdStats(f, nil))
 
 	return cmd
 }

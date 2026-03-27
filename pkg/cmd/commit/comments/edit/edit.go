@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -21,7 +20,7 @@ type EditOptions struct {
 	HttpClient func() (*http.Client, error)
 
 	Repository string
-	ID         int
+	ID         string
 	Body       string
 }
 
@@ -44,11 +43,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id, err := strconv.Atoi(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid comment id: %s", args[0])
-			}
-			opts.ID = id
+			opts.ID = args[0]
 
 			if runF != nil {
 				return runF(opts)
@@ -89,7 +84,7 @@ func editRun(opts *EditOptions) error {
 		return fmt.Errorf("failed to update comment: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Updated comment #%d\n", cs.Green("✓"), comment.ID)
+	fmt.Fprintf(opts.IO.Out, "%s Updated comment #%v\n", cs.Green("✓"), comment.ID)
 	return nil
 }
 

@@ -91,12 +91,12 @@ func GetCommitPatch(client *Client, owner, repo, sha string) (string, error) {
 
 // CommitComment represents a commit comment
 type CommitComment struct {
-	ID        int     `json:"id"`
-	Body      string  `json:"body"`
-	CreatedAt string  `json:"created_at"`
-	UpdatedAt string  `json:"updated_at"`
-	User      *User   `json:"user"`
-	Target    *Commit `json:"target"`
+	ID        interface{} `json:"id"`
+	Body      string      `json:"body"`
+	CreatedAt string      `json:"created_at"`
+	UpdatedAt string      `json:"updated_at"`
+	User      *User       `json:"user"`
+	Target    *Commit     `json:"target"`
 }
 
 // CreateCommitComment creates a comment on a commit
@@ -113,8 +113,8 @@ func CreateCommitComment(client *Client, owner, repo, sha, body string) (*Commit
 }
 
 // GetCommitComment fetches a single commit comment
-func GetCommitComment(client *Client, owner, repo string, id int) (*CommitComment, error) {
-	path := fmt.Sprintf("/repos/%s/%s/comments/%d", owner, repo, id)
+func GetCommitComment(client *Client, owner, repo, id string) (*CommitComment, error) {
+	path := fmt.Sprintf("/repos/%s/%s/comments/%s", owner, repo, id)
 
 	var comment CommitComment
 	err := client.Get(path, &comment)
@@ -125,8 +125,8 @@ func GetCommitComment(client *Client, owner, repo string, id int) (*CommitCommen
 }
 
 // UpdateCommitComment updates a commit comment
-func UpdateCommitComment(client *Client, owner, repo string, id int, body string) (*CommitComment, error) {
-	path := fmt.Sprintf("/repos/%s/%s/comments/%d", owner, repo, id)
+func UpdateCommitComment(client *Client, owner, repo, id string, body string) (*CommitComment, error) {
+	path := fmt.Sprintf("/repos/%s/%s/comments/%s", owner, repo, id)
 	payload := map[string]string{"body": body}
 
 	var comment CommitComment

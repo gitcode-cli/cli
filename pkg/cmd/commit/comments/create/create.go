@@ -84,7 +84,7 @@ func createRun(opts *CreateOptions) error {
 		return fmt.Errorf("failed to create comment: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Created comment #%d\n", cs.Green("✓"), comment.ID)
+	fmt.Fprintf(opts.IO.Out, "%s Created comment #%v\n", cs.Green("✓"), comment.ID)
 	return nil
 }
 

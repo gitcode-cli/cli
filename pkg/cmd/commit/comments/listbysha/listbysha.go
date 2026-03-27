@@ -106,7 +106,7 @@ func listBySHARun(opts *ListBySHAOptions) error {
 		if c.User != nil {
 			author = c.User.Login
 		}
-		fmt.Fprintf(opts.IO.Out, "#%-6d %s at %s\n", c.ID, cs.Bold(author), c.CreatedAt)
+		fmt.Fprintf(opts.IO.Out, "#%-6v %s at %s\n", c.ID, cs.Bold(author), c.CreatedAt)
 		fmt.Fprintf(opts.IO.Out, "  %s\n\n", c.Body)
 	}
 

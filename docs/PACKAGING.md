@@ -143,29 +143,55 @@ gc release create v0.3.2 -R gitcode-cli/cli \
 
 ## 安装方式
 
-### Wheel 包（推荐）
-python3 -m venv .venv
-source .venv/bin/activate
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gitcode_cli-0.3.3-py3-none-any.whl
+### Wheel 包（推荐，跨平台）
+
+创建虚拟环境并安装：
+
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
+
+Windows 用户激活虚拟环境：
+
+    .venv\Scripts\activate
 
 ### DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc_0.3.3_amd64.deb
-sudo dpkg -i gc_0.3.3_amd64.deb
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_amd64.deb
+    sudo dpkg -i gc_0.3.2_amd64.deb
+
+ARM64 设备：
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_arm64.deb
+    sudo dpkg -i gc_0.3.2_arm64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc-0.3.3-1.x86_64.rpm
-sudo rpm -i gc-0.3.3-1.x86_64.rpm
 
-### Linux 二进制文件
-#### AMD64
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc_linux_amd64
-chmod +x gc_linux_amd64
-sudo mv gc_linux_amd64 /usr/local/bin/gc
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.x86_64.rpm
+    sudo rpm -i gc-0.3.2-1.x86_64.rpm
 
-#### ARM64
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.3/gc_linux_arm64
-chmod +x gc_linux_arm64
-sudo mv gc_linux_arm64 /usr/local/bin/gc
+ARM64 设备：
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.aarch64.rpm
+    sudo rpm -i gc-0.3.2-1.aarch64.rpm
+
+### Linux 二进制
+
+AMD64：
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_amd64
+    chmod +x gc_linux_amd64
+    sudo mv gc_linux_amd64 /usr/local/bin/gc
+
+ARM64：
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_arm64
+    chmod +x gc_linux_arm64
+    sudo mv gc_linux_arm64 /usr/local/bin/gc
+
+## 验证安装
+
+    gc version
 EOF
 )"
 
@@ -173,13 +199,15 @@ EOF
 gc release upload v0.3.2 \
   dist/gc_linux_amd64 \
   dist/gc_linux_arm64 \
-  dist/gc_0.3.3_amd64.deb \
-  dist/gc_0.3.3_arm64.deb \
-  dist/gc-0.3.3-1.x86_64.rpm \
-  dist/gc-0.3.3-1.aarch64.rpm \
-  dist/gitcode_cli-0.3.3-py3-none-any.whl \
+  dist/gc_0.3.2_amd64.deb \
+  dist/gc_0.3.2_arm64.deb \
+  dist/gc-0.3.2-1.x86_64.rpm \
+  dist/gc-0.3.2-1.aarch64.rpm \
+  dist/gitcode_cli-0.3.2-py3-none-any.whl \
   -R gitcode-cli/cli
 ```
+
+> **注意**：将示例中的版本号 `0.3.2` 替换为实际版本号。
 
 ### Release Notes 要求
 
@@ -190,6 +218,79 @@ https://gitcode.com/gitcode-cli/cli/releases/download/v{VERSION}/{FILENAME}
 ```
 
 **禁止**只写 `pip install xxx.whl` 不提供下载地址！
+
+#### Release Notes 模板
+
+```markdown
+## 更新内容
+
+### 新功能
+- 功能描述
+
+### Bug 修复
+- 修复描述
+
+### 修复的 Issue
+- Fixes #XX
+
+## 安装方式
+
+### Wheel 包（推荐，跨平台）
+
+创建虚拟环境并安装：
+
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gitcode_cli-0.3.2-py3-none-any.whl
+
+Windows 用户激活虚拟环境：
+
+    .venv\Scripts\activate
+
+### DEB (Debian/Ubuntu)
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_amd64.deb
+    sudo dpkg -i gc_0.3.2_amd64.deb
+
+ARM64 设备：
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_0.3.2_arm64.deb
+    sudo dpkg -i gc_0.3.2_arm64.deb
+
+### RPM (RHEL/CentOS/Fedora)
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.x86_64.rpm
+    sudo rpm -i gc-0.3.2-1.x86_64.rpm
+
+ARM64 设备：
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc-0.3.2-1.aarch64.rpm
+    sudo rpm -i gc-0.3.2-1.aarch64.rpm
+
+### Linux 二进制
+
+AMD64：
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_amd64
+    chmod +x gc_linux_amd64
+    sudo mv gc_linux_amd64 /usr/local/bin/gc
+
+ARM64：
+
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.2/gc_linux_arm64
+    chmod +x gc_linux_arm64
+    sudo mv gc_linux_arm64 /usr/local/bin/gc
+
+## 验证安装
+
+    gc version
+```
+
+#### 注意事项
+
+1. **版本号替换**：将模板中的 `0.3.2` 替换为实际版本号
+2. **避免行内注释**：GitCode 会错误渲染代码块内的 `# 注释`
+3. **完整下载路径**：所有安装命令必须包含完整下载 URL
 
 ### 发布命令参考
 
@@ -388,4 +489,4 @@ source .venv/bin/activate
 
 ---
 
-**最后更新**: 2026-03-26
+**最后更新**: 2026-03-27

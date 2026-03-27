@@ -235,6 +235,12 @@ gc issue reopen 1 -R infra-test/gctest1
 ```bash
 # 添加评论
 gc issue comment 1 -R infra-test/gctest1 --body "This is a comment"
+
+# 从文件读取评论内容
+gc issue comment 1 -R infra-test/gctest1 --body-file comment.txt
+
+# 从 stdin 读取评论内容
+echo "Comment from stdin" | gc issue comment 1 -R infra-test/gctest1 --body-file -
 ```
 
 ### issue label - 管理 Issue 标签

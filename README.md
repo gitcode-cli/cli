@@ -171,6 +171,9 @@ gc issue reopen 123
 # 添加评论
 gc issue comment 123 --body "Comment text"
 
+# 从文件添加评论
+gc issue comment 123 --body-file comment.txt
+
 # 管理 Issue 标签
 gc issue label 123 --add bug,enhancement
 

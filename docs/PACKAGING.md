@@ -38,19 +38,19 @@
 
 ```bash
 # 发布用（构建 DEB + RPM + PyPI，推荐）
-./scripts/package.sh v0.3.2 release
+./scripts/package.sh v0.3.4 release
 
 # 构建所有包（DEB + RPM + PyPI）
-./scripts/package.sh v0.3.2
+./scripts/package.sh v0.3.4
 
 # 仅构建 Linux 包（DEB + RPM）
-./scripts/package.sh v0.3.2 linux
+./scripts/package.sh v0.3.4 linux
 
 # 仅构建 DEB 包
-./scripts/package.sh v0.3.2 deb
+./scripts/package.sh v0.3.4 deb
 
 # 仅构建 PyPI 包
-./scripts/package.sh v0.3.2 pypi
+./scripts/package.sh v0.3.4 pypi
 ```
 
 ### 构建目标
@@ -124,11 +124,11 @@ export GC_TOKEN="your_gitcode_token"
 
 ```bash
 # 1. 构建所有包
-./scripts/package.sh v0.3.2 release
+./scripts/package.sh v0.3.4 release
 
 # 2. 创建 Release
-gc release create v0.3.2 -R gitcode-cli/cli \
-  --title "GitCode CLI v0.3.2" \
+gc release create v0.3.4 -R gitcode-cli/cli \
+  --title "GitCode CLI v0.3.4" \
   --notes "$(cat <<'EOF'
 ## 更新内容
 
@@ -196,7 +196,7 @@ EOF
 )"
 
 # 3. 上传所有包
-gc release upload v0.3.2 \
+gc release upload v0.3.4 \
   dist/gc_linux_amd64 \
   dist/gc_linux_arm64 \
   dist/gc_0.3.4_amd64.deb \
@@ -207,7 +207,7 @@ gc release upload v0.3.2 \
   -R gitcode-cli/cli
 ```
 
-> **注意**：将示例中的版本号 `0.3.2` 替换为实际版本号。
+> **注意**：将示例中的版本号 `0.3.4` 替换为实际版本号。
 
 ### Release Notes 要求
 
@@ -288,7 +288,7 @@ ARM64：
 
 #### 注意事项
 
-1. **版本号替换**：将模板中的 `0.3.2` 替换为实际版本号
+1. **版本号替换**：将模板中的 `0.3.4` 替换为实际版本号
 2. **避免行内注释**：GitCode 会错误渲染代码块内的 `# 注释`
 3. **完整下载路径**：所有安装命令必须包含完整下载 URL
 
@@ -296,13 +296,13 @@ ARM64：
 
 ```bash
 # 查看 Release
-gc release view v0.3.2 -R gitcode-cli/cli
+gc release view v0.3.4 -R gitcode-cli/cli
 
 # 列出所有 Releases
 gc release list -R gitcode-cli/cli
 
 # 下载资产
-gc release download v0.3.2 -R gitcode-cli/cli
+gc release download v0.3.4 -R gitcode-cli/cli
 ```
 
 ---
@@ -395,7 +395,7 @@ GOOS=linux GOARCH=amd64 go build -o dist/gc_linux_amd64 ./cmd/gc
 GOOS=linux GOARCH=arm64 go build -o dist/gc_linux_arm64 ./cmd/gc
 
 # 2. 更新版本号
-VERSION="0.3.2"
+VERSION="0.3.4"
 sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-amd64.yaml
 sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-arm64.yaml
 
@@ -420,7 +420,7 @@ GOOS=darwin GOARCH=arm64 go build -o gc_cli/bin/gc-darwin-arm64 ./cmd/gc
 GOOS=windows GOARCH=amd64 go build -o gc_cli/bin/gc-windows-amd64.exe ./cmd/gc
 
 # 2. 更新版本号
-VERSION="0.3.2"
+VERSION="0.3.4"
 sed -i "s/version = \".*/version = \"$VERSION\"/" pyproject.toml
 sed -i "s/__version__ = \".*/__version__ = \"$VERSION\"/" gc_cli/__init__.py
 
@@ -441,7 +441,7 @@ python3 -m build --wheel --sdist --outdir dist/
 name: "gc"
 arch: "amd64"
 platform: "linux"
-version: "0.3.2"
+version: "0.3.4"
 maintainer: "gitcode-cli contributors"
 description: "GitCode CLI - Command line tool for GitCode"
 homepage: "https://gitcode.com/gitcode-cli/cli"

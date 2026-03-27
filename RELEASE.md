@@ -21,8 +21,8 @@ git checkout main
 git pull
 
 # 2. 创建并推送标签
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.3.4
+git push origin v0.3.4
 
 # 3. GitHub Actions 自动执行发布
 ```
@@ -70,7 +70,7 @@ git push origin v0.3.0
 pip install gitcode-cli
 
 # 或指定版本
-pip install gitcode-cli==0.3.0
+pip install gitcode-cli==0.3.4
 ```
 
 ---
@@ -154,10 +154,10 @@ make lint
 
 # 步骤 4: 提交版本更新
 git add .
-git commit -m "chore: prepare for release v0.3.0"
+git commit -m "chore: prepare for release v0.3.4"
 
 # 步骤 5: 创建标签
-git tag -a v0.3.0 -m "Release v0.3.0"
+git tag -a v0.3.4 -m "Release v0.3.4"
 
 # 步骤 6: 推送标签触发发布
 git push origin main --tags
@@ -180,7 +180,7 @@ git push origin main --tags
 # 创建虚拟环境测试
 python -m venv test-env
 source test-env/bin/activate
-pip install gitcode-cli==0.3.0
+pip install gitcode-cli==0.3.4
 gc version
 ```
 
@@ -190,11 +190,11 @@ gc version
 
 ```bash
 # RPM
-sudo rpm -i gc-0.3.0-1.x86_64.rpm
+sudo rpm -i gc-0.3.4-1.x86_64.rpm
 gc version
 
 # DEB
-sudo dpkg -i gc_0.3.0_amd64.deb
+sudo dpkg -i gc_0.3.4_amd64.deb
 gc version
 ```
 

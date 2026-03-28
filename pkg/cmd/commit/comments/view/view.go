@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -21,7 +20,7 @@ type ViewOptions struct {
 	HttpClient func() (*http.Client, error)
 
 	Repository string
-	ID         int
+	ID         string
 }
 
 // NewCmdView creates the view command
@@ -43,11 +42,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id, err := strconv.Atoi(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid comment id: %s", args[0])
-			}
-			opts.ID = id
+			opts.ID = args[0]
 
 			if runF != nil {
 				return runF(opts)
@@ -86,7 +81,7 @@ func viewRun(opts *ViewOptions) error {
 		return fmt.Errorf("failed to get comment: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "\n%s #%d\n", cs.Bold("Comment:"), comment.ID)
+	fmt.Fprintf(opts.IO.Out, "\n%s #%v\n", cs.Bold("Comment:"), comment.ID)
 	if comment.User != nil {
 		fmt.Fprintf(opts.IO.Out, "%s %s\n", cs.Bold("Author:"), comment.User.Login)
 	}

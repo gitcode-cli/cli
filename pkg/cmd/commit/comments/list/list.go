@@ -108,7 +108,7 @@ func listRun(opts *ListOptions) error {
 		if len(body) > 50 {
 			body = body[:47] + "..."
 		}
-		fmt.Fprintf(opts.IO.Out, "#%-6d %s  %s\n", c.ID, cs.Bold(author), body)
+		fmt.Fprintf(opts.IO.Out, "#%-6v %s  %s\n", c.ID, cs.Bold(author), body)
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")
 

@@ -139,7 +139,7 @@ gc release create v0.3.4 -R gitcode-cli/cli \
 - 修复描述
 
 ### 修复的 Issue
-- Fixes #XX
+- Fixes Issue XX
 
 ## 安装方式
 
@@ -231,7 +231,7 @@ https://gitcode.com/gitcode-cli/cli/releases/download/v{VERSION}/{FILENAME}
 - 修复描述
 
 ### 修复的 Issue
-- Fixes #XX
+- Fixes Issue XX
 
 ## 安装方式
 
@@ -289,7 +289,10 @@ ARM64：
 #### 注意事项
 
 1. **版本号替换**：将模板中的 `0.3.4` 替换为实际版本号
-2. **避免行内注释**：GitCode 会错误渲染代码块内的 `# 注释`
+2. **避免 `#` 字符问题**：GitCode 会错误渲染代码块内的 `#`
+   - Issue 引用使用 `Issue XX` 格式，不使用 `#XX`
+   - PR 引用使用 `PR XX` 格式，不使用 `#XX`
+   - 代码块注释单独成行，避免行内注释
 3. **完整下载路径**：所有安装命令必须包含完整下载 URL
 
 ### 发布命令参考

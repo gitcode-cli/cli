@@ -8,12 +8,12 @@
 
 ```bash
 # DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_0.3.5_amd64.deb
-sudo dpkg -i gc_0.3.5_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_0.3.6_amd64.deb
+sudo dpkg -i gc_0.3.6_amd64.deb
 
 # RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc-0.3.5-1.x86_64.rpm
-sudo rpm -i gc-0.3.5-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc-0.3.6-1.x86_64.rpm
+sudo rpm -i gc-0.3.6-1.x86_64.rpm
 ```
 
 **Wheel 包（跨平台，推荐）:**
@@ -27,7 +27,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gitcode_cli-0.3.5-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gitcode_cli-0.3.6-py3-none-any.whl
 ```
 
 **PyPI（备选）:**

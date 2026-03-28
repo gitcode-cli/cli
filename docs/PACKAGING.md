@@ -80,14 +80,14 @@
 
 ```bash
 dist/
-├── gc_0.3.5_amd64.deb              # DEB amd64
-├── gc_0.3.5_arm64.deb              # DEB arm64
-├── gc-0.3.5-1.x86_64.rpm           # RPM x86_64
-├── gc-0.3.5-1.aarch64.rpm          # RPM aarch64
+├── gc_0.3.6_amd64.deb              # DEB amd64
+├── gc_0.3.6_arm64.deb              # DEB arm64
+├── gc-0.3.6-1.x86_64.rpm           # RPM x86_64
+├── gc-0.3.6-1.aarch64.rpm          # RPM aarch64
 ├── gc_linux_amd64                  # Linux 二进制 amd64
 ├── gc_linux_arm64                  # Linux 二进制 arm64
-├── gitcode_cli-0.3.5-py3-none-any.whl  # PyPI wheel
-└── gitcode_cli-0.3.5.tar.gz        # PyPI sdist
+├── gitcode_cli-0.3.6-py3-none-any.whl  # PyPI wheel
+└── gitcode_cli-0.3.6.tar.gz        # PyPI sdist
 ```
 
 ---
@@ -149,7 +149,7 @@ gc release create v0.3.4 -R gitcode-cli/cli \
 
     python3 -m venv .venv
     source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gitcode_cli-0.3.5-py3-none-any.whl
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gitcode_cli-0.3.6-py3-none-any.whl
 
 Windows 用户激活虚拟环境：
 
@@ -157,35 +157,35 @@ Windows 用户激活虚拟环境：
 
 ### DEB (Debian/Ubuntu)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_0.3.5_amd64.deb
-    sudo dpkg -i gc_0.3.5_amd64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_0.3.6_amd64.deb
+    sudo dpkg -i gc_0.3.6_amd64.deb
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_0.3.5_arm64.deb
-    sudo dpkg -i gc_0.3.5_arm64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_0.3.6_arm64.deb
+    sudo dpkg -i gc_0.3.6_arm64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc-0.3.5-1.x86_64.rpm
-    sudo rpm -i gc-0.3.5-1.x86_64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc-0.3.6-1.x86_64.rpm
+    sudo rpm -i gc-0.3.6-1.x86_64.rpm
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc-0.3.5-1.aarch64.rpm
-    sudo rpm -i gc-0.3.5-1.aarch64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc-0.3.6-1.aarch64.rpm
+    sudo rpm -i gc-0.3.6-1.aarch64.rpm
 
 ### Linux 二进制
 
 AMD64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_linux_amd64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_linux_amd64
     chmod +x gc_linux_amd64
     sudo mv gc_linux_amd64 /usr/local/bin/gc
 
 ARM64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_linux_arm64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_linux_arm64
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
@@ -199,11 +199,11 @@ EOF
 gc release upload v0.3.4 \
   dist/gc_linux_amd64 \
   dist/gc_linux_arm64 \
-  dist/gc_0.3.5_amd64.deb \
-  dist/gc_0.3.5_arm64.deb \
-  dist/gc-0.3.5-1.x86_64.rpm \
-  dist/gc-0.3.5-1.aarch64.rpm \
-  dist/gitcode_cli-0.3.5-py3-none-any.whl \
+  dist/gc_0.3.6_amd64.deb \
+  dist/gc_0.3.6_arm64.deb \
+  dist/gc-0.3.6-1.x86_64.rpm \
+  dist/gc-0.3.6-1.aarch64.rpm \
+  dist/gitcode_cli-0.3.6-py3-none-any.whl \
   -R gitcode-cli/cli
 ```
 
@@ -267,7 +267,7 @@ GitCode 会错误渲染代码块内的 `#` 开头行为标题！
 
     python3 -m venv .venv
     source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gitcode_cli-0.3.5-py3-none-any.whl
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gitcode_cli-0.3.6-py3-none-any.whl
 
 Windows 用户激活虚拟环境：
 
@@ -275,35 +275,35 @@ Windows 用户激活虚拟环境：
 
 ### DEB (Debian/Ubuntu)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_0.3.5_amd64.deb
-    sudo dpkg -i gc_0.3.5_amd64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_0.3.6_amd64.deb
+    sudo dpkg -i gc_0.3.6_amd64.deb
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_0.3.5_arm64.deb
-    sudo dpkg -i gc_0.3.5_arm64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_0.3.6_arm64.deb
+    sudo dpkg -i gc_0.3.6_arm64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc-0.3.5-1.x86_64.rpm
-    sudo rpm -i gc-0.3.5-1.x86_64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc-0.3.6-1.x86_64.rpm
+    sudo rpm -i gc-0.3.6-1.x86_64.rpm
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc-0.3.5-1.aarch64.rpm
-    sudo rpm -i gc-0.3.5-1.aarch64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc-0.3.6-1.aarch64.rpm
+    sudo rpm -i gc-0.3.6-1.aarch64.rpm
 
 ### Linux 二进制
 
 AMD64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_linux_amd64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_linux_amd64
     chmod +x gc_linux_amd64
     sudo mv gc_linux_amd64 /usr/local/bin/gc
 
 ARM64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_linux_arm64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_linux_arm64
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
@@ -344,27 +344,27 @@ gc release download v0.3.4 -R gitcode-cli/cli
 python3 -m venv .venv
 source .venv/bin/activate
 
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gitcode_cli-0.3.5-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gitcode_cli-0.3.6-py3-none-any.whl
 ```
 
 ### DEB (Debian/Ubuntu)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_0.3.5_amd64.deb
-sudo dpkg -i gc_0.3.5_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_0.3.6_amd64.deb
+sudo dpkg -i gc_0.3.6_amd64.deb
 ```
 
 ### RPM (RHEL/CentOS/Fedora)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc-0.3.5-1.x86_64.rpm
-sudo rpm -i gc-0.3.5-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc-0.3.6-1.x86_64.rpm
+sudo rpm -i gc-0.3.6-1.x86_64.rpm
 ```
 
 ### Linux 二进制
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.5/gc_linux_amd64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.6/gc_linux_amd64
 chmod +x gc_linux_amd64
 sudo mv gc_linux_amd64 /usr/local/bin/gc
 ```

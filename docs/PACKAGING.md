@@ -219,6 +219,32 @@ https://gitcode.com/gitcode-cli/cli/releases/download/v{VERSION}/{FILENAME}
 
 **禁止**只写 `pip install xxx.whl` 不提供下载地址！
 
+**代码块格式警告**：
+
+GitCode 会错误渲染代码块内的 `#` 开头行为标题！
+
+错误格式（会导致格式混乱）：
+
+    ```bash
+    # 创建虚拟环境
+    python3 -m venv .venv
+    ```
+
+正确格式（注释放在代码块外）：
+
+    创建虚拟环境：
+
+    ```bash
+    python3 -m venv .venv
+    ```
+
+正确格式（使用其他注释符号）：
+
+    ```bash
+    :: 创建虚拟环境
+    python3 -m venv .venv
+    ```
+
 #### Release Notes 模板
 
 ```markdown

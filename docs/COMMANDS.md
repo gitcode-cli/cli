@@ -223,6 +223,36 @@ gc issue view 1 -R infra-test/gctest1 --web
 gc issue close 1 -R infra-test/gctest1
 ```
 
+### issue edit - 编辑 Issue
+
+```bash
+# 修改标题
+gc issue edit 1 --title "New title" -R infra-test/gctest1
+
+# 修改描述
+gc issue edit 1 --body "New description" -R infra-test/gctest1
+
+# 修改状态（close/reopen）
+gc issue edit 1 --state close -R infra-test/gctest1
+gc issue edit 1 --state reopen -R infra-test/gctest1
+
+# 指派负责人
+gc issue edit 1 --assignee username -R infra-test/gctest1
+gc issue edit 1 --assignee user1 --assignee user2 -R infra-test/gctest1
+
+# 设置标签
+gc issue edit 1 --label bug,enhancement -R infra-test/gctest1
+
+# 设置里程碑
+gc issue edit 1 --milestone 5 -R infra-test/gctest1
+
+# 设置为私有 Issue
+gc issue edit 1 --security-hole -R infra-test/gctest1
+
+# 组合使用
+gc issue edit 1 --title "Bug fix" --assignee username --label bug --milestone 1 -R infra-test/gctest1
+```
+
 ### issue reopen - 重开 Issue
 
 ```bash

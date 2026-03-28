@@ -80,13 +80,14 @@ type CreateIssueOptions struct {
 
 // UpdateIssueOptions represents options for updating an issue
 type UpdateIssueOptions struct {
-	Repo      string   `json:"repo,omitempty"`
-	Title     string   `json:"title,omitempty"`
-	Body      string   `json:"body,omitempty"`
-	State     string   `json:"state,omitempty"`
-	Assignees []string `json:"assignees,omitempty"`
-	Labels    []string `json:"labels,omitempty"`
-	Milestone int      `json:"milestone,omitempty"`
+	Repo         string   `json:"repo,omitempty"`
+	Title        string   `json:"title,omitempty"`
+	Body         string   `json:"body,omitempty"`
+	State        string   `json:"state,omitempty"`
+	Assignees    []string `json:"assignees,omitempty"`
+	Labels       []string `json:"labels,omitempty"`
+	Milestone    int      `json:"milestone,omitempty"`
+	SecurityHole string   `json:"security_hole,omitempty"`
 }
 
 // CreateCommentOptions represents options for creating a comment
@@ -209,6 +210,15 @@ func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIss
 	}
 	for _, label := range opts.Labels {
 		formValues.Add("labels[]", label)
+	}
+	for _, assignee := range opts.Assignees {
+		formValues.Add("assignees[]", assignee)
+	}
+	if opts.Milestone > 0 {
+		formValues.Set("milestone", itoa(opts.Milestone))
+	}
+	if opts.SecurityHole != "" {
+		formValues.Set("security_hole", opts.SecurityHole)
 	}
 
 	var issue Issue

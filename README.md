@@ -162,6 +162,14 @@ gc issue list --state open
 # 查看 Issue 详情
 gc issue view 123
 
+# 编辑 Issue
+gc issue edit 123 --title "New title"
+gc issue edit 123 --body "New description"
+gc issue edit 123 --state close
+gc issue edit 123 --assignee username
+gc issue edit 123 --label bug,enhancement
+gc issue edit 123 --milestone 5
+
 # 关闭 Issue
 gc issue close 123
 
@@ -269,7 +277,7 @@ gc <command> <subcommand> [flags]
 Commands:
   auth        认证管理 (login, logout, status, token)
   repo        仓库操作 (clone, create, list, view, fork, delete, stats)
-  issue       Issue 管理 (create, list, view, close, reopen, comment)
+  issue       Issue 管理 (create, list, view, edit, close, reopen, comment)
   pr          PR 管理 (create, list, view, checkout, merge, close, reopen, review, diff, ready)
   commit      Commit 管理 (view, diff, patch, comments)
   label       标签管理 (create, list, delete)

@@ -6,14 +6,15 @@ import (
 	"github.com/spf13/cobra"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/close"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/comment"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/edit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/label"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/prs"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/view"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/close"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/reopen"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/comment"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/view"
 )
 
 // NewCmdIssue creates the issue command
@@ -42,6 +43,7 @@ func NewCmdIssue(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
+	cmd.AddCommand(edit.NewCmdEdit(f, nil))
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(view.NewCmdView(f, nil))
 	cmd.AddCommand(close.NewCmdClose(f, nil))

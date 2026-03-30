@@ -2,6 +2,44 @@
 
 本文档定义完整的开发工作流程，**严格遵守以下流程，违反将导致代码管理混乱！**
 
+## 职责
+
+定义从 issue 到 merge 的总开发流程，以及在本仓库中开发时必须遵守的顺序和禁止行为。
+
+## 适用场景
+
+- 修复 issue
+- 开发新功能
+- 提交 PR
+- 按仓库规范完成评论、评审和合并
+
+## 必须
+
+- 修复前先验证问题是否仍存在
+- 不在 `main` 直接开发
+- 补测试、做本地验证和实际命令验证
+- 在提 PR 前完成安全审查
+- 按流程补 issue comment 和 PR review comment
+
+## 禁止
+
+- 看到 issue 就直接写代码
+- 跳过验证、测试或安全检查
+- 在主分支直接提交
+
+## 同步要求
+
+- 改动流程时同步 `spec/*`
+- 改动命令行为时同步 `docs/COMMANDS.md`
+- 改动 AI 协作或入口规则时同步 `AGENTS.md`、`CLAUDE.md` 和相关 skills
+
+## 不负责什么
+
+- 具体编码风格
+- 测试覆盖细节
+- 文档分层设计
+- 代码质量 blocker 判定
+
 ## 修复 Issue 前的验证（重要）
 
 **在开始修复任何 Issue 之前，必须先验证问题是否仍存在：**
@@ -217,6 +255,13 @@ gc issue close <number> -R gitcode-cli/cli
 ```bash
 gc pr merge <pr_number> -R gitcode-cli/cli
 ```
+
+## 下一步去看哪里
+
+- 如果你在写代码，继续看 [编码规范](./coding-standards.md)
+- 如果你在补测试，继续看 [测试指南](./testing-guide.md)
+- 如果你准备提交，继续看 [代码质量门禁规范](./code-quality-gates.md)
+- 如果你改了命令或协作规则，继续看 [文档治理规范](./docs-governance.md)
 
 ### 16. 拉取最新代码
 

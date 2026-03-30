@@ -22,16 +22,19 @@
 
 ## 2. 必读文档
 
-按以下顺序阅读：
+先读：
 
-1. [文档治理规范](./spec/docs-governance.md)
-2. [开发工作流程](./spec/development-workflow.md)
-3. [本地构建与打包规范](./spec/build-and-package.md)
-4. [发布流程规范](./spec/release-process.md)
-5. [代码质量门禁规范](./spec/code-quality-gates.md)
-6. [编码规范](./spec/coding-standards.md)
-7. [测试指南](./spec/testing-guide.md)
-8. [安全规范](./spec/security.md)
+1. [spec/README.md](./spec/README.md)
+
+再根据任务进入对应规范，不要机械顺序通读全部文档。
+
+常用任务入口：
+
+- 改命令行为：`spec/development-workflow.md`、`spec/docs-governance.md`、`spec/code-quality-gates.md`
+- 改 API / auth / config：`spec/coding-standards.md`、`spec/security.md`、`spec/testing-guide.md`
+- 补测试或做真实命令验证：`spec/testing-guide.md`、`spec/workflows/test-workflow.md`
+- 提交 PR / 做 review：`spec/workflows/pr-workflow.md`、`spec/workflows/review-workflow.md`
+- 改构建 / 打包 / 发布：`spec/build-and-package.md`、`spec/release-process.md`
 
 具体流程任务再进入：
 

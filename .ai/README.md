@@ -29,6 +29,10 @@
 
 通用 skill 包不得依赖本仓库内部 `spec/` 或 `docs/COMMANDS.md` 路径。
 
+当前可分发包的安装与分发说明见：
+
+- `.ai/distribution/gc-core/INSTALL.md`
+
 ## 当前阶段说明
 
 当前阶段先完成结构化治理：

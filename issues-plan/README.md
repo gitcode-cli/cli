@@ -18,6 +18,7 @@ issues-plan/
 ├── 08-config.md                   # 配置管理需求
 ├── 09-testing.md                  # 测试需求
 ├── 10-deployment.md               # 部署发布需求
+├── 11-next-development-plan.md    # 下一步开发计划
 ├── PROGRESS.md                    # 项目交付进度跟踪
 └── milestones/                    # 里程碑追踪
     ├── m1-foundation.md           # 里程碑1：基础架构
@@ -43,6 +44,7 @@ issues-plan/
 | [08-config.md](./08-config.md) | 配置管理设计需求 |
 | [09-testing.md](./09-testing.md) | 测试策略和测试需求 |
 | [10-deployment.md](./10-deployment.md) | 部署发布流程需求 |
+| [11-next-development-plan.md](./11-next-development-plan.md) | 收口与一致性阶段开发计划 |
 
 ## 如何使用需求文档
 
@@ -83,4 +85,4 @@ issues-plan/
 
 ---
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-03-30

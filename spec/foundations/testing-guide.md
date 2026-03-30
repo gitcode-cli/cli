@@ -169,7 +169,7 @@ export GC_TOKEN=your_token
 
 ### 核心回归矩阵
 
-优先使用 [docs/REGRESSION.md](../docs/REGRESSION.md) 和 `./scripts/regression-core.sh` 执行最小稳定回归集。
+优先使用 [docs/REGRESSION.md](../../docs/REGRESSION.md) 和 `./scripts/regression-core.sh` 执行最小稳定回归集。
 
 默认覆盖：
 - `auth login/status/token/logout`

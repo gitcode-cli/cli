@@ -78,7 +78,7 @@ AI skill 采用三层结构：
 - `.claude/skills/`：Claude 适配层
 - `.codex/skills/`：Codex 适配层
 
-当前仓库已使用 `.claude/skills/`。后续需要补齐 `.ai/skills/` 和 `.codex/skills/`。
+当前仓库已补齐 `.ai/skills/`、`.claude/skills/` 和 `.codex/skills/` 的分层结构。
 
 ## 3. 唯一真相源
 
@@ -114,7 +114,7 @@ AI skill 采用三层结构：
 - `AGENTS.md` 负责 Codex 侧入口说明
 - `CLAUDE.md` 负责 Claude 侧入口说明
 - `.claude/skills/` 不是跨 AI 的唯一 skill 来源
-- 后续引入 `.codex/skills/` 时，必须与共享真相源保持一致
+- `.codex/skills/` 必须与共享真相源保持一致
 
 AI 协作文档属于正式项目文档，行为变更后必须纳入同步检查。
 
@@ -182,11 +182,8 @@ skill 分为两类：
 
 ## 7. 规范补齐计划
 
-当前 `spec/` 目录已具备开发、测试、安全和 workflow 基础规范，但仍需补齐以下文档：
+当前 `spec/` 目录已具备开发、测试、安全、build、release、quality 和 workflow 基础规范，但仍需补齐以下文档：
 
-- `spec/build-and-package.md`
-- `spec/release-process.md`
-- `spec/code-quality-gates.md`
 - `spec/ci-workflows.md`
 
 其中 `spec/ci-workflows.md` 放在最后阶段落地，因为当前 GitCode CI 条件尚未具备。
@@ -294,11 +291,11 @@ skill 分为两类：
 
 ## 9. 当前执行原则
 
-在阶段 1 完成前，不进行大规模目录搬迁。
+在当前阶段，不进行大规模目录搬迁。
 
 当前优先级固定为：
 
 1. 建立治理基线
 2. 补齐 build、release、quality 规范
-3. 再调整入口和 skill 分层
+3. 调整入口和 skill 分层
 4. 最后处理 CI 自动化

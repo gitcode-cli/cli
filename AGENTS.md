@@ -59,12 +59,12 @@
 
 - `AGENTS.md`
 
-当前仓库尚未补齐 `.codex/skills/`。后续阶段会引入：
+当前仓库已引入：
 
-- 共享 skill 真相源
-- Codex 适配层
+- `.ai/skills/` 共享 skill 真相源
+- `.codex/skills/` Codex 适配层
 
-在这些目录正式入库前，Codex 仍应以 `spec/` 和本文件为主要入口。
+Codex 仍应先以 `spec/` 和本文件为主要入口，再进入共享源或适配层。
 
 ## 5. 常用入口
 
@@ -85,5 +85,7 @@
 - `spec/build-and-package.md`
 - `spec/release-process.md`
 - `spec/code-quality-gates.md`
+- `.ai/skills/` 共享 skill 真相源
+- `.codex/skills/` 适配层结构
 
-当前阶段目标是继续收口项目入口，并在后续阶段补齐共享 skill 真相源和 Codex 适配层。
+当前阶段目标是继续校准共享源与客户端适配层，而不是新建额外规则源。

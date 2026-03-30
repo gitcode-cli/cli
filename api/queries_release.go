@@ -2,19 +2,19 @@ package api
 
 // Release represents a GitCode release
 type Release struct {
-	ID              interface{}   `json:"id"`
-	TagName         string        `json:"tag_name"`
-	TargetCommitish string        `json:"target_commitish"`
-	Name            string        `json:"name"`
-	Body            string        `json:"body"`
-	Draft           bool          `json:"draft"`
-	Prerelease      bool          `json:"prerelease"`
-	HTMLURL         string        `json:"html_url"`
-	AssetsURL       string        `json:"assets_url"`
-	UploadURL       string        `json:"upload_url"`
-	CreatedAt       FlexibleTime  `json:"created_at"`
-	PublishedAt     *FlexibleTime `json:"published_at"`
-	Author          *User         `json:"author"`
+	ID              interface{}    `json:"id"`
+	TagName         string         `json:"tag_name"`
+	TargetCommitish string         `json:"target_commitish"`
+	Name            string         `json:"name"`
+	Body            string         `json:"body"`
+	Draft           bool           `json:"draft"`
+	Prerelease      bool           `json:"prerelease"`
+	HTMLURL         string         `json:"html_url"`
+	AssetsURL       string         `json:"assets_url"`
+	UploadURL       string         `json:"upload_url"`
+	CreatedAt       FlexibleTime   `json:"created_at"`
+	PublishedAt     *FlexibleTime  `json:"published_at"`
+	Author          *User          `json:"author"`
 	Assets          []ReleaseAsset `json:"assets"`
 }
 
@@ -220,11 +220,7 @@ func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error
 
 // GetReleaseUploadURL fetches the upload URL for a release asset
 func GetReleaseUploadURL(client *Client, owner, repo, tag, filename string) (*AssetUploadURL, error) {
-	token := client.Token()
 	path := "/repos/" + owner + "/" + repo + "/releases/" + tag + "/upload_url?file_name=" + filename
-	if token != "" {
-		path += "&access_token=" + token
-	}
 
 	var result AssetUploadURL
 	err := client.Get(path, &result)

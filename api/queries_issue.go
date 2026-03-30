@@ -7,20 +7,20 @@ import (
 
 // Issue represents a GitCode issue
 type Issue struct {
-	ID          interface{} `json:"id"`
-	Number      string      `json:"number"`
-	Title       string      `json:"title"`
-	Body        string      `json:"body"`
-	State       string      `json:"state"`
-	HTMLURL     string      `json:"html_url"`
-	User        *User       `json:"user"`
-	Assignees   []*User     `json:"assignees"`
-	Labels      []*Label    `json:"labels"`
-	Milestone   *Milestone  `json:"milestone"`
-	CreatedAt   FlexibleTime `json:"created_at"`
-	UpdatedAt   FlexibleTime `json:"updated_at"`
-	ClosedAt    *FlexibleTime `json:"closed_at"`
-	Comments    int         `json:"comments"`
+	ID        interface{}   `json:"id"`
+	Number    string        `json:"number"`
+	Title     string        `json:"title"`
+	Body      string        `json:"body"`
+	State     string        `json:"state"`
+	HTMLURL   string        `json:"html_url"`
+	User      *User         `json:"user"`
+	Assignees []*User       `json:"assignees"`
+	Labels    []*Label      `json:"labels"`
+	Milestone *Milestone    `json:"milestone"`
+	CreatedAt FlexibleTime  `json:"created_at"`
+	UpdatedAt FlexibleTime  `json:"updated_at"`
+	ClosedAt  *FlexibleTime `json:"closed_at"`
+	Comments  int           `json:"comments"`
 }
 
 // Label represents a GitCode label
@@ -185,11 +185,7 @@ func CreateIssue(client *Client, owner, repo string, opts *CreateIssueOptions) (
 // UpdateIssue updates an existing issue
 // GitCode API: PATCH /repos/:owner/issues/:number with repo param in body
 func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIssueOptions) (*Issue, error) {
-	token := client.Token()
 	path := "/repos/" + owner + "/issues/" + itoa(number)
-	if token != "" {
-		path += "?access_token=" + token
-	}
 
 	// Ensure repo is set in opts
 	if opts.Repo == "" {

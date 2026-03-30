@@ -6,33 +6,33 @@ import (
 
 // PullRequest represents a GitCode pull request
 type PullRequest struct {
-	ID          interface{} `json:"id"`
-	Number      int         `json:"number"`
-	Title       string      `json:"title"`
-	Body        string      `json:"body"`
-	State       string      `json:"state"`
-	HTMLURL     string      `json:"html_url"`
-	DiffURL     string      `json:"diff_url"`
-	PatchURL    string      `json:"patch_url"`
-	User        *User       `json:"user"`
-	Head        *PRBranch   `json:"head"`
-	Base        *PRBranch   `json:"base"`
-	Merged      bool        `json:"merged"`
-	MergedAt    *string     `json:"merged_at"`
-	Mergeable   *bool       `json:"mergeable"`
-	MergeState  interface{} `json:"mergeable_state"`
-	Draft       bool        `json:"draft"`
-	CreatedAt   FlexibleTime `json:"created_at"`
-	UpdatedAt   FlexibleTime `json:"updated_at"`
-	ClosedAt    *string     `json:"closed_at"`
-	Comments    int         `json:"comments"`
-	Commits     int         `json:"commits"`
-	Additions   int         `json:"additions"`
-	Deletions   int         `json:"deletions"`
-	ChangedFiles int        `json:"changed_files"`
-	Labels      []*Label    `json:"labels"`
-	Assignees   []*User     `json:"assignees"`
-	Reviewers   []*User     `json:"requested_reviewers"`
+	ID           interface{}  `json:"id"`
+	Number       int          `json:"number"`
+	Title        string       `json:"title"`
+	Body         string       `json:"body"`
+	State        string       `json:"state"`
+	HTMLURL      string       `json:"html_url"`
+	DiffURL      string       `json:"diff_url"`
+	PatchURL     string       `json:"patch_url"`
+	User         *User        `json:"user"`
+	Head         *PRBranch    `json:"head"`
+	Base         *PRBranch    `json:"base"`
+	Merged       bool         `json:"merged"`
+	MergedAt     *string      `json:"merged_at"`
+	Mergeable    *bool        `json:"mergeable"`
+	MergeState   interface{}  `json:"mergeable_state"`
+	Draft        bool         `json:"draft"`
+	CreatedAt    FlexibleTime `json:"created_at"`
+	UpdatedAt    FlexibleTime `json:"updated_at"`
+	ClosedAt     *string      `json:"closed_at"`
+	Comments     int          `json:"comments"`
+	Commits      int          `json:"commits"`
+	Additions    int          `json:"additions"`
+	Deletions    int          `json:"deletions"`
+	ChangedFiles int          `json:"changed_files"`
+	Labels       []*Label     `json:"labels"`
+	Assignees    []*User      `json:"assignees"`
+	Reviewers    []*User      `json:"requested_reviewers"`
 }
 
 // PRBranch represents a branch in a PR
@@ -109,8 +109,8 @@ type CreatePRCommentOptions struct {
 
 // CreatePRReviewOptions represents options for creating a PR review
 type CreatePRReviewOptions struct {
-	Body  string   `json:"body,omitempty"`
-	Event string   `json:"event"`
+	Body     string            `json:"body,omitempty"`
+	Event    string            `json:"event"`
 	Comments []PRReviewComment `json:"comments,omitempty"`
 }
 
@@ -217,14 +217,8 @@ func MergePullRequest(client *Client, owner, repo string, number int, opts *Merg
 
 // ListPRComments lists comments on a PR
 func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment, error) {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments"
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
 	var comments []PRComment
-	err := client.Get(path, &comments)
+	err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/comments", &comments)
 	if err != nil {
 		return nil, err
 	}
@@ -233,14 +227,8 @@ func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment
 
 // CreatePRComment creates a comment on a PR
 func CreatePRComment(client *Client, owner, repo string, number int, opts *CreatePRCommentOptions) (*PRComment, error) {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments"
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
 	var comment PRComment
-	err := client.Post(path, opts, &comment)
+	err := client.Post("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/comments", opts, &comment)
 	if err != nil {
 		return nil, err
 	}
@@ -264,25 +252,13 @@ type ReviewPROptions struct {
 
 // ReviewPR handles PR review (approve/force pass)
 func ReviewPR(client *Client, owner, repo string, number int, opts *ReviewPROptions) error {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/review"
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
-	return client.Post(path, opts, nil)
+	return client.Post("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/review", opts, nil)
 }
 
 // EditPR updates a PR's information
 func EditPR(client *Client, owner, repo string, number int, opts *UpdatePROptions) (*PullRequest, error) {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number)
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
 	var pr PullRequest
-	err := client.Patch(path, opts, &pr)
+	err := client.Patch("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number), opts, &pr)
 	if err != nil {
 		return nil, err
 	}
@@ -296,13 +272,7 @@ type TestPROptions struct {
 
 // TestPR handles PR test
 func TestPR(client *Client, owner, repo string, number int, opts *TestPROptions) error {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/test"
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
-	return client.Post(path, opts, nil)
+	return client.Post("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/test", opts, nil)
 }
 
 // EditPRCommentOptions represents options for editing a PR comment
@@ -312,14 +282,8 @@ type EditPRCommentOptions struct {
 
 // EditPRComment edits a PR comment
 func EditPRComment(client *Client, owner, repo string, commentID int, opts *EditPRCommentOptions) (*PRComment, error) {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/comments/" + itoa(commentID)
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
 	var comment PRComment
-	err := client.Patch(path, opts, &comment)
+	err := client.Patch("/repos/"+owner+"/"+repo+"/pulls/comments/"+itoa(commentID), opts, &comment)
 	if err != nil {
 		return nil, err
 	}
@@ -333,21 +297,15 @@ type ReplyPRCommentOptions struct {
 
 // ReplyPRCommentReply represents the response from replying to a PR comment
 type ReplyPRCommentReply struct {
-	ID      string `json:"id"`
-	NoteID  int    `json:"noteId"`
-	Body    string `json:"body"`
+	ID     string `json:"id"`
+	NoteID int    `json:"noteId"`
+	Body   string `json:"body"`
 }
 
 // ReplyPRComment replies to a PR comment discussion
 func ReplyPRComment(client *Client, owner, repo string, number int, discussionID string, opts *ReplyPRCommentOptions) (*ReplyPRCommentReply, error) {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/discussions/" + discussionID + "/comments"
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
 	var result ReplyPRCommentReply
-	err := client.Post(path, opts, &result)
+	err := client.Post("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/discussions/"+discussionID+"/comments", opts, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -361,13 +319,7 @@ type ResolvePRCommentOptions struct {
 
 // ResolvePRComment updates the resolution status of a PR comment
 func ResolvePRComment(client *Client, owner, repo string, number int, discussionID string, opts *ResolvePRCommentOptions) error {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments/" + discussionID
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
-	return client.Put(path, opts, nil)
+	return client.Put("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/comments/"+discussionID, opts, nil)
 }
 
 // ListPRReviews lists reviews on a PR
@@ -392,39 +344,39 @@ func ListPRCommits(client *Client, owner, repo string, number int) ([]Commit, er
 
 // Commit represents a Git commit
 type Commit struct {
-	SHA       string    `json:"sha"`
-	Message   string    `json:"message"`
-	Author    *User     `json:"author"`
-	Committer *User     `json:"committer"`
+	SHA       string `json:"sha"`
+	Message   string `json:"message"`
+	Author    *User  `json:"author"`
+	Committer *User  `json:"committer"`
 }
 
 // PRFilesResponse represents the response from PR files API
 type PRFilesResponse struct {
-	Code        int          `json:"code"`
-	AddedLines  int          `json:"added_lines"`
-	RemoveLines int          `json:"remove_lines"`
-	Count       int          `json:"count"`
-	DiffRefs    *PRDiffRefs  `json:"diff_refs"`
-	Diffs       []*PRDiff    `json:"diffs"`
+	Code        int         `json:"code"`
+	AddedLines  int         `json:"added_lines"`
+	RemoveLines int         `json:"remove_lines"`
+	Count       int         `json:"count"`
+	DiffRefs    *PRDiffRefs `json:"diff_refs"`
+	Diffs       []*PRDiff   `json:"diffs"`
 }
 
 // PRDiffRefs represents diff references
 type PRDiffRefs struct {
-	BaseSHA string `json:"base_sha"`
+	BaseSHA  string `json:"base_sha"`
 	StartSHA string `json:"start_sha"`
 	HeadSHA  string `json:"head_sha"`
 }
 
 // PRDiff represents a single file diff
 type PRDiff struct {
-	NewBlobID string        `json:"new_blob_id"`
-	Statistic *PRStatistic  `json:"statistic"`
-	Type      string        `json:"type"`
-	Path      string        `json:"path"`
-	OldPath   string        `json:"old_path"`
-	NewPath   string        `json:"new_path"`
-	View      int           `json:"view"`
-	Head      *PRDiffHead   `json:"head"`
+	NewBlobID string         `json:"new_blob_id"`
+	Statistic *PRStatistic   `json:"statistic"`
+	Type      string         `json:"type"`
+	Path      string         `json:"path"`
+	OldPath   string         `json:"old_path"`
+	NewPath   string         `json:"new_path"`
+	View      int            `json:"view"`
+	Head      *PRDiffHead    `json:"head"`
 	Content   *PRDiffContent `json:"content"`
 }
 
@@ -457,14 +409,8 @@ type PRDiffLine struct {
 
 // GetPRFiles gets the files and diffs of a PR
 func GetPRFiles(client *Client, owner, repo string, number int) (*PRFilesResponse, error) {
-	token := client.Token()
-	path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/files.json"
-	if token != "" {
-		path += "?access_token=" + token
-	}
-
 	var result PRFilesResponse
-	err := client.Get(path, &result)
+	err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/files.json", &result)
 	if err != nil {
 		return nil, err
 	}

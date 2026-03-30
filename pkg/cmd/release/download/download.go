@@ -156,13 +156,16 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 	fmt.Fprintf(out, "%s Downloading %s...\n", cs.Blue("⬇"), asset.Name)
 
 	// Use GitCode API download endpoint
-	downloadURL := fmt.Sprintf("https://api.gitcode.com/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download?access_token=%s",
-		owner, repo, tag, asset.Name, client.Token())
+	downloadURL := fmt.Sprintf("https://api.gitcode.com/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download",
+		owner, repo, tag, asset.Name)
 
 	// Create request
 	req, err := http.NewRequest("GET", downloadURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
+	}
+	if token := client.Token(); token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 
 	// Execute request

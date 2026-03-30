@@ -21,7 +21,7 @@ description: |
 ## 边界说明
 
 - 审查流程以 `spec/workflows/review-workflow.md` 为准
-- 质量门禁以 `spec/code-quality-gates.md` 为准
+- 质量门禁以 `spec/foundations/code-quality-gates.md` 为准
 - 本文件是 Claude 适配层，不是跨 AI 的唯一审查 skill 来源
 
 ## 评审流程

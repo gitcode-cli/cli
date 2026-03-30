@@ -6,8 +6,8 @@
 
 ## 统一约束
 
-- 本地构建规则以 `spec/build-and-package.md` 为准
-- 本地测试规则以 `spec/testing-guide.md` 为准
+- 本地构建规则以 `spec/delivery/build-and-package.md` 为准
+- 本地测试规则以 `spec/foundations/testing-guide.md` 为准
 - 真实命令验证只能使用 `infra-test/*`
 
 ## 适配层说明

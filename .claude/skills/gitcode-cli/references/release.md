@@ -1,7 +1,7 @@
 # Release 命令 (release)
 
 > 本文档是 Claude 参考层，不是命令行为真相源。
-> Release 命令行为以 `docs/COMMANDS.md`、`docs/PACKAGING.md` 和 `spec/release-process.md` 为准。
+> Release 命令行为以 `docs/COMMANDS.md`、`docs/PACKAGING.md` 和 `spec/delivery/release-process.md` 为准。
 
 ## release create - 创建 Release
 

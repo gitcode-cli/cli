@@ -113,7 +113,12 @@ export GC_TOKEN=your_token
    go build -o ./gc ./cmd/gc
    ```
 
-2. **执行测试命令**
+2. **优先执行核心回归脚本**
+   ```bash
+   ./scripts/regression-core.sh
+   ```
+
+3. **按需补充 issue 相关测试命令**
    ```bash
    # 示例：测试 Issue label 命令
    ./gc issue label 1 --add bug -R infra-test/gctest1
@@ -123,10 +128,23 @@ export GC_TOKEN=your_token
    ./gc pr create --title "Test PR" --body "Test body" -R infra-test/gctest1
    ```
 
-3. **验证结果**
+4. **验证结果**
    - 检查命令输出是否正确
    - 在 Web 界面验证操作结果
    - 检查错误信息是否清晰
+
+### 核心回归矩阵
+
+优先使用 [docs/REGRESSION.md](../docs/REGRESSION.md) 和 `./scripts/regression-core.sh` 执行最小稳定回归集。
+
+默认覆盖：
+- `auth login/status/token/logout`
+- `repo view`
+- `issue list/view`
+- 非 Git 目录错误路径
+
+可选写路径：
+- `pr create`，仅在显式提供测试仓库和 head 分支时执行
 
 ### 测试检查清单
 

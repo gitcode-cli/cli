@@ -19,6 +19,7 @@ import (
 type LabelOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -35,6 +36,7 @@ func NewCmdLabel(f *cmdutil.Factory, runF func(*LabelOptions) error) *cobra.Comm
 	opts := &LabelOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -92,7 +94,12 @@ func labelRun(opts *LabelOptions) error {
 	client.SetToken(token, "environment")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}

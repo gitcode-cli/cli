@@ -154,6 +154,7 @@ gc repo create my-repo --public
 
 # 查看仓库信息
 gc repo view owner/repo
+gc repo view
 
 # Fork 仓库
 gc repo fork owner/repo
@@ -200,6 +201,8 @@ gc issue label 123 --add bug,enhancement
 # 查看 Issue 关联的 PRs
 gc issue prs 123
 ```
+
+在当前 Git 仓库中执行 `gc repo view` 以及 `gc issue create/list/view/close/reopen/comment/edit/label/prs` 时，如果未传 `-R`，CLI 会优先从当前 remote 自动识别 `owner/repo`。
 
 ### Pull Request 管理
 

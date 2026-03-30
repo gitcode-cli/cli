@@ -19,6 +19,7 @@ import (
 type PrsOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -33,6 +34,7 @@ func NewCmdPrs(f *cmdutil.Factory, runF func(*PrsOptions) error) *cobra.Command 
 	opts := &PrsOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -87,7 +89,12 @@ func prsRun(opts *PrsOptions) error {
 	client.SetToken(token, "environment")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}

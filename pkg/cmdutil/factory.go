@@ -2,8 +2,10 @@
 package cmdutil
 
 import (
+	"fmt"
 	"net/http"
 
+	gitpkg "gitcode.com/gitcode-cli/cli/git"
 	"gitcode.com/gitcode-cli/cli/internal/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -13,6 +15,7 @@ type Factory struct {
 	IOStreams  *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
 	Config     func() (config.Config, error)
+	BaseRepo   func() (string, error)
 	Branch     func() (string, error)
 }
 
@@ -25,6 +28,16 @@ func NewFactory() *Factory {
 		},
 		Config: func() (config.Config, error) {
 			return config.New(), nil
+		},
+		BaseRepo: func() (string, error) {
+			if !gitpkg.IsRepo() {
+				return "", fmt.Errorf("not in a git repository")
+			}
+			repo, err := gitpkg.CurrentRepo()
+			if err != nil {
+				return "", err
+			}
+			return repo.String(), nil
 		},
 		Branch: func() (string, error) {
 			return "", nil // TODO: implement git branch detection
@@ -42,6 +55,9 @@ func TestFactory() *Factory {
 		},
 		Config: func() (config.Config, error) {
 			return config.New(), nil
+		},
+		BaseRepo: func() (string, error) {
+			return "owner/repo", nil
 		},
 		Branch: func() (string, error) {
 			return "main", nil

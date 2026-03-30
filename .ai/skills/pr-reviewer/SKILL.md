@@ -7,7 +7,7 @@
 ## 统一约束
 
 - 审查流程以 `spec/workflows/review-workflow.md` 为准
-- 质量门禁以 `spec/code-quality-gates.md` 为准
+- 质量门禁以 `spec/foundations/code-quality-gates.md` 为准
 - 命令行为以 `gc pr review` 当前真实能力为准
 - 平台不支持的动作必须明确说明，不能伪装成已支持
 

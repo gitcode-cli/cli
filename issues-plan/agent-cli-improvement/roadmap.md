@@ -175,6 +175,7 @@
 建议建立新 milestone：
 
 - 名称：`v0.6.0 Agent-Friendly CLI`
+- 已创建：`#307769`
 
 建议描述：
 

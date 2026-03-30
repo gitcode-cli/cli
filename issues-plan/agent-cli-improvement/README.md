@@ -27,6 +27,13 @@
 - 命令行为真相源以 `docs/COMMANDS.md` 为准
 - 当前项目状态以 `issues-plan/PROGRESS.md` 为准
 
+## 已创建任务
+
+当前已在 `gitcode-cli/cli` 中创建专项任务：
+
+- Milestone：`v0.6.0 Agent-Friendly CLI` `#307769`
+- Epic Issue：`#88` 规划：建立 gitcode-cli 的 Agent-Friendly CLI 专项改进基线
+
 ## 结论摘要
 
 `gitcode-cli` 当前已经具备较好的资源型命令树基础，例如 `repo`、`issue`、`pr`、`release`、`milestone`、`commit`。这意味着它天然适合继续向 agent-friendly CLI 演进。

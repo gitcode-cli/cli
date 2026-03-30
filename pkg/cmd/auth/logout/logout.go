@@ -8,6 +8,7 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -15,6 +16,7 @@ import (
 type LogoutOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	Config     func() (config.Config, error)
 
 	// Flags
 	Hostname string
@@ -26,6 +28,7 @@ func NewCmdLogout(f *cmdutil.Factory, runF func(*LogoutOptions) error) *cobra.Co
 	opts := &LogoutOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		Config:     f.Config,
 	}
 
 	cmd := &cobra.Command{
@@ -59,19 +62,28 @@ func NewCmdLogout(f *cmdutil.Factory, runF func(*LogoutOptions) error) *cobra.Co
 
 func logoutRun(opts *LogoutOptions) error {
 	// Set default hostname
+	cfg, err := opts.Config()
+	if err != nil {
+		return fmt.Errorf("failed to read config: %w", err)
+	}
+	authCfg := cfg.Authentication()
 	if opts.Hostname == "" {
-		opts.Hostname = "gitcode.com"
+		opts.Hostname, _ = authCfg.DefaultHost()
 	}
 
 	cs := opts.IO.ColorScheme()
+	_, source := authCfg.ActiveToken(opts.Hostname)
+	if err := authCfg.Logout(opts.Hostname, opts.Username); err != nil {
+		return fmt.Errorf("failed to clear stored authentication: %w", err)
+	}
 
-	// In memory-only mode, just clear from memory
-	// The actual implementation would clear from keyring
-
-	fmt.Fprintf(opts.IO.Out, "%s Logged out of %s\n", cs.Green("✓"), opts.Hostname)
-	fmt.Fprintf(opts.IO.Out, "\n")
-	fmt.Fprintf(opts.IO.Out, "Note: If you used GC_TOKEN environment variable, unset it manually:\n")
-	fmt.Fprintf(opts.IO.Out, "  unset GC_TOKEN\n")
+	fmt.Fprintf(opts.IO.Out, "%s Cleared stored authentication for %s\n", cs.Green("✓"), opts.Hostname)
+	if source == "GC_TOKEN" || source == "GITCODE_TOKEN" {
+		fmt.Fprintf(opts.IO.Out, "\n")
+		fmt.Fprintf(opts.IO.Out, "Environment token is still active. Unset it manually to fully log out:\n")
+		fmt.Fprintf(opts.IO.Out, "  unset GC_TOKEN\n")
+		fmt.Fprintf(opts.IO.Out, "  unset GITCODE_TOKEN\n")
+	}
 
 	return nil
 }

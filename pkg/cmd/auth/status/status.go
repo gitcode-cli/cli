@@ -4,12 +4,12 @@ package status
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -17,9 +17,10 @@ import (
 type StatusOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	Config     func() (config.Config, error)
 
 	// Flags
-	Hostname string
+	Hostname  string
 	ShowToken bool
 }
 
@@ -28,6 +29,7 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 	opts := &StatusOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		Config:     f.Config,
 	}
 
 	cmd := &cobra.Command{
@@ -63,19 +65,18 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 
 func statusRun(opts *StatusOptions) error {
 	// Set default hostname
+	cfg, err := opts.Config()
+	if err != nil {
+		return fmt.Errorf("failed to read config: %w", err)
+	}
+	authCfg := cfg.Authentication()
 	if opts.Hostname == "" {
-		opts.Hostname = "gitcode.com"
+		opts.Hostname, _ = authCfg.DefaultHost()
 	}
 
 	cs := opts.IO.ColorScheme()
 
-	// Check for token from environment
-	token := os.Getenv("GC_TOKEN")
-	tokenSource := "GC_TOKEN"
-	if token == "" {
-		token = os.Getenv("GITCODE_TOKEN")
-		tokenSource = "GITCODE_TOKEN"
-	}
+	token, tokenSource := authCfg.ActiveToken(opts.Hostname)
 
 	fmt.Fprintf(opts.IO.Out, "%s\n", opts.Hostname)
 
@@ -102,7 +103,7 @@ func statusRun(opts *StatusOptions) error {
 
 	// Display logged in status
 	fmt.Fprintf(opts.IO.Out, "  %s Logged in as %s (%s)\n", cs.Green("✓"), user.Login, tokenSource)
-	fmt.Fprintf(opts.IO.Out, "  %s Git operations protocol: https\n", cs.Green("✓"))
+	fmt.Fprintf(opts.IO.Out, "  %s Git operations protocol: %s\n", cs.Green("✓"), cfg.GitProtocol(opts.Hostname).Value)
 
 	if opts.ShowToken {
 		// Mask most of the token

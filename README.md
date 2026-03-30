@@ -114,6 +114,18 @@ gc auth login
 gc auth login --token YOUR_TOKEN
 ```
 
+当前版本认证优先级：
+
+1. `GC_TOKEN`
+2. `GITCODE_TOKEN`
+3. 本地登录配置
+
+说明：
+- `gc auth login` 会将认证信息持久化到本地配置目录
+- 如果设置了环境变量，环境变量始终覆盖本地配置
+- `gc auth logout` 只清理本地配置，不会自动取消环境变量
+- 详细规则见 [docs/AUTH.md](./docs/AUTH.md)
+
 **获取 Token：**
 1. 登录 [GitCode](https://gitcode.com)
 2. 进入 设置 -> 私人令牌

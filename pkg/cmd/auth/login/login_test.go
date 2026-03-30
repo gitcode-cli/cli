@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -45,6 +46,7 @@ func TestNewCmdLogin(t *testing.T) {
 }
 
 func TestLoginWithWebOpensBrowser(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	io, _, out, _ := iostreams.Test()
 	io.In = bytes.NewBufferString("test-token\n")
 
@@ -61,6 +63,9 @@ func TestLoginWithWebOpensBrowser(t *testing.T) {
 					}, nil
 				}),
 			}, nil
+		},
+		Config: func() (config.Config, error) {
+			return config.New(), nil
 		},
 		OpenBrowser: func(url string) error {
 			openedURL = url

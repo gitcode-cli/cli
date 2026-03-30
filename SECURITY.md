@@ -7,14 +7,15 @@
 ### Token 管理
 
 1. **禁止硬编码 Token**：Token 绝对不能写入源代码或任何持久化存储
-2. **使用环境变量**：Token 仅通过环境变量传递
+2. **使用环境变量或本地配置**：Token 可通过环境变量或本地配置文件提供
    ```bash
    export GC_TOKEN="your_token"
    # 或
    export GITCODE_TOKEN="your_token"
    ```
-3. **内存存储**：Token 仅在内存中保存，程序结束后自动清除
-4. **禁止 URL 传递**：认证信息必须通过 `Authorization: Bearer <token>` 请求头传递，不能拼接到 query string
+3. **本地配置存储**：`gc auth login` 会将 token 写入本地配置目录，文件权限应限制为当前用户可读写
+4. **环境变量优先**：若同时存在环境变量和本地配置，环境变量优先
+5. **禁止 URL 传递**：认证信息必须通过 `Authorization: Bearer <token>` 请求头传递，不能拼接到 query string
 
 ### 禁止提交的内容
 

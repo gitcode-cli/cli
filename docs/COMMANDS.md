@@ -119,6 +119,10 @@ gc repo fork owner/repo
 gc repo fork owner/repo --clone
 ```
 
+说明：
+- `repo fork` 现在会按传入的 `owner/repo` 执行 fork，不再使用硬编码仓库路径。
+- `--clone` 会在 fork 成功后将 fork 出来的仓库克隆到当前目录。
+
 ### repo delete - 删除仓库
 
 ```bash
@@ -726,7 +730,7 @@ gc help issue create
 
 | 功能 | 限制说明 |
 |------|----------|
-| `repo fork` | 在某些情况下可能返回 400 错误 |
+| `repo fork` | 仓库路径已按用户输入解析，但 GitCode API 在部分仓库上仍可能返回 `400 Bad Request` |
 | `milestone create/view` | 返回 400 错误，API 可能不支持 |
 | `release edit/delete` | GitCode API 不返回 release ID |
 

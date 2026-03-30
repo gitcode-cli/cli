@@ -154,8 +154,8 @@ release notes 必须满足：
 - `README.md`
 - `docs/PACKAGING.md`
 - `docs/COMMANDS.md`
-- `spec/release-process.md`
-- `spec/build-and-package.md`
+- `spec/delivery/release-process.md`
+- `spec/delivery/build-and-package.md`
 - `AGENTS.md`
 - `CLAUDE.md`
 - 相关 AI skills

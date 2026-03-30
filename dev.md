@@ -27,11 +27,13 @@
 ```
 spec/
 ├── README.md                # 文档索引
-├── development-workflow.md  # 开发工作流程（核心文档）
-├── coding-standards.md      # 编码规范
-├── testing-guide.md         # 测试指南
-├── command-template.md      # 命令开发模板
-├── security.md              # 安全规范
+├── workflows/               # 操作流程
+│   └── development-workflow.md
+├── foundations/             # 基础规范
+│   ├── coding-standards.md
+│   ├── testing-guide.md
+│   ├── command-template.md
+│   └── security.md
 └── workflows/
     ├── issue-workflow.md    # Issue 操作流程
     ├── pr-workflow.md       # PR 操作流程
@@ -308,8 +310,8 @@ Team Lead (orchestrator)
 |------|---------|
 | AI 开发入口 | `CLAUDE.md` |
 | 规范索引 | `spec/README.md` |
-| 开发流程 | `spec/development-workflow.md` |
-| 命令模板 | `spec/command-template.md` |
+| 开发流程 | `spec/workflows/development-workflow.md` |
+| 命令模板 | `spec/foundations/command-template.md` |
 | Issue Skill | `.claude/skills/issue-reviewer/SKILL.md` |
 | PR Skill | `.claude/skills/pr-reviewer/SKILL.md` |
 | 命令生成 Skill | `.claude/skills/gitcode-cmd-generator/SKILL.md` |

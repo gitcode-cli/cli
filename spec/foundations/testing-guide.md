@@ -255,7 +255,7 @@ for _, tt := range tests {
 
 ## 下一步去看哪里
 
-- 如果你在安排测试执行顺序，继续看 [测试流程](./workflows/test-workflow.md)
+- 如果你在安排测试执行顺序，继续看 [测试流程](../workflows/test-workflow.md)
 - 如果你准备提交，继续看 [代码质量门禁规范](./code-quality-gates.md)
 
 ### Mock 和 Stub

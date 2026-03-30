@@ -14,7 +14,7 @@
 - 本地验证构建产物
 - 提交前检查本地构建目录和产物边界
 
-本规范不定义 CI 自动化规则。CI 相关内容在后续 `spec/ci-workflows.md` 中单独维护。
+本规范不定义 CI 自动化规则。CI 相关内容在后续 `spec/delivery/ci-workflows.md` 中单独维护。
 
 ## 2. 权威边界
 
@@ -177,8 +177,8 @@ go build -o ./gc ./cmd/gc
 
 - `docs/PACKAGING.md`
 - `README.md`
-- `spec/build-and-package.md`
-- `spec/release-process.md`
+- `spec/delivery/build-and-package.md`
+- `spec/delivery/release-process.md`
 - `AGENTS.md`
 - `CLAUDE.md`
 - 相关 AI skills

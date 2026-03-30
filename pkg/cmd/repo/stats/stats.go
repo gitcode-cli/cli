@@ -127,14 +127,7 @@ func statsRun(opts *StatsOptions) error {
 }
 
 func parseRepo(repo string) (string, string, error) {
-	if repo == "" {
-		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
-	}
-	parts := strings.Split(repo, "/")
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf("invalid repository format: %s", repo)
-	}
-	return parts[0], parts[1], nil
+	return cmdutil.ParseRepo(repo)
 }
 
 func getEnvToken() string {

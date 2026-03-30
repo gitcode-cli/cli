@@ -22,12 +22,12 @@ type CreateOptions struct {
 	TagName string
 
 	// Flags
-	Repository  string
-	Title       string
-	Notes       string
-	Draft       bool
-	Prerelease  bool
-	Target      string
+	Repository string
+	Title      string
+	Notes      string
+	Draft      bool
+	Prerelease bool
+	Target     string
 }
 
 // NewCmdCreate creates the create command
@@ -123,17 +123,7 @@ func createRun(opts *CreateOptions) error {
 }
 
 func parseRepo(repo string) (string, string, error) {
-	if repo == "" {
-		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
-	}
-
-	// Simple parsing - in real implementation would be more robust
-	for i := 0; i < len(repo); i++ {
-		if repo[i] == '/' {
-			return repo[:i], repo[i+1:], nil
-		}
-	}
-	return "", "", fmt.Errorf("invalid repository format: %s", repo)
+	return cmdutil.ParseRepo(repo)
 }
 
 func getEnvToken() string {

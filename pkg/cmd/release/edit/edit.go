@@ -22,13 +22,13 @@ type EditOptions struct {
 	TagName string
 
 	// Flags
-	Repository   string
-	Title        string
-	Notes        string
-	NotesFile    string
-	Draft        string
-	Prerelease   string
-	Target       string
+	Repository string
+	Title      string
+	Notes      string
+	NotesFile  string
+	Draft      string
+	Prerelease string
+	Target     string
 }
 
 // NewCmdEdit creates the edit command
@@ -158,16 +158,7 @@ func editRun(opts *EditOptions) error {
 }
 
 func parseRepo(repo string) (string, string, error) {
-	if repo == "" {
-		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
-	}
-
-	for i := 0; i < len(repo); i++ {
-		if repo[i] == '/' {
-			return repo[:i], repo[i+1:], nil
-		}
-	}
-	return "", "", fmt.Errorf("invalid repository format: %s", repo)
+	return cmdutil.ParseRepo(repo)
 }
 
 func parseBool(s string) (bool, error) {

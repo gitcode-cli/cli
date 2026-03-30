@@ -57,3 +57,62 @@ func TestResolveRepo(t *testing.T) {
 		})
 	}
 }
+
+func TestParseRepo(t *testing.T) {
+	tests := []struct {
+		name      string
+		repo      string
+		wantOwner string
+		wantRepo  string
+		wantErr   string
+	}{
+		{
+			name:      "owner repo",
+			repo:      "owner/repo",
+			wantOwner: "owner",
+			wantRepo:  "repo",
+		},
+		{
+			name:      "https url",
+			repo:      "https://gitcode.com/owner/repo",
+			wantOwner: "owner",
+			wantRepo:  "repo",
+		},
+		{
+			name:      "ssh url",
+			repo:      "git@gitcode.com:owner/repo.git",
+			wantOwner: "owner",
+			wantRepo:  "repo",
+		},
+		{
+			name:    "missing repo",
+			wantErr: "no repository specified. Use -R owner/repo",
+		},
+		{
+			name:    "invalid repo",
+			repo:    "owner/repo/extra",
+			wantErr: "invalid repository format",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			owner, repo, err := ParseRepo(tt.repo)
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatalf("ParseRepo() error = nil, want %q", tt.wantErr)
+				}
+				if err.Error() == tt.wantErr || strings.Contains(err.Error(), tt.wantErr) {
+					return
+				}
+				t.Fatalf("ParseRepo() error = %q, want containing %q", err.Error(), tt.wantErr)
+			}
+			if err != nil {
+				t.Fatalf("ParseRepo() unexpected error = %v", err)
+			}
+			if owner != tt.wantOwner || repo != tt.wantRepo {
+				t.Fatalf("ParseRepo() = (%q, %q), want (%q, %q)", owner, repo, tt.wantOwner, tt.wantRepo)
+			}
+		})
+	}
+}

@@ -6,6 +6,20 @@
 
 ## 前置准备
 
+### 仓库参数格式
+
+大多数接受仓库参数的命令现在统一支持以下格式：
+
+```bash
+owner/repo
+https://gitcode.com/owner/repo
+git@gitcode.com:owner/repo.git
+```
+
+说明：
+- 未显式传 `-R` 的命令，仍按各自命令说明决定是否支持从当前 Git 仓库自动推断。
+- 传入 HTTPS 或 SSH 仓库地址时，CLI 会统一解析出目标仓库，不再要求手工改写成 `owner/repo`。
+
 ### 认证
 
 ```bash

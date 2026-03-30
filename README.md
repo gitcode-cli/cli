@@ -163,6 +163,8 @@ gc repo fork owner/repo
 gc repo delete owner/repo
 ```
 
+大多数接受仓库参数的命令统一支持三种格式：`owner/repo`、`https://gitcode.com/owner/repo`、`git@gitcode.com:owner/repo.git`。
+
 ### Issue 管理
 
 ```bash

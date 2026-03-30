@@ -12,6 +12,18 @@ description: |
 
 自动化评审 GitCode CLI 项目的 Issue，给出分析意见和标签建议。
 
+## 共享源
+
+本 Claude skill 对应的共享真相源是：
+
+- [`../../../.ai/skills/issue-reviewer/SKILL.md`](../../../.ai/skills/issue-reviewer/SKILL.md)
+
+## 边界说明
+
+- issue 生命周期以 `spec/workflows/issue-workflow.md` 为准
+- 问题修复前必须先验证问题仍然存在
+- 本文件是 Claude 适配层，不是跨 AI 的唯一 issue skill 来源
+
 ## 评审流程
 
 ### 1. 获取 Issue 信息

@@ -15,6 +15,7 @@ echo "To get started:"
 echo "  1. Run 'gc auth login' to authenticate"
 echo "  2. Set your token: export GC_TOKEN=your_token"
 echo ""
-echo "Documentation: https://gitcode.com/help/cli"
+echo "Project README: https://gitcode.com/gitcode-cli/cli"
+echo "Command docs: https://gitcode.com/gitcode-cli/cli/blob/main/docs/COMMANDS.md"
 
 exit 0

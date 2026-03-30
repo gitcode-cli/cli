@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/git"
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -17,6 +19,10 @@ import (
 type ForkOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	Config     func() (config.Config, error)
+	ParseRepo  func(string) (*git.Repo, error)
+	ForkRepo   func(*api.Client, string, string) (*api.Repository, error)
+	CloneRepo  func(*git.Repo, string, string, int) error
 
 	// Arguments
 	Repository string
@@ -30,6 +36,10 @@ func NewCmdFork(f *cmdutil.Factory, runF func(*ForkOptions) error) *cobra.Comman
 	opts := &ForkOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		Config:     f.Config,
+		ParseRepo:  git.ParseRepo,
+		ForkRepo:   api.ForkRepo,
+		CloneRepo:  git.CloneWithProtocol,
 	}
 
 	cmd := &cobra.Command{
@@ -65,6 +75,15 @@ func NewCmdFork(f *cmdutil.Factory, runF func(*ForkOptions) error) *cobra.Comman
 func forkRun(opts *ForkOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	if opts.Repository == "" {
+		return fmt.Errorf("repository is required. Usage: gc repo fork owner/repo")
+	}
+
+	sourceRepo, err := opts.ParseRepo(opts.Repository)
+	if err != nil {
+		return fmt.Errorf("invalid repository: %w", err)
+	}
+
 	httpClient, err := opts.HttpClient()
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
@@ -81,13 +100,36 @@ func forkRun(opts *ForkOptions) error {
 	client.SetToken(token, "environment")
 
 	// Fork repo
-	repo, err := api.ForkRepo(client, "owner", "repo") // TODO: parse repository
+	repo, err := opts.ForkRepo(client, sourceRepo.Owner, sourceRepo.Name)
 	if err != nil {
 		return fmt.Errorf("failed to fork repository: %w", err)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Forked repository %s\n", cs.Green("✓"), repo.FullName)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", repo.HTMLURL)
+
+	if opts.Clone {
+		cfg, err := opts.Config()
+		if err != nil {
+			return fmt.Errorf("failed to read config: %w", err)
+		}
+
+		forkedRepo, err := opts.ParseRepo(repo.FullName)
+		if err != nil {
+			return fmt.Errorf("failed to parse forked repository: %w", err)
+		}
+
+		protocol := cfg.GitProtocol(sourceRepo.Host).Value
+		if protocol == "" {
+			protocol = "https"
+		}
+
+		if err := opts.CloneRepo(forkedRepo, "", protocol, 0); err != nil {
+			return fmt.Errorf("failed to clone forked repository: %w", err)
+		}
+
+		fmt.Fprintf(opts.IO.Out, "%s Cloned fork to ./%s\n", cs.Green("✓"), forkedRepo.Name)
+	}
 
 	return nil
 }

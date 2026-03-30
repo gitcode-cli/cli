@@ -320,6 +320,26 @@ gc issue comment 1 -R infra-test/gctest1 --body-file comment.txt
 echo "Comment from stdin" | gc issue comment 1 -R infra-test/gctest1 --body-file -
 ```
 
+### issue comments - 列出 Issue 评论
+
+```bash
+# 列出评论
+gc issue comments 1 -R infra-test/gctest1
+gc issue comments 1
+
+# 限制返回数量
+gc issue comments 1 -R infra-test/gctest1 --limit 10
+
+# 倒序排列
+gc issue comments 1 -R infra-test/gctest1 --order desc
+
+# 按更新时间筛选
+gc issue comments 1 -R infra-test/gctest1 --since "2024-01-01T00:00:00+08:00"
+
+# JSON 输出
+gc issue comments 1 -R infra-test/gctest1 --json
+```
+
 ### issue label - 管理 Issue 标签
 
 ```bash
@@ -346,7 +366,7 @@ gc issue prs 123 --mode 1 -R infra-test/gctest1
 ```
 
 说明：
-- `issue create/list/view/close/reopen/comment/edit/label/prs` 在当前 Git 仓库中可缺省 `-R`，CLI 会优先解析 `origin` remote；若没有 `origin`，则回退到第一个 remote。
+- `issue create/list/view/close/reopen/comment/comments/edit/label/prs` 在当前 Git 仓库中可缺省 `-R`，CLI 会优先解析 `origin` remote；若没有 `origin`，则回退到第一个 remote。
 - 若当前目录不是 Git 仓库，或仓库没有可用 remote，会返回明确错误并提示改用 `-R owner/repo`。
 
 ---

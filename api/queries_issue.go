@@ -50,6 +50,14 @@ type IssueComment struct {
 	UpdatedAt FlexibleTime `json:"updated_at"`
 }
 
+// IssueCommentListOptions represents options for listing issue comments.
+type IssueCommentListOptions struct {
+	Page    int
+	PerPage int
+	Order   string
+	Since   string
+}
+
 // IssueListOptions represents options for listing issues
 type IssueListOptions struct {
 	State         string `url:"state,omitempty"`
@@ -254,9 +262,29 @@ func ReopenIssue(client *Client, owner, repo string, number int) (*Issue, error)
 }
 
 // ListIssueComments lists comments on an issue
-func ListIssueComments(client *Client, owner, repo string, number int) ([]IssueComment, error) {
+func ListIssueComments(client *Client, owner, repo string, number int, opts *IssueCommentListOptions) ([]IssueComment, error) {
+	path := "/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/comments"
+	if opts != nil {
+		params := url.Values{}
+		if opts.Page > 0 {
+			params.Set("page", itoa(opts.Page))
+		}
+		if opts.PerPage > 0 {
+			params.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Order != "" {
+			params.Set("order", opts.Order)
+		}
+		if opts.Since != "" {
+			params.Set("since", opts.Since)
+		}
+		if len(params) > 0 {
+			path += "?" + params.Encode()
+		}
+	}
+
 	var comments []IssueComment
-	err := client.Get("/repos/"+owner+"/"+repo+"/issues/"+itoa(number)+"/comments", &comments)
+	err := client.Get(path, &comments)
 	if err != nil {
 		return nil, err
 	}

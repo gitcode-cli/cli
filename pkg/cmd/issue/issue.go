@@ -5,9 +5,9 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/close"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/comment"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/comments"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/create"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/edit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/label"
@@ -15,6 +15,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/prs"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/reopen"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/view"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdIssue creates the issue command
@@ -49,6 +50,7 @@ func NewCmdIssue(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(close.NewCmdClose(f, nil))
 	cmd.AddCommand(reopen.NewCmdReopen(f, nil))
 	cmd.AddCommand(comment.NewCmdComment(f, nil))
+	cmd.AddCommand(comments.NewCmdComments(f, nil))
 	cmd.AddCommand(label.NewCmdLabel(f, nil))
 	cmd.AddCommand(prs.NewCmdPrs(f, nil))
 

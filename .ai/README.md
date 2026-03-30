@@ -33,3 +33,9 @@
 - 自动同步脚本
 - 全量重写所有现有 skill 内容
 - 把客户端差异抹平成完全相同的文本
+
+当前已提供：
+
+- `scripts/sync-ai-skills.sh`
+
+该脚本用于基于共享源更新 Codex 适配层，并为缺失的 Claude 适配目录生成占位入口；不会覆盖现有 Claude skill 正文。

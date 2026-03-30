@@ -456,6 +456,7 @@ gc pr comments 1 --limit 5 -R infra-test/gctest1
 ```
 
 评论列表会显示 DiscussionID，可用于回复评论。
+当前 GitCode 公开 API 不支持通过 CLI 将 PR 评论标记为已解决或未解决；resolved 状态需要在 Web UI 中手动处理。
 
 ### pr reply - 回复 PR 评论
 

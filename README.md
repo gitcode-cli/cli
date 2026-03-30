@@ -237,6 +237,9 @@ gc pr comments 456
 # 回复 PR 评论
 gc pr reply 456 --discussion <discussion_id> --body "Reply text"
 
+# 当前不支持通过 CLI 解决/取消解决 PR 评论
+# resolved 状态需要在 GitCode Web UI 中手动处理
+
 # 检出 PR 分支
 gc pr checkout 456
 

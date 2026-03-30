@@ -195,6 +195,11 @@ gc issue reopen 123
 # 添加评论
 gc issue comment 123 --body "Comment text"
 
+# 列出 Issue 评论
+gc issue comments 123
+gc issue comments 123 --limit 10
+gc issue comments 123 --order desc
+
 # 从文件添加评论
 gc issue comment 123 --body-file comment.txt
 
@@ -205,7 +210,7 @@ gc issue label 123 --add bug,enhancement
 gc issue prs 123
 ```
 
-在当前 Git 仓库中执行 `gc repo view` 以及 `gc issue create/list/view/close/reopen/comment/edit/label/prs` 时，如果未传 `-R`，CLI 会优先从当前 remote 自动识别 `owner/repo`。
+在当前 Git 仓库中执行 `gc repo view` 以及 `gc issue create/list/view/close/reopen/comment/comments/edit/label/prs` 时，如果未传 `-R`，CLI 会优先从当前 remote 自动识别 `owner/repo`。
 
 ### Pull Request 管理
 

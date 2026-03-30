@@ -125,6 +125,26 @@ gc issue comment 1 -R infra-test/gctest1 --body-file comment.txt
 echo "Comment from stdin" | gc issue comment 1 -R infra-test/gctest1 --body-file -
 ```
 
+## issue comments - 列出 Issue 评论
+
+```bash
+# 列出评论
+gc issue comments 1 -R infra-test/gctest1
+gc issue comments 1
+
+# 限制返回数量
+gc issue comments 1 -R infra-test/gctest1 --limit 10
+
+# 倒序排列
+gc issue comments 1 -R infra-test/gctest1 --order desc
+
+# 按更新时间筛选
+gc issue comments 1 -R infra-test/gctest1 --since "2024-01-01T00:00:00+08:00"
+
+# JSON 输出
+gc issue comments 1 -R infra-test/gctest1 --json
+```
+
 ## issue label - 管理 Issue 标签
 
 ```bash

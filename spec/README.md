@@ -1,22 +1,32 @@
-# 规范文档索引
+# 规范入口
 
-`spec/` 是 gitcode-cli 的正式规范目录，定义项目开发、测试、安全、评审和后续交付规则。
+`spec/` 是 gitcode-cli 的正式规范目录，也是 Codex、Claude 和人工维护者在本仓库中执行开发任务时的唯一规则源。
 
-如果你要修改代码、文档、流程或 AI 协作规则，先从本目录开始。
+如果你要修改代码、文档、流程、发布规则或 AI 协作规则，先从本目录开始。
 
-## 阅读顺序
+## 进入开发前的最小阅读集
 
-建议按以下顺序阅读：
+首次进入本仓库，至少先读以下 4 篇：
 
-1. [文档治理规范](./docs-governance.md)
-2. [开发工作流程](./development-workflow.md)
-3. [本地构建与打包规范](./build-and-package.md)
-4. [发布流程规范](./release-process.md)
-5. [代码质量门禁规范](./code-quality-gates.md)
-6. [编码规范](./coding-standards.md)
-7. [测试指南](./testing-guide.md)
-8. [安全规范](./security.md)
-9. `workflows/` 中对应操作流程
+1. [开发工作流程](./development-workflow.md)
+2. [编码规范](./coding-standards.md)
+3. [测试指南](./testing-guide.md)
+4. [代码质量门禁规范](./code-quality-gates.md)
+
+如果改动涉及命令行为、文档同步或 AI 协作边界，再补读：
+
+5. [文档治理规范](./docs-governance.md)
+
+## 按任务选择入口
+
+| 你正在做什么 | 先读这些文档 |
+|------|------|
+| 改命令行为、参数、用户可见输出 | [开发工作流程](./development-workflow.md)、[文档治理规范](./docs-governance.md)、[代码质量门禁规范](./code-quality-gates.md) |
+| 改 API、认证、配置、错误处理 | [编码规范](./coding-standards.md)、[安全规范](./security.md)、[测试指南](./testing-guide.md) |
+| 补测试、修回归、做真实命令验证 | [测试指南](./testing-guide.md)、[测试流程](./workflows/test-workflow.md) |
+| 提交 PR、补 issue comment、补 review comment | [PR 流程](./workflows/pr-workflow.md)、[评审流程](./workflows/review-workflow.md)、[代码质量门禁规范](./code-quality-gates.md) |
+| 改构建、打包、发布 | [本地构建与打包规范](./build-and-package.md)、[发布流程规范](./release-process.md) |
+| 改文档、skills、AGENTS、CLAUDE | [文档治理规范](./docs-governance.md)、[代码质量门禁规范](./code-quality-gates.md) |
 
 ## 当前结构
 
@@ -50,6 +60,13 @@ spec/
 
 如果其他文档与本目录冲突，以 `spec/` 为准。
 
+## 任何改动都要检查的同步点
+
+- 命令行为变化：`docs/COMMANDS.md`、`README.md`、相关 AI skills
+- 流程变化：`spec/*`、`AGENTS.md`、`CLAUDE.md`
+- 文档或 AI 协作规则变化：`docs-governance.md`、相关 skills、入口文档
+- 当前状态变化：`issues-plan/PROGRESS.md`
+
 ## 核心规范
 
 | 文档 | 说明 |
@@ -80,6 +97,15 @@ spec/
 - `spec/ci-workflows.md`
 
 其中 `spec/ci-workflows.md` 放在最后阶段实施，因为当前 GitCode CI 条件尚未具备。
+
+## AI 使用建议
+
+对 Codex 和 Claude 来说，推荐执行顺序是：
+
+1. 先从本页判断任务类型
+2. 再进入对应规范正文
+3. 开始修改前回到 [代码质量门禁规范](./code-quality-gates.md) 确认交付标准
+4. 命令行为或协作规则变化时，回到 [文档治理规范](./docs-governance.md) 检查同步范围
 
 ## 相关文档
 

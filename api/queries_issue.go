@@ -103,6 +103,11 @@ type CreateCommentOptions struct {
 	Body string `json:"body"`
 }
 
+// UpdateCommentOptions represents options for updating an issue comment.
+type UpdateCommentOptions struct {
+	Body string `json:"body"`
+}
+
 // ListRepoIssues lists issues for a repository
 func ListRepoIssues(client *Client, owner, repo string, opts *IssueListOptions) ([]Issue, error) {
 	path := "/repos/" + owner + "/" + repo + "/issues"
@@ -295,6 +300,16 @@ func ListIssueComments(client *Client, owner, repo string, number int, opts *Iss
 func CreateIssueComment(client *Client, owner, repo string, number int, opts *CreateCommentOptions) (*IssueComment, error) {
 	var comment IssueComment
 	err := client.Post("/repos/"+owner+"/"+repo+"/issues/"+itoa(number)+"/comments", opts, &comment)
+	if err != nil {
+		return nil, err
+	}
+	return &comment, nil
+}
+
+// UpdateIssueComment updates a comment on an issue.
+func UpdateIssueComment(client *Client, owner, repo string, commentID string, opts *UpdateCommentOptions) (*IssueComment, error) {
+	var comment IssueComment
+	err := client.Patch("/repos/"+owner+"/"+repo+"/issues/comments/"+commentID, opts, &comment)
 	if err != nil {
 		return nil, err
 	}

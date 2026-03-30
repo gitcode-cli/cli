@@ -18,6 +18,7 @@ pkg/cmd/<command>/subcommand.go  # 子命令（如有）
 package xxx
 
 import (
+    "encoding/json"
     "fmt"
     "net/http"
 
@@ -38,6 +39,7 @@ type XxxOptions struct {
 
     // Flags
     Option string
+    JSON   bool
 }
 
 func NewCmdXxx(f *cmdutil.Factory, runF func(*XxxOptions) error) *cobra.Command {
@@ -71,6 +73,7 @@ func NewCmdXxx(f *cmdutil.Factory, runF func(*XxxOptions) error) *cobra.Command 
     // 添加 flags
     cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
     cmd.Flags().StringVarP(&opts.Option, "option", "o", "", "Option description")
+    cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
     return cmd
 }
@@ -102,6 +105,13 @@ func xxxRun(opts *XxxOptions) error {
     // ... API 调用 ...
 
     // 5. 输出结果
+    if opts.JSON {
+        if err := json.NewEncoder(opts.IO.Out).Encode(map[string]string{"status": "ok"}); err != nil {
+            return fmt.Errorf("failed to encode JSON output: %w", err)
+        }
+        return nil
+    }
+
     fmt.Fprintf(opts.IO.Out, "%s Success\n", cs.Green("✓"))
 
     return nil
@@ -208,16 +218,12 @@ tp.Render()
 ## 交互提示
 
 ```go
-prompter := opts.Prompter
-
-// 确认
-confirmed, _ := prompter.Confirm("Are you sure?", true)
-
-// 输入
-name, _ := prompter.Input("Name:", "")
-
-// 选择
-index, _ := prompter.Select("Choose:", "opt1", []string{"opt1", "opt2"})
+err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+    IO:       opts.IO,
+    Yes:      opts.Yes,
+    Expected: "owner/repo",
+    Prompt:   "Type the repository name to confirm: ",
+})
 ```
 
 ## 测试模板

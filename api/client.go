@@ -132,6 +132,52 @@ func (c *Client) Post(path string, body interface{}, response interface{}) error
 	return c.REST("POST", path, body, response)
 }
 
+// PostForm performs a POST request with form data.
+func (c *Client) PostForm(path string, formValues url.Values, response interface{}) error {
+	reqBody := formValues.Encode()
+
+	reqURL := fmt.Sprintf("https://%s/api/%s%s", c.host, DefaultAPIVersion, path)
+	req, err := http.NewRequest("POST", reqURL, bytes.NewReader([]byte(reqBody)))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	if c.token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		var apiErr APIError
+		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
+			apiErr.StatusCode = resp.StatusCode
+			return &apiErr
+		}
+		return fmt.Errorf("API error: %s", resp.Status)
+	}
+
+	if response != nil && len(respBody) > 0 {
+		if err := json.Unmarshal(respBody, response); err != nil {
+			return fmt.Errorf("failed to parse response: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // Put performs a PUT request
 func (c *Client) Put(path string, body interface{}, response interface{}) error {
 	return c.REST("PUT", path, body, response)

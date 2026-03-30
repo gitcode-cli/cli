@@ -99,6 +99,12 @@ gofmt -w <files>
 - `CLAUDE.md`
 - 相关 skills
 
+如果改动影响命令输出、确认行为、错误语义或 schema，还必须检查：
+
+- `spec/foundations/agent-friendly-cli.md`
+- `docs/AI-GUIDE.md`
+- `docs/REGRESSION.md`
+
 ### 3.5 工作区卫生检查
 
 提交前必须确认：
@@ -163,6 +169,8 @@ PR 在合并前，必须满足：
 
 - 命令行为是否符合产品语义
 - 错误提示是否清晰
+- 非交互环境是否会阻塞等待输入
+- JSON / schema 输出是否稳定且可消费
 - API 兼容性是否真实有效
 - 是否引入重复实现
 - 文档是否准确描述当前限制

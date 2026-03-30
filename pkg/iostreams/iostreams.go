@@ -118,6 +118,11 @@ func (s *IOStreams) IsStderrTTY() bool {
 	return s.isTerminal(s.ErrOut)
 }
 
+// CanPromptForInput returns true when this IOStreams instance can prompt safely.
+func (s *IOStreams) CanPrompt() bool {
+	return s != nil && s.IsStdinTTY() && os.Getenv("GC_TEST_DISABLE_PROMPT") == ""
+}
+
 // IsInputTTY returns true if input is from a terminal
 func IsInputTTY() bool {
 	fi, err := os.Stdin.Stat()
@@ -162,9 +167,9 @@ func Test() (*IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
 	out := &bytes.Buffer{}
 	errOut := &bytes.Buffer{}
 	return &IOStreams{
-		In:      in,
-		Out:     out,
-		ErrOut:  errOut,
+		In:         in,
+		Out:        out,
+		ErrOut:     errOut,
 		isTerminal: func(io.Writer) bool { return false },
 	}, in, out, errOut
 }

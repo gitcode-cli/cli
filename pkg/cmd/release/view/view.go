@@ -4,7 +4,6 @@ package view
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -25,6 +24,7 @@ type ViewOptions struct {
 	// Flags
 	Repository string
 	Web        bool
+	JSON       bool
 }
 
 // NewCmdView creates the view command
@@ -60,6 +60,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -73,9 +74,9 @@ func viewRun(opts *ViewOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -95,6 +96,10 @@ func viewRun(opts *ViewOptions) error {
 	if opts.Web {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", release.HTMLURL)
 		return browser.Open(release.HTMLURL)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, release)
 	}
 
 	// Output
@@ -147,11 +152,4 @@ func viewRun(opts *ViewOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

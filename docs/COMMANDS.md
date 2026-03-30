@@ -24,6 +24,26 @@ git@gitcode.com:owner/repo.git
 - 已支持缺省 `-R` 的命令：`repo view`、`issue create/list/view/close/reopen/comment/edit/label/prs`
 - 仍需显式传 `-R` 的常见命令：`pr create/list/view/review`、`release *`、`label *`、`milestone *`、`commit *`
 
+### Agent-Friendly CLI 能力
+
+当前版本已开始收口面向 AI 代理和脚本的 CLI 契约：
+
+- 高频只读命令逐步支持 `--json`
+- 删除类命令支持 `--dry-run`
+- 非交互环境下删除命令未显式传 `--yes` 会直接失败，不再隐式等待输入
+- 可通过 `gc schema` 查询命令树和单命令元数据
+
+当前已支持 `--json` 的高频只读命令：
+
+- `repo view`
+- `repo list`
+- `issue list`
+- `issue view`
+- `pr list`
+- `pr view`
+- `release list`
+- `release view`
+
 ### 认证
 
 ```bash
@@ -109,6 +129,9 @@ gc repo view
 
 # 在浏览器中打开
 gc repo view infra-test/gctest1 --web
+
+# 输出 JSON
+gc repo view infra-test/gctest1 --json
 ```
 
 说明：
@@ -128,6 +151,9 @@ gc repo list --limit 10
 
 # 只列出公开仓库
 gc repo list --visibility public
+
+# 输出 JSON
+gc repo list --json
 ```
 
 ### repo create - 创建仓库
@@ -164,7 +190,17 @@ gc repo fork owner/repo --clone
 ```bash
 # 删除仓库（危险操作，需确认）
 gc repo delete owner/repo
+
+# 预演删除
+gc repo delete owner/repo --dry-run
+
+# 非交互执行
+gc repo delete owner/repo --yes
 ```
+
+说明：
+- 默认会要求输入仓库名确认。
+- 在非交互环境中，未显式传 `--yes` 会直接失败。
 
 ### repo stats - 代码贡献统计
 
@@ -198,7 +234,14 @@ gc issue create -R infra-test/gctest1 --title "Feature request" --body "Descript
 
 # 指定受理人
 gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --assignee username
+
+# 预演创建
+gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --dry-run
 ```
+
+说明：
+- `issue create` 当前已支持 `--dry-run` 预演创建参数。
+- 创建时携带 `--label`、`--milestone`、`--assignee` 已走兼容的 form 提交路径。
 
 ### issue list - 列出 Issues
 
@@ -243,6 +286,9 @@ gc issue list -R infra-test/gctest1 --search "bug"
 
 # 组合使用
 gc issue list -R infra-test/gctest1 --state open --milestone "v1.0" --sort updated
+
+# 输出 JSON
+gc issue list -R infra-test/gctest1 --json
 ```
 
 ### issue view - 查看 Issue
@@ -257,6 +303,12 @@ gc issue view 1 -R infra-test/gctest1 --comments
 
 # 在浏览器中打开
 gc issue view 1 -R infra-test/gctest1 --web
+
+# 输出 JSON
+gc issue view 1 -R infra-test/gctest1 --json
+
+# 查看评论并输出 JSON
+gc issue view 1 -R infra-test/gctest1 --comments --json
 ```
 
 ### issue close - 关闭 Issue
@@ -430,6 +482,9 @@ gc pr list -R infra-test/gctest1 --state merged
 
 # 限制数量
 gc pr list -R infra-test/gctest1 --limit 10
+
+# 输出 JSON
+gc pr list -R infra-test/gctest1 --json
 ```
 
 ### pr view - 查看 PR
@@ -443,6 +498,12 @@ gc pr view 1 -R infra-test/gctest1 --comments
 
 # 在浏览器中打开
 gc pr view 1 -R infra-test/gctest1 --web
+
+# 输出 JSON
+gc pr view 1 -R infra-test/gctest1 --json
+
+# 查看评论并输出 JSON
+gc pr view 1 -R infra-test/gctest1 --comments --json
 ```
 
 ### pr comments - 查看 PR 评论
@@ -599,6 +660,9 @@ gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Release
 ```bash
 # 列出所有 Releases
 gc release list -R infra-test/gctest1
+
+# 输出 JSON
+gc release list -R infra-test/gctest1 --json
 ```
 
 ### release view - 查看 Release
@@ -609,6 +673,9 @@ gc release view v1.0.0 -R infra-test/gctest1
 
 # 在浏览器中打开
 gc release view v1.0.0 -R infra-test/gctest1 --web
+
+# 输出 JSON
+gc release view v1.0.0 -R infra-test/gctest1 --json
 ```
 
 ### release upload - 上传资产
@@ -649,6 +716,12 @@ gc release edit v1.0.0 --notes "New release notes" -R infra-test/gctest1
 ```bash
 # 删除 Release
 gc release delete v1.0.0 -R infra-test/gctest1
+
+# 预演删除
+gc release delete v1.0.0 -R infra-test/gctest1 --dry-run
+
+# 非交互执行
+gc release delete v1.0.0 -R infra-test/gctest1 --yes
 ```
 
 ---
@@ -746,6 +819,12 @@ gc label create "bug" -R infra-test/gctest1 --color "#ff0000" --description "Bug
 ```bash
 # 删除标签
 gc label delete bug -R infra-test/gctest1
+
+# 预演删除
+gc label delete bug -R infra-test/gctest1 --dry-run
+
+# 非交互执行
+gc label delete bug -R infra-test/gctest1 --yes
 ```
 
 ---
@@ -773,6 +852,19 @@ gc milestone create "v1.0" -R infra-test/gctest1 --description "First release"
 gc milestone view 1 -R infra-test/gctest1
 ```
 
+### milestone delete - 删除里程碑
+
+```bash
+# 删除里程碑
+gc milestone delete 1 -R infra-test/gctest1
+
+# 预演删除
+gc milestone delete 1 -R infra-test/gctest1 --dry-run
+
+# 非交互执行
+gc milestone delete 1 -R infra-test/gctest1 --yes
+```
+
 ---
 
 ## 其他命令
@@ -794,6 +886,16 @@ gc help issue
 gc help issue create
 ```
 
+### schema - 命令元数据
+
+```bash
+# 输出完整命令树
+gc schema
+
+# 输出单个命令的元数据
+gc schema "issue view"
+```
+
 ---
 
 ## 常用选项
@@ -804,6 +906,8 @@ gc help issue create
 | `--help` | 显示帮助 |
 | `--limit N` | 限制结果数量 |
 | `--web` | 在浏览器中打开 |
+| `--json` | 输出结构化 JSON |
+| `--dry-run` | 预演写操作而不执行 |
 
 ---
 

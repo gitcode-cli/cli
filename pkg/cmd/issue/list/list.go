@@ -4,7 +4,6 @@ package list
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -38,6 +37,7 @@ type ListOptions struct {
 	UpdatedBefore string
 	Search        string
 	Page          int
+	JSON          bool
 }
 
 // NewCmdList creates the list command
@@ -112,6 +112,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.UpdatedBefore, "updated-before", "", "Filter issues updated before this time")
 	cmd.Flags().StringVar(&opts.Search, "search", "", "Search by keyword in title or body")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number for pagination")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -125,9 +126,9 @@ func listRun(opts *ListOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -166,8 +167,15 @@ func listRun(opts *ListOptions) error {
 
 	// Output
 	if len(issues) == 0 {
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, issues)
+		}
 		fmt.Fprintf(opts.IO.Out, "No issues found\n")
 		return nil
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, issues)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "\n")
@@ -187,11 +195,4 @@ func listRun(opts *ListOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

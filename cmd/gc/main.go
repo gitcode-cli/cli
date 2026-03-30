@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/root"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 var (
@@ -17,6 +18,6 @@ func main() {
 	// Execute the root command
 	if err := root.Execute(version, commit, date); err != nil {
 		os.Stderr.WriteString("Error: " + err.Error() + "\n")
-		os.Exit(1)
+		os.Exit(cmdutil.ExitCode(err))
 	}
 }

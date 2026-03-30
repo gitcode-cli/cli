@@ -4,7 +4,6 @@ package delete
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -24,7 +23,8 @@ type DeleteOptions struct {
 	Number     int
 
 	// Flags
-	Yes bool
+	Yes    bool
+	DryRun bool
 }
 
 // NewCmdDelete creates the delete command
@@ -64,6 +64,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation")
+	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview the deletion without deleting the milestone")
 
 	return cmd
 }
@@ -71,23 +72,28 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 func deleteRun(opts *DeleteOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	// Get repository
+	owner, repo, err := parseRepo(opts.Repository)
+	if err != nil {
+		return err
+	}
+
+	if opts.DryRun {
+		fmt.Fprintf(opts.IO.Out, "Dry run: would delete milestone #%d from %s/%s\n", opts.Number, owner, repo)
+		return nil
+	}
+
 	httpClient, err := opts.HttpClient()
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
-
-	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
-	if err != nil {
-		return err
-	}
 
 	// Get milestone for confirmation
 	ms, err := api.GetMilestone(client, owner, repo, opts.Number)
@@ -95,15 +101,13 @@ func deleteRun(opts *DeleteOptions) error {
 		return fmt.Errorf("failed to get milestone: %w", err)
 	}
 
-	// Confirm deletion
-	if !opts.Yes {
-		fmt.Fprintf(opts.IO.ErrOut, "! This will delete milestone #%d %s\n", ms.Number, cs.Bold(ms.Title))
-		fmt.Fprintf(opts.IO.ErrOut, "Type the milestone number to confirm: ")
-		var input string
-		fmt.Scanln(&input)
-		if input != strconv.Itoa(opts.Number) {
-			return fmt.Errorf("confirmation did not match milestone number")
-		}
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: strconv.Itoa(opts.Number),
+		Prompt:   fmt.Sprintf("! This will delete milestone #%d %s\nType the milestone number to confirm: ", ms.Number, cs.Bold(ms.Title)),
+	}); err != nil {
+		return err
 	}
 
 	// Delete milestone
@@ -118,11 +122,4 @@ func deleteRun(opts *DeleteOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

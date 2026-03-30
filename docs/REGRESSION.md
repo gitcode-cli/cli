@@ -58,6 +58,34 @@ export GC_REGRESSION_PR_BASE=main
 - 只有在明确提供目标仓库和 head 分支时才执行 `pr create`
 - 这样可以避免默认污染测试仓库，同时仍把 `pr create` 纳入统一回归矩阵
 
+## Agent-Friendly 契约补充回归
+
+当前里程碑新增了以下推荐补充检查：
+
+```bash
+# 命令元数据
+./gc schema
+./gc schema "issue view"
+
+# 结构化输出
+./gc repo view infra-test/gctest1 --json
+./gc issue list -R infra-test/gctest1 --limit 1 --json
+./gc issue view 1 -R infra-test/gctest1 --json
+./gc pr list -R infra-test/gctest1 --json
+./gc release list -R infra-test/gctest1 --json
+
+# dry-run
+./gc repo delete infra-test/gctest1 --dry-run
+./gc label delete bug -R infra-test/gctest1 --dry-run
+./gc milestone delete 1 -R infra-test/gctest1 --dry-run
+./gc release delete v0.0.0 -R infra-test/gctest1 --dry-run
+./gc issue create -R infra-test/gctest1 --title "Regression" --body "dry-run" --dry-run
+```
+
+说明：
+- 上述 dry-run 命令不应执行真实写入。
+- 非交互环境中未传 `--yes` 的删除命令应直接失败，不应挂起等待输入。
+
 ## 推荐记录方式
 
 在 PR 描述或 issue comment 中记录：

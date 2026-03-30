@@ -31,6 +31,7 @@
 常用任务入口：
 
 - 改命令行为：`spec/workflows/development-workflow.md`、`spec/governance/docs-governance.md`、`spec/foundations/code-quality-gates.md`
+- 改 agent / script 可消费性：`spec/foundations/agent-friendly-cli.md`、`spec/foundations/code-quality-gates.md`
 - 改 API / auth / config：`spec/foundations/coding-standards.md`、`spec/foundations/security.md`、`spec/foundations/testing-guide.md`
 - 补测试或做真实命令验证：`spec/foundations/testing-guide.md`、`spec/workflows/test-workflow.md`
 - 提交 PR / 做 review：`spec/workflows/pr-workflow.md`、`spec/workflows/review-workflow.md`

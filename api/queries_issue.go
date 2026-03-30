@@ -187,8 +187,23 @@ func GetIssue(client *Client, owner, repo string, number int) (*Issue, error) {
 
 // CreateIssue creates a new issue
 func CreateIssue(client *Client, owner, repo string, opts *CreateIssueOptions) (*Issue, error) {
+	formValues := url.Values{}
+	formValues.Set("title", opts.Title)
+	if opts.Body != "" {
+		formValues.Set("body", opts.Body)
+	}
+	for _, label := range opts.Labels {
+		formValues.Add("labels[]", label)
+	}
+	for _, assignee := range opts.Assignees {
+		formValues.Add("assignees[]", assignee)
+	}
+	if opts.Milestone > 0 {
+		formValues.Set("milestone", itoa(opts.Milestone))
+	}
+
 	var issue Issue
-	err := client.Post("/repos/"+owner+"/"+repo+"/issues", opts, &issue)
+	err := client.PostForm("/repos/"+owner+"/"+repo+"/issues", formValues, &issue)
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,6 @@ package view
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -24,7 +23,8 @@ type ViewOptions struct {
 	Repository string
 
 	// Flags
-	Web bool
+	Web  bool
+	JSON bool
 }
 
 // NewCmdView creates the view command
@@ -64,6 +64,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -77,10 +78,7 @@ func viewRun(opts *ViewOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := os.Getenv("GC_TOKEN")
-	if token == "" {
-		token = os.Getenv("GITCODE_TOKEN")
-	}
+	token := cmdutil.EnvToken()
 	if token != "" {
 		client.SetToken(token, "environment")
 	}
@@ -105,6 +103,10 @@ func viewRun(opts *ViewOptions) error {
 	if opts.Web {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", repo.HTMLURL)
 		return browser.Open(repo.HTMLURL)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, repo)
 	}
 
 	// Output

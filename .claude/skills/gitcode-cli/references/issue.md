@@ -125,6 +125,19 @@ gc issue comment 1 -R infra-test/gctest1 --body-file comment.txt
 echo "Comment from stdin" | gc issue comment 1 -R infra-test/gctest1 --body-file -
 ```
 
+## issue comment edit - 编辑 Issue 评论
+
+```bash
+# 按参数编辑评论
+gc issue comment edit 166061383 -R infra-test/gctest1 --body "Updated comment"
+
+# 按 --id 编辑评论
+gc issue comment edit --id 166061383 -R infra-test/gctest1 --body "Updated comment"
+
+# 从文件读取新内容
+gc issue comment edit 166061383 -R infra-test/gctest1 --body-file comment.md
+```
+
 ## issue comments - 列出 Issue 评论
 
 ```bash

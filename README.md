@@ -200,6 +200,10 @@ gc issue comments 123
 gc issue comments 123 --limit 10
 gc issue comments 123 --order desc
 
+# 编辑评论
+gc issue comment edit 166061383 --body "Updated comment"
+gc issue comment edit --id 166061383 --body "Updated comment"
+
 # 从文件添加评论
 gc issue comment 123 --body-file comment.txt
 

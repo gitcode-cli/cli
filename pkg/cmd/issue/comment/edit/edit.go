@@ -1,5 +1,5 @@
-// Package comment implements the issue comment command
-package comment
+// Package edit implements the issue comment edit command.
+package edit
 
 import (
 	"bufio"
@@ -7,86 +7,81 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue/comment/edit"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
-type CommentOptions struct {
+type EditOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
 	BaseRepo   func() (string, error)
 
-	// Arguments
 	Repository string
-	Number     int
-
-	// Flags
-	Body     string
-	BodyFile string
+	ID         string
+	Body       string
+	BodyFile   string
 }
 
-// NewCmdComment creates the comment command
-func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.Command {
-	opts := &CommentOptions{
+// NewCmdEdit creates the issue comment edit command.
+func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Command {
+	opts := &EditOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
 		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
-		Use:   "comment <number>",
-		Short: "Add a comment to an issue",
+		Use:   "edit [id]",
+		Short: "Edit an issue comment",
 		Long: heredoc.Doc(`
-			Add a comment to an issue in a GitCode repository.
+			Edit an existing issue comment in a GitCode repository.
 
 			The comment body can be provided via --body flag or --body-file flag.
 			Use --body-file - to read from stdin.
 		`),
 		Example: heredoc.Doc(`
-			# Add a comment
-			$ gc issue comment 123 --body "This is a comment" -R owner/repo
+			# Edit a comment by argument
+			$ gc issue comment edit 12345 -R owner/repo --body "Updated comment"
 
-			# Add comment from file
-			$ gc issue comment 123 --body-file comment.txt -R owner/repo
+			# Edit a comment by flag
+			$ gc issue comment edit --id 12345 -R owner/repo --body "Updated comment"
 
-			# Add comment from stdin
-			$ echo "Comment from stdin" | gc issue comment 123 --body-file - -R owner/repo
+			# Edit from file
+			$ gc issue comment edit 12345 -R owner/repo --body-file comment.md
 		`),
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			number, err := strconv.Atoi(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid issue number: %s", args[0])
+			if len(args) > 0 {
+				opts.ID = args[0]
 			}
-			opts.Number = number
-
 			if runF != nil {
 				return runF(opts)
 			}
-			return commentRun(opts)
+			return editRun(opts)
 		},
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
-	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "Comment body")
+	cmd.Flags().StringVar(&opts.ID, "id", "", "Issue comment ID")
+	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "New comment body")
 	cmd.Flags().StringVarP(&opts.BodyFile, "body-file", "F", "", "Read comment body from file (use - for stdin)")
-	cmd.AddCommand(edit.NewCmdEdit(f, nil))
 
 	return cmd
 }
 
-func commentRun(opts *CommentOptions) error {
+func editRun(opts *EditOptions) error {
 	cs := opts.IO.ColorScheme()
 
-	// Validate body input
+	if opts.ID == "" {
+		return fmt.Errorf("comment ID is required. Use an argument or --id flag")
+	}
+
 	body, err := getBody(opts)
 	if err != nil {
 		return err
@@ -107,45 +102,32 @@ func commentRun(opts *CommentOptions) error {
 	}
 	client.SetToken(token, "environment")
 
-	// Get repository
 	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
 	if err != nil {
 		return err
 	}
 
-	owner, repo, err := parseRepo(repository)
+	owner, repo, err := cmdutil.ParseRepo(repository)
 	if err != nil {
 		return err
 	}
 
-	// Create comment
-	comment, err := api.CreateIssueComment(client, owner, repo, opts.Number, &api.CreateCommentOptions{
+	comment, err := api.UpdateIssueComment(client, owner, repo, opts.ID, &api.UpdateCommentOptions{
 		Body: body,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create comment: %w", err)
+		return fmt.Errorf("failed to update comment: %w", err)
 	}
 
-	// Output
-	fmt.Fprintf(opts.IO.Out, "%s Added comment to issue #%d\n", cs.Green("✓"), opts.Number)
-	fmt.Fprintf(opts.IO.Out, "  ID: %v\n", comment.ID)
-	if comment.User != nil {
-		fmt.Fprintf(opts.IO.Out, "  Author: %s\n", comment.User.Login)
+	fmt.Fprintf(opts.IO.Out, "%s Updated issue comment %s\n", cs.Green("✓"), opts.ID)
+	if comment.UpdatedAt.IsZero() {
+		return nil
 	}
-	if !comment.CreatedAt.IsZero() {
-		fmt.Fprintf(opts.IO.Out, "  Created: %s\n", comment.CreatedAt.Format("2006-01-02 15:04"))
-	}
-	if body != "" {
-		preview := body
-		if len(preview) > 100 {
-			preview = preview[:100] + "..."
-		}
-		fmt.Fprintf(opts.IO.Out, "  Body: %s\n", preview)
-	}
+	fmt.Fprintf(opts.IO.Out, "  Updated: %s\n", comment.UpdatedAt.Format("2006-01-02 15:04"))
 	return nil
 }
 
-func getBody(opts *CommentOptions) (string, error) {
+func getBody(opts *EditOptions) (string, error) {
 	if opts.Body != "" && opts.BodyFile != "" {
 		return "", fmt.Errorf("cannot use both --body and --body-file")
 	}
@@ -156,7 +138,6 @@ func getBody(opts *CommentOptions) (string, error) {
 
 	if opts.BodyFile != "" {
 		if opts.BodyFile == "-" {
-			// Read from stdin
 			reader := bufio.NewReader(opts.IO.In)
 			var sb strings.Builder
 			for {
@@ -172,7 +153,6 @@ func getBody(opts *CommentOptions) (string, error) {
 			return strings.TrimSpace(sb.String()), nil
 		}
 
-		// Read from file
 		content, err := os.ReadFile(opts.BodyFile)
 		if err != nil {
 			return "", fmt.Errorf("failed to read file %s: %w", opts.BodyFile, err)
@@ -181,10 +161,6 @@ func getBody(opts *CommentOptions) (string, error) {
 	}
 
 	return "", nil
-}
-
-func parseRepo(repo string) (string, string, error) {
-	return cmdutil.ParseRepo(repo)
 }
 
 func getEnvToken() string {

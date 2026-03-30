@@ -8,6 +8,26 @@
 
 GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
 
+## 文档导航
+
+按角色建议从以下入口开始：
+
+| 角色 | 入口 |
+|------|------|
+| 使用者 | [docs/README.md](./docs/README.md) |
+| 开发者 | [spec/README.md](./spec/README.md) |
+| Codex / 代理 | [AGENTS.md](./AGENTS.md) |
+| Claude | [CLAUDE.md](./CLAUDE.md) |
+
+主要文档：
+
+- [命令手册](./docs/COMMANDS.md)
+- [认证说明](./docs/AUTH.md)
+- [回归说明](./docs/REGRESSION.md)
+- [打包说明](./docs/PACKAGING.md)
+- [开发规范](./spec/README.md)
+- [当前进度](./issues-plan/PROGRESS.md)
+
 ## 安装
 
 ### 从源码构建
@@ -139,9 +159,9 @@ gc auth login --token YOUR_TOKEN
 gc auth status
 ```
 
-> 📖 **完整命令指南**: 查看 [COMMANDS.md](./docs/COMMANDS.md) 获取所有命令的详细使用说明和示例。
+> 详细命令行为和完整示例请查看 [docs/COMMANDS.md](./docs/COMMANDS.md)。
 
-## 命令示例
+## 常用示例
 
 ### 仓库操作
 
@@ -162,9 +182,6 @@ gc repo fork owner/repo
 # 删除仓库
 gc repo delete owner/repo
 ```
-
-大多数接受仓库参数的命令统一支持三种格式：`owner/repo`、`https://gitcode.com/owner/repo`、`git@gitcode.com:owner/repo.git`。
-当前支持缺省 `-R` 自动推断的命令主要是 `gc repo view` 与 `gc issue create/list/view/close/reopen/comment/edit/label/prs`；其余大多数命令仍应显式传入仓库参数。
 
 ### Issue 管理
 
@@ -214,8 +231,6 @@ gc issue label 123 --add bug,enhancement
 gc issue prs 123
 ```
 
-在当前 Git 仓库中执行 `gc repo view` 以及 `gc issue create/list/view/close/reopen/comment/comments/edit/label/prs` 时，如果未传 `-R`，CLI 会优先从当前 remote 自动识别 `owner/repo`。
-
 ### Pull Request 管理
 
 ```bash
@@ -260,91 +275,7 @@ gc pr review 456 --comment "Review comment"
 gc pr review 456 --approve --comment "LGTM"
 ```
 
-在当前 Git 仓库中执行 `gc pr create -R owner/repo ...` 时，如果未显式传 `--head`，CLI 会通过统一的分支解析能力自动使用当前分支；若当前目录不是 Git 仓库或处于无法识别的 HEAD 状态，会明确提示改用 `--head`。
-当前 GitCode API 支持 PR 评论和批准；`gc pr review --request` 会明确提示该动作暂不受当前 API 支持。
-
-### Release 管理
-
-```bash
-# 创建 Release（建议包含 --notes 参数）
-gc release create v1.0.0 --title "Version 1.0" --notes "Release notes"
-
-# 列出 Releases
-gc release list -R owner/repo
-
-# 查看 Release 详情
-gc release view v1.0.0 -R owner/repo
-
-# 上传资产到 Release
-gc release upload v1.0.0 app.zip -R owner/repo
-gc release upload v1.0.0 file1.tar.gz file2.rpm -R owner/repo
-
-# 下载 Release 资产
-gc release download v1.0.0 -R owner/repo
-gc release download v1.0.0 app.zip -R owner/repo -o ./downloads/
-
-# 删除 Release
-gc release delete v1.0.0 -R owner/repo
-```
-
-> **注意**: `release create` 命令建议包含 `--notes` 参数，否则可能返回错误。
-
-## 功能特性
-
-| 功能 | 描述 |
-|------|------|
-| 🔐 认证管理 | Token 认证、多账户支持、安全存储 |
-| 📦 仓库操作 | 克隆、创建、Fork、查看、删除 |
-| 🐛 Issue 管理 | 创建、列表、查看、关闭、重开、评论 |
-| 🔀 PR 管理 | 创建、列表、查看、检出、合并、关闭 |
-| 👀 代码检视 | 批准、请求修改、添加评论 |
-| 🏷️ 标签管理 | 创建、列表、删除 |
-| 🎯 里程碑管理 | 创建、列表、查看、删除 |
-| 🚀 Release 管理 | 创建、列表、查看、上传资产、下载资产 |
-
-## 命令概览
-
-```
-gc <command> <subcommand> [flags]
-
-Commands:
-  auth        认证管理 (login, logout, status, token)
-  repo        仓库操作 (clone, create, list, view, fork, delete, stats)
-  issue       Issue 管理 (create, list, view, edit, close, reopen, comment)
-  pr          PR 管理 (create, list, view, checkout, merge, close, reopen, review, diff, ready)
-  commit      Commit 管理 (view, diff, patch, comments)
-  label       标签管理 (create, list, delete)
-  milestone   里程碑管理 (create, list, view, delete)
-  release     Release 管理 (create, list, view, upload, download, delete)
-  version     显示版本信息
-```
-
-## 配置
-
-配置文件位置: `~/.config/gc/config.yaml`
-
-```yaml
-# 默认主机
-host: gitcode.com
-
-# Git 协议
-git_protocol: https
-
-# 默认编辑器
-editor: vim
-
-# 分页器
-pager: less
-```
-
-### 环境变量
-
-| 变量 | 描述 |
-|------|------|
-| `GC_TOKEN` | 认证 Token |
-| `GITCODE_TOKEN` | 备用 Token |
-| `GC_HOST` | 默认主机 |
-| `NO_COLOR` | 禁用颜色输出 |
+更多命令细节、仓库参数格式、自动推断行为、Release 命令和平台限制，请查看 [docs/COMMANDS.md](./docs/COMMANDS.md)。
 
 ## Shell 补全
 
@@ -362,25 +293,16 @@ gc completion fish > ~/.config/fish/completions/gc.fish
 source ~/.config/fish/config.fish
 ```
 
-## 文档
+## 项目定位
 
-- [命令指南](./docs/COMMANDS.md) - 所有命令的详细使用说明和示例
-- [版本发布](./RELEASE.md) - 发布流程和产物说明
-- [AI 操作指南](./docs/AI-GUIDE.md) - 使用 AI 助手操作 GitCode 的完整指南
-- [打包发布](./docs/PACKAGING.md) - DEB/RPM 包构建和发布流程
-- [贡献指南](./CONTRIBUTING.md) - 开发和发布流程
-- [安全策略](./SECURITY.md) - 敏感信息保护和安全规范
-- [CLAUDE.md](./CLAUDE.md) - AI 辅助开发指南
-- [需求文档](./issues-plan/) - 完整需求规格和里程碑规划
+当前仓库已经建立：
 
-## 技术栈
+- 用户文档入口：[`docs/`](./docs/README.md)
+- 正式规范入口：[`spec/`](./spec/README.md)
+- Codex 入口：[`AGENTS.md`](./AGENTS.md)
+- Claude 入口：[`CLAUDE.md`](./CLAUDE.md)
 
-| 组件 | 技术 |
-|------|------|
-| 语言 | Go 1.22+ |
-| 命令框架 | Cobra |
-| 配置格式 | YAML |
-| 目标平台 | Linux, macOS, Windows |
+如果你要看完整规范、构建与发布规则、质量门禁和 AI 协作边界，请直接进入对应入口，不要仅依赖本 README。
 
 ## 开发
 
@@ -407,7 +329,7 @@ make run
 
 ## 贡献
 
-欢迎贡献代码！请查看 [贡献指南](./CONTRIBUTING.md)。
+欢迎贡献代码。开始前请查看 [贡献指南](./CONTRIBUTING.md) 和 [spec/README.md](./spec/README.md)。
 
 ## 许可证
 

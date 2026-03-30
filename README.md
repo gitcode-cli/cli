@@ -245,6 +245,8 @@ gc pr review 456 --request
 gc pr review 456 --comment "Review comment"
 ```
 
+在当前 Git 仓库中执行 `gc pr create -R owner/repo ...` 时，如果未显式传 `--head`，CLI 会通过统一的分支解析能力自动使用当前分支；若当前目录不是 Git 仓库或处于无法识别的 HEAD 状态，会明确提示改用 `--head`。
+
 ### Release 管理
 
 ```bash

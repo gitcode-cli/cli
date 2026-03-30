@@ -363,6 +363,7 @@ gc pr create -R infra-test/gctest1 --title "New feature" --body "Description" --
 > **说明**: `--head` 参数可选，未指定时自动检测当前 Git 分支。
 > `--fill` 会使用最近一次 Git commit 的标题和正文补全未显式提供的 `--title` / `--body`。
 > `--web` 会在 PR 创建成功后打开新建 PR 页面。
+> 当前分支解析已统一接入 `Factory.Branch`；若当前目录不是 Git 仓库或无法识别分支，会明确提示改用 `--head`。
 
 ### pr list - 列出 PRs
 

@@ -1,6 +1,7 @@
 package create
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -98,13 +99,14 @@ func TestCreateRunFillAndWeb(t *testing.T) {
 		Base:       "main",
 		Fill:       true,
 		Web:        true,
+		Branch: func() (string, error) {
+			return "feature-branch", nil
+		},
 		ExecGitCommand: func(name string, args ...string) (string, error) {
 			commandLine := name + " " + strings.Join(args, " ")
 			switch commandLine {
 			case "git log -1 --pretty=%B":
 				return "feat: add fill behavior\n\ncommit body", nil
-			case "git rev-parse --abbrev-ref HEAD":
-				return "feature-branch\n", nil
 			default:
 				return "", nil
 			}
@@ -157,6 +159,9 @@ func TestCreateRunFillPreservesExplicitTitleAndBody(t *testing.T) {
 		Body:       "explicit body",
 		Head:       "feature-branch",
 		Fill:       true,
+		Branch: func() (string, error) {
+			return "ignored", nil
+		},
 		ExecGitCommand: func(name string, args ...string) (string, error) {
 			return "commit title\n\ncommit body", nil
 		},
@@ -176,5 +181,73 @@ func TestCreateRunFillPreservesExplicitTitleAndBody(t *testing.T) {
 
 	if createdOpts.Title != "explicit title" || createdOpts.Body != "explicit body" {
 		t.Fatalf("explicit values were overwritten: %+v", createdOpts)
+	}
+}
+
+func TestCreateRunUsesFactoryBranch(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	var createdOpts *api.CreatePROptions
+
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		Body:       "body",
+		Base:       "main",
+		Branch: func() (string, error) {
+			return "feature/from-factory", nil
+		},
+		ExecGitCommand: func(name string, args ...string) (string, error) {
+			t.Fatalf("ExecGitCommand should not be used for branch detection")
+			return "", nil
+		},
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			createdOpts = createOpts
+			return &api.PullRequest{Number: 7, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if createdOpts == nil {
+		t.Fatalf("CreatePR() was not called")
+	}
+	if createdOpts.Head != "feature/from-factory" {
+		t.Fatalf("CreatePR Head = %q", createdOpts.Head)
+	}
+}
+
+func TestCreateRunBranchError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		Body:       "body",
+		Branch: func() (string, error) {
+			return "", fmt.Errorf("not in a git repository")
+		},
+		ExecGitCommand: func(name string, args ...string) (string, error) {
+			t.Fatalf("ExecGitCommand should not be used for branch detection")
+			return "", nil
+		},
+		CreatePR:    api.CreatePullRequest,
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	err := createRun(opts)
+	if err == nil {
+		t.Fatalf("createRun() error = nil")
+	}
+	if !strings.Contains(err.Error(), "could not determine current branch") {
+		t.Fatalf("createRun() error = %v", err)
 	}
 }

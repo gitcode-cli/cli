@@ -40,7 +40,17 @@ func NewFactory() *Factory {
 			return repo.String(), nil
 		},
 		Branch: func() (string, error) {
-			return "", nil // TODO: implement git branch detection
+			if !gitpkg.IsRepo() {
+				return "", fmt.Errorf("not in a git repository")
+			}
+			branch, err := gitpkg.CurrentBranch()
+			if err != nil {
+				return "", err
+			}
+			if branch == "" || branch == "HEAD" {
+				return "", fmt.Errorf("could not determine current branch")
+			}
+			return branch, nil
 		},
 	}
 }

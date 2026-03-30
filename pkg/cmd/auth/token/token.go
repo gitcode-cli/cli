@@ -4,11 +4,11 @@ package token
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -16,6 +16,7 @@ import (
 type TokenOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	Config     func() (config.Config, error)
 
 	// Flags
 	Hostname string
@@ -26,6 +27,7 @@ func NewCmdToken(f *cmdutil.Factory, runF func(*TokenOptions) error) *cobra.Comm
 	opts := &TokenOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		Config:     f.Config,
 	}
 
 	cmd := &cobra.Command{
@@ -62,15 +64,16 @@ func NewCmdToken(f *cmdutil.Factory, runF func(*TokenOptions) error) *cobra.Comm
 
 func tokenRun(opts *TokenOptions) error {
 	// Set default hostname
+	cfg, err := opts.Config()
+	if err != nil {
+		return fmt.Errorf("failed to read config: %w", err)
+	}
+	authCfg := cfg.Authentication()
 	if opts.Hostname == "" {
-		opts.Hostname = "gitcode.com"
+		opts.Hostname, _ = authCfg.DefaultHost()
 	}
 
-	// Check for token from environment
-	token := os.Getenv("GC_TOKEN")
-	if token == "" {
-		token = os.Getenv("GITCODE_TOKEN")
-	}
+	token, _ := authCfg.ActiveToken(opts.Hostname)
 
 	if token == "" {
 		return fmt.Errorf("no authentication token found")

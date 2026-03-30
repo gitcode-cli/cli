@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	"gitcode.com/gitcode-cli/cli/pkg/browser"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
@@ -21,6 +22,7 @@ import (
 type LoginOptions struct {
 	IO          *iostreams.IOStreams
 	HttpClient  func() (*http.Client, error)
+	Config      func() (config.Config, error)
 	OpenBrowser func(string) error
 
 	// Flags
@@ -36,6 +38,7 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 	opts := &LoginOptions{
 		IO:          f.IOStreams,
 		HttpClient:  f.HttpClient,
+		Config:      f.Config,
 		OpenBrowser: browser.Open,
 	}
 
@@ -132,13 +135,20 @@ func loginWithTokenFlag(opts *LoginOptions) error {
 		return fmt.Errorf("failed to verify token: %w", err)
 	}
 
-	// Token is valid - in memory only, not persisted to file
-	// In a real implementation, this would be stored in keyring
+	cfg, err := opts.Config()
+	if err != nil {
+		return fmt.Errorf("failed to read config: %w", err)
+	}
+	_, err = cfg.Authentication().Login(opts.Hostname, user.Login, opts.Token, opts.GitProtocol, false)
+	if err != nil {
+		return fmt.Errorf("failed to store authentication: %w", err)
+	}
+
 	fmt.Fprintf(opts.IO.Out, "%s Logged in as %s\n", opts.IO.ColorScheme().Green("✓"), user.Login)
 	fmt.Fprintf(opts.IO.Out, "  Host: %s\n", opts.Hostname)
 	fmt.Fprintf(opts.IO.Out, "  Git protocol: %s\n", opts.GitProtocol)
 	fmt.Fprintf(opts.IO.Out, "\n")
-	fmt.Fprintf(opts.IO.Out, "Note: Token is stored in memory only for this session.\n")
+	fmt.Fprintf(opts.IO.Out, "Token stored in local config. Environment variables still take precedence.\n")
 
 	return nil
 }

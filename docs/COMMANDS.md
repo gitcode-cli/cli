@@ -44,6 +44,7 @@ gc auth login --web
 
 说明：
 - `auth login --web` 会打开 GitCode Token 页面，然后继续在终端中读取你粘贴的 Token 完成登录。
+- 登录成功后 token 会写入本地配置；若同时设置了 `GC_TOKEN` 或 `GITCODE_TOKEN`，环境变量优先。
 
 ### auth status - 查看认证状态
 
@@ -64,11 +65,18 @@ gitcode.com
 gc auth token
 ```
 
+说明：
+- `auth token` 输出当前实际生效的 token，解析顺序与 `auth status` 一致。
+
 ### auth logout - 登出
 
 ```bash
 gc auth logout
 ```
+
+说明：
+- `auth logout` 会清理本地持久化认证信息。
+- 若当前认证来自 `GC_TOKEN` 或 `GITCODE_TOKEN`，命令会提示你手动 `unset` 环境变量。
 
 ---
 

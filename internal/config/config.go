@@ -105,7 +105,13 @@ func (c *config) GitProtocol(host string) ConfigEntry {
 	if val := os.Getenv("GC_GIT_PROTOCOL"); val != "" {
 		return ConfigEntry{Value: val, Source: "environment"}
 	}
-	// TODO: read from config
+
+	state, err := c.readAuthState()
+	if err == nil {
+		if user := state.activeUser(host); user != nil && user.GitProtocol != "" {
+			return ConfigEntry{Value: user.GitProtocol, Source: "config"}
+		}
+	}
 	return ConfigEntry{Value: "https", Source: "default"}
 }
 

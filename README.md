@@ -164,6 +164,7 @@ gc repo delete owner/repo
 ```
 
 大多数接受仓库参数的命令统一支持三种格式：`owner/repo`、`https://gitcode.com/owner/repo`、`git@gitcode.com:owner/repo.git`。
+当前支持缺省 `-R` 自动推断的命令主要是 `gc repo view` 与 `gc issue create/list/view/close/reopen/comment/edit/label/prs`；其余大多数命令仍应显式传入仓库参数。
 
 ### Issue 管理
 

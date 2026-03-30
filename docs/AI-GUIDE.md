@@ -75,19 +75,29 @@ gc version
 gc auth status
 ```
 
-## 4. 安装 gitcode-cli Skill
+## 4. 安装 gc-core Skill
 
-将本项目的 skill 文件安装到你的 Claude Code 配置目录：
+外部项目推荐使用 `gc-core` 通用 skill 包，而不是仓库内部协作 skill。
+
+详细安装与分发说明见：
+
+- [gc-core 安装与分发说明](../.ai/distribution/gc-core/INSTALL.md)
+
+常见安装方式：
 
 ```bash
-# 复制 skill 文件到 Claude Code 配置目录
-mkdir -p ~/.claude/skills/gitcode-cli
-cp .claude/skills/gitcode-cli/SKILL.md ~/.claude/skills/gitcode-cli/
+# Claude
+mkdir -p ~/.claude/skills/gc-pr
+cp .ai/distribution/gc-core/pr/SKILL.md ~/.claude/skills/gc-pr/SKILL.md
+
+# Codex
+mkdir -p ~/.codex/skills/gc-pr
+cp .ai/distribution/gc-core/pr/SKILL.md ~/.codex/skills/gc-pr/SKILL.md
 ```
 
-安装后，AI 会自动识别并使用 `gc` 命令操作 GitCode。
+你也可以按同样方式安装 `gc-auth`、`gc-issue`、`gc-review` 等其他通用 skill。
 
-> **Skill 文件位置**: [.claude/skills/gitcode-cli/SKILL.md](../.claude/skills/gitcode-cli/SKILL.md)
+安装后，AI 就可以通过 `gc` 命令操作 GitCode。
 
 ## 完成后的使用方式
 
@@ -108,4 +118,4 @@ AI 会自动使用 `gc` 命令执行操作。
 
 ---
 
-**最后更新**: 2026-03-25
+**最后更新**: 2026-03-30

@@ -33,7 +33,7 @@
 
 ## 发布方式
 
-**推荐方式**：通过 GitHub Actions 自动发布。
+**历史方案**：通过 GitHub Actions 自动发布。
 
 ### 发布触发条件
 
@@ -257,7 +257,7 @@ v2.0.0         # 重大更新版本
 - [ ] 无已知严重 Bug
 
 ### 文档更新
-- [ ] CHANGELOG.md 已更新
+- [ ] Release notes 已更新
 - [ ] README.md 版本信息已更新（如需要）
 
 ### 发布后验证
@@ -308,9 +308,9 @@ wget https://gitcode.com/gitcode-cli/cli/releases/download/v{VERSION}/gitcode_cl
 pip install gitcode_cli-{VERSION}-py3-none-any.whl
 \`\`\`
 
-## 完整更新日志
+## 发布说明入口
 
-参见 [CHANGELOG.md](./CHANGELOG.md)
+参见当前 release notes 和 [spec/delivery/release-process.md](./spec/delivery/release-process.md)
 ```
 
 **重要**：所有下载链接必须使用完整路径格式：

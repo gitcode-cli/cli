@@ -75,12 +75,15 @@ export GC_TOKEN=your_token
 # 1. 构建本地版本
 go build -o ./gc ./cmd/gc
 
-# 2. 执行测试命令（示例）
+# 2. 优先执行核心回归脚本
+./scripts/regression-core.sh
+
+# 3. 执行 issue/feature 相关补充测试（示例）
 ./gc issue list -R infra-test/gctest1
 ./gc issue create --title "Test" --body "Body" -R infra-test/gctest1
 ./gc issue label 1 --add bug -R infra-test/gctest1
 
-# 3. 验证结果
+# 4. 验证结果
 # 检查命令输出
 # 在 Web 界面验证操作结果
 ```
@@ -120,6 +123,7 @@ gc pr view <number> -R infra-test/gctest1
 ### 提交 PR 前
 
 - [ ] 单元测试全部通过
+- [ ] 核心回归脚本已执行
 - [ ] 实际命令测试通过
 - [ ] 测试仓库使用正确
 - [ ] 测试结果已记录

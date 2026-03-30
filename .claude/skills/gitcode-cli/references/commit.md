@@ -1,5 +1,8 @@
 # Commit 命令
 
+> 本文档是 Claude 参考层，不是命令行为真相源。
+> 命令行为以 `docs/COMMANDS.md` 和 `spec/` 为准。
+
 ## commit view - 查看提交
 
 ```bash

@@ -1,5 +1,8 @@
 # Pull Request 命令 (pr)
 
+> 本文档是 Claude 参考层，不是命令行为真相源。
+> PR 命令行为以 `docs/COMMANDS.md`、`spec/workflows/pr-workflow.md` 和 `spec/workflows/review-workflow.md` 为准。
+
 ## pr create - 创建 PR
 
 ```bash
@@ -129,6 +132,7 @@ gc pr review 1 --comment "评审意见" -R infra-test/gctest1
 gc pr review 1 --approve -R infra-test/gctest1
 
 # 请求修改
+# 当前 GitCode 公开 API 暂不支持该动作，会明确报错
 gc pr review 1 --request -R infra-test/gctest1
 
 # 强制通过审批（管理员权限）
@@ -166,3 +170,5 @@ gc pr test 1 -R infra-test/gctest1
 # 强制通过测试（管理员权限）
 gc pr test 1 --force -R infra-test/gctest1
 ```
+
+> `gc pr review --request` 当前不会成功提交 request changes，保留该示例仅用于说明现有限制。

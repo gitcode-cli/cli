@@ -1,5 +1,8 @@
 # 仓库命令 (repo)
 
+> 本文档是 Claude 参考层，不是命令行为真相源。
+> 仓库命令行为以 `docs/COMMANDS.md` 和 `spec/` 为准。
+
 ## repo view - 查看仓库
 
 ```bash

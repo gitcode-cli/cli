@@ -14,6 +14,7 @@
    export GITCODE_TOKEN="your_token"
    ```
 3. **内存存储**：Token 仅在内存中保存，程序结束后自动清除
+4. **禁止 URL 传递**：认证信息必须通过 `Authorization: Bearer <token>` 请求头传递，不能拼接到 query string
 
 ### 禁止提交的内容
 

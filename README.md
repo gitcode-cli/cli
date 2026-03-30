@@ -161,121 +161,33 @@ gc auth status
 
 > 详细命令行为和完整示例请查看 [docs/COMMANDS.md](./docs/COMMANDS.md)。
 
-## 常用示例
+## 常见任务入口
 
-### 仓库操作
+最常用的起步命令：
 
 ```bash
-# 克隆仓库
-gc repo clone owner/repo
-
-# 创建新仓库
-gc repo create my-repo --public
-
-# 查看仓库信息
-gc repo view owner/repo
+# 查看仓库
 gc repo view
 
-# Fork 仓库
-gc repo fork owner/repo
-
-# 删除仓库
-gc repo delete owner/repo
-```
-
-### Issue 管理
-
-```bash
 # 创建 Issue
 gc issue create --title "Bug report" --body "Description"
 
 # 列出 Issues
 gc issue list --state open
 
-# 查看 Issue 详情
-gc issue view 123
-
-# 编辑 Issue
-gc issue edit 123 --title "New title"
-gc issue edit 123 --body "New description"
-gc issue edit 123 --state close
-gc issue edit 123 --assignee username
-gc issue edit 123 --label bug,enhancement
-gc issue edit 123 --milestone 5
-
-# 关闭 Issue
-gc issue close 123
-
-# 重开 Issue
-gc issue reopen 123
-
-# 添加评论
-gc issue comment 123 --body "Comment text"
-
-# 列出 Issue 评论
-gc issue comments 123
-gc issue comments 123 --limit 10
-gc issue comments 123 --order desc
-
-# 编辑评论
-gc issue comment edit 166061383 --body "Updated comment"
-gc issue comment edit --id 166061383 --body "Updated comment"
-
-# 从文件添加评论
-gc issue comment 123 --body-file comment.txt
-
-# 管理 Issue 标签
-gc issue label 123 --add bug,enhancement
-
-# 查看 Issue 关联的 PRs
-gc issue prs 123
-```
-
-### Pull Request 管理
-
-```bash
-# 创建 PR（自动检测当前分支）
+# 创建 PR
 gc pr create --title "New feature" --base main
 
-# 创建跨仓库 PR（从 fork 到 upstream）
-gc pr create -R upstream/repo --fork myfork/repo --title "Feature"
-
-# 列出 PR
-gc pr list --state open
-
-# 查看 PR 详情
-gc pr view 456
-
-# 查看 PR 评论
-gc pr comments 456
-
-# 回复 PR 评论
-gc pr reply 456 --discussion <discussion_id> --body "Reply text"
-
-# 当前不支持通过 CLI 解决/取消解决 PR 评论
-# resolved 状态需要在 GitCode Web UI 中手动处理
-
-# 检出 PR 分支
-gc pr checkout 456
-
-# 合并 PR
-gc pr merge 456 --squash
-
-# 关闭/重开 PR
-gc pr close 456
-gc pr reopen 456
-
-# 编辑 PR
-gc pr edit 456 --title "New title"
-gc pr edit 456 --draft true
-
-# 代码检视
-gc pr review 456 --approve
-gc pr review 456 --comment "Review comment"
-gc pr review 456 --approve --comment "LGTM"
+# 查看认证状态
+gc auth status
 ```
 
-更多命令细节、仓库参数格式、自动推断行为、Release 命令和平台限制，请查看 [docs/COMMANDS.md](./docs/COMMANDS.md)。
+完整命令说明、参数细节、平台限制和更多示例，请直接查看：
+
+- [docs/COMMANDS.md](./docs/COMMANDS.md)
+- [docs/AUTH.md](./docs/AUTH.md)
+- [docs/PACKAGING.md](./docs/PACKAGING.md)
+- [docs/REGRESSION.md](./docs/REGRESSION.md)
 
 ## Shell 补全
 

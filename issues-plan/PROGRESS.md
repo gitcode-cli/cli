@@ -228,6 +228,7 @@
 - 修复 pr view --comments 功能
 - 修复 pr create 命令 (Issue #15)
   - --head 参数可选，自动检测当前分支
+  - 当前分支解析已统一收敛到 Factory.Branch
   - 新增 --fork 参数支持跨仓库 PR
 - 发布 v0.2.1 版本
 

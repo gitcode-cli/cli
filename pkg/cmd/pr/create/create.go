@@ -20,6 +20,7 @@ import (
 type CreateOptions struct {
 	IO             *iostreams.IOStreams
 	HttpClient     func() (*http.Client, error)
+	Branch         func() (string, error)
 	ExecGitCommand func(string, ...string) (string, error)
 	CreatePR       func(*api.Client, string, string, *api.CreatePROptions) (*api.PullRequest, error)
 	OpenBrowser    func(string) error
@@ -43,6 +44,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	opts := &CreateOptions{
 		IO:             f.IOStreams,
 		HttpClient:     f.HttpClient,
+		Branch:         f.Branch,
 		ExecGitCommand: execGitCommand,
 		CreatePR:       api.CreatePullRequest,
 		OpenBrowser:    browser.Open,
@@ -123,10 +125,12 @@ func createRun(opts *CreateOptions) error {
 	// Auto-detect head branch if not specified
 	head := opts.Head
 	if head == "" {
-		// Try to get current branch from git
-		output, err := opts.ExecGitCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
-		if err != nil {
+		if opts.Branch == nil {
 			return fmt.Errorf("head branch is required. Use --head flag")
+		}
+		output, err := opts.Branch()
+		if err != nil {
+			return fmt.Errorf("could not determine current branch. Use --head flag: %w", err)
 		}
 		head = strings.TrimSpace(output)
 		if head == "" || head == "HEAD" {

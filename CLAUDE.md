@@ -61,11 +61,12 @@ Claude 侧的项目内 skill 目录位于：
 
 使用原则：
 
+- `.ai/skills/` 是共享 skill 真相源
 - `.claude/skills/` 是 Claude 适配层
 - 场景技能不能定义与 `spec/` 冲突的项目规则
 - 行为变化后，必须同步检查相关 skill 文档
 
-后续阶段会继续引入共享 skill 真相源和 Codex 适配层。
+Codex 侧适配层位于 `.codex/skills/`。
 
 ## 5. 常用入口
 
@@ -84,5 +85,7 @@ Claude 侧的项目内 skill 目录位于：
 - `spec/build-and-package.md`
 - `spec/release-process.md`
 - `spec/code-quality-gates.md`
+- `.ai/skills/` 共享 skill 真相源
+- `.codex/skills/` 适配层结构
 
-当前阶段目标是继续收口入口文档和后续 AI skill 分层，而不是扩展新的规则源。
+当前阶段目标是继续校准共享 skill 与客户端适配层，而不是扩展新的规则源。

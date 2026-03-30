@@ -1,5 +1,8 @@
 # GitCode API Patterns
 
+> This file is a Claude reference layer for command generation.
+> API usage patterns must remain consistent with `spec/`, current code in `api/`, and actual command behavior documented in `docs/COMMANDS.md`.
+
 This reference documents common patterns for implementing API operations in gitcode-cli.
 
 ## API Client Usage

@@ -1,5 +1,8 @@
 # Issue 命令 (issue)
 
+> 本文档是 Claude 参考层，不是命令行为真相源。
+> Issue 命令行为以 `docs/COMMANDS.md` 和 `spec/workflows/issue-workflow.md` 为准。
+
 ## issue create - 创建 Issue
 
 ```bash

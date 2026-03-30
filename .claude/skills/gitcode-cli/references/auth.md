@@ -1,5 +1,8 @@
 # 认证命令 (auth)
 
+> 本文档是 Claude 参考层，不是命令行为真相源。
+> 认证行为以 `docs/COMMANDS.md`、`docs/AUTH.md` 和 `spec/` 为准。
+
 ## auth login - 登录
 
 ```bash
@@ -27,3 +30,6 @@ gc auth token
 ```bash
 gc auth logout
 ```
+
+> 当前认证优先级：
+> `GC_TOKEN` -> `GITCODE_TOKEN` -> 本地登录配置。

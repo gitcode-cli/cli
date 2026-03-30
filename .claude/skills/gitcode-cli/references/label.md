@@ -1,5 +1,8 @@
 # 标签和里程碑命令
 
+> 本文档是 Claude 参考层，不是命令行为真相源。
+> 命令行为以 `docs/COMMANDS.md` 和 `spec/` 为准。
+
 ## 标签命令 (label)
 
 ### label list - 列出标签

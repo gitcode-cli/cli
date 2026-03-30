@@ -181,7 +181,7 @@ git diff --cached | grep -iE "token|password|secret|api_key"
 git ls-files | grep -iE "\.pem|\.key|\.env|credentials|secret"
 ```
 
-详细安全规范参见 [安全规范](./security.md)。
+详细安全规范参见 [安全规范](../foundations/security.md)。
 
 ### 9. 提交代码
 
@@ -258,10 +258,10 @@ gc pr merge <pr_number> -R gitcode-cli/cli
 
 ## 下一步去看哪里
 
-- 如果你在写代码，继续看 [编码规范](./coding-standards.md)
-- 如果你在补测试，继续看 [测试指南](./testing-guide.md)
-- 如果你准备提交，继续看 [代码质量门禁规范](./code-quality-gates.md)
-- 如果你改了命令或协作规则，继续看 [文档治理规范](./docs-governance.md)
+- 如果你在写代码，继续看 [编码规范](../foundations/coding-standards.md)
+- 如果你在补测试，继续看 [测试指南](../foundations/testing-guide.md)
+- 如果你准备提交，继续看 [代码质量门禁规范](../foundations/code-quality-gates.md)
+- 如果你改了命令或协作规则，继续看 [文档治理规范](../governance/docs-governance.md)
 
 ### 16. 拉取最新代码
 

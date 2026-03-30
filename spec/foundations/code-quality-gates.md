@@ -214,5 +214,5 @@ PR 在合并前，必须满足：
 
 ## 下一步去看哪里
 
-- 如果你不确定哪些文档需要同步，继续看 [文档治理规范](./docs-governance.md)
-- 如果你还没完成流程动作，继续看 [开发工作流程](./development-workflow.md)
+- 如果你不确定哪些文档需要同步，继续看 [文档治理规范](../governance/docs-governance.md)
+- 如果你还没完成流程动作，继续看 [开发工作流程](../workflows/development-workflow.md)

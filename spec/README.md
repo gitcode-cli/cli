@@ -8,45 +8,49 @@
 
 首次进入本仓库，至少先读以下 4 篇：
 
-1. [开发工作流程](./development-workflow.md)
-2. [编码规范](./coding-standards.md)
-3. [测试指南](./testing-guide.md)
-4. [代码质量门禁规范](./code-quality-gates.md)
+1. [开发工作流程](./workflows/development-workflow.md)
+2. [编码规范](./foundations/coding-standards.md)
+3. [测试指南](./foundations/testing-guide.md)
+4. [代码质量门禁规范](./foundations/code-quality-gates.md)
 
 如果改动涉及命令行为、文档同步或 AI 协作边界，再补读：
 
-5. [文档治理规范](./docs-governance.md)
+5. [文档治理规范](./governance/docs-governance.md)
 
 ## 按任务选择入口
 
 | 你正在做什么 | 先读这些文档 |
 |------|------|
-| 改命令行为、参数、用户可见输出 | [开发工作流程](./development-workflow.md)、[文档治理规范](./docs-governance.md)、[代码质量门禁规范](./code-quality-gates.md) |
-| 改 API、认证、配置、错误处理 | [编码规范](./coding-standards.md)、[安全规范](./security.md)、[测试指南](./testing-guide.md) |
-| 补测试、修回归、做真实命令验证 | [测试指南](./testing-guide.md)、[测试流程](./workflows/test-workflow.md) |
-| 提交 PR、补 issue comment、补 review comment | [PR 流程](./workflows/pr-workflow.md)、[评审流程](./workflows/review-workflow.md)、[代码质量门禁规范](./code-quality-gates.md) |
-| 改构建、打包、发布 | [本地构建与打包规范](./build-and-package.md)、[发布流程规范](./release-process.md) |
-| 改文档、skills、AGENTS、CLAUDE | [文档治理规范](./docs-governance.md)、[代码质量门禁规范](./code-quality-gates.md) |
+| 改命令行为、参数、用户可见输出 | [开发工作流程](./workflows/development-workflow.md)、[文档治理规范](./governance/docs-governance.md)、[代码质量门禁规范](./foundations/code-quality-gates.md) |
+| 改 API、认证、配置、错误处理 | [编码规范](./foundations/coding-standards.md)、[安全规范](./foundations/security.md)、[测试指南](./foundations/testing-guide.md) |
+| 补测试、修回归、做真实命令验证 | [测试指南](./foundations/testing-guide.md)、[测试流程](./workflows/test-workflow.md) |
+| 提交 PR、补 issue comment、补 review comment | [PR 流程](./workflows/pr-workflow.md)、[评审流程](./workflows/review-workflow.md)、[代码质量门禁规范](./foundations/code-quality-gates.md) |
+| 改构建、打包、发布 | [本地构建与打包规范](./delivery/build-and-package.md)、[发布流程规范](./delivery/release-process.md) |
+| 改文档、skills、AGENTS、CLAUDE | [文档治理规范](./governance/docs-governance.md)、[代码质量门禁规范](./foundations/code-quality-gates.md) |
 
 ## 当前结构
 
 ```
 spec/
 ├── README.md                # 本文件：规范入口
-├── docs-governance.md       # 文档治理规范
-├── development-workflow.md  # 开发工作流程
-├── build-and-package.md     # 本地构建与打包规范
-├── release-process.md       # 发布流程规范
-├── code-quality-gates.md    # 代码质量门禁规范
-├── coding-standards.md      # 编码规范
-├── testing-guide.md         # 测试指南
-├── command-template.md      # 命令开发模板
-├── security.md              # 安全规范
-└── workflows/               # 独立操作流程
-    ├── issue-workflow.md    # Issue 流程
-    ├── pr-workflow.md       # PR 流程
-    ├── review-workflow.md   # 评审流程
-    └── test-workflow.md     # 测试流程
+├── foundations/             # 基础规则
+│   ├── coding-standards.md
+│   ├── testing-guide.md
+│   ├── security.md
+│   ├── code-quality-gates.md
+│   └── command-template.md
+├── workflows/               # 操作流程
+│   ├── development-workflow.md
+│   ├── issue-workflow.md
+│   ├── pr-workflow.md
+│   ├── review-workflow.md
+│   └── test-workflow.md
+├── delivery/                # 构建与交付
+│   ├── build-and-package.md
+│   └── release-process.md
+└── governance/              # 治理与协作边界
+    ├── docs-governance.md
+    └── ai-collaboration.md
 ```
 
 ## 权威边界
@@ -71,15 +75,16 @@ spec/
 
 | 文档 | 说明 |
 |------|------|
-| [文档治理规范](./docs-governance.md) | 文档分层、唯一真相源、AI 协作分层、分阶段实施方案 |
-| [开发工作流程](./development-workflow.md) | 完整流程、分支规范、禁止行为、检查清单 |
-| [本地构建与打包规范](./build-and-package.md) | 标准构建命令、打包方式、产物边界和验证要求 |
-| [发布流程规范](./release-process.md) | 版本规则、发布步骤、release notes 和发布后验证 |
-| [代码质量门禁规范](./code-quality-gates.md) | 本地门禁、PR 门禁、合并门禁和 blocker 判定 |
-| [编码规范](./coding-standards.md) | 命名规范、文件结构、错误处理、代码风格 |
-| [测试指南](./testing-guide.md) | 单元测试、实际命令测试、测试仓库限制 |
-| [命令开发模板](./command-template.md) | 新命令开发模板、API 客户端用法、输出处理 |
-| [安全规范](./security.md) | Token 管理、敏感信息保护、安全审查 |
+| [文档治理规范](./governance/docs-governance.md) | 文档分层、唯一真相源、AI 协作分层、分阶段实施方案 |
+| [AI 协作规范](./governance/ai-collaboration.md) | Codex / Claude 入口关系、共享源与适配层边界 |
+| [开发工作流程](./workflows/development-workflow.md) | 完整流程、分支规范、禁止行为、检查清单 |
+| [本地构建与打包规范](./delivery/build-and-package.md) | 标准构建命令、打包方式、产物边界和验证要求 |
+| [发布流程规范](./delivery/release-process.md) | 版本规则、发布步骤、release notes 和发布后验证 |
+| [代码质量门禁规范](./foundations/code-quality-gates.md) | 本地门禁、PR 门禁、合并门禁和 blocker 判定 |
+| [编码规范](./foundations/coding-standards.md) | 命名规范、文件结构、错误处理、代码风格 |
+| [测试指南](./foundations/testing-guide.md) | 单元测试、实际命令测试、测试仓库限制 |
+| [命令开发模板](./foundations/command-template.md) | 新命令开发模板、API 客户端用法、输出处理 |
+| [安全规范](./foundations/security.md) | Token 管理、敏感信息保护、安全审查 |
 
 ## 操作流程
 
@@ -94,9 +99,9 @@ spec/
 
 以下规范仍在治理计划中，但尚未落地：
 
-- `spec/ci-workflows.md`
+- `spec/delivery/ci-workflows.md`
 
-其中 `spec/ci-workflows.md` 放在最后阶段实施，因为当前 GitCode CI 条件尚未具备。
+其中 `spec/delivery/ci-workflows.md` 放在最后阶段实施，因为当前 GitCode CI 条件尚未具备。
 
 ## AI 使用建议
 
@@ -104,8 +109,8 @@ spec/
 
 1. 先从本页判断任务类型
 2. 再进入对应规范正文
-3. 开始修改前回到 [代码质量门禁规范](./code-quality-gates.md) 确认交付标准
-4. 命令行为或协作规则变化时，回到 [文档治理规范](./docs-governance.md) 检查同步范围
+3. 开始修改前回到 [代码质量门禁规范](./foundations/code-quality-gates.md) 确认交付标准
+4. 命令行为或协作规则变化时，回到 [文档治理规范](./governance/docs-governance.md) 检查同步范围
 
 ## 相关文档
 

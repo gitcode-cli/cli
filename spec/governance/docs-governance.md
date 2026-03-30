@@ -217,8 +217,8 @@ skill 分为两类：
 
 构建、打包、发布规则变化时，必须检查并同步：
 
-- `spec/build-and-package.md`
-- `spec/release-process.md`
+- `spec/delivery/build-and-package.md`
+- `spec/delivery/release-process.md`
 - `AGENTS.md`
 - `CLAUDE.md`
 - 相关 AI skills
@@ -234,9 +234,9 @@ skill 分为两类：
 
 当前 `spec/` 目录已具备开发、测试、安全、build、release、quality 和 workflow 基础规范，但仍需补齐以下文档：
 
-- `spec/ci-workflows.md`
+- `spec/delivery/ci-workflows.md`
 
-其中 `spec/ci-workflows.md` 放在最后阶段落地，因为当前 GitCode CI 条件尚未具备。
+其中 `spec/delivery/ci-workflows.md` 放在最后阶段落地，因为当前 GitCode CI 条件尚未具备。
 
 ## 8. 分阶段实施方案
 
@@ -246,10 +246,10 @@ skill 分为两类：
 
 交付物：
 
-- `spec/docs-governance.md`
-- `spec/build-and-package.md`
-- `spec/release-process.md`
-- `spec/code-quality-gates.md`
+- `spec/governance/docs-governance.md`
+- `spec/delivery/build-and-package.md`
+- `spec/delivery/release-process.md`
+- `spec/foundations/code-quality-gates.md`
 - 更新 `spec/README.md`
 
 验收标准：
@@ -330,14 +330,9 @@ skill 分为两类：
 
 交付物：
 
-- `spec/ci-workflows.md`
+- `spec/delivery/ci-workflows.md`
 - workflow 模板
 - 质量门禁的 CI 映射
-
-## 下一步去看哪里
-
-- 如果你在修改命令行为，继续看 [docs/COMMANDS.md](../docs/COMMANDS.md)
-- 如果你在准备提交，继续看 [代码质量门禁规范](./code-quality-gates.md)
 
 验收标准：
 
@@ -346,11 +341,15 @@ skill 分为两类：
 
 ## 9. 当前执行原则
 
-在当前阶段，不进行大规模目录搬迁。
+当前长期整改已完成目录级重组，但仍未进入 CI 自动化阶段。
 
 当前优先级固定为：
 
-1. 建立治理基线
-2. 补齐 build、release、quality 规范
-3. 调整入口和 skill 分层
-4. 最后处理 CI 自动化
+1. 保持 `foundations/`、`workflows/`、`delivery/`、`governance/` 的边界稳定
+2. 同步更新入口文档和 skills 中的规范路径
+3. 在具备真实条件后补齐 `spec/delivery/ci-workflows.md`
+
+## 下一步去看哪里
+
+- 如果你在修改命令行为，继续看 [docs/COMMANDS.md](../../docs/COMMANDS.md)
+- 如果你在准备提交，继续看 [代码质量门禁规范](../foundations/code-quality-gates.md)

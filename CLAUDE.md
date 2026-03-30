@@ -30,11 +30,11 @@
 
 常用任务入口：
 
-- 改命令行为：`spec/development-workflow.md`、`spec/docs-governance.md`、`spec/code-quality-gates.md`
-- 改 API / auth / config：`spec/coding-standards.md`、`spec/security.md`、`spec/testing-guide.md`
-- 补测试或做真实命令验证：`spec/testing-guide.md`、`spec/workflows/test-workflow.md`
+- 改命令行为：`spec/workflows/development-workflow.md`、`spec/governance/docs-governance.md`、`spec/foundations/code-quality-gates.md`
+- 改 API / auth / config：`spec/foundations/coding-standards.md`、`spec/foundations/security.md`、`spec/foundations/testing-guide.md`
+- 补测试或做真实命令验证：`spec/foundations/testing-guide.md`、`spec/workflows/test-workflow.md`
 - 提交 PR / 做 review：`spec/workflows/pr-workflow.md`、`spec/workflows/review-workflow.md`
-- 改构建 / 打包 / 发布：`spec/build-and-package.md`、`spec/release-process.md`
+- 改构建 / 打包 / 发布：`spec/delivery/build-and-package.md`、`spec/delivery/release-process.md`
 
 如果任务是具体操作流程，再进入：
 
@@ -84,10 +84,10 @@ Codex 侧适配层位于 `.codex/skills/`。
 
 当前治理已完成：
 
-- `spec/docs-governance.md`
-- `spec/build-and-package.md`
-- `spec/release-process.md`
-- `spec/code-quality-gates.md`
+- `spec/governance/docs-governance.md`
+- `spec/delivery/build-and-package.md`
+- `spec/delivery/release-process.md`
+- `spec/foundations/code-quality-gates.md`
 - `.ai/skills/` 共享 skill 真相源
 - `.codex/skills/` 适配层结构
 

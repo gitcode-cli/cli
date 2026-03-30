@@ -17,10 +17,10 @@ Before contributing, please read the following documentation:
 
 | Document | Description |
 |----------|-------------|
-| [编码规范](./spec/coding-standards.md) | Naming, file structure, error handling |
-| [测试指南](./spec/testing-guide.md) | Unit tests, actual command testing |
-| [命令开发模板](./spec/command-template.md) | Command development template |
-| [安全规范](./spec/security.md) | Token management, sensitive info protection |
+| [编码规范](./spec/foundations/coding-standards.md) | Naming, file structure, error handling |
+| [测试指南](./spec/foundations/testing-guide.md) | Unit tests, actual command testing |
+| [命令开发模板](./spec/foundations/command-template.md) | Command development template |
+| [安全规范](./spec/foundations/security.md) | Token management, sensitive info protection |
 
 ### Development Workflows (spec/workflows/)
 
@@ -30,8 +30,9 @@ Before contributing, please read the following documentation:
 | [PR 流程](./spec/workflows/pr-workflow.md) | PR creation and merge |
 | [评审流程](./spec/workflows/review-workflow.md) | Code review process |
 | [测试流程](./spec/workflows/test-workflow.md) | Testing workflow |
-| [构建打包流程](./spec/workflows/build-workflow.md) | Build and package |
-| [Release 流程](./spec/workflows/release-workflow.md) | Release process |
+| [开发流程](./spec/workflows/development-workflow.md) | End-to-end development workflow |
+| [构建打包规范](./spec/delivery/build-and-package.md) | Build and package |
+| [Release 规范](./spec/delivery/release-process.md) | Release process |
 
 ### Other Documentation
 

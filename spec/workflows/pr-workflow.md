@@ -32,8 +32,8 @@ git checkout -b feature/issue-23
 ## 2. 开发代码
 
 ### 开发规范
-- 遵循 [编码规范](../coding-standards.md)
-- 使用 [命令开发模板](../command-template.md)
+- 遵循 [编码规范](../foundations/coding-standards.md)
+- 使用 [命令开发模板](../foundations/command-template.md)
 
 ### 本地测试
 ```bash

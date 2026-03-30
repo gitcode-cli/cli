@@ -1,6 +1,35 @@
 # GitCode CLI 版本发布指南
 
-本文档定义 GitCode CLI 的发布流程和发布产物。
+> 当前正式发布规范以 [spec/delivery/release-process.md](./spec/delivery/release-process.md) 为准。
+>
+> 本文档保留的是历史性的 GitHub Actions / GitHub Release 发布说明，用于解释早期自动发布设计和兼容背景，不能替代当前正式规范。
+
+## 文档定位
+
+本文档的职责是：
+
+- 保留历史 GitHub Actions 自动发布方案说明
+- 解释早期 GitHub Release / PyPI 发布设计
+
+本文档不负责：
+
+- 定义当前正式发布流程
+- 定义当前 GitCode 环境下的发布门禁
+- 替代 `spec/delivery/release-process.md`
+
+如果你要执行当前版本发布，请先阅读：
+
+- [spec/delivery/release-process.md](./spec/delivery/release-process.md)
+- [spec/delivery/build-and-package.md](./spec/delivery/build-and-package.md)
+- [docs/PACKAGING.md](./docs/PACKAGING.md)
+
+## 当前边界说明
+
+当前仓库仍未建立 GitCode CI 自动发布闭环，因此：
+
+- 当前正式规则不以本文件为准
+- 本文件中的 GitHub Actions 自动发布内容属于历史参考
+- 若与 `spec/delivery/release-process.md` 冲突，以 `spec/` 规范为准
 
 ## 发布方式
 

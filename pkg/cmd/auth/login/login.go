@@ -13,27 +13,30 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/pkg/browser"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 type LoginOptions struct {
-	IO         *iostreams.IOStreams
-	HttpClient func() (*http.Client, error)
+	IO          *iostreams.IOStreams
+	HttpClient  func() (*http.Client, error)
+	OpenBrowser func(string) error
 
 	// Flags
-	Hostname     string
-	Token        string
-	WithToken    bool
-	GitProtocol  string
-	Web          bool
+	Hostname    string
+	Token       string
+	WithToken   bool
+	GitProtocol string
+	Web         bool
 }
 
 // NewCmdLogin creates the login command
 func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Command {
 	opts := &LoginOptions{
-		IO:         f.IOStreams,
-		HttpClient: f.HttpClient,
+		IO:          f.IOStreams,
+		HttpClient:  f.HttpClient,
+		OpenBrowser: browser.Open,
 	}
 
 	cmd := &cobra.Command{
@@ -73,6 +76,10 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 				return loginWithTokenFlag(opts)
 			}
 
+			if opts.Web {
+				return loginWithWeb(opts)
+			}
+
 			// Interactive login
 			return loginInteractive(opts)
 		},
@@ -89,7 +96,7 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 
 func loginWithToken(opts *LoginOptions) error {
 	// Read token from stdin
-	reader := bufio.NewReader(os.Stdin)
+	reader := newInputReader(opts)
 	token, err := reader.ReadString('\n')
 	if err != nil && err != io.EOF {
 		return fmt.Errorf("failed to read token from stdin: %w", err)
@@ -136,6 +143,21 @@ func loginWithTokenFlag(opts *LoginOptions) error {
 	return nil
 }
 
+func loginWithWeb(opts *LoginOptions) error {
+	if opts.Hostname == "" {
+		opts.Hostname = "gitcode.com"
+	}
+
+	loginURL := fmt.Sprintf("https://%s/-/profile/personal_access_tokens", opts.Hostname)
+	fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", loginURL)
+	if err := opts.OpenBrowser(loginURL); err != nil {
+		return fmt.Errorf("failed to open browser: %w", err)
+	}
+
+	fmt.Fprintf(opts.IO.Out, "After generating a token in the browser, paste it below.\n")
+	return loginInteractive(opts)
+}
+
 func loginInteractive(opts *LoginOptions) error {
 	// Set default hostname
 	if opts.Hostname == "" {
@@ -150,7 +172,7 @@ func loginInteractive(opts *LoginOptions) error {
 
 	// Prompt for token
 	fmt.Fprintf(opts.IO.Out, "? Paste your authentication token: ")
-	reader := bufio.NewReader(os.Stdin)
+	reader := newInputReader(opts)
 	token, err := reader.ReadString('\n')
 	if err != nil {
 		return fmt.Errorf("failed to read token: %w", err)
@@ -163,4 +185,11 @@ func loginInteractive(opts *LoginOptions) error {
 
 	opts.Token = token
 	return loginWithTokenFlag(opts)
+}
+
+func newInputReader(opts *LoginOptions) *bufio.Reader {
+	if opts.IO != nil && opts.IO.In != nil {
+		return bufio.NewReader(opts.IO.In)
+	}
+	return bufio.NewReader(os.Stdin)
 }

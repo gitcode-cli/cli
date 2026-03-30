@@ -37,7 +37,13 @@ gc auth login
 
 # 使用 Token 登录
 gc auth login --token YOUR_TOKEN
+
+# 打开浏览器生成 Token 后继续登录
+gc auth login --web
 ```
+
+说明：
+- `auth login --web` 会打开 GitCode Token 页面，然后继续在终端中读取你粘贴的 Token 完成登录。
 
 ### auth status - 查看认证状态
 
@@ -324,9 +330,14 @@ gc pr create -R upstream/repo --fork myfork/repo --head feature-branch --title "
 
 # 从最后一次提交填充标题和内容
 gc pr create -R infra-test/gctest1 --fill
+
+# 创建成功后在浏览器中打开 PR
+gc pr create -R infra-test/gctest1 --title "New feature" --body "Description" --web
 ```
 
 > **说明**: `--head` 参数可选，未指定时自动检测当前 Git 分支。
+> `--fill` 会使用最近一次 Git commit 的标题和正文补全未显式提供的 `--title` / `--body`。
+> `--web` 会在 PR 创建成功后打开新建 PR 页面。
 
 ### pr list - 列出 PRs
 

@@ -1,7 +1,11 @@
 # Binaries
 bin/
 !gc_cli/bin/
+gc_cli/bin/*
+!gc_cli/bin/.gitkeep
 /gc
+gc_linux_*
+gc-darwin-*
 *.exe
 *.exe~
 *.dll
@@ -28,7 +32,21 @@ go.work.sum
 Thumbs.db
 
 # Build
+build/
 dist/
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Python packaging
+*.egg-info/
+
+# Local evaluation and analysis outputs
+issue-reviewer-workspace/
+context/
+statistics.json
+project-management-statistics.json
 
 # 敏感文件 - 禁止提交
 *.pem

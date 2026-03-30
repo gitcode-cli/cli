@@ -75,10 +75,12 @@ AI 协作入口层由以下文件组成：
 AI skill 采用三层结构：
 
 - `.ai/skills/`：跨 AI 的共享 skill 真相源
+- `.ai/distribution/`：可分发的通用 skill 包
 - `.claude/skills/`：Claude 适配层
 - `.codex/skills/`：Codex 适配层
 
 当前仓库已补齐 `.ai/skills/`、`.claude/skills/` 和 `.codex/skills/` 的分层结构。
+同时，`.ai/distribution/` 用于承载可脱离本仓库复用的 `gc` 通用 skill。
 
 ## 3. 唯一真相源
 
@@ -132,6 +134,11 @@ skill 分为两类：
 - `.codex/skills/` 存放 Codex 适配版本
 
 用户本地安装目录仅作为运行时副本，不作为项目规则真相源。
+
+此外，需要明确区分两类 skill：
+
+- 仓库协作 skill：服务 gitcode-cli 仓库自身开发，可依赖仓库内 `spec/`、`docs/` 和目录结构
+- 通用 `gc` skill：服务外部项目使用 `gc`，不得依赖本仓库私有文档路径
 
 当前仓库已提供最小同步工具：
 

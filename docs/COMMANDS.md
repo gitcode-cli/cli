@@ -490,12 +490,17 @@ gc pr review 1 --comment "评审意见" -R infra-test/gctest1
 # 批准 PR
 gc pr review 1 --approve -R infra-test/gctest1
 
-# 请求修改
-gc pr review 1 --request -R infra-test/gctest1
+# 批准 PR 并附带评论
+gc pr review 1 --approve --comment "LGTM" -R infra-test/gctest1
 
 # 强制通过审批（管理员权限）
 gc pr review 1 --approve --force -R infra-test/gctest1
 ```
+
+说明：
+- `--approve` 现在走 GitCode 实际可用的 `/pulls/:number/review` endpoint，不再命中错误的 `/reviews` 路径。
+- `--approve --comment` 会先提交普通评论，再执行批准动作。
+- GitCode 当前公开 API 不支持“request changes”动作，`--request` 会明确报错并提示改用 `--comment` 留下审查意见。
 
 ### pr edit - 编辑 PR
 

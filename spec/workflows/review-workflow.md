@@ -78,6 +78,8 @@ gc pr review <number> --approve -R gitcode-cli/cli
 gc pr review <number> --request -R gitcode-cli/cli
 ```
 
+说明：GitCode 当前公开 API 暂不支持“request changes”动作；该命令会返回明确错误，实际审查流程请改用 `gc pr review <number> --comment "..." -R gitcode-cli/cli` 留下修改意见。
+
 ### 普通评论（Comment）
 ```bash
 gc pr review <number> --comment "评论内容" -R gitcode-cli/cli

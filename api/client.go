@@ -105,7 +105,8 @@ func (c *Client) REST(method, path string, body interface{}, response interface{
 	// Check for errors
 	if resp.StatusCode >= 400 {
 		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && apiErr.Message != "" {
+		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
+			apiErr.StatusCode = resp.StatusCode
 			return &apiErr
 		}
 		return fmt.Errorf("API error: %s", resp.Status)
@@ -180,7 +181,8 @@ func (c *Client) PatchForm(path string, formValues url.Values, response interfac
 	// Check for errors
 	if resp.StatusCode >= 400 {
 		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && apiErr.Message != "" {
+		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
+			apiErr.StatusCode = resp.StatusCode
 			return &apiErr
 		}
 		return fmt.Errorf("API error: %s", resp.Status)
@@ -263,7 +265,8 @@ func (c *Client) UploadAsset(path, filename string, content []byte, contentType 
 	// Check for errors
 	if resp.StatusCode >= 400 {
 		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && apiErr.Message != "" {
+		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
+			apiErr.StatusCode = resp.StatusCode
 			return nil, &apiErr
 		}
 		return nil, fmt.Errorf("upload failed: %s", resp.Status)
@@ -280,14 +283,19 @@ func (c *Client) UploadAsset(path, filename string, content []byte, contentType 
 
 // APIError represents an API error
 type APIError struct {
-	StatusCode int    `json:"-"`
-	Message    string `json:"message"`
-	ErrorName  string `json:"error"`
+	StatusCode    int    `json:"-"`
+	Message       string `json:"message"`
+	ErrorMessage  string `json:"error_message"`
+	ErrorName     string `json:"error"`
+	ErrorCodeName string `json:"error_code_name"`
 }
 
 func (e *APIError) Error() string {
 	if e.Message != "" {
 		return e.Message
+	}
+	if e.ErrorMessage != "" {
+		return e.ErrorMessage
 	}
 	return fmt.Sprintf("API error (%d)", e.StatusCode)
 }

@@ -17,6 +17,18 @@ description: |
 
 Generate standard command code templates and test files for the gitcode-cli project.
 
+## 共享源
+
+本 Claude skill 对应的共享真相源是：
+
+- [`../../../.ai/skills/gitcode-cmd-generator/SKILL.md`](../../../.ai/skills/gitcode-cmd-generator/SKILL.md)
+
+## 边界说明
+
+- 命令结构和编码规范以 `spec/` 为准
+- 命令行为说明必须同步到 `docs/COMMANDS.md`
+- 本文件是 Claude 适配层，不是跨 AI 的唯一命令生成 skill 来源
+
 ## Project Context
 
 | 项目 | 值 |

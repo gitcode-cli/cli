@@ -10,6 +10,18 @@ description: |
 
 # GitCode CLI 命令使用指南
 
+## 共享源
+
+本 Claude skill 对应的共享真相源是：
+
+- [`../../../.ai/skills/gitcode-cli/SKILL.md`](../../../.ai/skills/gitcode-cli/SKILL.md)
+
+## 边界说明
+
+- 项目正式规则以 `spec/` 为准
+- 命令行为以 `docs/COMMANDS.md` 为准
+- 本文件是 Claude 适配层，不是跨 AI 的唯一 skill 来源
+
 ## 核心规则
 
 **绝对禁止使用 `gh` 命令！** 这是 GitCode 项目，命令是 `gc`。

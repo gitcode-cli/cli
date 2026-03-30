@@ -12,6 +12,18 @@ description: |
 
 自动化评审 GitCode CLI 项目的 Pull Request，检查代码质量、安全问题和规范合规性。
 
+## 共享源
+
+本 Claude skill 对应的共享真相源是：
+
+- [`../../../.ai/skills/pr-reviewer/SKILL.md`](../../../.ai/skills/pr-reviewer/SKILL.md)
+
+## 边界说明
+
+- 审查流程以 `spec/workflows/review-workflow.md` 为准
+- 质量门禁以 `spec/code-quality-gates.md` 为准
+- 本文件是 Claude 适配层，不是跨 AI 的唯一审查 skill 来源
+
 ## 评审流程
 
 ### 1. 获取 PR 信息

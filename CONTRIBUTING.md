@@ -83,6 +83,30 @@ make lint           # Run linter
 make completions    # Generate shell completions
 ```
 
+### Workspace Hygiene
+
+Do not commit local build outputs, package artifacts, evaluation workspaces, or statistics files.
+
+Common examples that must stay out of git:
+
+```bash
+build/
+dist/
+gc_linux_*
+gc-darwin-*
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+*.egg-info/
+issue-reviewer-workspace/
+context/
+statistics.json
+project-management-statistics.json
+```
+
+The repository `.gitignore` already covers these paths. If a new local-only output appears repeatedly, update `.gitignore` in the same change.
+
 ## Packaging
 
 ### Binary

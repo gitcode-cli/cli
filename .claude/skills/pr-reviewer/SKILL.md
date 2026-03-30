@@ -83,13 +83,21 @@ gc pr review <number> --comment "评审意见" -R gitcode-cli/cli
 # 批准 PR
 gc pr review <number> --approve -R gitcode-cli/cli
 
-# 请求修改
-gc pr review <number> --request -R gitcode-cli/cli
+# 批准 PR 并附带评论
+gc pr review <number> --approve --comment "LGTM" -R gitcode-cli/cli
 
 # 运行测试
 go test ./...
 go test -coverprofile=coverage.out ./...
+./scripts/regression-core.sh
 ```
+
+## 当前行为说明
+
+- `gc pr review --approve` 走 GitCode 实际可用的 `/pulls/:number/review` endpoint。
+- `gc pr review --request` 当前会明确报错：GitCode 公开 API 暂不支持 request changes。
+- 需要给出修改意见时，优先使用 `gc pr review <number> --comment "..." -R gitcode-cli/cli`。
+- 审查前优先运行 `./scripts/regression-core.sh`，再按本次 PR 变更补充针对性命令验证。
 
 ## 评审结论模板
 
@@ -129,3 +137,4 @@ go test -coverprofile=coverage.out ./...
 2. 检查新增代码是否有测试覆盖
 3. 注意破坏性变更
 4. 评论保持专业和建设性
+5. 检查 `.claude/skills/`、`README.md`、`docs/COMMANDS.md`、`spec/` 是否与当前行为同步

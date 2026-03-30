@@ -88,3 +88,15 @@ gc auth login --token YOUR_TOKEN
 | `GC_TOKEN` | 认证 Token |
 | `GITCODE_TOKEN` | 备用 Token |
 | `GC_HOST` | 默认主机（默认：gitcode.com） |
+
+---
+
+## 当前约定
+
+- 大多数接受仓库参数的命令统一支持三种格式：
+  - `owner/repo`
+  - `https://gitcode.com/owner/repo`
+  - `git@gitcode.com:owner/repo.git`
+- 部分命令在 Git 仓库内支持从当前 remote 自动推断仓库；具体以 `README.md` 和 `docs/COMMANDS.md` 为准。
+- `gc pr review --approve` 当前可用；`gc pr review --request` 会明确提示 GitCode API 暂不支持该动作。
+- 优先使用 `./scripts/regression-core.sh` 做核心真实命令回归，再补充本次开发相关验证。

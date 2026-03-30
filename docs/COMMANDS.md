@@ -20,6 +20,10 @@ git@gitcode.com:owner/repo.git
 - 未显式传 `-R` 的命令，仍按各自命令说明决定是否支持从当前 Git 仓库自动推断。
 - 传入 HTTPS 或 SSH 仓库地址时，CLI 会统一解析出目标仓库，不再要求手工改写成 `owner/repo`。
 
+当前自动推断边界：
+- 已支持缺省 `-R` 的命令：`repo view`、`issue create/list/view/close/reopen/comment/edit/label/prs`
+- 仍需显式传 `-R` 的常见命令：`pr create/list/view/review`、`release *`、`label *`、`milestone *`、`commit *`
+
 ### 认证
 
 ```bash

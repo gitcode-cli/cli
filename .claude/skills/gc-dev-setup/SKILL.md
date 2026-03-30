@@ -69,6 +69,16 @@ go build -o ./gc ./cmd/gc
 
 如果命令执行无错误，则环境已就绪。无需检查认证状态。
 
+如果需要继续开发或验证核心链路，优先执行：
+
+```bash
+./scripts/regression-core.sh
+```
+
+说明：
+- 该脚本会用临时 `GC_CONFIG_DIR` 验证 auth、repo view、issue list/view 和非 Git 目录错误路径。
+- 默认不执行 `pr create` 这类写路径；需要时按 `docs/REGRESSION.md` 显式开启。
+
 预期输出：
 ```
 gc version dev
@@ -83,10 +93,10 @@ https://gitcode.com/gitcode-cli/cli
 
 ```bash
 # 重新构建并验证
-GOPROXY=https://goproxy.cn,direct go build -o ./gc ./cmd/gc && ./gc version
+GOPROXY=https://goproxy.cn,direct go build -o ./gc ./cmd/gc && ./gc version && ./scripts/regression-core.sh
 ```
 
-如果无错误，则环境已就绪。
+如果无错误，则环境已就绪；如果只是做最小环境探测，`./gc version` 通过即可。
 
 ## 常见问题
 

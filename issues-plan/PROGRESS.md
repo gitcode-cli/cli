@@ -2,7 +2,7 @@
 
 本文档实时跟踪 gitcode-cli 项目的开发和验收进展。
 
-**最后更新**: 2026-03-24
+**最后更新**: 2026-03-30
 
 ---
 
@@ -255,17 +255,17 @@ gitcode-cli 项目已全部完成开发，实现了以下功能：
 - `gc repo clone` - 克隆仓库
 - `gc repo create` - 创建仓库
 - `gc repo fork` - Fork仓库
-- `gc repo view` - 查看仓库
+- `gc repo view` - 查看仓库，支持从当前 Git remote 自动识别 `owner/repo`
 - `gc repo list` - 列出仓库
 - `gc repo delete` - 删除仓库
 
 ### Issue模块
-- `gc issue create` - 创建Issue
-- `gc issue list` - 列出Issues
-- `gc issue view` - 查看Issue
-- `gc issue close` - 关闭Issue
-- `gc issue reopen` - 重开Issue
-- `gc issue comment` - 添加评论
+- `gc issue create` - 创建Issue，支持从当前 Git remote 自动识别 `owner/repo`
+- `gc issue list` - 列出Issues，支持从当前 Git remote 自动识别 `owner/repo`
+- `gc issue view` - 查看Issue，支持从当前 Git remote 自动识别 `owner/repo`
+- `gc issue close` - 关闭Issue，支持从当前 Git remote 自动识别 `owner/repo`
+- `gc issue reopen` - 重开Issue，支持从当前 Git remote 自动识别 `owner/repo`
+- `gc issue comment` - 添加评论，支持从当前 Git remote 自动识别 `owner/repo`
 
 ### 标签模块
 - `gc label create` - 创建标签

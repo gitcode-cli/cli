@@ -87,10 +87,14 @@ gc auth logout
 ```bash
 # 查看仓库详情
 gc repo view infra-test/gctest1
+gc repo view
 
 # 在浏览器中打开
 gc repo view infra-test/gctest1 --web
 ```
+
+说明：
+- 在当前 Git 仓库中执行时，`gc repo view` 可缺省仓库参数；CLI 会优先解析 `origin` remote，若不存在则回退到第一个 remote。
 
 ### repo list - 列出仓库
 
@@ -169,6 +173,7 @@ gc repo stats --branch main --since 2024-01-01 --until 2024-12-31 -R infra-test/
 ```bash
 # 创建 Issue
 gc issue create -R infra-test/gctest1 --title "Bug: Something wrong" --body "Description here"
+gc issue create --title "Bug: Something wrong" --body "Description here"
 
 # 创建 Issue 并添加标签
 gc issue create -R infra-test/gctest1 --title "Feature request" --body "Description" --label enhancement
@@ -182,6 +187,7 @@ gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --assi
 ```bash
 # 列出所有开放的 Issues
 gc issue list -R infra-test/gctest1
+gc issue list
 
 # 只列出已关闭的 Issues
 gc issue list -R infra-test/gctest1 --state closed
@@ -226,6 +232,7 @@ gc issue list -R infra-test/gctest1 --state open --milestone "v1.0" --sort updat
 ```bash
 # 查看 Issue 详情
 gc issue view 1 -R infra-test/gctest1
+gc issue view 1
 
 # 查看评论
 gc issue view 1 -R infra-test/gctest1 --comments
@@ -239,6 +246,7 @@ gc issue view 1 -R infra-test/gctest1 --web
 ```bash
 # 关闭 Issue
 gc issue close 1 -R infra-test/gctest1
+gc issue close 1
 ```
 
 ### issue edit - 编辑 Issue
@@ -246,6 +254,7 @@ gc issue close 1 -R infra-test/gctest1
 ```bash
 # 修改标题
 gc issue edit 1 --title "New title" -R infra-test/gctest1
+gc issue edit 1 --title "New title"
 
 # 修改描述
 gc issue edit 1 --body "New description" -R infra-test/gctest1
@@ -276,6 +285,7 @@ gc issue edit 1 --title "Bug fix" --assignee username --label bug --milestone 1 
 ```bash
 # 重开 Issue
 gc issue reopen 1 -R infra-test/gctest1
+gc issue reopen 1
 ```
 
 ### issue comment - 添加评论
@@ -283,6 +293,7 @@ gc issue reopen 1 -R infra-test/gctest1
 ```bash
 # 添加评论
 gc issue comment 1 -R infra-test/gctest1 --body "This is a comment"
+gc issue comment 1 --body "This is a comment"
 
 # 从文件读取评论内容
 gc issue comment 1 -R infra-test/gctest1 --body-file comment.txt
@@ -296,6 +307,7 @@ echo "Comment from stdin" | gc issue comment 1 -R infra-test/gctest1 --body-file
 ```bash
 # 添加标签
 gc issue label 1 --add bug,enhancement -R infra-test/gctest1
+gc issue label 1 --add bug,enhancement
 
 # 移除标签
 gc issue label 1 --remove bug -R infra-test/gctest1
@@ -309,10 +321,15 @@ gc issue label 1 --list -R infra-test/gctest1
 ```bash
 # 查看 Issue 关联的 Pull Requests
 gc issue prs 123 -R infra-test/gctest1
+gc issue prs 123
 
 # 获取增强信息（包含可合并状态）
 gc issue prs 123 --mode 1 -R infra-test/gctest1
 ```
+
+说明：
+- `issue create/list/view/close/reopen/comment/edit/label/prs` 在当前 Git 仓库中可缺省 `-R`，CLI 会优先解析 `origin` remote；若没有 `origin`，则回退到第一个 remote。
+- 若当前目录不是 Git 仓库，或仓库没有可用 remote，会返回明确错误并提示改用 `-R owner/repo`。
 
 ---
 

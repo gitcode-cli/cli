@@ -1,9 +1,13 @@
 package login
 
 import (
+	"bytes"
+	"net/http"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 func TestNewCmdLogin(t *testing.T) {
@@ -39,3 +43,56 @@ func TestNewCmdLogin(t *testing.T) {
 		})
 	}
 }
+
+func TestLoginWithWebOpensBrowser(t *testing.T) {
+	io, _, out, _ := iostreams.Test()
+	io.In = bytes.NewBufferString("test-token\n")
+
+	var openedURL string
+	opts := &LoginOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"login":"tester"}`),
+					}, nil
+				}),
+			}, nil
+		},
+		OpenBrowser: func(url string) error {
+			openedURL = url
+			return nil
+		},
+		Web: true,
+	}
+
+	if err := loginWithWeb(opts); err != nil {
+		t.Fatalf("loginWithWeb() error = %v", err)
+	}
+
+	if openedURL != "https://gitcode.com/-/profile/personal_access_tokens" {
+		t.Fatalf("opened URL = %q", openedURL)
+	}
+	if !strings.Contains(out.String(), "Opening https://gitcode.com/-/profile/personal_access_tokens in your browser.") {
+		t.Fatalf("output = %q", out.String())
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
+
+func ioNopCloser(body string) *readCloser {
+	return &readCloser{Reader: strings.NewReader(body)}
+}
+
+type readCloser struct {
+	*strings.Reader
+}
+
+func (r *readCloser) Close() error { return nil }

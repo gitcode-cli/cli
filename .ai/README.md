@@ -7,10 +7,12 @@
 - 为 Claude 和 Codex 提供共享的项目级 skill 真相源
 - 避免把某一客户端的 skill 目录误当作全项目唯一来源
 - 让 skill 可以版本化、评审、迁移和跨项目复用
+- 提供可脱离本仓库使用的通用 `gc` skill 包
 
 ## 权威边界
 
 - `.ai/skills/` 是共享 skill 真相源
+- `.ai/distribution/` 是可分发的通用 skill 包
 - `.claude/skills/` 是 Claude 适配层
 - `.codex/skills/` 是 Codex 适配层
 
@@ -19,6 +21,13 @@
 `.ai/` 不是项目正式规则源。
 
 项目正式规则仍以 [spec/README.md](../spec/README.md) 和 `spec/` 目录为准。
+
+## 仓库内 skill 与通用 skill 的区别
+
+- `.ai/skills/` 面向 gitcode-cli 仓库内部协作
+- `.ai/distribution/` 面向外部项目复用 `gc`
+
+通用 skill 包不得依赖本仓库内部 `spec/` 或 `docs/COMMANDS.md` 路径。
 
 ## 当前阶段说明
 

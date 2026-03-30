@@ -87,6 +87,49 @@ func TestGetReleaseUploadURLUsesAuthorizationHeader(t *testing.T) {
 	}
 }
 
+func TestReviewPRUsesAuthorizationHeaderAndReviewEndpoint(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusNoContent, ``), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := ReviewPR(client, "owner", "repo", 123, &ReviewPROptions{})
+	if err != nil {
+		t.Fatalf("ReviewPR() error = %v", err)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	if gotPath != "/api/v5/repos/owner/repo/pulls/123/review" {
+		t.Fatalf("request path = %q, want %q", gotPath, "/api/v5/repos/owner/repo/pulls/123/review")
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization header = %q, want %q", gotAuth, "Bearer test-token")
+	}
+}
+
+func TestReviewPRReturnsErrorMessageField(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusBadRequest, `{"error_code_name":"UN_KNOW","error_message":"403 Forbidden - You don't have the authority to approval this merge request."}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := ReviewPR(client, "owner", "repo", 123, &ReviewPROptions{})
+	if err == nil {
+		t.Fatal("expected ReviewPR() to return an error")
+	}
+	if !strings.Contains(err.Error(), "You don't have the authority") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func newAuthTestClient(fn func(*http.Request) (*http.Response, error)) *Client {
 	return NewClientFromHTTP(&http.Client{
 		Transport: roundTripFunc(fn),

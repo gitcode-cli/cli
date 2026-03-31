@@ -136,6 +136,11 @@ func editRun(opts *EditOptions) error {
 		return err
 	}
 
+	assigneeIDs, err := api.ResolveUserIDs(client, opts.Assignees)
+	if err != nil {
+		return fmt.Errorf("failed to resolve assignees: %w", err)
+	}
+
 	// Normalize state value
 	state := opts.State
 	if state == "closed" {
@@ -144,12 +149,12 @@ func editRun(opts *EditOptions) error {
 
 	// Build update options
 	updateOpts := &api.UpdateIssueOptions{
-		Title:     opts.Title,
-		Body:      opts.Body,
-		State:     state,
-		Assignees: opts.Assignees,
-		Labels:    opts.Labels,
-		Milestone: opts.Milestone,
+		Title:       opts.Title,
+		Body:        opts.Body,
+		State:       state,
+		AssigneeIDs: assigneeIDs,
+		Labels:      opts.Labels,
+		Milestone:   opts.Milestone,
 	}
 
 	if opts.SecurityHole {
@@ -159,6 +164,9 @@ func editRun(opts *EditOptions) error {
 	issue, err := api.UpdateIssue(client, owner, repo, opts.Number, updateOpts)
 	if err != nil {
 		return fmt.Errorf("failed to update issue: %w", err)
+	}
+	if err := verifyAppliedAssignees(client, owner, repo, opts.Number, assigneeIDs); err != nil {
+		return err
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Updated issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
@@ -175,4 +183,45 @@ func getEnvToken() string {
 		return token
 	}
 	return os.Getenv("GITCODE_TOKEN")
+}
+
+func verifyAppliedAssignees(client *api.Client, owner, repo string, issueNumber int, expectedIDs []string) error {
+	if len(expectedIDs) == 0 {
+		return nil
+	}
+
+	issue, err := api.GetIssue(client, owner, repo, issueNumber)
+	if err != nil {
+		return fmt.Errorf("failed to verify issue assignees: %w", err)
+	}
+	if hasExpectedAssignees(issue, expectedIDs) {
+		return nil
+	}
+
+	return cmdutil.NewCLIError(
+		cmdutil.ExitConflict,
+		fmt.Sprintf("issue #%d was updated, but GitCode API did not apply requested assignees", issueNumber),
+		nil,
+	)
+}
+
+func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
+	if issue == nil || len(expectedIDs) == 0 {
+		return true
+	}
+
+	actual := make(map[string]struct{}, len(issue.Assignees))
+	for _, assignee := range issue.Assignees {
+		if assignee == nil || assignee.ID == nil {
+			continue
+		}
+		actual[fmt.Sprint(assignee.ID)] = struct{}{}
+	}
+
+	for _, expectedID := range expectedIDs {
+		if _, ok := actual[expectedID]; !ok {
+			return false
+		}
+	}
+	return true
 }

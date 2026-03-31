@@ -4,6 +4,7 @@ package create
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -112,16 +113,24 @@ func createRun(opts *CreateOptions) error {
 	}
 	client.SetToken(token, "environment")
 
+	assigneeIDs, err := api.ResolveUserIDs(client, opts.Assignees)
+	if err != nil {
+		return fmt.Errorf("failed to resolve assignees: %w", err)
+	}
+
 	// Create issue
 	issue, err := api.CreateIssue(client, owner, repo, &api.CreateIssueOptions{
-		Title:     opts.Title,
-		Body:      opts.Body,
-		Labels:    opts.Labels,
-		Assignees: opts.Assignees,
-		Milestone: opts.Milestone,
+		Title:       opts.Title,
+		Body:        opts.Body,
+		Labels:      opts.Labels,
+		AssigneeIDs: assigneeIDs,
+		Milestone:   opts.Milestone,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create issue: %w", err)
+	}
+	if err := verifyAppliedAssignees(client, owner, repo, issue.Number, assigneeIDs); err != nil {
+		return err
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
@@ -131,4 +140,50 @@ func createRun(opts *CreateOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+func verifyAppliedAssignees(client *api.Client, owner, repo, issueNumber string, expectedIDs []string) error {
+	if len(expectedIDs) == 0 {
+		return nil
+	}
+
+	number, err := strconv.Atoi(issueNumber)
+	if err != nil {
+		return fmt.Errorf("failed to parse created issue number %q: %w", issueNumber, err)
+	}
+
+	issue, err := api.GetIssue(client, owner, repo, number)
+	if err != nil {
+		return fmt.Errorf("failed to verify issue assignees: %w", err)
+	}
+	if hasExpectedAssignees(issue, expectedIDs) {
+		return nil
+	}
+
+	return cmdutil.NewCLIError(
+		cmdutil.ExitConflict,
+		fmt.Sprintf("issue #%s was created, but GitCode API did not apply requested assignees", issueNumber),
+		nil,
+	)
+}
+
+func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
+	if issue == nil || len(expectedIDs) == 0 {
+		return true
+	}
+
+	actual := make(map[string]struct{}, len(issue.Assignees))
+	for _, assignee := range issue.Assignees {
+		if assignee == nil || assignee.ID == nil {
+			continue
+		}
+		actual[fmt.Sprint(assignee.ID)] = struct{}{}
+	}
+
+	for _, expectedID := range expectedIDs {
+		if _, ok := actual[expectedID]; !ok {
+			return false
+		}
+	}
+	return true
 }

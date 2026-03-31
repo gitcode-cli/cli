@@ -242,6 +242,7 @@ gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --dry-
 说明：
 - `issue create` 当前已支持 `--dry-run` 预演创建参数。
 - 创建时携带 `--label`、`--milestone`、`--assignee` 已走兼容的 form 提交路径。
+- `--assignee` 继续使用用户名输入，但客户端会先解析为 GitCode user ID，再提交到 issue API。
 
 ### issue list - 列出 Issues
 
@@ -349,6 +350,9 @@ gc issue edit 1 --security-hole -R infra-test/gctest1
 # 组合使用
 gc issue edit 1 --title "Bug fix" --assignee username --label bug --milestone 1 -R infra-test/gctest1
 ```
+
+说明：
+- `issue edit --assignee` 使用用户名输入，客户端会先解析为 GitCode user ID，再调用 issue 更新接口。
 
 ### issue reopen - 重开 Issue
 

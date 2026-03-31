@@ -520,7 +520,7 @@ gc pr comments 1 -R infra-test/gctest1
 gc pr comments 1 --limit 5 -R infra-test/gctest1
 ```
 
-评论列表会显示 DiscussionID，可用于回复评论。
+评论列表会显示 `Discussion ID`，可直接用于 `gc pr reply --discussion`。
 当前 GitCode 公开 API 不支持通过 CLI 将 PR 评论标记为已解决或未解决；resolved 状态需要在 Web UI 中手动处理。
 
 ### pr reply - 回复 PR 评论
@@ -715,6 +715,9 @@ gc release edit v1.0.0 --title "New title" -R infra-test/gctest1
 gc release edit v1.0.0 --notes "New release notes" -R infra-test/gctest1
 ```
 
+说明：
+- 若 GitCode 当前 release 查询响应未返回 release ID，`release edit` 会明确报错提示上游 API 限制，而不是给出模糊失败信息。
+
 ### release delete - 删除 Release
 
 ```bash
@@ -727,6 +730,9 @@ gc release delete v1.0.0 -R infra-test/gctest1 --dry-run
 # 非交互执行
 gc release delete v1.0.0 -R infra-test/gctest1 --yes
 ```
+
+说明：
+- 若 GitCode 当前 release 查询响应未返回 release ID，`release delete` 会明确报错提示上游 API 限制。
 
 ---
 

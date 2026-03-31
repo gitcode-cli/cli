@@ -83,7 +83,7 @@ func editRun(opts *EditOptions) error {
 		return fmt.Errorf("failed to update comment: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Updated comment #%v\n", cs.Green("✓"), comment.ID)
+	fmt.Fprintf(opts.IO.Out, "%s Updated comment #%s\n", cs.Green("✓"), cmdutil.FormatAPIID(comment.ID))
 	return nil
 }
 

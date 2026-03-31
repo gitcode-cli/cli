@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -65,28 +66,13 @@ func GetCommit(client *Client, owner, repo, sha string, showDiff bool) (*Reposit
 // GetCommitDiff fetches the diff of a commit
 func GetCommitDiff(client *Client, owner, repo, sha string) (string, error) {
 	path := "/repos/" + owner + "/" + repo + "/commit/" + sha + "/diff"
-
-	var result map[string]interface{}
-	err := client.Get(path, &result)
-	if err != nil {
-		return "", err
-	}
-
-	// Return formatted diff
-	return fmt.Sprintf("%v", result), nil
+	return client.GetText(path)
 }
 
 // GetCommitPatch fetches the patch of a commit
 func GetCommitPatch(client *Client, owner, repo, sha string) (string, error) {
 	path := "/repos/" + owner + "/" + repo + "/commit/" + sha + "/patch"
-
-	var result map[string]interface{}
-	err := client.Get(path, &result)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%v", result), nil
+	return client.GetText(path)
 }
 
 // CommitComment represents a commit comment
@@ -115,13 +101,24 @@ func CreateCommitComment(client *Client, owner, repo, sha, body string) (*Commit
 // GetCommitComment fetches a single commit comment
 func GetCommitComment(client *Client, owner, repo, id string) (*CommitComment, error) {
 	path := fmt.Sprintf("/repos/%s/%s/comments/%s", owner, repo, id)
-
-	var comment CommitComment
-	err := client.Get(path, &comment)
+	body, err := client.GetText(path)
 	if err != nil {
 		return nil, err
 	}
-	return &comment, nil
+
+	var comment CommitComment
+	if err := json.Unmarshal([]byte(body), &comment); err == nil {
+		return &comment, nil
+	}
+
+	var comments []CommitComment
+	if err := json.Unmarshal([]byte(body), &comments); err != nil {
+		return nil, err
+	}
+	if len(comments) == 0 {
+		return nil, fmt.Errorf("commit comment %s not found", id)
+	}
+	return &comments[0], nil
 }
 
 // UpdateCommitComment updates a commit comment

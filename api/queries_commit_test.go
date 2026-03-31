@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 )
 
@@ -95,5 +96,50 @@ func TestCommitCommentList_Unmarshal(t *testing.T) {
 	}
 	if comments[0].Body != "Comment 1" {
 		t.Errorf("Expected first comment Body 'Comment 1', got '%s'", comments[0].Body)
+	}
+}
+
+func TestGetCommitCommentAcceptsArrayResponse(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `[{"id":"123","body":"from array"}]`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	comment, err := GetCommitComment(client, "owner", "repo", "123")
+	if err != nil {
+		t.Fatalf("GetCommitComment() error = %v", err)
+	}
+	if comment.Body != "from array" {
+		t.Fatalf("GetCommitComment().Body = %q, want %q", comment.Body, "from array")
+	}
+}
+
+func TestGetCommitDiffReturnsRawText(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, "diff --git a/README.md b/README.md"), nil
+	})
+	client.SetToken("test-token", "test")
+
+	diff, err := GetCommitDiff(client, "owner", "repo", "abc123")
+	if err != nil {
+		t.Fatalf("GetCommitDiff() error = %v", err)
+	}
+	if diff != "diff --git a/README.md b/README.md" {
+		t.Fatalf("GetCommitDiff() = %q", diff)
+	}
+}
+
+func TestGetCommitPatchReturnsRawText(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, "From abc123 Mon Sep 17 00:00:00 2001"), nil
+	})
+	client.SetToken("test-token", "test")
+
+	patch, err := GetCommitPatch(client, "owner", "repo", "abc123")
+	if err != nil {
+		t.Fatalf("GetCommitPatch() error = %v", err)
+	}
+	if patch != "From abc123 Mon Sep 17 00:00:00 2001" {
+		t.Fatalf("GetCommitPatch() = %q", patch)
 	}
 }

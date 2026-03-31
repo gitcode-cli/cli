@@ -117,7 +117,9 @@ func replyRun(opts *ReplyOptions) error {
 
 	// Output
 	fmt.Fprintf(opts.IO.Out, "%s Replied to discussion %s\n", cs.Green("✓"), cs.Yellow(opts.DiscussionID))
-	fmt.Fprintf(opts.IO.Out, "  Comment ID: %s\n", cs.Cyan(formatID(result.NoteID)))
+	if noteID := cmdutil.FormatAPIID(result.NoteID); noteID != "" && noteID != "0" {
+		fmt.Fprintf(opts.IO.Out, "  Comment ID: %s\n", cs.Cyan(noteID))
+	}
 	if result.ID != "" {
 		fmt.Fprintf(opts.IO.Out, "  Discussion ID: %s\n", cs.Yellow(result.ID))
 	}
@@ -134,19 +136,4 @@ func getEnvToken() string {
 		return token
 	}
 	return os.Getenv("GITCODE_TOKEN")
-}
-
-func formatID(id interface{}) string {
-	switch v := id.(type) {
-	case string:
-		return v
-	case float64:
-		return strconv.FormatInt(int64(v), 10)
-	case int:
-		return strconv.Itoa(v)
-	case int64:
-		return strconv.FormatInt(v, 10)
-	default:
-		return fmt.Sprintf("%v", id)
-	}
 }

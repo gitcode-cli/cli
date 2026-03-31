@@ -134,9 +134,9 @@ func TestFormatID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatID(tt.input)
+			result := cmdutil.FormatAPIID(tt.input)
 			if result != tt.expected {
-				t.Errorf("formatID(%v) = %s, want %s", tt.input, result, tt.expected)
+				t.Errorf("FormatAPIID(%v) = %s, want %s", tt.input, result, tt.expected)
 			}
 		})
 	}

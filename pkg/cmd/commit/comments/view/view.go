@@ -80,7 +80,7 @@ func viewRun(opts *ViewOptions) error {
 		return fmt.Errorf("failed to get comment: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "\n%s #%v\n", cs.Bold("Comment:"), comment.ID)
+	fmt.Fprintf(opts.IO.Out, "\n%s #%s\n", cs.Bold("Comment:"), cmdutil.FormatAPIID(comment.ID))
 	if comment.User != nil {
 		fmt.Fprintf(opts.IO.Out, "%s %s\n", cs.Bold("Author:"), comment.User.Login)
 	}

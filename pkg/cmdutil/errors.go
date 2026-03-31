@@ -3,6 +3,7 @@ package cmdutil
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"gitcode.com/gitcode-cli/cli/api"
 )
@@ -65,6 +66,34 @@ func NewAuthError(message string) error {
 
 func NewNotFoundError(message string, cause error) error {
 	return NewCLIError(ExitNotFound, message, cause)
+}
+
+// FormatAPIID normalizes API IDs that may arrive as strings or JSON numbers.
+func FormatAPIID(id interface{}) string {
+	switch v := id.(type) {
+	case nil:
+		return ""
+	case string:
+		return v
+	case float64:
+		return strconv.FormatInt(int64(v), 10)
+	case float32:
+		return strconv.FormatInt(int64(v), 10)
+	case int:
+		return strconv.Itoa(v)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case int32:
+		return strconv.FormatInt(int64(v), 10)
+	case uint:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint64:
+		return strconv.FormatUint(v, 10)
+	case uint32:
+		return strconv.FormatUint(uint64(v), 10)
+	default:
+		return fmt.Sprintf("%v", id)
+	}
 }
 
 // ExitCode maps a command error to a stable process exit code.

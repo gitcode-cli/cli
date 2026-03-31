@@ -168,7 +168,11 @@ func editRun(opts *EditOptions) error {
 		return fmt.Errorf("failed to edit PR: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Updated PR #%d: %s\n", cs.Green("✓"), pr.Number, pr.Title)
+	prNumber := pr.Number
+	if prNumber == 0 {
+		prNumber = opts.Number
+	}
+	fmt.Fprintf(opts.IO.Out, "%s Updated PR #%d: %s\n", cs.Green("✓"), prNumber, pr.Title)
 	return nil
 }
 

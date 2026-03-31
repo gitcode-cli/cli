@@ -27,3 +27,23 @@ func TestExitCode(t *testing.T) {
 		}
 	})
 }
+
+func TestFormatAPIID(t *testing.T) {
+	cases := map[string]struct {
+		input interface{}
+		want  string
+	}{
+		"string":  {input: "123", want: "123"},
+		"float64": {input: 123.0, want: "123"},
+		"int":     {input: 123, want: "123"},
+		"nil":     {input: nil, want: ""},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			if got := FormatAPIID(tc.input); got != tc.want {
+				t.Fatalf("FormatAPIID(%v) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
+	}
+}

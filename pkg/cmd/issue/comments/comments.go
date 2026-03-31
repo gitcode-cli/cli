@@ -141,7 +141,7 @@ func commentsRun(opts *CommentsOptions) error {
 			author = comment.User.Login
 		}
 
-		fmt.Fprintf(opts.IO.Out, "%s) ID: %s\n", cs.Gray(fmt.Sprintf("#%d", i+1)), formatID(comment.ID))
+		fmt.Fprintf(opts.IO.Out, "%s) ID: %s\n", cs.Gray(fmt.Sprintf("#%d", i+1)), cmdutil.FormatAPIID(comment.ID))
 		fmt.Fprintf(opts.IO.Out, "   Author: %s", cs.Bold(author))
 		if !comment.CreatedAt.IsZero() {
 			fmt.Fprintf(opts.IO.Out, " at %s", comment.CreatedAt.Format("2006-01-02 15:04"))
@@ -162,21 +162,6 @@ func commentsRun(opts *CommentsOptions) error {
 	}
 
 	return nil
-}
-
-func formatID(id interface{}) string {
-	switch v := id.(type) {
-	case string:
-		return v
-	case float64:
-		return strconv.FormatInt(int64(v), 10)
-	case int:
-		return strconv.Itoa(v)
-	case int64:
-		return strconv.FormatInt(v, 10)
-	default:
-		return fmt.Sprintf("%v", id)
-	}
 }
 
 func parseRepo(repo string) (string, string, error) {

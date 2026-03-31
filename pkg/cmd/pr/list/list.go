@@ -4,7 +4,6 @@ package list
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -26,6 +25,7 @@ type ListOptions struct {
 	Limit int
 	Head  string
 	Base  string
+	JSON  bool
 }
 
 // NewCmdList creates the list command
@@ -64,6 +64,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of PRs to list")
 	cmd.Flags().StringVarP(&opts.Head, "head", "H", "", "Filter by head branch")
 	cmd.Flags().StringVarP(&opts.Base, "base", "B", "", "Filter by base branch")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -77,9 +78,9 @@ func listRun(opts *ListOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -102,8 +103,15 @@ func listRun(opts *ListOptions) error {
 
 	// Output
 	if len(prs) == 0 {
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, prs)
+		}
 		fmt.Fprintf(opts.IO.Out, "No pull requests found\n")
 		return nil
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, prs)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "\n")
@@ -130,11 +138,4 @@ func listRun(opts *ListOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

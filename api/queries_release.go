@@ -258,8 +258,8 @@ func UploadReleaseAssetByTag(client *Client, owner, repo, tag, filename string, 
 	return client.UploadToURL(uploadInfo.URL, filename, content, contentType, uploadInfo.Headers)
 }
 
-// ErrNoReleaseID is returned when release has no ID
-var ErrNoReleaseID = fmtError("release has no ID")
+// ErrNoReleaseID is returned when the GitCode API omits release IDs.
+var ErrNoReleaseID = fmtError("release id was not returned by GitCode API")
 
 // ErrInvalidReleaseID is returned when release ID is invalid
 var ErrInvalidReleaseID = fmtError("invalid release ID")

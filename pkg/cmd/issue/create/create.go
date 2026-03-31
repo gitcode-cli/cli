@@ -4,7 +4,7 @@ package create
 import (
 	"fmt"
 	"net/http"
-	"os"
+	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -28,6 +28,7 @@ type CreateOptions struct {
 	Labels    []string
 	Assignees []string
 	Milestone int
+	DryRun    bool
 }
 
 // NewCmdCreate creates the create command
@@ -71,24 +72,13 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringSliceVarP(&opts.Labels, "label", "l", []string{}, "Labels to add")
 	cmd.Flags().StringSliceVarP(&opts.Assignees, "assignee", "a", []string{}, "Assignees")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Milestone number")
+	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview the create request without creating the issue")
 
 	return cmd
 }
 
 func createRun(opts *CreateOptions) error {
 	cs := opts.IO.ColorScheme()
-
-	httpClient, err := opts.HttpClient()
-	if err != nil {
-		return fmt.Errorf("failed to create HTTP client: %w", err)
-	}
-
-	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
-	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
-	}
-	client.SetToken(token, "environment")
 
 	// Get repository
 	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
@@ -103,23 +93,45 @@ func createRun(opts *CreateOptions) error {
 
 	// Validate title
 	if opts.Title == "" {
-		return fmt.Errorf("title is required. Use --title flag")
+		return cmdutil.NewUsageError("title is required. Use --title flag")
+	}
+
+	if opts.DryRun {
+		fmt.Fprintf(opts.IO.Out, "Dry run: would create issue %q in %s/%s\n", opts.Title, owner, repo)
+		return nil
+	}
+
+	httpClient, err := opts.HttpClient()
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP client: %w", err)
+	}
+
+	client := api.NewClientFromHTTP(httpClient)
+	token := cmdutil.EnvToken()
+	if token == "" {
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
+	}
+	client.SetToken(token, "environment")
+
+	assigneeIDs, err := api.ResolveUserIDs(client, opts.Assignees)
+	if err != nil {
+		return fmt.Errorf("failed to resolve assignees: %w", err)
 	}
 
 	// Create issue
 	issue, err := api.CreateIssue(client, owner, repo, &api.CreateIssueOptions{
-		Title:     opts.Title,
-		Body:      opts.Body,
-		Labels:    opts.Labels,
-		Assignees: opts.Assignees,
-		Milestone: opts.Milestone,
+		Title:       opts.Title,
+		Body:        opts.Body,
+		Labels:      opts.Labels,
+		AssigneeIDs: assigneeIDs,
+		Milestone:   opts.Milestone,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create issue: %w", err)
 	}
-
 	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
+	warnIfAssigneesNotApplied(opts.IO, client, owner, repo, issue.Number, assigneeIDs)
 	return nil
 }
 
@@ -127,9 +139,46 @@ func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
 }
 
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
+func warnIfAssigneesNotApplied(io *iostreams.IOStreams, client *api.Client, owner, repo, issueNumber string, expectedIDs []string) {
+	if len(expectedIDs) == 0 {
+		return
 	}
-	return os.Getenv("GITCODE_TOKEN")
+
+	number, err := strconv.Atoi(issueNumber)
+	if err != nil {
+		return
+	}
+
+	issue, err := api.GetIssue(client, owner, repo, number)
+	if err != nil {
+		return
+	}
+	if hasExpectedAssignees(issue, expectedIDs) {
+		return
+	}
+
+	if io != nil && io.ErrOut != nil {
+		fmt.Fprintf(io.ErrOut, "! Issue #%s was created, but GitCode API did not apply the requested assignees.\n", issueNumber)
+	}
+}
+
+func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
+	if issue == nil || len(expectedIDs) == 0 {
+		return true
+	}
+
+	actual := make(map[string]struct{}, len(issue.Assignees))
+	for _, assignee := range issue.Assignees {
+		if assignee == nil || assignee.ID == nil {
+			continue
+		}
+		actual[fmt.Sprint(assignee.ID)] = struct{}{}
+	}
+
+	for _, expectedID := range expectedIDs {
+		if _, ok := actual[expectedID]; !ok {
+			return false
+		}
+	}
+	return true
 }

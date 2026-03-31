@@ -136,6 +136,11 @@ func editRun(opts *EditOptions) error {
 		return err
 	}
 
+	assigneeIDs, err := api.ResolveUserIDs(client, opts.Assignees)
+	if err != nil {
+		return fmt.Errorf("failed to resolve assignees: %w", err)
+	}
+
 	// Normalize state value
 	state := opts.State
 	if state == "closed" {
@@ -144,12 +149,12 @@ func editRun(opts *EditOptions) error {
 
 	// Build update options
 	updateOpts := &api.UpdateIssueOptions{
-		Title:     opts.Title,
-		Body:      opts.Body,
-		State:     state,
-		Assignees: opts.Assignees,
-		Labels:    opts.Labels,
-		Milestone: opts.Milestone,
+		Title:       opts.Title,
+		Body:        opts.Body,
+		State:       state,
+		AssigneeIDs: assigneeIDs,
+		Labels:      opts.Labels,
+		Milestone:   opts.Milestone,
 	}
 
 	if opts.SecurityHole {
@@ -160,9 +165,9 @@ func editRun(opts *EditOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to update issue: %w", err)
 	}
-
 	fmt.Fprintf(opts.IO.Out, "%s Updated issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
+	warnIfAssigneesNotApplied(opts.IO, client, owner, repo, opts.Number, assigneeIDs)
 	return nil
 }
 
@@ -175,4 +180,43 @@ func getEnvToken() string {
 		return token
 	}
 	return os.Getenv("GITCODE_TOKEN")
+}
+
+func warnIfAssigneesNotApplied(io *iostreams.IOStreams, client *api.Client, owner, repo string, issueNumber int, expectedIDs []string) {
+	if len(expectedIDs) == 0 {
+		return
+	}
+
+	issue, err := api.GetIssue(client, owner, repo, issueNumber)
+	if err != nil {
+		return
+	}
+	if hasExpectedAssignees(issue, expectedIDs) {
+		return
+	}
+
+	if io != nil && io.ErrOut != nil {
+		fmt.Fprintf(io.ErrOut, "! Issue #%d was updated, but GitCode API did not apply the requested assignees.\n", issueNumber)
+	}
+}
+
+func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
+	if issue == nil || len(expectedIDs) == 0 {
+		return true
+	}
+
+	actual := make(map[string]struct{}, len(issue.Assignees))
+	for _, assignee := range issue.Assignees {
+		if assignee == nil || assignee.ID == nil {
+			continue
+		}
+		actual[fmt.Sprint(assignee.ID)] = struct{}{}
+	}
+
+	for _, expectedID := range expectedIDs {
+		if _, ok := actual[expectedID]; !ok {
+			return false
+		}
+	}
+	return true
 }

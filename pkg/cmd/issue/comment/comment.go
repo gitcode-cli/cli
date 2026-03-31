@@ -128,7 +128,7 @@ func commentRun(opts *CommentOptions) error {
 
 	// Output
 	fmt.Fprintf(opts.IO.Out, "%s Added comment to issue #%d\n", cs.Green("✓"), opts.Number)
-	fmt.Fprintf(opts.IO.Out, "  ID: %v\n", comment.ID)
+	fmt.Fprintf(opts.IO.Out, "  ID: %s\n", cmdutil.FormatAPIID(comment.ID))
 	if comment.User != nil {
 		fmt.Fprintf(opts.IO.Out, "  Author: %s\n", comment.User.Login)
 	}

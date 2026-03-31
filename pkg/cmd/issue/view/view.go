@@ -4,7 +4,6 @@ package view
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -29,6 +28,7 @@ type ViewOptions struct {
 	// Flags
 	Comments bool
 	Web      bool
+	JSON     bool
 }
 
 // NewCmdView creates the view command
@@ -73,6 +73,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Comments, "comments", "c", false, "View issue comments")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -86,9 +87,9 @@ func viewRun(opts *ViewOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -113,6 +114,20 @@ func viewRun(opts *ViewOptions) error {
 	if opts.Web {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", issue.HTMLURL)
 		return browser.Open(issue.HTMLURL)
+	}
+
+	if opts.JSON {
+		if opts.Comments && issue.Comments > 0 {
+			comments, err := api.ListIssueComments(client, owner, repo, opts.Number, nil)
+			if err != nil {
+				return fmt.Errorf("failed to get comments: %w", err)
+			}
+			return cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
+				"issue":    issue,
+				"comments": comments,
+			})
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, issue)
 	}
 
 	// Output
@@ -157,11 +172,4 @@ func viewRun(opts *ViewOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

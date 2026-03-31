@@ -2,11 +2,8 @@
 package delete
 
 import (
-	"bufio"
 	"fmt"
 	"net/http"
-	"os"
-	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -26,6 +23,7 @@ type DeleteOptions struct {
 	// Flags
 	Repository string
 	Yes        bool
+	DryRun     bool
 }
 
 // NewCmdDelete creates the delete command
@@ -63,6 +61,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation")
+	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview the deletion without deleting the release")
 
 	return cmd
 }
@@ -70,23 +69,28 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 func deleteRun(opts *DeleteOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	// Get repository
+	owner, repo, err := parseRepo(opts.Repository)
+	if err != nil {
+		return err
+	}
+
+	if opts.DryRun {
+		fmt.Fprintf(opts.IO.Out, "Dry run: would delete release %s from %s/%s\n", opts.TagName, owner, repo)
+		return nil
+	}
+
 	httpClient, err := opts.HttpClient()
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
-
-	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
-	if err != nil {
-		return err
-	}
 
 	// Get release for confirmation
 	release, err := api.GetRelease(client, owner, repo, opts.TagName)
@@ -99,23 +103,21 @@ func deleteRun(opts *DeleteOptions) error {
 		title = release.Name
 	}
 
-	// Confirm deletion
-	if !opts.Yes {
-		fmt.Fprintf(opts.IO.ErrOut, "! This will delete release %s\n", cs.Bold(title))
-		fmt.Fprintf(opts.IO.ErrOut, "Type the tag name to confirm: ")
-
-		reader := bufio.NewReader(os.Stdin)
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		if input != opts.TagName {
-			return fmt.Errorf("confirmation did not match tag name")
-		}
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: opts.TagName,
+		Prompt:   fmt.Sprintf("! This will delete release %s\nType the tag name to confirm: ", cs.Bold(title)),
+	}); err != nil {
+		return err
 	}
 
 	// Delete release
 	err = api.DeleteReleaseByTag(client, owner, repo, opts.TagName)
 	if err != nil {
+		if err == api.ErrNoReleaseID {
+			return fmt.Errorf("failed to delete release: %w; GitCode currently omits release IDs in release lookup responses", err)
+		}
 		return fmt.Errorf("failed to delete release: %w", err)
 	}
 
@@ -125,11 +127,4 @@ func deleteRun(opts *DeleteOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

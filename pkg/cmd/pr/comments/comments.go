@@ -41,8 +41,8 @@ func NewCmdComments(f *cmdutil.Factory, runF func(*CommentsOptions) error) *cobr
 		Long: heredoc.Doc(`
 			List comments on a pull request in a GitCode repository.
 
-			Displays comment ID, author, creation time, and content.
-			The comment ID can be used to reply to specific comments.
+			Displays comment ID, discussion ID, author, creation time, and content.
+			Use the discussion ID with 'gc pr reply --discussion'.
 		`),
 		Example: heredoc.Doc(`
 			# List all comments on a PR
@@ -115,7 +115,7 @@ func commentsRun(opts *CommentsOptions) error {
 
 	for i, comment := range comments {
 		// Format ID
-		commentID := formatID(comment.ID)
+		commentID := cmdutil.FormatAPIID(comment.ID)
 
 		// Format author
 		author := "unknown"
@@ -131,7 +131,7 @@ func commentsRun(opts *CommentsOptions) error {
 
 		// Print discussion ID if available (for reply)
 		if comment.DiscussionID != "" {
-			fmt.Fprintf(opts.IO.Out, "   DiscussionID: %s\n", cs.Yellow(comment.DiscussionID))
+			fmt.Fprintf(opts.IO.Out, "   Discussion ID: %s\n", cs.Yellow(comment.DiscussionID))
 		}
 
 		fmt.Fprintf(opts.IO.Out, "   Author: %s at %s\n", cs.Bold(author), timeStr)
@@ -164,21 +164,6 @@ func commentsRun(opts *CommentsOptions) error {
 	}
 
 	return nil
-}
-
-func formatID(id interface{}) string {
-	switch v := id.(type) {
-	case string:
-		return v
-	case float64:
-		return strconv.FormatInt(int64(v), 10)
-	case int:
-		return strconv.Itoa(v)
-	case int64:
-		return strconv.FormatInt(v, 10)
-	default:
-		return fmt.Sprintf("%v", id)
-	}
 }
 
 func formatTime(t api.FlexibleTime) string {

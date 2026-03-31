@@ -110,5 +110,7 @@ gc auth login --token YOUR_TOKEN
   - `https://gitcode.com/owner/repo`
   - `git@gitcode.com:owner/repo.git`
 - 部分命令在 Git 仓库内支持从当前 remote 自动推断仓库；具体以 `README.md` 和 `docs/COMMANDS.md` 为准。
+- 读取类命令优先使用 `--json`，需要探索命令结构时优先使用 `gc schema`。
+- 删除类命令在自动化场景中先用 `--dry-run`；真实执行时显式传 `--yes`。
 - `gc pr review --approve` 当前可用；`gc pr review --request` 会明确提示 GitCode API 暂不支持该动作。
 - 优先使用 `./scripts/regression-core.sh` 做核心真实命令回归，再补充本次开发相关验证。

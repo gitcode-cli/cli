@@ -79,11 +79,11 @@ type IssueListOptions struct {
 
 // CreateIssueOptions represents options for creating an issue
 type CreateIssueOptions struct {
-	Title     string   `json:"title"`
-	Body      string   `json:"body,omitempty"`
-	Assignees []string `json:"assignees,omitempty"`
-	Labels    []string `json:"labels,omitempty"`
-	Milestone int      `json:"milestone,omitempty"`
+	Title       string   `json:"title"`
+	Body        string   `json:"body,omitempty"`
+	AssigneeIDs []string `json:"assignee_ids,omitempty"`
+	Labels      []string `json:"labels,omitempty"`
+	Milestone   int      `json:"milestone,omitempty"`
 }
 
 // UpdateIssueOptions represents options for updating an issue
@@ -92,7 +92,7 @@ type UpdateIssueOptions struct {
 	Title        string   `json:"title,omitempty"`
 	Body         string   `json:"body,omitempty"`
 	State        string   `json:"state,omitempty"`
-	Assignees    []string `json:"assignees,omitempty"`
+	AssigneeIDs  []string `json:"assignee_ids,omitempty"`
 	Labels       []string `json:"labels,omitempty"`
 	Milestone    int      `json:"milestone,omitempty"`
 	SecurityHole string   `json:"security_hole,omitempty"`
@@ -187,8 +187,21 @@ func GetIssue(client *Client, owner, repo string, number int) (*Issue, error) {
 
 // CreateIssue creates a new issue
 func CreateIssue(client *Client, owner, repo string, opts *CreateIssueOptions) (*Issue, error) {
+	formValues := url.Values{}
+	formValues.Set("title", opts.Title)
+	if opts.Body != "" {
+		formValues.Set("body", opts.Body)
+	}
+	for _, label := range opts.Labels {
+		formValues.Add("labels[]", label)
+	}
+	addAssigneeIDs(formValues, opts.AssigneeIDs)
+	if opts.Milestone > 0 {
+		formValues.Set("milestone", itoa(opts.Milestone))
+	}
+
 	var issue Issue
-	err := client.Post("/repos/"+owner+"/"+repo+"/issues", opts, &issue)
+	err := client.PostForm("/repos/"+owner+"/"+repo+"/issues", formValues, &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -220,9 +233,7 @@ func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIss
 	for _, label := range opts.Labels {
 		formValues.Add("labels[]", label)
 	}
-	for _, assignee := range opts.Assignees {
-		formValues.Add("assignees[]", assignee)
-	}
+	addAssigneeIDs(formValues, opts.AssigneeIDs)
 	if opts.Milestone > 0 {
 		formValues.Set("milestone", itoa(opts.Milestone))
 	}
@@ -236,6 +247,19 @@ func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIss
 		return nil, err
 	}
 	return &issue, nil
+}
+
+func addAssigneeIDs(formValues url.Values, assigneeIDs []string) {
+	if len(assigneeIDs) == 0 {
+		return
+	}
+
+	for _, assigneeID := range assigneeIDs {
+		formValues.Add("assignee_ids[]", assigneeID)
+	}
+	if len(assigneeIDs) == 1 {
+		formValues.Set("assignee_id", assigneeIDs[0])
+	}
 }
 
 // CloseIssue closes an issue

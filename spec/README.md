@@ -38,6 +38,7 @@ spec/
 │   ├── testing-guide.md
 │   ├── security.md
 │   ├── code-quality-gates.md
+│   ├── agent-friendly-cli.md
 │   └── command-template.md
 ├── workflows/               # 操作流程
 │   ├── development-workflow.md
@@ -83,6 +84,7 @@ spec/
 | [代码质量门禁规范](./foundations/code-quality-gates.md) | 本地门禁、PR 门禁、合并门禁和 blocker 判定 |
 | [编码规范](./foundations/coding-standards.md) | 命名规范、文件结构、错误处理、代码风格 |
 | [测试指南](./foundations/testing-guide.md) | 单元测试、实际命令测试、测试仓库限制 |
+| [Agent-Friendly CLI 规范](./foundations/agent-friendly-cli.md) | 结构化输出、非交互行为、错误契约和命令发现能力 |
 | [命令开发模板](./foundations/command-template.md) | 新命令开发模板、API 客户端用法、输出处理 |
 | [安全规范](./foundations/security.md) | Token 管理、敏感信息保护、安全审查 |
 

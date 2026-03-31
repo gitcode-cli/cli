@@ -4,7 +4,6 @@ package view
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -27,6 +26,7 @@ type ViewOptions struct {
 	// Flags
 	Web      bool
 	Comments bool
+	JSON     bool
 }
 
 // NewCmdView creates the view command
@@ -67,6 +67,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
 	cmd.Flags().BoolVarP(&opts.Comments, "comments", "c", false, "View comments")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -80,9 +81,9 @@ func viewRun(opts *ViewOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -102,6 +103,20 @@ func viewRun(opts *ViewOptions) error {
 	if opts.Web {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", pr.HTMLURL)
 		return browser.Open(pr.HTMLURL)
+	}
+
+	if opts.JSON {
+		if opts.Comments {
+			comments, err := api.ListPRComments(client, owner, repo, opts.Number)
+			if err != nil {
+				return fmt.Errorf("failed to get comments: %w", err)
+			}
+			return cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
+				"pull_request": pr,
+				"comments":     comments,
+			})
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, pr)
 	}
 
 	// Output
@@ -155,11 +170,4 @@ func viewRun(opts *ViewOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

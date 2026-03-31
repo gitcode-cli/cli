@@ -142,6 +142,9 @@ func editRun(opts *EditOptions) error {
 	// Update release
 	release, err := api.UpdateReleaseByTag(client, owner, repo, opts.TagName, updateOpts)
 	if err != nil {
+		if err == api.ErrNoReleaseID {
+			return fmt.Errorf("failed to update release: %w; GitCode currently omits release IDs in release lookup responses", err)
+		}
 		return fmt.Errorf("failed to update release: %w", err)
 	}
 

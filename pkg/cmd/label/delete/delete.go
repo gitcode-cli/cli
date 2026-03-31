@@ -4,7 +4,6 @@ package delete
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -23,7 +22,8 @@ type DeleteOptions struct {
 	Name       string
 
 	// Flags
-	Yes bool
+	Yes    bool
+	DryRun bool
 }
 
 // NewCmdDelete creates the delete command
@@ -59,24 +59,13 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation")
+	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview the deletion without deleting the label")
 
 	return cmd
 }
 
 func deleteRun(opts *DeleteOptions) error {
 	cs := opts.IO.ColorScheme()
-
-	httpClient, err := opts.HttpClient()
-	if err != nil {
-		return fmt.Errorf("failed to create HTTP client: %w", err)
-	}
-
-	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
-	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
-	}
-	client.SetToken(token, "environment")
 
 	// Get repository
 	owner, repo, err := parseRepo(opts.Repository)
@@ -85,14 +74,30 @@ func deleteRun(opts *DeleteOptions) error {
 	}
 
 	// Confirm deletion
-	if !opts.Yes {
-		fmt.Fprintf(opts.IO.ErrOut, "! This will delete label %s\n", cs.Bold(opts.Name))
-		fmt.Fprintf(opts.IO.ErrOut, "Type the label name to confirm: ")
-		var input string
-		fmt.Scanln(&input)
-		if input != opts.Name {
-			return fmt.Errorf("confirmation did not match label name")
-		}
+	if opts.DryRun {
+		fmt.Fprintf(opts.IO.Out, "Dry run: would delete label %s from %s/%s\n", opts.Name, owner, repo)
+		return nil
+	}
+
+	httpClient, err := opts.HttpClient()
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP client: %w", err)
+	}
+
+	client := api.NewClientFromHTTP(httpClient)
+	token := cmdutil.EnvToken()
+	if token == "" {
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
+	}
+	client.SetToken(token, "environment")
+
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: opts.Name,
+		Prompt:   fmt.Sprintf("! This will delete label %s\nType the label name to confirm: ", cs.Bold(opts.Name)),
+	}); err != nil {
+		return err
 	}
 
 	// Delete label
@@ -107,11 +112,4 @@ func deleteRun(opts *DeleteOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

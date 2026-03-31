@@ -4,7 +4,6 @@ package list
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -22,6 +21,7 @@ type ListOptions struct {
 	// Flags
 	Repository string
 	Limit      int
+	JSON       bool
 }
 
 // NewCmdList creates the list command
@@ -57,6 +57,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of releases to list")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -70,9 +71,9 @@ func listRun(opts *ListOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -91,8 +92,15 @@ func listRun(opts *ListOptions) error {
 	}
 
 	if len(releases) == 0 {
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, releases)
+		}
 		fmt.Fprintf(opts.IO.Out, "No releases found in %s/%s\n", owner, repo)
 		return nil
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, releases)
 	}
 
 	// Output
@@ -137,11 +145,4 @@ func truncate(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen-3] + "..."
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

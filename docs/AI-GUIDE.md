@@ -99,6 +99,31 @@ cp .ai/distribution/gc-core/pr/SKILL.md ~/.codex/skills/gc-pr/SKILL.md
 
 安装后，AI 就可以通过 `gc` 命令操作 GitCode。
 
+## 5. 面向 AI 的使用建议
+
+为了让 AI 和脚本更稳定地消费 `gc`，优先使用以下模式：
+
+```bash
+# 读取类命令优先使用 JSON
+gc repo view owner/repo --json
+gc issue list -R owner/repo --json
+gc pr view 123 -R owner/repo --json
+
+# 探索命令结构优先使用 schema
+gc schema
+gc schema "issue view"
+
+# 高风险删除命令先 dry-run，再决定是否执行
+gc repo delete owner/repo --dry-run
+gc release delete v1.0.0 -R owner/repo --dry-run
+```
+
+说明：
+
+- 删除类命令在非交互环境中不会再隐式等待输入；如果未显式传 `--yes`，会直接失败。
+- 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
+- 当前基础退出码语义：`0` 成功，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误。
+
 ## 完成后的使用方式
 
 安装完成后，直接告诉 AI 你想做什么：

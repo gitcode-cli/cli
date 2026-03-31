@@ -129,12 +129,9 @@ func createRun(opts *CreateOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create issue: %w", err)
 	}
-	if err := verifyAppliedAssignees(client, owner, repo, issue.Number, assigneeIDs); err != nil {
-		return err
-	}
-
 	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
+	warnIfAssigneesNotApplied(opts.IO, client, owner, repo, issue.Number, assigneeIDs)
 	return nil
 }
 
@@ -142,29 +139,27 @@ func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
 }
 
-func verifyAppliedAssignees(client *api.Client, owner, repo, issueNumber string, expectedIDs []string) error {
+func warnIfAssigneesNotApplied(io *iostreams.IOStreams, client *api.Client, owner, repo, issueNumber string, expectedIDs []string) {
 	if len(expectedIDs) == 0 {
-		return nil
+		return
 	}
 
 	number, err := strconv.Atoi(issueNumber)
 	if err != nil {
-		return fmt.Errorf("failed to parse created issue number %q: %w", issueNumber, err)
+		return
 	}
 
 	issue, err := api.GetIssue(client, owner, repo, number)
 	if err != nil {
-		return fmt.Errorf("failed to verify issue assignees: %w", err)
+		return
 	}
 	if hasExpectedAssignees(issue, expectedIDs) {
-		return nil
+		return
 	}
 
-	return cmdutil.NewCLIError(
-		cmdutil.ExitConflict,
-		fmt.Sprintf("issue #%s was created, but GitCode API did not apply requested assignees", issueNumber),
-		nil,
-	)
+	if io != nil && io.ErrOut != nil {
+		fmt.Fprintf(io.ErrOut, "! Issue #%s was created, but GitCode API did not apply the requested assignees.\n", issueNumber)
+	}
 }
 
 func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {

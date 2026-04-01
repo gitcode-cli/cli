@@ -10,6 +10,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/fork"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/stats"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/sync"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/view"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
@@ -27,6 +28,7 @@ Available commands:
   fork     Fork a repository
   view     View a repository
   list     List repositories
+  sync     Sync a local directory into another repository and create a PR
   delete   Delete a repository`,
 	}
 
@@ -35,6 +37,7 @@ Available commands:
 	cmd.AddCommand(fork.NewCmdFork(f, nil))
 	cmd.AddCommand(view.NewCmdView(f, nil))
 	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(sync.NewCmdSync(f, nil))
 	cmd.AddCommand(delete.NewCmdDelete(f, nil))
 	cmd.AddCommand(stats.NewCmdStats(f, nil))
 

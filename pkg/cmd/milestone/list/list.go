@@ -4,7 +4,6 @@ package list
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -24,6 +23,7 @@ type ListOptions struct {
 	// Flags
 	State string
 	Limit int
+	JSON  bool
 }
 
 // NewCmdList creates the list command
@@ -45,6 +45,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# List closed milestones
 			$ gc milestone list --state closed
+
+			# List milestones as JSON
+			$ gc milestone list -R owner/repo --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -57,6 +60,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.State, "state", "s", "open", "Filter by state (open/closed/all)")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of milestones to list")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -70,9 +74,9 @@ func listRun(opts *ListOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -90,8 +94,15 @@ func listRun(opts *ListOptions) error {
 
 	// Output
 	if len(milestones) == 0 {
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, milestones)
+		}
 		fmt.Fprintf(opts.IO.Out, "No milestones found\n")
 		return nil
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, milestones)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "\n")
@@ -112,11 +123,4 @@ func listRun(opts *ListOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

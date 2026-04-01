@@ -43,6 +43,8 @@ git@gitcode.com:owner/repo.git
 - `pr view`
 - `release list`
 - `release view`
+- `label list`
+- `milestone list`
 
 ### 认证
 
@@ -817,6 +819,9 @@ gc commit comments list-by-sha abc123 -R infra-test/gctest1
 ```bash
 # 列出所有标签
 gc label list -R infra-test/gctest1
+
+# 结构化输出
+gc label list -R infra-test/gctest1 --json
 ```
 
 ### label create - 创建标签
@@ -848,6 +853,9 @@ gc label delete bug -R infra-test/gctest1 --yes
 ```bash
 # 列出所有里程碑
 gc milestone list -R infra-test/gctest1
+
+# 结构化输出
+gc milestone list -R infra-test/gctest1 --json
 ```
 
 ### milestone create - 创建里程碑

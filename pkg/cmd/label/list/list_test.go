@@ -19,3 +19,21 @@ func TestNewCmdList(t *testing.T) {
 		t.Errorf("Expected Use 'list', got %q", cmd.Use)
 	}
 }
+
+func TestNewCmdListJSONFlag(t *testing.T) {
+	f := cmdutil.TestFactory()
+	var gotJSON bool
+
+	cmd := NewCmdList(f, func(opts *ListOptions) error {
+		gotJSON = opts.JSON
+		return nil
+	})
+	cmd.SetArgs([]string{"--json"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !gotJSON {
+		t.Fatal("expected --json flag to set opts.JSON")
+	}
+}

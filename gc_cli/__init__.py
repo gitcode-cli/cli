@@ -4,7 +4,7 @@ GitCode CLI - Command line tool for GitCode.
 This package provides a Python wrapper for the gc binary.
 """
 
-__version__ = "0.3.6"
+__version__ = "0.3.7"
 __author__ = "GitCode CLI Contributors"
 __all__ = ["__version__", "main"]
 

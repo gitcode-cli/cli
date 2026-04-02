@@ -158,6 +158,38 @@ gc repo list --visibility public
 gc repo list --json
 ```
 
+### repo sync - 同步目录到目标仓库并创建 PR
+
+```bash
+# 将当前仓库 docs/api 同步到目标仓库的 mirror/api 目录
+gc repo sync \
+  --target-repo infra-test/target-repo \
+  --source-dir docs/api \
+  --target-dir mirror/api
+
+# 指定 base 分支和 PR 标题
+gc repo sync \
+  --target-repo infra-test/target-repo \
+  --source-dir pkg/contracts \
+  --target-dir mirror/contracts \
+  --base main \
+  --title "sync: update contracts"
+
+# 结构化输出
+gc repo sync \
+  --target-repo infra-test/target-repo \
+  --source-dir docs/api \
+  --target-dir mirror/api \
+  --json
+```
+
+说明：
+- 该命令必须在本地 Git 仓库内执行
+- `--source-dir` 是当前仓库内要同步的目录
+- `--target-dir` 是目标仓库中的子目录，不能是仓库根目录
+- 命令会自动创建同步分支、提交、推送并创建目标 PR
+- 如果目标目录内容与源目录一致，命令会直接返回“无变更”
+
 ### repo create - 创建仓库
 
 ```bash

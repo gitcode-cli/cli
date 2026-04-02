@@ -474,6 +474,24 @@ gc issue prs 123 --mode 1 -R infra-test/gctest1
 - `issue create/list/view/close/reopen/comment/comments/edit/label/prs` 在当前 Git 仓库中可缺省 `-R`，CLI 会优先解析 `origin` remote；若没有 `origin`，则回退到第一个 remote。
 - 若当前目录不是 Git 仓库，或仓库没有可用 remote，会返回明确错误并提示改用 `-R owner/repo`。
 
+### issue relations - 查看仓库内 Issue / PR 关联表
+
+```bash
+# 查看仓库内所有 issue / PR 关联关系
+gc issue relations -R infra-test/gctest1
+
+# 输出 JSON 关系行
+gc issue relations -R infra-test/gctest1 --json
+
+# 只扫描开放 issue
+gc issue relations -R infra-test/gctest1 --state open --limit 50
+```
+
+说明：
+- 该命令会遍历仓库 issue，并获取每个 issue 关联的 PR。
+- 文本输出按 PR 聚合，并同时显示关联 issue 的状态信息。
+- `--json` 输出为关系行数组，每一行包含 `pr` 和 `issue` 两部分。
+
 ---
 
 ## Pull Request 命令 (pr)

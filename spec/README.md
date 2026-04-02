@@ -42,6 +42,7 @@ spec/
 │   └── command-template.md
 ├── workflows/               # 操作流程
 │   ├── development-workflow.md
+│   ├── ai-local-development-workflow.md
 │   ├── issue-workflow.md
 │   ├── pr-workflow.md
 │   ├── review-workflow.md
@@ -51,6 +52,7 @@ spec/
 │   └── release-process.md
 └── governance/              # 治理与协作边界
     ├── docs-governance.md
+    ├── source-of-truth-matrix.md
     └── ai-collaboration.md
 ```
 
@@ -70,15 +72,17 @@ spec/
 - 命令行为变化：`docs/COMMANDS.md`、`README.md`、相关 AI skills
 - 流程变化：`spec/*`、`AGENTS.md`、`CLAUDE.md`
 - 文档或 AI 协作规则变化：`docs-governance.md`、相关 skills、入口文档
-- 当前状态变化：`issues-plan/PROGRESS.md`
+- 阶段说明变化：`issues-plan/PROGRESS.md`
 
 ## 核心规范
 
 | 文档 | 说明 |
 |------|------|
 | [文档治理规范](./governance/docs-governance.md) | 文档分层、唯一真相源、AI 协作分层、分阶段实施方案 |
+| [真相源矩阵](./governance/source-of-truth-matrix.md) | 各类信息的事实来源、边界和判定优先级 |
 | [AI 协作规范](./governance/ai-collaboration.md) | Codex / Claude 入口关系、共享源与适配层边界 |
 | [开发工作流程](./workflows/development-workflow.md) | 完整流程、分支规范、禁止行为、检查清单 |
+| [AI 本地开发流程](./workflows/ai-local-development-workflow.md) | 仓库内 AI 从接任务到本地验证到评审前的编排流程 |
 | [本地构建与打包规范](./delivery/build-and-package.md) | 标准构建命令、打包方式、产物边界和验证要求 |
 | [发布流程规范](./delivery/release-process.md) | 版本规则、发布步骤、release notes 和发布后验证 |
 | [代码质量门禁规范](./foundations/code-quality-gates.md) | 本地门禁、PR 门禁、合并门禁和 blocker 判定 |
@@ -96,6 +100,7 @@ spec/
 | [PR 流程](./workflows/pr-workflow.md) | 分支创建、代码提交、PR 创建与合并 |
 | [评审流程](./workflows/review-workflow.md) | Issue 评论、PR 审查评论 |
 | [测试流程](./workflows/test-workflow.md) | 单元测试、实际命令测试 |
+| [AI 本地开发流程](./workflows/ai-local-development-workflow.md) | AI 协作者执行本地开发闭环的编排流程 |
 
 ## 计划补齐的规范
 
@@ -112,7 +117,9 @@ spec/
 1. 先从本页判断任务类型
 2. 再进入对应规范正文
 3. 开始修改前回到 [代码质量门禁规范](./foundations/code-quality-gates.md) 确认交付标准
-4. 命令行为或协作规则变化时，回到 [文档治理规范](./governance/docs-governance.md) 检查同步范围
+4. 判断某类信息能否直接作为事实依据时，先看 [真相源矩阵](./governance/source-of-truth-matrix.md)
+5. 仓库内 AI 执行本地开发闭环时，继续看 [AI 本地开发流程](./workflows/ai-local-development-workflow.md)
+6. 命令行为或协作规则变化时，回到 [文档治理规范](./governance/docs-governance.md) 检查同步范围
 
 ## 相关文档
 
@@ -123,6 +130,6 @@ spec/
 | CLAUDE.md | 根目录 | Claude 项目级入口 |
 | docs/COMMANDS.md | docs/ | 命令行为说明 |
 | docs/PACKAGING.md | docs/ | 打包发布使用说明 |
-| issues-plan/PROGRESS.md | issues-plan/ | 当前项目状态 |
+| issues-plan/PROGRESS.md | issues-plan/ | 项目阶段说明 |
 
 **最后更新**: 2026-03-30

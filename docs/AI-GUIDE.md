@@ -2,6 +2,12 @@
 
 本指南帮助你通过 AI 助手（如 Claude Code）操作 GitCode 平台。
 
+边界说明：
+
+- 本文档只适用于“外部项目通过 AI 使用 `gc` 操作 GitCode”
+- 本文档不定义 gitcode-cli 仓库内部开发流程
+- 在 gitcode-cli 仓库内部参与开发时，应以 `AGENTS.md`、`CLAUDE.md`、`spec/README.md` 和 `spec/workflows/*` 为准
+
 ## 1. 安装 GitCode CLI
 
 **Linux (DEB/RPM):**
@@ -124,9 +130,9 @@ gc release delete v1.0.0 -R owner/repo --dry-run
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
 - 当前基础退出码语义：`0` 成功，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误。
 
-## 6. 面向 AI 的开发流程约束
+## 6. 在规范化仓库中的协作提醒
 
-如果 AI 在本仓库或类似规范化仓库内参与开发，不应只把流程理解成一份 checklist，而应遵守“状态机 + 证据门禁”。
+如果目标仓库本身已经定义了开发规范，AI 不应只把流程理解成一份 checklist，而应遵守目标仓库自己的“状态机 + 证据门禁”。
 
 最低要求：
 
@@ -136,14 +142,14 @@ gc release delete v1.0.0 -R owner/repo --dry-run
 - 作者自检不是独立评审
 - PR 未合入主干前，不得把 issue 视为已完成主干合入
 
-推荐状态流：
+推荐状态流应以目标仓库正式规范为准，下面只给出常见示意：
 
 ```text
 Issue: status/triage -> status/verified -> status/in-progress -> status/ready-for-review -> status/merged
 PR:    status/draft -> status/self-checked -> status/ready-for-review -> status/approved -> status/merged
 ```
 
-## 7. 推荐给 AI 的固定模板
+## 7. 可参考的固定模板
 
 ### Issue 验证记录
 
@@ -194,7 +200,7 @@ PR:    status/draft -> status/self-checked -> status/ready-for-review -> status/
 - 结论:
 ```
 
-如果你希望直接复用完整模板而不是从本文复制，请查看：
+如果你需要参考 gitcode-cli 仓库自己的内部模板，请查看：
 
 - [AI-TEMPLATES.md](./AI-TEMPLATES.md)
 

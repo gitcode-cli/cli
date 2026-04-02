@@ -52,6 +52,8 @@
 - 项目正式规范以 `spec/` 为准
 - 命令行为以 [docs/COMMANDS.md](./docs/COMMANDS.md) 为准
 - 当前状态以 [issues-plan/PROGRESS.md](./issues-plan/PROGRESS.md) 为准
+- 判断“某个 issue / 功能是否已合入主干”时，必须以 merged PR 和 `origin/main` 为准，不能只依据 issue 状态、issue comment、release 文案或功能分支存在与否
+- 如果 issue 已关闭但没有 merged PR 或 `origin/main` 不包含对应代码，必须明确判定为“未完成主干合入”
 - 代码或流程变化后必须同步检查相关文档
 - 实际命令测试只能使用 `infra-test/*`
 - 不得在 `main` 直接开发

@@ -30,6 +30,8 @@
 3. [REGRESSION.md](./REGRESSION.md)
 4. [PACKAGING.md](./PACKAGING.md)
 5. [AI-GUIDE.md](./AI-GUIDE.md)
+6. [AI-TEMPLATES.md](./AI-TEMPLATES.md)
+7. `docs/ai-templates/*.md`
 
 ## 当前包含内容
 
@@ -40,3 +42,5 @@
 | [REGRESSION.md](./REGRESSION.md) | 核心回归矩阵说明 |
 | [PACKAGING.md](./PACKAGING.md) | 本地打包与发布使用说明 |
 | [AI-GUIDE.md](./AI-GUIDE.md) | 使用 AI 操作 GitCode 的场景指南 |
+| [AI-TEMPLATES.md](./AI-TEMPLATES.md) | AI 协作开发的固定模板 |
+| `docs/ai-templates/*.md` | 可直接复用的 AI 评论与检查模板文件 |

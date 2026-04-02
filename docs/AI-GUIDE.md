@@ -124,6 +124,80 @@ gc release delete v1.0.0 -R owner/repo --dry-run
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
 - 当前基础退出码语义：`0` 成功，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误。
 
+## 6. 面向 AI 的开发流程约束
+
+如果 AI 在本仓库或类似规范化仓库内参与开发，不应只把流程理解成一份 checklist，而应遵守“状态机 + 证据门禁”。
+
+最低要求：
+
+- 未进入 `status/verified` 的 issue，不得开始写代码
+- 未创建非 `main` 分支前，不得修改实现文件
+- 未完成测试、构建和必要的真实命令验证前，不得宣称“已完成”
+- 作者自检不是独立评审
+- PR 未合入主干前，不得把 issue 视为已完成主干合入
+
+推荐状态流：
+
+```text
+Issue: status/triage -> status/verified -> status/in-progress -> status/ready-for-review -> status/merged
+PR:    status/draft -> status/self-checked -> status/ready-for-review -> status/approved -> status/merged
+```
+
+## 7. 推荐给 AI 的固定模板
+
+### Issue 验证记录
+
+```markdown
+## 验证记录
+
+- 当前版本或分支:
+- 复现命令:
+- 实际结果:
+- 结论:
+```
+
+### Issue 开发进度
+
+```markdown
+## 开发进度
+
+- 根因:
+- 主要修改:
+- 测试:
+- 实际命令验证:
+- 风险或未覆盖项:
+- 关联 PR:
+```
+
+### PR 作者自检
+
+```markdown
+## 作者自检
+
+- 根因或实现理由:
+- 主要修改:
+- 单元测试:
+- 构建:
+- 实际命令验证:
+- 文档同步:
+- 风险:
+- 未覆盖项:
+```
+
+### PR 评审结论
+
+```markdown
+## 评审结论
+
+- 发现:
+- blocker:
+- 结论:
+```
+
+如果你希望直接复用完整模板而不是从本文复制，请查看：
+
+- [AI-TEMPLATES.md](./AI-TEMPLATES.md)
+
 ## 完成后的使用方式
 
 安装完成后，直接告诉 AI 你想做什么：
@@ -143,4 +217,4 @@ AI 会自动使用 `gc` 命令执行操作。
 
 ---
 
-**最后更新**: 2026-03-30
+**最后更新**: 2026-04-02

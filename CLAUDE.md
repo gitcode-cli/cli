@@ -52,10 +52,12 @@ Claude 在本仓库中必须遵守：
 - 项目正式规范以 `spec/` 为准
 - 命令行为以 [docs/COMMANDS.md](./docs/COMMANDS.md) 为准
 - 当前状态以 [issues-plan/PROGRESS.md](./issues-plan/PROGRESS.md) 为准
+- 流程推进以 `spec/workflows/*` 定义的状态机为准，不能只按松散 checklist 执行
 - 代码变更后必须同步检查相关文档
 - 实际命令测试只能使用 `infra-test/*`
 - 不得在 `main` 直接开发
 - 不得在文档中写入真实 token 或凭证
+- 不得在缺少验证记录、自检证据或独立评审的情况下宣称“已完成”
 
 ## 4. AI 协作入口
 

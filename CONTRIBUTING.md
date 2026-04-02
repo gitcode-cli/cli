@@ -12,6 +12,7 @@ Before contributing, please read the following documentation:
 |----------|-------------|
 | [README.md](./README.md) | Project overview and installation guide |
 | [CLAUDE.md](./CLAUDE.md) | AI-assisted development guide |
+| [AGENTS.md](./AGENTS.md) | Codex and general agent entry |
 
 ### Development Specifications (spec/)
 
@@ -40,8 +41,20 @@ Before contributing, please read the following documentation:
 |----------|-------------|
 | [docs/COMMANDS.md](./docs/COMMANDS.md) | Command usage guide |
 | [docs/PACKAGING.md](./docs/PACKAGING.md) | Packaging guide |
+| [docs/AI-GUIDE.md](./docs/AI-GUIDE.md) | AI workflow guidance |
+| [docs/AI-TEMPLATES.md](./docs/AI-TEMPLATES.md) | Reusable issue/PR comment templates |
 
 > **Important**: When modifying command-related code, you MUST sync updates to `docs/COMMANDS.md`.
+>
+> **Important**: When modifying development or review workflow rules, you MUST sync `spec/`, `AGENTS.md`, `CLAUDE.md`, related shared skills, and AI workflow templates.
+
+## Workflow Expectations
+
+- Development and review flow is state-based, not a loose checklist.
+- Do not start coding on an issue before it reaches `status/verified`.
+- Do not treat author self-check as an independent review.
+- Do not close a fix issue before the related PR is merged to `main`.
+- Use the reusable templates in `docs/AI-TEMPLATES.md` or `docs/ai-templates/*.md` for issue comments, PR self-check, and review outcomes.
 
 ## Development Setup
 

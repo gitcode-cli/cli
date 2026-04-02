@@ -21,6 +21,7 @@
 `.ai/` 不是项目正式规则源。
 
 项目正式规则仍以 [spec/README.md](../spec/README.md) 和 `spec/` 目录为准。
+不同信息类型的事实边界见 [spec/governance/source-of-truth-matrix.md](../spec/governance/source-of-truth-matrix.md)。
 
 ## 仓库内 skill 与通用 skill 的区别
 

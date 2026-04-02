@@ -41,9 +41,10 @@
 
 1. `spec/` 定义项目正式规则
 2. `AGENTS.md` / `CLAUDE.md` 定义不同 AI 客户端如何进入规则体系
-3. `.ai/skills/` 定义共享场景技能
-4. `.claude/skills/` / `.codex/skills/` 定义客户端适配
-5. `.ai/distribution/` 定义可分发的通用 skill 包
+3. `spec/governance/source-of-truth-matrix.md` 定义哪些文档可用于事实判定
+4. `.ai/skills/` 定义共享场景技能
+5. `.claude/skills/` / `.codex/skills/` 定义客户端适配
+6. `.ai/distribution/` 定义可分发的通用 skill 包
 
 ## 当前结构
 
@@ -56,3 +57,4 @@
 
 - 如果你在改技能分发，继续看 [../../.ai/distribution/gc-core/README.md](../../.ai/distribution/gc-core/README.md)
 - 如果你在改同步边界，继续看 [docs-governance.md](./docs-governance.md)
+- 如果你在执行仓库内 AI 本地开发，继续看 [../workflows/ai-local-development-workflow.md](../workflows/ai-local-development-workflow.md)

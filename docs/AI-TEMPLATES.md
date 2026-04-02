@@ -4,6 +4,12 @@
 
 它的职责不是重新定义规则，而是把 `spec/` 中已经确定的流程要求沉淀为可直接复用的文本片段，降低 AI 自由发挥空间。
 
+边界说明：
+
+- 本文模板服务 gitcode-cli 仓库内部协作记录
+- 本文不适用于外部项目通过 AI 使用 `gc` 的通用说明
+- 本文不是项目规则源，正式规则仍以 `spec/` 为准
+
 正式规则仍以 `spec/` 为准，尤其是：
 
 - [开发工作流程](../spec/workflows/development-workflow.md)
@@ -76,6 +82,7 @@ gc issue comment <number> --body-file /path/to/verification.md -R owner/repo
 - 单元测试:
 - 构建:
 - 实际命令验证:
+- 安全影响:
 - 文档同步:
 - 风险或未覆盖项:
 - 关联 PR:
@@ -137,6 +144,7 @@ gc issue comment <number> --body-file /path/to/verification.md -R owner/repo
 - 单元测试:
 - 构建:
 - 实际命令验证:
+- 安全审查:
 - 文档同步:
 - 风险:
 - 未覆盖项:
@@ -162,6 +170,7 @@ gc pr review <number> --comment-file /path/to/self-check.md -R owner/repo
 - 评审范围:
 - 发现:
 - blocker:
+- 安全检查:
 - 测试与证据检查:
 - 文档同步检查:
 - 结论: 可以批准 / 需要继续修改
@@ -198,7 +207,9 @@ gc pr review <number> --comment-file /path/to/self-check.md -R owner/repo
 
 - 当前 issue / PR 编号:
 - 当前状态标签:
+- 远端 issue / PR 当前状态核验:
 - 是否已合入主干:
+- 是否已检查 merged PR / `origin/main`:
 - 是否已完成验证:
 - 是否已有开发分支:
 - 是否需要补标签:

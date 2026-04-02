@@ -68,6 +68,7 @@
 - 安装、打包、发布的使用说明
 
 其中 `docs/COMMANDS.md` 是命令行为唯一真相源。
+`docs/AI-GUIDE.md` 只服务外部项目通过 AI 使用 `gc`，不定义 gitcode-cli 仓库内部开发流程。
 
 ### 2.3 spec/
 
@@ -92,7 +93,7 @@
 - 历史规划
 - 当前进度状态
 
-其中 `issues-plan/PROGRESS.md` 是当前状态唯一真相源。
+其中 `issues-plan/PROGRESS.md` 是阶段说明文档，不是远端 issue / PR 实时状态真相源。
 
 ### 2.5 AI 协作入口层
 
@@ -122,7 +123,8 @@ AI skill 采用三层结构：
 - 项目总入口：`README.md`
 - 命令行为：`docs/COMMANDS.md`
 - 项目正式规范：`spec/`
-- 当前状态：`issues-plan/PROGRESS.md`
+- 真相源边界说明：`spec/governance/source-of-truth-matrix.md`
+- 项目阶段说明：`issues-plan/PROGRESS.md`
 - AI 共享 skill 真相源：`.ai/skills/`
 - Codex 项目级入口：`AGENTS.md`
 - Claude 项目级入口：`CLAUDE.md`
@@ -133,11 +135,13 @@ AI skill 采用三层结构：
 
 1. `spec/` 定义项目正式规则
 2. `docs/COMMANDS.md` 定义命令行为
-3. `AGENTS.md` / `CLAUDE.md` 定义 AI 入口
-4. `.ai/skills/` 定义共享场景技能
-5. `.claude/skills/` / `.codex/skills/` 定义客户端适配
+3. `spec/governance/source-of-truth-matrix.md` 定义不同信息类型的事实边界
+4. `AGENTS.md` / `CLAUDE.md` 定义 AI 入口
+5. `.ai/skills/` 定义共享场景技能
+6. `.claude/skills/` / `.codex/skills/` 定义客户端适配
 
 `AGENTS.md`、`CLAUDE.md`、`.claude/skills/`、`.codex/skills/` 不得定义与 `spec/` 冲突的项目规则。
+`issues-plan/PROGRESS.md` 只能作为阶段说明，不得作为单个 issue / PR 实时状态真相源。
 
 ## 4. 多 AI 协作规则
 

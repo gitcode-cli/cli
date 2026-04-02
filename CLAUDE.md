@@ -51,8 +51,9 @@ Claude 在本仓库中必须遵守：
 - 命令名固定为 `gc`
 - 项目正式规范以 `spec/` 为准
 - 命令行为以 [docs/COMMANDS.md](./docs/COMMANDS.md) 为准
-- 当前状态以 [issues-plan/PROGRESS.md](./issues-plan/PROGRESS.md) 为准
+- 项目阶段说明可参考 [issues-plan/PROGRESS.md](./issues-plan/PROGRESS.md)，但该文档可能滞后，不作为单个 issue / PR 实时状态真相源
 - 流程推进以 `spec/workflows/*` 定义的状态机为准，不能只按松散 checklist 执行
+- 外部项目使用 AI 操作 GitCode 的说明以 `docs/AI-GUIDE.md` 为准，但该文档不定义本仓库内部开发流程
 - 代码变更后必须同步检查相关文档
 - 实际命令测试只能使用 `infra-test/*`
 - 不得在 `main` 直接开发

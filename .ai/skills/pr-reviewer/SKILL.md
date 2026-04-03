@@ -11,14 +11,16 @@
 - 不同信息类型的事实边界以 `spec/governance/source-of-truth-matrix.md` 为准
 - 命令行为以 `gc pr review` 当前真实能力为准
 - 平台不支持的动作必须明确说明，不能伪装成已支持
-- 作者自检与独立评审必须分离
+- 作者自检与独立执行主体评审必须分离
+- 评审主体可以是第二个 AI 代理，也可以是人工
+- 高风险改动在独立 AI 评审后仍需人工最终确认
 - PR 必须按 `status/draft -> status/self-checked -> status/ready-for-review -> status/approved -> status/merged` 推进
 
 ## 最低记录要求
 
 - 作者必须先在 PR 中补 `作者自检`
-- 独立评审必须单独给出 `评审结论`
-- 只有独立评审才能把 PR 视为 `approved`
+- 独立执行主体评审必须单独给出 `评审结论`
+- 只有独立执行主体评审才能把 PR 视为 `approved`
 
 ## PR 评论模板
 
@@ -45,9 +47,13 @@
 ```markdown
 ## 评审结论
 
+- 评审主体类型:
+- 评审范围:
 - 发现:
 - blocker:
 - 安全检查:
+- 测试与证据检查:
+- 文档同步检查:
 - 结论:
 ```
 

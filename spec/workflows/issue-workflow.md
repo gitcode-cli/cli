@@ -57,7 +57,7 @@ gc issue label <number> --add type/bug,status/triage,scope/pr -R owner/repo
 | `status/verified` | 已完成复现或确认需求有效 | 准备进入开发 |
 | `status/in-progress` | 已创建开发分支并开始修复 | 代码与自检完成 |
 | `status/blocked` | 当前存在阻塞 | 阻塞解除 |
-| `status/ready-for-review` | 对应 PR 已完成作者自检 | 进入独立评审 |
+| `status/ready-for-review` | 对应 PR 已完成作者自检与风险分级 | 进入独立执行主体评审 |
 | `status/merged` | 关联 PR 已合入主干 | 流程结束 |
 | `status/closed-no-fix` | 无效、重复、已修复或不做 | 流程结束 |
 
@@ -160,7 +160,7 @@ gc issue comment 33 --body "## 开发进度
 ### 不得关闭的情况
 
 - 代码还在功能分支，未进入主干
-- 只有作者自检，没有独立评审或合并记录
+- 只有作者自检，没有独立执行主体评审或合并记录
 - 只有“已完成实现”的口头说明，没有证据
 
 ### 关闭方式
@@ -190,4 +190,4 @@ gc issue close <number> -R owner/repo
 
 ---
 
-**最后更新**: 2026-04-02
+**最后更新**: 2026-04-03

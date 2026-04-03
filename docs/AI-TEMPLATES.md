@@ -24,7 +24,7 @@
 - 先核远端事实，再填写模板；模板不能替代事实确认
 - 模板字段可以补充，但不应删掉关键证据项
 - 如果某项未执行，不要留空，应明确写“未执行”及原因
-- 作者自检不能替代独立评审
+- 作者自检不能替代独立执行主体评审
 
 ## 机器校验
 
@@ -56,7 +56,7 @@ make validate-ai-record FILE=/path/to/pr-self-check.md KIND=pr-self-check
 
 - 验证字段内容是否真实
 - 验证远端 issue / PR 状态是否与记录一致
-- 替代独立评审
+- 替代独立执行主体评审
 
 ## 可直接复用的示例文件
 
@@ -166,7 +166,7 @@ gc issue comment <number> --body-file /path/to/verification.md -R owner/repo
 适用场景：
 
 - PR 已创建为 `status/draft`
-- 请求独立评审之前
+- 请求独立执行主体评审之前
 
 ```markdown
 ## 作者自检
@@ -194,12 +194,13 @@ gc pr review <number> --comment-file /path/to/self-check.md -R owner/repo
 
 适用场景：
 
-- 独立评审
+- 独立执行主体评审
 - 合并前最终确认
 
 ```markdown
 ## 评审结论
 
+- 评审主体类型: AI / human
 - 评审范围:
 - 发现:
 - blocker:
@@ -256,9 +257,9 @@ gc pr review <number> --comment-file /path/to/self-check.md -R owner/repo
 2. 补 `验证记录`
 3. 开始开发并补 `开发进度`
 4. 创建 PR 后补 `作者自检`
-5. 由非作者补 `评审结论`
+5. 由非作者、非同一执行主体补 `评审结论`
 6. 合入主干后补 `关闭说明`
 
 ---
 
-**最后更新**: 2026-04-02
+**最后更新**: 2026-04-03

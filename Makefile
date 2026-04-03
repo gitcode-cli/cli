@@ -25,6 +25,7 @@ GOMOD := $(GOCMD) mod
 .PHONY: docker docker-build docker-push docker-run
 .PHONY: release release-local release-snapshot
 .PHONY: completions validate-ai-template validate-ai-record validate-ai-templates
+.PHONY: classify-change-risk verify-remote-facts
 
 all: build
 
@@ -128,6 +129,17 @@ validate-ai-record:
 	@test -n "$(FILE)" || (echo "Usage: make validate-ai-record FILE=/path/to/file.md KIND=pr-self-check" && exit 2)
 	@test -n "$(KIND)" || (echo "KIND is required" && exit 2)
 	@python3 scripts/validate-ai-record.py --mode record --kind "$(KIND)" "$(FILE)"
+
+classify-change-risk:
+	@test -n "$(BASE)" || (echo "Usage: make classify-change-risk BASE=origin/main" && exit 2)
+	@python3 scripts/classify-change-risk.py --base "$(BASE)"
+
+verify-remote-facts:
+	@test -n "$(REPO)" || (echo "Usage: make verify-remote-facts REPO=owner/repo [ISSUE=1] [PR=2] [HEAD_SHA=<sha>]" && exit 2)
+	@python3 scripts/verify-remote-facts.py --repo "$(REPO)" \
+		$(if $(ISSUE),--issue $(ISSUE),) \
+		$(if $(PR),--pr $(PR),) \
+		$(if $(HEAD_SHA),--head-sha $(HEAD_SHA),)
 
 # Dependencies
 deps:

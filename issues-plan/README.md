@@ -20,6 +20,7 @@ issues-plan/
 ├── 10-deployment.md               # 部署发布需求
 ├── 11-next-development-plan.md    # 下一步开发计划
 ├── agent-cli-improvement/         # Agent-Friendly CLI 专项改进方案
+├── team-agent-review/             # Team agent 代码审视与提 issue 任务书
 ├── PROGRESS.md                    # 项目交付进度跟踪
 └── milestones/                    # 里程碑追踪
     ├── m1-foundation.md           # 里程碑1：基础架构
@@ -47,6 +48,7 @@ issues-plan/
 | [10-deployment.md](./10-deployment.md) | 部署发布流程需求 |
 | [11-next-development-plan.md](./11-next-development-plan.md) | 收口与一致性阶段开发计划 |
 | [agent-cli-improvement/README.md](./agent-cli-improvement/README.md) | 参考 agent-cli-guide 的 CLI 改进专项方案 |
+| [team-agent-review/README.md](./team-agent-review/README.md) | Team agent 代码审视与提 issue 任务书 |
 
 ## 如何使用需求文档
 

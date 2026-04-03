@@ -132,7 +132,7 @@ func TestParseRepo(t *testing.T) {
 		wantErr   bool
 	}{
 		{"owner/repo", "owner", "repo", false},
-		{"", "gitcode-cli", "cli", false},
+		{"", "", "", true},
 		{"invalid", "", "", true},
 		{"too/many/parts", "", "", true},
 	}

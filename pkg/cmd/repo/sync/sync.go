@@ -19,7 +19,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
-var gitRun = gitpkg.Run
+var gitRun = gitpkg.RunWithEnv
 
 type SyncResult struct {
 	SourceRepo    string `json:"source_repo"`
@@ -42,7 +42,7 @@ type SyncOptions struct {
 	BaseRepo   func() (string, error)
 	GetRepo    func(*api.Client, string, string) (*api.Repository, error)
 	CreatePR   func(*api.Client, string, string, *api.CreatePROptions) (*api.PullRequest, error)
-	GitRun     func(string, ...string) (string, error)
+	GitRun     func(string, map[string]string, ...string) (string, error)
 	MkdirTemp  func(string, string) (string, error)
 	RemoveAll  func(string) error
 
@@ -68,7 +68,7 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 		BaseRepo:   f.BaseRepo,
 		GetRepo:    api.GetRepo,
 		CreatePR:   api.CreatePullRequest,
-		GitRun:     gitpkg.RunInDir,
+		GitRun:     gitpkg.RunInDirWithEnv,
 		MkdirTemp:  os.MkdirTemp,
 		RemoveAll:  os.RemoveAll,
 	}
@@ -205,12 +205,12 @@ func syncRun(opts *SyncOptions) error {
 	}
 	defer opts.RemoveAll(workDir)
 
-	cloneArgs := append(authenticatedGitArgs(token), "clone", repositoryGitURL(targetOwner, targetRepo), workDir)
-	if _, err := gitRun(cloneArgs...); err != nil {
+	authEnv := authenticatedGitEnv(token)
+	if _, err := gitRun(authEnv, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
 		return fmt.Errorf("failed to clone target repository: %w", err)
 	}
 
-	if _, err := opts.GitRun(workDir, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
+	if _, err := opts.GitRun(workDir, nil, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
 		return fmt.Errorf("failed to prepare sync branch: %w", err)
 	}
 
@@ -219,7 +219,7 @@ func syncRun(opts *SyncOptions) error {
 		return fmt.Errorf("failed to sync directory contents: %w", err)
 	}
 
-	status, err := opts.GitRun(workDir, "status", "--porcelain")
+	status, err := opts.GitRun(workDir, nil, "status", "--porcelain")
 	if err != nil {
 		return fmt.Errorf("failed to inspect target repository changes: %w", err)
 	}
@@ -239,13 +239,13 @@ func syncRun(opts *SyncOptions) error {
 		return writeSyncResult(opts, result)
 	}
 
-	if _, err := opts.GitRun(workDir, "add", "--all", "--", targetDir); err != nil {
+	if _, err := opts.GitRun(workDir, nil, "add", "--all", "--", targetDir); err != nil {
 		return fmt.Errorf("failed to stage synced changes: %w", err)
 	}
-	if _, err := opts.GitRun(workDir, "commit", "-m", commitMsg); err != nil {
+	if _, err := opts.GitRun(workDir, nil, "commit", "-m", commitMsg); err != nil {
 		return fmt.Errorf("failed to create sync commit: %w", err)
 	}
-	if _, err := opts.GitRun(workDir, authenticatedGitArgs(token, "push", "--force-with-lease", "-u", "origin", syncBranch)...); err != nil {
+	if _, err := opts.GitRun(workDir, authEnv, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
 		return fmt.Errorf("failed to push sync branch: %w", err)
 	}
 
@@ -412,10 +412,10 @@ func repositoryGitURL(owner, repo string) string {
 	return fmt.Sprintf("https://gitcode.com/%s/%s.git", owner, repo)
 }
 
-func authenticatedGitArgs(token string, args ...string) []string {
-	prefix := []string{
-		"-c",
-		fmt.Sprintf("http.extraHeader=Authorization: Bearer %s", token),
+func authenticatedGitEnv(token string) map[string]string {
+	return map[string]string{
+		"GIT_CONFIG_COUNT":   "1",
+		"GIT_CONFIG_KEY_0":   "http.extraHeader",
+		"GIT_CONFIG_VALUE_0": fmt.Sprintf("Authorization: Bearer %s", token),
 	}
-	return append(prefix, args...)
 }

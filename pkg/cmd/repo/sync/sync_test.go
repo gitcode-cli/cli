@@ -100,6 +100,7 @@ func TestSyncRunNoChanges(t *testing.T) {
 	}
 
 	var cloneArgs []string
+	var cloneEnv map[string]string
 	prCalled := false
 	opts := &SyncOptions{
 		IO:         f.IOStreams,
@@ -120,7 +121,7 @@ func TestSyncRunNoChanges(t *testing.T) {
 			prCalled = true
 			return nil, nil
 		},
-		GitRun: func(dir string, args ...string) (string, error) {
+		GitRun: func(dir string, env map[string]string, args ...string) (string, error) {
 			switch strings.Join(args, " ") {
 			case "checkout -B sync/owner-source/feature-demo/docs origin/main":
 				return "", nil
@@ -144,7 +145,8 @@ func TestSyncRunNoChanges(t *testing.T) {
 	_ = os.Setenv("GC_TOKEN", "token")
 
 	originalGitRun := gitRun
-	gitRun = func(args ...string) (string, error) {
+	gitRun = func(env map[string]string, args ...string) (string, error) {
+		cloneEnv = env
 		cloneArgs = append([]string{}, args...)
 		return "", nil
 	}
@@ -156,25 +158,24 @@ func TestSyncRunNoChanges(t *testing.T) {
 	if prCalled {
 		t.Fatal("CreatePR should not be called when there are no changes")
 	}
-	if len(cloneArgs) < 5 {
+	if len(cloneArgs) != 3 {
 		t.Fatalf("unexpected clone args: %#v", cloneArgs)
 	}
-	if cloneArgs[0] != "-c" || !strings.Contains(cloneArgs[1], "http.extraHeader=Authorization: Bearer token") {
-		t.Fatalf("unexpected auth args: %#v", cloneArgs)
+	if cloneEnv["GIT_CONFIG_COUNT"] != "1" || cloneEnv["GIT_CONFIG_KEY_0"] != "http.extraHeader" || cloneEnv["GIT_CONFIG_VALUE_0"] != "Authorization: Bearer token" {
+		t.Fatalf("unexpected auth env: %#v", cloneEnv)
 	}
-	if cloneArgs[3] != "https://gitcode.com/infra-test/target.git" {
+	if cloneArgs[1] != "https://gitcode.com/infra-test/target.git" {
 		t.Fatalf("unexpected clone URL: %#v", cloneArgs)
 	}
 }
 
-func TestAuthenticatedGitArgs(t *testing.T) {
-	args := authenticatedGitArgs("token", "push", "origin", "branch")
-	got := strings.Join(args, " ")
-	if !strings.Contains(got, "http.extraHeader=Authorization: Bearer token") {
-		t.Fatalf("authenticatedGitArgs() = %q", got)
+func TestAuthenticatedGitEnv(t *testing.T) {
+	env := authenticatedGitEnv("token")
+	if env["GIT_CONFIG_COUNT"] != "1" || env["GIT_CONFIG_KEY_0"] != "http.extraHeader" {
+		t.Fatalf("authenticatedGitEnv() = %#v", env)
 	}
-	if !strings.Contains(got, "push origin branch") {
-		t.Fatalf("authenticatedGitArgs() missing git args: %q", got)
+	if env["GIT_CONFIG_VALUE_0"] != "Authorization: Bearer token" {
+		t.Fatalf("authenticatedGitEnv() token = %q", env["GIT_CONFIG_VALUE_0"])
 	}
 }
 
@@ -217,7 +218,7 @@ func TestSyncRunBuildsPRURLWhenCreateResponseOmitsHTMLURL(t *testing.T) {
 		CreatePR: func(client *api.Client, owner, repo string, opts *api.CreatePROptions) (*api.PullRequest, error) {
 			return &api.PullRequest{Number: 7}, nil
 		},
-		GitRun: func(dir string, args ...string) (string, error) {
+		GitRun: func(dir string, env map[string]string, args ...string) (string, error) {
 			switch strings.Join(args, " ") {
 			case "checkout -B sync/owner-source/feature-demo/docs origin/main":
 				return "", nil
@@ -249,7 +250,7 @@ func TestSyncRunBuildsPRURLWhenCreateResponseOmitsHTMLURL(t *testing.T) {
 	_ = os.Setenv("GC_TOKEN", "token")
 
 	originalGitRun := gitRun
-	gitRun = func(args ...string) (string, error) { return "", nil }
+	gitRun = func(env map[string]string, args ...string) (string, error) { return "", nil }
 	t.Cleanup(func() { gitRun = originalGitRun })
 
 	if err := syncRun(opts); err != nil {

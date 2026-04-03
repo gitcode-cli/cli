@@ -208,25 +208,25 @@ func normalizeDateFilters(opts *ListOptions) error {
 	}
 
 	var err error
-	if opts.Since, err = normalizeIssueListTime(opts.Since); err != nil {
+	if opts.Since, err = normalizeIssueListTime(opts.Since, false); err != nil {
 		return fmt.Errorf("invalid --since: %w", err)
 	}
-	if opts.CreatedAfter, err = normalizeIssueListTime(opts.CreatedAfter); err != nil {
+	if opts.CreatedAfter, err = normalizeIssueListTime(opts.CreatedAfter, false); err != nil {
 		return fmt.Errorf("invalid --created-after: %w", err)
 	}
-	if opts.CreatedBefore, err = normalizeIssueListTime(opts.CreatedBefore); err != nil {
+	if opts.CreatedBefore, err = normalizeIssueListTime(opts.CreatedBefore, true); err != nil {
 		return fmt.Errorf("invalid --created-before: %w", err)
 	}
-	if opts.UpdatedAfter, err = normalizeIssueListTime(opts.UpdatedAfter); err != nil {
+	if opts.UpdatedAfter, err = normalizeIssueListTime(opts.UpdatedAfter, false); err != nil {
 		return fmt.Errorf("invalid --updated-after: %w", err)
 	}
-	if opts.UpdatedBefore, err = normalizeIssueListTime(opts.UpdatedBefore); err != nil {
+	if opts.UpdatedBefore, err = normalizeIssueListTime(opts.UpdatedBefore, true); err != nil {
 		return fmt.Errorf("invalid --updated-before: %w", err)
 	}
 	return nil
 }
 
-func normalizeIssueListTime(value string) (string, error) {
+func normalizeIssueListTime(value string, endOfDay bool) (string, error) {
 	if value == "" {
 		return "", nil
 	}
@@ -244,6 +244,9 @@ func normalizeIssueListTime(value string) (string, error) {
 	}
 
 	if ts, err := time.Parse("2006-01-02", value); err == nil {
+		if endOfDay {
+			ts = ts.Add(24*time.Hour - time.Second)
+		}
 		return ts.Format(time.RFC3339), nil
 	}
 

@@ -3,8 +3,6 @@ package cmdutil
 import (
 	"errors"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -133,36 +131,5 @@ func TestParseRepoOutsideGitRepoRequiresExplicitRepo(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "no repository specified. Use -R owner/repo") {
 		t.Fatalf("ParseRepo() error = %q", err.Error())
-	}
-}
-
-func TestParseRepoFallsBackToCurrentRepo(t *testing.T) {
-	dir := t.TempDir()
-	run := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = dir
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("git %v failed: %v (%s)", args, err, string(out))
-		}
-	}
-
-	run("init")
-	run("remote", "add", "origin", "https://gitcode.com/fallback/repo.git")
-
-	oldWd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("os.Getwd() error = %v", err)
-	}
-	defer func() { _ = os.Chdir(oldWd) }()
-	if err := os.Chdir(filepath.Clean(dir)); err != nil {
-		t.Fatalf("os.Chdir() error = %v", err)
-	}
-
-	owner, repo, err := ParseRepo("")
-	if err != nil {
-		t.Fatalf("ParseRepo() unexpected error = %v", err)
-	}
-	if owner != "fallback" || repo != "repo" {
-		t.Fatalf("ParseRepo() = (%q, %q), want (%q, %q)", owner, repo, "fallback", "repo")
 	}
 }

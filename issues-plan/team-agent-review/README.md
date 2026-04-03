@@ -132,6 +132,10 @@ Integration Reviewer Agent：
 
 ## 提交 issue 的统一要求
 
+- 创建 issue 后必须立即按 `spec/workflows/issue-workflow.md` 补最小标签：
+  - 类型标签：`type/*`
+  - 状态标签：`status/triage`
+  - 范围标签：`scope/*`
 - 标题应直接描述问题，不写模糊优化口号
 - 正文至少包含：背景、复现/核验、实际结果、预期结果、影响、建议方向
 - 能归类成上游限制的，要明确写清是“API/平台限制”还是“CLI 自身缺陷”

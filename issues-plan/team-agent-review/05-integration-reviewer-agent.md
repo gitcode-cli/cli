@@ -25,7 +25,9 @@
 - `issues-plan/team-agent-review/03-security-auth-agent.md`
 - `issues-plan/team-agent-review/04-testing-regression-agent.md`
 - 当前轮次各 agent 实际输出
-- 远端 open issue 列表
+- 远端相关 issue 列表
+  - 至少覆盖当前 open issue
+  - 如某条 finding 疑似历史回归或曾被关闭，必须补查相关 closed issue
 
 ## 必答问题
 
@@ -41,6 +43,7 @@
 - 同一用户影响、同一修复方向，优先合并
 - 已有 open issue 能覆盖的，不重复创建
 - 已关闭 issue 若主干仍未修复，可重开或新建，但必须写清原因
+- 若创建新 issue，必须提醒执行主体在创建后立即补 `type/*`、`status/triage`、`scope/*` 标签
 
 ## 最终输出格式
 

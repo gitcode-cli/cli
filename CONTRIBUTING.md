@@ -51,6 +51,8 @@ Before contributing, please read the following documentation:
 > **Important**: When modifying development or review workflow rules, you MUST sync `spec/`, `AGENTS.md`, `CLAUDE.md`, related shared skills, and AI workflow templates.
 >
 > **Important**: Do not treat `issues-plan/PROGRESS.md` as the real-time source for single issue/PR status; use the remote platform, merged PRs, and `origin/main`.
+>
+> **Important**: When changing `docs/AI-TEMPLATES.md` or `docs/ai-templates/*.md`, run `make validate-ai-templates`.
 
 ## Workflow Expectations
 

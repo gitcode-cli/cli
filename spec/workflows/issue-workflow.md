@@ -130,6 +130,7 @@ Issue 在进入 `status/ready-for-review` 前必须补充阶段性说明。
 - 主要修改:
 - 测试:
 - 实际命令验证:
+- 安全影响:
 - 风险或未覆盖项:
 - 关联 PR:
 ```
@@ -143,6 +144,7 @@ gc issue comment 33 --body "## 开发进度
 - 主要修改: 调整 PR review endpoint 与错误处理
 - 测试: go test ./...
 - 实际命令验证: ./gc pr review 1 --approve -R infra-test/gctest1
+- 安全影响: 已检查无凭证泄漏，本次改动不涉及认证与权限路径
 - 风险或未覆盖项: request changes 仍受 API 限制
 - 关联 PR: #51" -R gitcode-cli/cli
 ```

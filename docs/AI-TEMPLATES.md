@@ -21,9 +21,42 @@
 ## 使用原则
 
 - 模板用于帮助 AI 和人工保持记录格式一致
+- 先核远端事实，再填写模板；模板不能替代事实确认
 - 模板字段可以补充，但不应删掉关键证据项
 - 如果某项未执行，不要留空，应明确写“未执行”及原因
 - 作者自检不能替代独立评审
+
+## 机器校验
+
+仓库提供最小模板校验脚本：
+
+```bash
+# 校验模板结构
+python3 scripts/validate-ai-record.py --mode template docs/ai-templates/pr-self-check.md
+
+# 校验已填写记录
+python3 scripts/validate-ai-record.py --mode record --kind pr-self-check /path/to/pr-self-check.md
+```
+
+也可以使用 Makefile 包装入口：
+
+```bash
+make validate-ai-template FILE=docs/ai-templates/pr-self-check.md
+make validate-ai-templates
+make validate-ai-record FILE=/path/to/pr-self-check.md KIND=pr-self-check
+```
+
+当前机器校验范围：
+
+- 检查标题是否匹配模板类型
+- 检查必填字段是否齐全
+- 在 `record` 模式下检查字段值是否为空
+
+当前不负责：
+
+- 验证字段内容是否真实
+- 验证远端 issue / PR 状态是否与记录一致
+- 替代独立评审
 
 ## 可直接复用的示例文件
 

@@ -70,8 +70,11 @@ AI 接到任务后，按以下顺序建立上下文：
 - 当前 issue / PR 的远端状态
 - 是否已有 merged PR
 - `origin/main` 是否已包含对应改动
+- 如果 issue 已关闭，是否仍缺少 merged PR 或主干代码
 
 不得把 `issues-plan/PROGRESS.md` 当成上述事实的唯一依据。
+
+若 issue 已关闭，但不存在 merged PR 或 `origin/main` 不包含对应改动，必须明确判定为“未完成主干合入”。
 
 ### 2. 验证问题
 
@@ -157,6 +160,12 @@ AI 或脚本消费 `gc` 时，应优先使用：
 
 - [../../docs/AI-TEMPLATES.md](../../docs/AI-TEMPLATES.md)
 - `docs/ai-templates/*.md`
+
+如使用本地文件准备 issue / PR 评论，建议在提交前运行最小机器校验：
+
+```bash
+python3 scripts/validate-ai-record.py --mode record --kind pr-self-check /path/to/pr-self-check.md
+```
 
 ## 禁止事项
 

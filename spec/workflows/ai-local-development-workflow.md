@@ -55,9 +55,10 @@ AI 接到任务后，按以下顺序建立上下文：
 → 真实命令验证
 → 安全审查
 → 文档同步
+→ 风险分级
 → 补 issue 进度与 PR 自检
 → ready-for-review
-→ 独立评审
+→ 独立执行主体评审
 → merge
 ```
 
@@ -71,6 +72,12 @@ AI 接到任务后，按以下顺序建立上下文：
 - 是否已有 merged PR
 - `origin/main` 是否已包含对应改动
 - 如果 issue 已关闭，是否仍缺少 merged PR 或主干代码
+
+建议使用最小远端事实核验脚本：
+
+```bash
+python3 scripts/verify-remote-facts.py --repo owner/repo --issue <issue> --pr <pr> --head-sha <sha>
+```
 
 不得把 `issues-plan/PROGRESS.md` 当成上述事实的唯一依据。
 
@@ -143,7 +150,21 @@ AI 或脚本消费 `gc` 时，应优先使用：
 - 构建打包变化：`spec/delivery/*`、`docs/PACKAGING.md`
 - AI 协作边界变化：`.ai/skills/*` 与适配层
 
-### 9. 证据留存
+### 9. 风险分级
+
+提交评审前，必须执行最小风险分级：
+
+```bash
+python3 scripts/classify-change-risk.py --base origin/main
+```
+
+结果用于决定评审策略：
+
+- `low`：第二个 AI 代理可作为独立执行主体评审并自动推进
+- `medium`：第二个 AI 代理可作为独立执行主体评审；仅在 blocker 或不确定时升级人工
+- `high`：独立 AI 评审后仍需人工最终确认
+
+### 10. 证据留存
 
 提交评审前，至少应留存以下证据：
 
@@ -154,6 +175,7 @@ AI 或脚本消费 `gc` 时，应优先使用：
 - 真实命令验证结果
 - 安全审查结果
 - 文档同步结果
+- 风险分级结果
 - PR 作者自检
 
 模板见：
@@ -173,6 +195,7 @@ python3 scripts/validate-ai-record.py --mode record --kind pr-self-check /path/t
 - 不得跳过 `status/verified`
 - 不得缺少证据就宣称完成
 - 不得把作者自检当独立评审
+- 不得让作者与评审者是同一执行主体
 - 不得把 `issues-plan/PROGRESS.md` 当成实时事实源
 - 不得把 `docs/AI-GUIDE.md` 当成仓库内部开发规则
 

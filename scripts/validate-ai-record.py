@@ -104,6 +104,7 @@ SCHEMAS = {
     "pr-review-outcome": {
         "heading": "## 评审结论",
         "fields": [
+            "评审主体类型",
             "评审范围",
             "发现",
             "blocker",

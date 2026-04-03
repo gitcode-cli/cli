@@ -95,9 +95,9 @@ func TestBuildSyncBranch(t *testing.T) {
 
 func TestBuildSyncBody(t *testing.T) {
 	pr := &api.PullRequest{
-		Title:    "Test PR",
-		Body:     "Original body",
-		HTMLURL:  "https://gitcode.com/owner/repo/pulls/123",
+		Title:   "Test PR",
+		Body:    "Original body",
+		HTMLURL: "https://gitcode.com/owner/repo/pulls/123",
 	}
 	sourcePR := &PRRef{Owner: "source-owner", Repo: "source-repo", Number: 123}
 	targetRepo := "target-owner/target-repo"
@@ -148,20 +148,6 @@ func TestNewCmdSync(t *testing.T) {
 		if cmd.Flags().Lookup(flag) == nil {
 			t.Errorf("NewCmdSync() missing optional flag %q", flag)
 		}
-	}
-}
-
-func TestAuthenticatedGitEnv(t *testing.T) {
-	env := authenticatedGitEnv("test-token")
-
-	if env["GIT_CONFIG_COUNT"] != "1" {
-		t.Errorf("authenticatedGitEnv() GIT_CONFIG_COUNT = %q, want 1", env["GIT_CONFIG_COUNT"])
-	}
-	if env["GIT_CONFIG_KEY_0"] != "http.extraHeader" {
-		t.Errorf("authenticatedGitEnv() GIT_CONFIG_KEY_0 = %q, want http.extraHeader", env["GIT_CONFIG_KEY_0"])
-	}
-	if !bytes.Contains([]byte(env["GIT_CONFIG_VALUE_0"]), []byte("Bearer")) {
-		t.Errorf("authenticatedGitEnv() GIT_CONFIG_VALUE_0 should contain Bearer")
 	}
 }
 

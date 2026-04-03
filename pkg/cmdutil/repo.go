@@ -31,6 +31,12 @@ func ResolveRepo(repo string, baseRepo func() (string, error)) (string, error) {
 // name. It supports owner/repo, HTTPS URLs, and SSH URLs.
 func ParseRepo(repo string) (string, string, error) {
 	if repo == "" {
+		if gitpkg.IsRepo() {
+			parsedRepo, err := gitpkg.CurrentRepo()
+			if err == nil && parsedRepo != nil {
+				return parsedRepo.Owner, parsedRepo.Name, nil
+			}
+		}
 		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
 	}
 

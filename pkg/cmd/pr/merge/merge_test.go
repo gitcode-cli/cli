@@ -28,6 +28,11 @@ func TestNewCmdMerge(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "merge with yes",
+			args:    []string{"123", "--yes"},
+			wantErr: false,
+		},
+		{
 			name:    "no PR number",
 			args:    []string{},
 			wantErr: true,

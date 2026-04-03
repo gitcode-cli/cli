@@ -113,7 +113,7 @@ func TestParseRepo(t *testing.T) {
 	}{
 		{"owner/repo", "owner", "repo", false},
 		{"gitcode-cli/cli", "gitcode-cli", "cli", false},
-		{"", "", "", true},
+		{"", "gitcode-cli", "cli", false},
 		{"invalid", "", "", true},
 		{"too/many/parts", "", "", true},
 	}

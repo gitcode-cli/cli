@@ -99,7 +99,7 @@ func TestSyncRunNoChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var clonedURL string
+	var cloneArgs []string
 	prCalled := false
 	opts := &SyncOptions{
 		IO:         f.IOStreams,
@@ -145,7 +145,7 @@ func TestSyncRunNoChanges(t *testing.T) {
 
 	originalGitRun := gitRun
 	gitRun = func(args ...string) (string, error) {
-		clonedURL = args[1]
+		cloneArgs = append([]string{}, args...)
 		return "", nil
 	}
 	t.Cleanup(func() { gitRun = originalGitRun })
@@ -156,8 +156,25 @@ func TestSyncRunNoChanges(t *testing.T) {
 	if prCalled {
 		t.Fatal("CreatePR should not be called when there are no changes")
 	}
-	if !strings.Contains(clonedURL, "oauth2:token@gitcode.com/infra-test/target.git") {
-		t.Fatalf("unexpected clone URL: %q", clonedURL)
+	if len(cloneArgs) < 5 {
+		t.Fatalf("unexpected clone args: %#v", cloneArgs)
+	}
+	if cloneArgs[0] != "-c" || !strings.Contains(cloneArgs[1], "http.extraHeader=Authorization: Bearer token") {
+		t.Fatalf("unexpected auth args: %#v", cloneArgs)
+	}
+	if cloneArgs[3] != "https://gitcode.com/infra-test/target.git" {
+		t.Fatalf("unexpected clone URL: %#v", cloneArgs)
+	}
+}
+
+func TestAuthenticatedGitArgs(t *testing.T) {
+	args := authenticatedGitArgs("token", "push", "origin", "branch")
+	got := strings.Join(args, " ")
+	if !strings.Contains(got, "http.extraHeader=Authorization: Bearer token") {
+		t.Fatalf("authenticatedGitArgs() = %q", got)
+	}
+	if !strings.Contains(got, "push origin branch") {
+		t.Fatalf("authenticatedGitArgs() missing git args: %q", got)
 	}
 }
 

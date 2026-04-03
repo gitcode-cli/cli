@@ -98,11 +98,11 @@ func TestTestRun(t *testing.T) {
 
 func TestParseRepo(t *testing.T) {
 	tests := []struct {
-		name       string
-		repo       string
-		wantOwner  string
-		wantRepo   string
-		wantErr    bool
+		name      string
+		repo      string
+		wantOwner string
+		wantRepo  string
+		wantErr   bool
 	}{
 		{
 			name:      "valid repo",
@@ -112,9 +112,11 @@ func TestParseRepo(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:    "empty repo",
-			repo:    "",
-			wantErr: true,
+			name:      "empty repo falls back to current repo",
+			repo:      "",
+			wantOwner: "gitcode-cli",
+			wantRepo:  "cli",
+			wantErr:   false,
 		},
 		{
 			name:    "invalid format",

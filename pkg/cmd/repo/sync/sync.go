@@ -205,8 +205,8 @@ func syncRun(opts *SyncOptions) error {
 	}
 	defer opts.RemoveAll(workDir)
 
-	authURL := authenticatedGitURL(targetOwner, targetRepo, token)
-	if _, err := gitRun("clone", authURL, workDir); err != nil {
+	cloneArgs := append(authenticatedGitArgs(token), "clone", repositoryGitURL(targetOwner, targetRepo), workDir)
+	if _, err := gitRun(cloneArgs...); err != nil {
 		return fmt.Errorf("failed to clone target repository: %w", err)
 	}
 
@@ -245,7 +245,7 @@ func syncRun(opts *SyncOptions) error {
 	if _, err := opts.GitRun(workDir, "commit", "-m", commitMsg); err != nil {
 		return fmt.Errorf("failed to create sync commit: %w", err)
 	}
-	if _, err := opts.GitRun(workDir, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
+	if _, err := opts.GitRun(workDir, authenticatedGitArgs(token, "push", "--force-with-lease", "-u", "origin", syncBranch)...); err != nil {
 		return fmt.Errorf("failed to push sync branch: %w", err)
 	}
 
@@ -408,6 +408,14 @@ func defaultPRBody(sourceRepo, currentBranch, sourceDir, targetRepo, targetDir s
 	)
 }
 
-func authenticatedGitURL(owner, repo, token string) string {
-	return fmt.Sprintf("https://oauth2:%s@gitcode.com/%s/%s.git", token, owner, repo)
+func repositoryGitURL(owner, repo string) string {
+	return fmt.Sprintf("https://gitcode.com/%s/%s.git", owner, repo)
+}
+
+func authenticatedGitArgs(token string, args ...string) []string {
+	prefix := []string{
+		"-c",
+		fmt.Sprintf("http.extraHeader=Authorization: Bearer %s", token),
+	}
+	return append(prefix, args...)
 }

@@ -115,6 +115,9 @@ func (a *authConfig) Login(hostname, username, token, gitProtocol string, secure
 	if username == "" || token == "" {
 		return false, errors.New("username and token are required")
 	}
+	if secureStorage {
+		return false, errors.New("secure storage is not supported yet")
+	}
 	if gitProtocol == "" {
 		gitProtocol = "https"
 	}

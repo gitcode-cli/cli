@@ -165,9 +165,11 @@ func TestParseRepo(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:    "empty repo",
-			repo:    "",
-			wantErr: true,
+			name:      "empty repo falls back to current repo",
+			repo:      "",
+			wantOwner: "gitcode-cli",
+			wantRepo:  "cli",
+			wantErr:   false,
 		},
 		{
 			name:    "invalid format - no slash",

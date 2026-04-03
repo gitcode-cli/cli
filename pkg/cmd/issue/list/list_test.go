@@ -94,3 +94,46 @@ func TestNewCmdList(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeIssueListTime(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:  "date only",
+			input: "2026-03-31",
+			want:  "2026-03-31T00:00:00Z",
+		},
+		{
+			name:  "rfc3339",
+			input: "2026-03-31T12:30:00+08:00",
+			want:  "2026-03-31T12:30:00+08:00",
+		},
+		{
+			name:    "invalid",
+			input:   "2026/03/31",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := normalizeIssueListTime(tt.input)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("normalizeIssueListTime() error = nil, want error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("normalizeIssueListTime() error = %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("normalizeIssueListTime() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

@@ -705,6 +705,41 @@ gc pr test 1 -R infra-test/gctest1
 gc pr test 1 --force -R infra-test/gctest1
 ```
 
+### pr sync - 同步 PR 到另一个仓库
+
+```bash
+# 同步 PR 到目标仓库
+gc pr sync --source-pr owner/source-repo#123 --target-repo owner/target-repo
+
+# 指定目标分支
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --base release/v1.0
+
+# 自定义标题和内容
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --title "[sync] Fix login bug" \
+  --body "从 owner/source-repo#123 同步"
+
+# 创建草稿 PR
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --draft
+
+# 结构化输出
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --json
+```
+
+说明：
+- `--source-pr` 支持两种格式：`owner/repo#number` 或完整 URL
+- 命令会 cherry-pick 源 PR 的所有 commits 到目标仓库
+- 新 PR 标题默认格式：`[sync] {源 PR 标题}`
+- 新 PR 内容默认继承源 PR 内容并追加同步来源信息
+- 如遇 cherry-pick 冲突，命令会报错并提示手动处理
+
 ---
 
 ## Release 命令 (release)

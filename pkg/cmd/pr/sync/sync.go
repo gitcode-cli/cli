@@ -38,7 +38,7 @@ type SyncOptions struct {
 	ListPRCommits func(*api.Client, string, string, int) ([]api.Commit, error)
 	GetRepo       func(*api.Client, string, string) (*api.Repository, error)
 	CreatePR      func(*api.Client, string, string, *api.CreatePROptions) (*api.PullRequest, error)
-	GitRun        func(string, ...string) (string, error)
+	GitRun        func(string, map[string]string, ...string) (string, error)
 	MkdirTemp     func(string, string) (string, error)
 	RemoveAll     func(string) error
 
@@ -60,7 +60,7 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 		ListPRCommits: api.ListPRCommits,
 		GetRepo:       api.GetRepo,
 		CreatePR:      api.CreatePullRequest,
-		GitRun:        gitpkg.RunInDir,
+		GitRun:        gitpkg.RunInDirWithEnv,
 		MkdirTemp:     os.MkdirTemp,
 		RemoveAll:     os.RemoveAll,
 	}
@@ -239,32 +239,33 @@ func syncRun(opts *SyncOptions) error {
 	}
 	defer opts.RemoveAll(workDir)
 
+	// Prepare authentication environment (avoid embedding token in URL)
+	authEnv := authenticatedGitEnv(token)
+
 	// Clone target repository
-	authURL := authenticatedGitURL(targetOwner, targetRepo, token)
-	if _, err := gitpkg.Run("clone", authURL, workDir); err != nil {
+	if _, err := gitpkg.RunWithEnv(authEnv, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
 		return fmt.Errorf("failed to clone target repository: %w", err)
 	}
 
 	// Fetch source repository to get commits
-	sourceAuthURL := authenticatedGitURL(sourcePR.Owner, sourcePR.Repo, token)
-	if _, err := opts.GitRun(workDir, "remote", "add", "source", sourceAuthURL); err != nil {
+	if _, err := opts.GitRun(workDir, authEnv, "remote", "add", "source", repositoryGitURL(sourcePR.Owner, sourcePR.Repo)); err != nil {
 		return fmt.Errorf("failed to add source remote: %w", err)
 	}
-	if _, err := opts.GitRun(workDir, "fetch", "source"); err != nil {
+	if _, err := opts.GitRun(workDir, authEnv, "fetch", "source"); err != nil {
 		return fmt.Errorf("failed to fetch source repository: %w", err)
 	}
 
 	// Create sync branch based on target base branch
-	if _, err := opts.GitRun(workDir, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
+	if _, err := opts.GitRun(workDir, nil, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
 		return fmt.Errorf("failed to create sync branch: %w", err)
 	}
 
 	// Cherry-pick commits in order
 	conflictError := ""
 	for _, commit := range commits {
-		if _, err := opts.GitRun(workDir, "cherry-pick", "--no-commit", commit.SHA); err != nil {
+		if _, err := opts.GitRun(workDir, nil, "cherry-pick", "--no-commit", commit.SHA); err != nil {
 			// Abort cherry-pick on conflict
-			_, _ = opts.GitRun(workDir, "cherry-pick", "--abort")
+			_, _ = opts.GitRun(workDir, nil, "cherry-pick", "--abort")
 			conflictError = fmt.Sprintf("cherry-pick conflict on commit %s: %s", commit.SHA[:8], commit.Message)
 			break
 		}
@@ -288,12 +289,12 @@ func syncRun(opts *SyncOptions) error {
 	commitMsg := fmt.Sprintf("sync: cherry-pick from %s/%s#%d\n\n%s",
 		sourcePR.Owner, sourcePR.Repo, sourcePR.Number,
 		buildCommitList(commits))
-	if _, err := opts.GitRun(workDir, "commit", "-m", commitMsg); err != nil {
+	if _, err := opts.GitRun(workDir, nil, "commit", "-m", commitMsg); err != nil {
 		return fmt.Errorf("failed to create sync commit: %w", err)
 	}
 
 	// Push sync branch
-	if _, err := opts.GitRun(workDir, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
+	if _, err := opts.GitRun(workDir, authEnv, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
 		return fmt.Errorf("failed to push sync branch: %w", err)
 	}
 
@@ -372,6 +373,17 @@ func buildCommitList(commits []api.Commit) string {
 	return list
 }
 
-func authenticatedGitURL(owner, repo, token string) string {
-	return fmt.Sprintf("https://oauth2:%s@gitcode.com/%s/%s.git", token, owner, repo)
+// repositoryGitURL returns a Git URL without embedded credentials
+func repositoryGitURL(owner, repo string) string {
+	return fmt.Sprintf("https://gitcode.com/%s/%s.git", owner, repo)
+}
+
+// authenticatedGitEnv returns environment variables for Git authentication
+// using Bearer token header (avoids embedding token in URL)
+func authenticatedGitEnv(token string) map[string]string {
+	return map[string]string{
+		"GIT_CONFIG_COUNT":   "1",
+		"GIT_CONFIG_KEY_0":   "http.extraHeader",
+		"GIT_CONFIG_VALUE_0": fmt.Sprintf("Authorization: Bearer %s", token),
+	}
 }

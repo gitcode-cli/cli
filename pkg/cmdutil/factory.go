@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"gitcode.com/gitcode-cli/cli/api"
 	gitpkg "gitcode.com/gitcode-cli/cli/git"
 	"gitcode.com/gitcode-cli/cli/internal/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
@@ -24,7 +25,7 @@ func NewFactory() *Factory {
 	return &Factory{
 		IOStreams: iostreams.System(),
 		HttpClient: func() (*http.Client, error) {
-			return &http.Client{}, nil
+			return api.DefaultHTTPClient(), nil
 		},
 		Config: func() (config.Config, error) {
 			return config.New(), nil
@@ -61,7 +62,7 @@ func TestFactory() *Factory {
 	return &Factory{
 		IOStreams: io,
 		HttpClient: func() (*http.Client, error) {
-			return &http.Client{}, nil
+			return api.DefaultHTTPClient(), nil
 		},
 		Config: func() (config.Config, error) {
 			return config.New(), nil

@@ -107,11 +107,11 @@ func TestEditRun(t *testing.T) {
 
 func TestParseRepo(t *testing.T) {
 	tests := []struct {
-		name       string
-		repo       string
-		wantOwner  string
-		wantRepo   string
-		wantErr    bool
+		name      string
+		repo      string
+		wantOwner string
+		wantRepo  string
+		wantErr   bool
 	}{
 		{
 			name:      "valid repo",
@@ -121,7 +121,7 @@ func TestParseRepo(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:    "empty repo",
+			name:    "empty repo requires explicit repo",
 			repo:    "",
 			wantErr: true,
 		},

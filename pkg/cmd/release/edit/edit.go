@@ -88,11 +88,11 @@ func editRun(opts *EditOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
-	client.SetToken(token, "environment")
+	client.SetToken(token, "active")
 
 	// Get repository
 	owner, repo, err := parseRepo(opts.Repository)
@@ -173,11 +173,4 @@ func parseBool(s string) (bool, error) {
 	default:
 		return false, fmt.Errorf("invalid boolean value: %s", s)
 	}
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

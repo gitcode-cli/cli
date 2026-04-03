@@ -142,7 +142,7 @@ func viewRun(opts *ViewOptions) error {
 	if len(release.Assets) > 0 {
 		fmt.Fprintf(opts.IO.Out, "\n%s\n", cs.Bold("Assets:"))
 		for _, asset := range release.Assets {
-			fmt.Fprintf(opts.IO.Out, "  %s (%d bytes, %d downloads)\n", asset.Name, asset.Size, asset.Downloads)
+			fmt.Fprintf(opts.IO.Out, "  %s (%s, %d downloads)\n", asset.Name, assetSizeLabel(asset), asset.Downloads)
 		}
 	}
 
@@ -152,4 +152,11 @@ func viewRun(opts *ViewOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+func assetSizeLabel(asset api.ReleaseAsset) string {
+	if asset.Size <= 0 {
+		return "unknown size"
+	}
+	return fmt.Sprintf("%d bytes", asset.Size)
 }

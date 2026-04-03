@@ -79,6 +79,8 @@ AI 接到任务后，按以下顺序建立上下文：
 python3 scripts/verify-remote-facts.py --repo owner/repo --issue <issue> --pr <pr> --head-sha <sha>
 ```
 
+如果已传入 `--pr`，脚本会优先从 PR 标题和正文中自动提取 `#123` 这类 issue 引用；在常见 `Refs #123` 场景下可减少显式传 `--issue`。
+
 不得把 `issues-plan/PROGRESS.md` 当成上述事实的唯一依据。
 
 若 issue 已关闭，但不存在 merged PR 或 `origin/main` 不包含对应改动，必须明确判定为“未完成主干合入”。
@@ -177,6 +179,7 @@ python3 scripts/classify-change-risk.py --base origin/main
 - 文档同步结果
 - 风险分级结果
 - PR 作者自检
+- 作者主体标识与评审主体标识
 
 模板见：
 

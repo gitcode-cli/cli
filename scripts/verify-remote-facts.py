@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 
@@ -21,6 +22,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pr", type=int, help="PR number to verify")
     parser.add_argument("--head-sha", help="Head commit SHA expected to be in origin/main")
     return parser.parse_args()
+
+
+ISSUE_REF_RE = re.compile(r"(?:#|!)(\d+)")
 
 
 def run_json(cmd: list[str]) -> dict:
@@ -43,6 +47,24 @@ def merged_in_main(sha: str) -> bool:
     raise SystemExit(result.stderr.strip() or f"failed to run: {' '.join(cmd)}")
 
 
+def extract_issue_numbers(pr: dict) -> list[int]:
+    text = "\n".join(
+        [
+            str(pr.get("title") or ""),
+            str(pr.get("body") or ""),
+        ]
+    )
+    seen: set[int] = set()
+    found: list[int] = []
+    for match in ISSUE_REF_RE.finditer(text):
+        number = int(match.group(1))
+        if number in seen:
+            continue
+        seen.add(number)
+        found.append(number)
+    return found
+
+
 def main() -> int:
     args = parse_args()
     problems: list[str] = []
@@ -63,6 +85,21 @@ def main() -> int:
         is_merged = pr_state == "merged" or bool(pr.get("merged_at"))
         if not is_merged:
             problems.append(f"pr #{args.pr} is not merged")
+        inferred_issues = extract_issue_numbers(pr)
+        if inferred_issues:
+            print(
+                "pr.referenced_issues="
+                + ",".join(str(number) for number in inferred_issues)
+            )
+            if args.issue is None and len(inferred_issues) == 1:
+                args.issue = inferred_issues[0]
+                issue = run_json(
+                    ["./gc", "issue", "view", str(args.issue), "-R", args.repo, "--json"]
+                )
+                print(f"issue.state={issue.get('state') or 'unknown'}")
+                print(f"issue.closed_at={issue.get('closed_at') or 'unknown'}")
+        else:
+            print("pr.referenced_issues=none")
 
     if args.head_sha:
         in_main = merged_in_main(args.head_sha)

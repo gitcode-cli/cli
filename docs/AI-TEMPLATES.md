@@ -171,6 +171,7 @@ gc issue comment <number> --body-file /path/to/verification.md -R owner/repo
 ```markdown
 ## 作者自检
 
+- 作者主体标识:
 - 根因或实现理由:
 - 主要修改:
 - 影响范围:
@@ -201,6 +202,7 @@ gc pr review <number> --comment-file /path/to/self-check.md -R owner/repo
 ## 评审结论
 
 - 评审主体类型: AI / human
+- 评审主体标识:
 - 评审范围:
 - 发现:
 - blocker:

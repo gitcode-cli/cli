@@ -125,6 +125,7 @@ gc pr review <number> --comment "## 作者自检
 - 发现的问题或确认结果
 - 是否存在 blocker
 - 评审主体类型
+- 评审主体标识
 - 安全检查结论
 - 是否建议继续修改
 
@@ -134,6 +135,7 @@ gc pr review <number> --comment "## 作者自检
 gc pr review <number> --comment "## 评审结论
 
 - 评审主体类型: AI / human
+- 评审主体标识: codex-reviewer/session-456
 - 发现: ...
 - blocker: 无 / 有
 - 安全检查: ...
@@ -170,6 +172,7 @@ gc pr review <number> --request -R gitcode-cli/cli
 - 评审主体必须与作者分离
 - 评审主体不得与作者是同一执行主体
 - 评审主体类型必须在评审记录中明确写为 `AI` 或 `human`
+- 评审主体标识必须在评审记录中明确写出，且应可与作者主体标识区分
 - 高风险改动的最终确认主体必须是人工
 
 ## 5. 独立执行主体评审检查清单
@@ -213,6 +216,7 @@ gc pr review <number> --request -R gitcode-cli/cli
 
 - [ ] 评审主体与作者不是同一执行主体
 - [ ] 评审主体类型已记录
+- [ ] 评审主体标识已记录，且可与作者主体标识区分
 
 ## 6. 评审结果如何推进状态
 

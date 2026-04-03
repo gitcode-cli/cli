@@ -335,7 +335,8 @@ func ListPRReviews(client *Client, owner, repo string, number int) ([]PRReview, 
 // ListPRCommits lists commits in a PR
 func ListPRCommits(client *Client, owner, repo string, number int) ([]Commit, error) {
 	var commits []Commit
-	err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/commits", &commits)
+	// Use per_page=100 to get more commits per request (GitCode default is 20)
+	err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/commits?per_page=100", &commits)
 	if err != nil {
 		return nil, err
 	}

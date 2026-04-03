@@ -7,10 +7,12 @@
 ## 统一约束
 
 - issue 生命周期以 `spec/workflows/issue-workflow.md` 为准
+- 不同信息类型的事实边界以 `spec/governance/source-of-truth-matrix.md` 为准
 - 问题修复前必须先验证问题仍然存在
 - issue comment 应反映真实状态，不得提前宣布已完成
 - issue 必须按 `status/triage -> status/verified -> status/in-progress -> status/ready-for-review -> status/merged` 推进
 - issue 在 PR 未合入主干前不得关闭，除非明确判定为 `status/closed-no-fix`
+- 不得把 `issues-plan/PROGRESS.md` 当成单个 issue / PR 实时状态真相源
 
 ## 最低记录要求
 
@@ -42,6 +44,7 @@
 - 主要修改:
 - 测试:
 - 实际命令验证:
+- 安全影响:
 - 风险或未覆盖项:
 - 关联 PR:
 ```

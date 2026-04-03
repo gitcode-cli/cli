@@ -8,6 +8,7 @@
 
 - 审查流程以 `spec/workflows/review-workflow.md` 为准
 - 质量门禁以 `spec/foundations/code-quality-gates.md` 为准
+- 不同信息类型的事实边界以 `spec/governance/source-of-truth-matrix.md` 为准
 - 命令行为以 `gc pr review` 当前真实能力为准
 - 平台不支持的动作必须明确说明，不能伪装成已支持
 - 作者自检与独立评审必须分离
@@ -33,6 +34,7 @@
 - 单元测试:
 - 构建:
 - 实际命令验证:
+- 安全审查:
 - 文档同步:
 - 风险:
 - 未覆盖项:
@@ -45,6 +47,7 @@
 
 - 发现:
 - blocker:
+- 安全检查:
 - 结论:
 ```
 

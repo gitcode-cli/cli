@@ -132,77 +132,17 @@ gc release delete v1.0.0 -R owner/repo --dry-run
 
 ## 6. 在规范化仓库中的协作提醒
 
-如果目标仓库本身已经定义了开发规范，AI 不应只把流程理解成一份 checklist，而应遵守目标仓库自己的“状态机 + 证据门禁”。
-
-最低要求：
-
-- 未进入 `status/verified` 的 issue，不得开始写代码
-- 未创建非 `main` 分支前，不得修改实现文件
-- 未完成测试、构建和必要的真实命令验证前，不得宣称“已完成”
-- 作者自检不是独立评审
-- PR 未合入主干前，不得把 issue 视为已完成主干合入
-
-推荐状态流应以目标仓库正式规范为准，下面只给出常见示意：
-
-```text
-Issue: status/triage -> status/verified -> status/in-progress -> status/ready-for-review -> status/merged
-PR:    status/draft -> status/self-checked -> status/ready-for-review -> status/approved -> status/merged
-```
+如果目标仓库本身已经定义了开发规范，AI 应直接遵守目标仓库自己的正式规则、状态机和证据门禁，而不是套用本文档。
 
 ## 7. 可参考的固定模板
 
-### Issue 验证记录
+外部项目如需固定模板，应由目标项目自己定义。
 
-```markdown
-## 验证记录
-
-- 当前版本或分支:
-- 复现命令:
-- 实际结果:
-- 结论:
-```
-
-### Issue 开发进度
-
-```markdown
-## 开发进度
-
-- 根因:
-- 主要修改:
-- 测试:
-- 实际命令验证:
-- 风险或未覆盖项:
-- 关联 PR:
-```
-
-### PR 作者自检
-
-```markdown
-## 作者自检
-
-- 根因或实现理由:
-- 主要修改:
-- 单元测试:
-- 构建:
-- 实际命令验证:
-- 文档同步:
-- 风险:
-- 未覆盖项:
-```
-
-### PR 评审结论
-
-```markdown
-## 评审结论
-
-- 发现:
-- blocker:
-- 结论:
-```
-
-如果你需要参考 gitcode-cli 仓库自己的内部模板，请查看：
+如果你只是参考 gitcode-cli 仓库的内部模板结构，请查看：
 
 - [AI-TEMPLATES.md](./AI-TEMPLATES.md)
+
+但这些模板不应被默认视为外部项目的正式流程模板。
 
 ## 完成后的使用方式
 

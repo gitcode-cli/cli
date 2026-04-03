@@ -24,7 +24,7 @@ GOMOD := $(GOCMD) mod
 .PHONY: all build build-all clean test install fmt lint help
 .PHONY: docker docker-build docker-push docker-run
 .PHONY: release release-local release-snapshot
-.PHONY: completions
+.PHONY: completions validate-ai-template validate-ai-record validate-ai-templates
 
 all: build
 
@@ -114,6 +114,20 @@ dev:
 # Check
 check: test lint
 	@echo "All checks passed!"
+
+validate-ai-template:
+	@test -n "$(FILE)" || (echo "Usage: make validate-ai-template FILE=docs/ai-templates/pr-self-check.md [KIND=pr-self-check]" && exit 2)
+	@python3 scripts/validate-ai-record.py --mode template $(if $(KIND),--kind $(KIND),) "$(FILE)"
+
+validate-ai-templates:
+	@for file in docs/ai-templates/*.md; do \
+		python3 scripts/validate-ai-record.py --mode template "$$file" || exit $$?; \
+	done
+
+validate-ai-record:
+	@test -n "$(FILE)" || (echo "Usage: make validate-ai-record FILE=/path/to/file.md KIND=pr-self-check" && exit 2)
+	@test -n "$(KIND)" || (echo "KIND is required" && exit 2)
+	@python3 scripts/validate-ai-record.py --mode record --kind "$(KIND)" "$(FILE)"
 
 # Dependencies
 deps:

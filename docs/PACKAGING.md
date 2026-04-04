@@ -145,7 +145,7 @@ gc release create v0.3.7 -R gitcode-cli/cli \
 
 ### Wheel 包（推荐，跨平台）
 
-创建虚拟环境并安装：
+内置全平台二进制（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64），创建虚拟环境并安装：
 
     python3 -m venv .venv
     source .venv/bin/activate
@@ -263,7 +263,7 @@ GitCode 会错误渲染代码块内的 `#` 开头行为标题！
 
 ### Wheel 包（推荐，跨平台）
 
-创建虚拟环境并安装：
+内置全平台二进制（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64），创建虚拟环境并安装：
 
     python3 -m venv .venv
     source .venv/bin/activate
@@ -339,6 +339,8 @@ gc release download v0.3.7 -R gitcode-cli/cli
 ## 安装指南
 
 ### Wheel 包（跨平台，推荐）
+
+内置全平台二进制（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64）：
 
 ```bash
 python3 -m venv .venv

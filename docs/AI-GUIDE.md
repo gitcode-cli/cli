@@ -24,7 +24,7 @@ sudo rpm -i gc-0.3.9-1.x86_64.rpm
 
 **Wheel 包（跨平台，推荐）:**
 
-从 Release 归档下载 wheel 包安装：
+从 Release 归档下载 wheel 包安装，**内置全平台二进制**（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64）：
 
 ```bash
 # 创建虚拟环境

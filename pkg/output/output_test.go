@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 	"time"
 
@@ -889,6 +890,203 @@ func TestTemplatePrinter(t *testing.T) {
 
 			if tt.wantOutput && buf.Len() == 0 {
 				t.Error("expected output but got empty")
+			}
+		})
+	}
+}
+
+func TestTemplatePrinter_PrintPRs(t *testing.T) {
+	template := "{{range .}}#{{.Number}}: {{.Title}}\n{{end}}"
+	printer, err := NewTemplatePrinter(template, &Options{})
+	if err != nil {
+		t.Fatalf("failed to create template printer: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		prs     interface{}
+		wantErr bool
+	}{
+		{
+			name:    "single pr",
+			prs:     []map[string]interface{}{{"Number": 123, "Title": "Test PR"}},
+			wantErr: false,
+		},
+		{
+			name:    "multiple prs",
+			prs:     []map[string]interface{}{{"Number": 1, "Title": "PR1"}, {"Number": 2, "Title": "PR2"}},
+			wantErr: false,
+		},
+		{
+			name:    "empty list",
+			prs:     []map[string]interface{}{},
+			wantErr: false,
+		},
+		{
+			name:    "api pr pointers",
+			prs:     []*api.PullRequest{{Number: 123, State: "open", Title: "Test PR"}},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			err := printer.PrintPRs(&buf, tt.prs)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PrintPRs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestTemplateFuncs(t *testing.T) {
+	tests := []struct {
+		name     string
+		template string
+		data     interface{}
+		want     string
+	}{
+		{
+			name:     "upper function",
+			template: "{{upper .Title}}",
+			data:     map[string]interface{}{"Title": "test"},
+			want:     "test",
+		},
+		{
+			name:     "upper function truncation",
+			template: "{{upper .Title}}",
+			data:     map[string]interface{}{"Title": "this is a very long string that exceeds fifty characters limit"},
+			want:     "this is a very long string that exceeds fif",
+		},
+		{
+			name:     "lower function",
+			template: "{{lower .Title}}",
+			data:     map[string]interface{}{"Title": "TEST"},
+			want:     "test",
+		},
+		{
+			name:     "lower function mixed",
+			template: "{{lower .Title}}",
+			data:     map[string]interface{}{"Title": "TeSt"},
+			want:     "test",
+		},
+		{
+			name:     "trunc function",
+			template: "{{trunc .Title 10}}",
+			data:     map[string]interface{}{"Title": "short"},
+			want:     "short",
+		},
+		{
+			name:     "trunc function truncate",
+			template: "{{trunc .Title 10}}",
+			data:     map[string]interface{}{"Title": "this is a long string"},
+			want:     "this is...",
+		},
+		{
+			name:     "json function",
+			template: "{{json .}}",
+			data:     map[string]interface{}{"Number": 123, "Title": "Test"},
+			want:     "map[Number:123 Title:Test]",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			printer, err := NewTemplatePrinter(tt.template, &Options{})
+			if err != nil {
+				t.Fatalf("failed to create template printer: %v", err)
+			}
+
+			var buf bytes.Buffer
+			err = printer.PrintIssues(&buf, tt.data)
+			if err != nil {
+				t.Errorf("PrintIssues error: %v", err)
+				return
+			}
+
+			result := buf.String()
+			if !strings.Contains(result, tt.want) {
+				t.Errorf("template output = %q, want to contain %q", result, tt.want)
+			}
+		})
+	}
+}
+
+func TestFormatLabels(t *testing.T) {
+	tests := []struct {
+		name   string
+		labels interface{}
+		want   string
+	}{
+		{"nil labels", nil, ""},
+		{"empty slice", []string{}, ""},
+		{"string slice", []string{"bug", "enhancement"}, "bug, enhancement"},
+		{"single string", []string{"bug"}, "bug"},
+		{"interface slice", []interface{}{"label1", "label2"}, "[label1 label2]"}, // fmt.Sprintf format
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatLabels(tt.labels)
+			if result != tt.want {
+				t.Errorf("formatLabels() = %v, want %v", result, tt.want)
+			}
+		})
+	}
+}
+
+func TestWriteJSONError(t *testing.T) {
+	// Test with a type that can't be marshaled to JSON
+	var buf bytes.Buffer
+	err := writeJSON(&buf, func() {})
+	if err == nil {
+		t.Error("expected error for unmarshalable type")
+	}
+}
+
+func TestExecuteTemplateError(t *testing.T) {
+	template := "{{.MissingField}}"
+	printer, err := NewTemplatePrinter(template, &Options{})
+	if err != nil {
+		t.Fatalf("failed to create template printer: %v", err)
+	}
+
+	var buf bytes.Buffer
+	// Missing field should cause execution error
+	err = printer.PrintIssues(&buf, map[string]interface{}{"Title": "Test"})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestFormatRelativeTimeBoundaries(t *testing.T) {
+	now := time.Now()
+
+	tests := []struct {
+		name     string
+		duration time.Duration
+		want     string
+	}{
+		{"59 seconds", 59 * time.Second, "just now"}, // < 1 minute returns "just now"
+		{"61 seconds", 61 * time.Second, "1 minute ago"},
+		{"59 minutes", 59 * time.Minute, "59 minutes ago"},
+		{"61 minutes", 61 * time.Minute, "1 hour ago"},
+		{"23 hours", 23 * time.Hour, "23 hours ago"},
+		{"25 hours", 25 * time.Hour, "1 day ago"},
+		{"6 days", 6 * 24 * time.Hour, "6 days ago"},
+		{"8 days", 8 * 24 * time.Hour, "1 week ago"},
+		{"13 weeks", 13 * 7 * 24 * time.Hour, "3 months ago"},
+		{"11 months", 11 * 30 * 24 * time.Hour, "11 months ago"},
+		{"13 months", 13 * 30 * 24 * time.Hour, "1 year ago"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			past := now.Add(-tt.duration)
+			result := formatRelativeTime(past)
+			if result != tt.want {
+				t.Errorf("formatRelativeTime() = %v, want %v", result, tt.want)
 			}
 		})
 	}

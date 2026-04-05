@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"gitcode.com/gitcode-cli/cli/api"
 )
 
 // TablePrinter outputs data in table format
@@ -13,12 +15,88 @@ type TablePrinter struct {
 
 // PrintIssues prints issues in table format
 func (p *TablePrinter) PrintIssues(w io.Writer, issues interface{}) error {
-	// TODO: implement with actual issue type
-	issueList, ok := issues.([]map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid issue list type")
+	// Handle []api.Issue, []*api.Issue and []map[string]interface{}
+	switch v := issues.(type) {
+	case []api.Issue:
+		return p.printAPIIssues(w, v)
+	case []*api.Issue:
+		return p.printAPIIssuePtrs(w, v)
+	case []map[string]interface{}:
+		return p.printMapIssues(w, v)
+	default:
+		return fmt.Errorf("invalid issue list type: %T", issues)
+	}
+}
+
+func (p *TablePrinter) printAPIIssues(w io.Writer, issueList []api.Issue) error {
+	if len(issueList) == 0 {
+		fmt.Fprintln(w, "No issues found")
+		return nil
 	}
 
+	// Calculate max width for issue numbers
+	maxNumWidth := 0
+	for _, issue := range issueList {
+		w := len(fmt.Sprintf("#%s", issue.Number))
+		if w > maxNumWidth {
+			maxNumWidth = w
+		}
+	}
+
+	for _, issue := range issueList {
+		state := issue.State
+		author := ""
+		if issue.User != nil {
+			author = issue.User.Login
+		}
+		labels := formatAPILabels(issue.Labels)
+
+		fmt.Fprintf(w, "%-*s %s  %s  %s  %s\n",
+			maxNumWidth, fmt.Sprintf("#%s", issue.Number),
+			state,
+			truncate(issue.Title, 40),
+			author,
+			labels)
+	}
+
+	return nil
+}
+
+func (p *TablePrinter) printAPIIssuePtrs(w io.Writer, issueList []*api.Issue) error {
+	if len(issueList) == 0 {
+		fmt.Fprintln(w, "No issues found")
+		return nil
+	}
+
+	// Calculate max width for issue numbers
+	maxNumWidth := 0
+	for _, issue := range issueList {
+		w := len(fmt.Sprintf("#%s", issue.Number))
+		if w > maxNumWidth {
+			maxNumWidth = w
+		}
+	}
+
+	for _, issue := range issueList {
+		state := issue.State
+		author := ""
+		if issue.User != nil {
+			author = issue.User.Login
+		}
+		labels := formatAPILabels(issue.Labels)
+
+		fmt.Fprintf(w, "%-*s %s  %s  %s  %s\n",
+			maxNumWidth, fmt.Sprintf("#%s", issue.Number),
+			state,
+			truncate(issue.Title, 40),
+			author,
+			labels)
+	}
+
+	return nil
+}
+
+func (p *TablePrinter) printMapIssues(w io.Writer, issueList []map[string]interface{}) error {
 	if len(issueList) == 0 {
 		fmt.Fprintln(w, "No issues found")
 		return nil
@@ -44,11 +122,47 @@ func (p *TablePrinter) PrintIssues(w io.Writer, issues interface{}) error {
 
 // PrintPRs prints pull requests in table format
 func (p *TablePrinter) PrintPRs(w io.Writer, prs interface{}) error {
-	prList, ok := prs.([]map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid PR list type")
+	switch v := prs.(type) {
+	case []*api.PullRequest:
+		return p.printAPIDocsPRs(w, v)
+	case []map[string]interface{}:
+		return p.printMapPRs(w, v)
+	default:
+		return fmt.Errorf("invalid PR list type: %T", prs)
+	}
+}
+
+func (p *TablePrinter) printAPIDocsPRs(w io.Writer, prList []*api.PullRequest) error {
+	if len(prList) == 0 {
+		fmt.Fprintln(w, "No pull requests found")
+		return nil
 	}
 
+	maxNumWidth := 0
+	for _, pr := range prList {
+		w := len(fmt.Sprintf("#%d", pr.Number))
+		if w > maxNumWidth {
+			maxNumWidth = w
+		}
+	}
+
+	for _, pr := range prList {
+		state := pr.State
+		author := ""
+		if pr.User != nil {
+			author = pr.User.Login
+		}
+		fmt.Fprintf(w, "%-*s %s  %s  %s\n",
+			maxNumWidth, fmt.Sprintf("#%d", pr.Number),
+			state,
+			truncate(pr.Title, 40),
+			author)
+	}
+
+	return nil
+}
+
+func (p *TablePrinter) printMapPRs(w io.Writer, prList []map[string]interface{}) error {
 	if len(prList) == 0 {
 		fmt.Fprintln(w, "No pull requests found")
 		return nil
@@ -170,4 +284,15 @@ func formatLabels(labels interface{}) string {
 		return fmt.Sprintf("%v", labels)
 	}
 	return strings.Join(labelList, ", ")
+}
+
+func formatAPILabels(labels []*api.Label) string {
+	if len(labels) == 0 {
+		return ""
+	}
+	names := make([]string, len(labels))
+	for i, l := range labels {
+		names[i] = l.Name
+	}
+	return strings.Join(names, ", ")
 }

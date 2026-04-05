@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -102,6 +103,31 @@ func TestTablePrinter_PrintIssues(t *testing.T) {
 			issues:  "invalid",
 			wantErr: true,
 		},
+		{
+			name:    "api issues with labels",
+			issues:  []api.Issue{{Number: "123", State: "open", Title: "Test", Labels: []*api.Label{{Name: "bug"}}}},
+			wantErr: false,
+		},
+		{
+			name:    "api issues with user",
+			issues:  []api.Issue{{Number: "123", State: "open", Title: "Test", User: &api.User{Login: "testuser"}}},
+			wantErr: false,
+		},
+		{
+			name:    "api issue pointers with labels",
+			issues:  []*api.Issue{{Number: "123", State: "open", Title: "Test", Labels: []*api.Label{{Name: "enhancement"}, {Name: "priority"}}}},
+			wantErr: false,
+		},
+		{
+			name:    "api issue pointers with user",
+			issues:  []*api.Issue{{Number: "123", State: "open", Title: "Test", User: &api.User{Login: "dev"}}},
+			wantErr: false,
+		},
+		{
+			name:    "map issues with all fields",
+			issues:  []map[string]interface{}{{"number": 999999, "state": "closed", "title": "Very Long Title That Should Be Truncated", "labels": []string{"bug", "critical"}}},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -175,8 +201,28 @@ func TestTablePrinter_PrintPRs(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "api pr pointers with user",
+			prs:     []*api.PullRequest{{Number: 123, State: "open", Title: "Test PR", User: &api.User{Login: "developer"}}},
+			wantErr: false,
+		},
+		{
+			name:    "api pr pointers without user",
+			prs:     []*api.PullRequest{{Number: 456, State: "closed", Title: "Another PR"}},
+			wantErr: false,
+		},
+		{
+			name:    "empty api pr pointers",
+			prs:     []*api.PullRequest{},
+			wantErr: false,
+		},
+		{
 			name:    "map prs",
 			prs:     []map[string]interface{}{{"number": 123, "state": "open", "title": "Test"}},
+			wantErr: false,
+		},
+		{
+			name:    "map prs with all fields",
+			prs:     []map[string]interface{}{{"number": 123, "state": "open", "title": "Test", "author": "dev", "review_status": "approved"}},
 			wantErr: false,
 		},
 		{
@@ -1053,11 +1099,33 @@ func TestExecuteTemplateError(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	// Missing field should cause execution error
+	// Missing field should cause execution error - but Go templates don't error on missing fields
 	err = printer.PrintIssues(&buf, map[string]interface{}{"Title": "Test"})
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
+}
+
+func TestWriteWriterError(t *testing.T) {
+	template := "{{.Title}}"
+	printer, err := NewTemplatePrinter(template, &Options{})
+	if err != nil {
+		t.Fatalf("failed to create template printer: %v", err)
+	}
+
+	// Use a writer that always fails
+	errWriter := &errorWriter{}
+	err = printer.PrintIssues(errWriter, map[string]interface{}{"Title": "Test"})
+	if err == nil {
+		t.Error("expected error from failing writer")
+	}
+}
+
+// errorWriter is a writer that always returns an error
+type errorWriter struct{}
+
+func (w *errorWriter) Write(p []byte) (n int, err error) {
+	return 0, fmt.Errorf("write error")
 }
 
 func TestFormatRelativeTimeBoundaries(t *testing.T) {
@@ -1070,15 +1138,21 @@ func TestFormatRelativeTimeBoundaries(t *testing.T) {
 	}{
 		{"59 seconds", 59 * time.Second, "just now"}, // < 1 minute returns "just now"
 		{"61 seconds", 61 * time.Second, "1 minute ago"},
+		{"2 minutes", 2 * time.Minute, "2 minutes ago"},
 		{"59 minutes", 59 * time.Minute, "59 minutes ago"},
 		{"61 minutes", 61 * time.Minute, "1 hour ago"},
+		{"2 hours", 2 * time.Hour, "2 hours ago"},
 		{"23 hours", 23 * time.Hour, "23 hours ago"},
 		{"25 hours", 25 * time.Hour, "1 day ago"},
+		{"2 days", 2 * 24 * time.Hour, "2 days ago"},
 		{"6 days", 6 * 24 * time.Hour, "6 days ago"},
 		{"8 days", 8 * 24 * time.Hour, "1 week ago"},
+		{"2 weeks", 2 * 7 * 24 * time.Hour, "2 weeks ago"},
 		{"13 weeks", 13 * 7 * 24 * time.Hour, "3 months ago"},
+		{"2 months", 2 * 30 * 24 * time.Hour, "2 months ago"},
 		{"11 months", 11 * 30 * 24 * time.Hour, "11 months ago"},
 		{"13 months", 13 * 30 * 24 * time.Hour, "1 year ago"},
+		{"2 years", 2 * 365 * 24 * time.Hour, "2 years ago"},
 	}
 
 	for _, tt := range tests {

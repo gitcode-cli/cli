@@ -323,13 +323,24 @@ gc issue list -R infra-test/gctest1 --search "bug"
 # 组合使用
 gc issue list -R infra-test/gctest1 --state open --milestone "v1.0" --sort updated
 
-# 输出 JSON
+# 输出 JSON（已弃用，建议使用 --format json）
 gc issue list -R infra-test/gctest1 --json
+
+# 输出格式选项（v0.4.0+）
+gc issue list -R infra-test/gctest1 --format json      # JSON 格式
+gc issue list -R infra-test/gctest1 --format simple   # 简单文本（默认）
+gc issue list -R infra-test/gctest1 --format table    # 表格格式
+
+# 时间格式选项（v0.4.0+）
+gc issue list -R infra-test/gctest1 --time-format absolute  # 绝对时间（默认）
+gc issue list -R infra-test/gctest1 --time-format relative  # 相对时间（如 "2 hours ago"）
 ```
 
 说明：
 - `--since`、`--created-after`、`--created-before`、`--updated-after`、`--updated-before` 支持 `YYYY-MM-DD` 和 ISO 8601 时间。
 - CLI 会在请求前自动规范化为 GitCode API 可接受的 RFC3339 时间戳。
+- `--format` 选项支持 `json`、`simple`、`table` 三种格式。
+- `--time-format` 选项支持 `absolute`（如 `2024-01-01 12:00`）和 `relative`（如 `2 hours ago`）。
 
 ### issue view - 查看 Issue
 

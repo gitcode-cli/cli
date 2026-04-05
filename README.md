@@ -100,6 +100,35 @@ source .venv/bin/activate  # Linux/macOS
 pip install gitcode-cli
 ```
 
+## 输出格式选项
+
+gc CLI 支持多种输出格式，方便脚本处理和人工阅读：
+
+### --format 选项
+
+```bash
+# 表格格式（默认）
+gc issue list -R owner/repo
+
+# JSON 格式（适合脚本处理）
+gc issue list -R owner/repo --format json
+
+# 简单文本格式
+gc issue list -R owner/repo --format simple
+```
+
+### --time-format 选项
+
+```bash
+# 绝对时间（默认）
+gc issue list -R owner/repo --time-format absolute
+
+# 相对时间（如 "2 hours ago"）
+gc issue list -R owner/repo --time-format relative
+```
+
+更多选项详见 [命令手册](./docs/COMMANDS.md)。
+
 ### 规划中的安装方式
 
 以下安装方式正在开发中：

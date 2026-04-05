@@ -184,6 +184,16 @@ func listRun(opts *ListOptions) error {
 	}
 
 	fmt.Fprintf(opts.IO.Out, "\n")
+
+	// Calculate max width for issue numbers (fix alignment issue)
+	maxNumWidth := 0
+	for _, issue := range issues {
+		w := len(fmt.Sprintf("#%s", issue.Number))
+		if w > maxNumWidth {
+			maxNumWidth = w
+		}
+	}
+
 	for _, issue := range issues {
 		state := "open"
 		if issue.State == "closed" {
@@ -191,7 +201,8 @@ func listRun(opts *ListOptions) error {
 		} else {
 			state = cs.Green("open")
 		}
-		fmt.Fprintf(opts.IO.Out, "#%-6s %s  %s\n", issue.Number, state, issue.Title)
+		// Use dynamic width for alignment (fixes #125)
+		fmt.Fprintf(opts.IO.Out, "%-*s %s  %s\n", maxNumWidth, fmt.Sprintf("#%s", issue.Number), state, issue.Title)
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")
 

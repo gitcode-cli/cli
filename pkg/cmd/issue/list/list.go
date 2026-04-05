@@ -12,6 +12,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/output"
 )
 
 type ListOptions struct {
@@ -38,7 +39,7 @@ type ListOptions struct {
 	UpdatedBefore string
 	Search        string
 	Page          int
-	JSON          bool
+	Format        string
 }
 
 // NewCmdList creates the list command
@@ -113,14 +114,12 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.UpdatedBefore, "updated-before", "", "Filter issues updated before this time")
 	cmd.Flags().StringVar(&opts.Search, "search", "", "Search by keyword in title or body")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number for pagination")
-	cmdutil.AddJSONFlag(cmd, &opts.JSON)
+	cmdutil.AddFormatFlag(cmd, &opts.Format)
 
 	return cmd
 }
 
 func listRun(opts *ListOptions) error {
-	cs := opts.IO.ColorScheme()
-
 	if err := normalizeDateFilters(opts); err != nil {
 		return err
 	}
@@ -172,39 +171,19 @@ func listRun(opts *ListOptions) error {
 
 	// Output
 	if len(issues) == 0 {
-		if opts.JSON {
-			return cmdutil.WriteJSON(opts.IO.Out, issues)
+		if opts.Format == "json" {
+			printer := output.NewPrinter(&output.Options{Format: output.FormatJSON})
+			return printer.PrintIssues(opts.IO.Out, issues)
 		}
 		fmt.Fprintf(opts.IO.Out, "No issues found\n")
 		return nil
 	}
 
-	if opts.JSON {
-		return cmdutil.WriteJSON(opts.IO.Out, issues)
-	}
-
-	fmt.Fprintf(opts.IO.Out, "\n")
-
-	// Calculate max width for issue numbers (fix alignment issue)
-	maxNumWidth := 0
-	for _, issue := range issues {
-		w := len(fmt.Sprintf("#%s", issue.Number))
-		if w > maxNumWidth {
-			maxNumWidth = w
-		}
-	}
-
-	for _, issue := range issues {
-		state := "open"
-		if issue.State == "closed" {
-			state = cs.Red("closed")
-		} else {
-			state = cs.Green("open")
-		}
-		// Use dynamic width for alignment (fixes #125)
-		fmt.Fprintf(opts.IO.Out, "%-*s %s  %s\n", maxNumWidth, fmt.Sprintf("#%s", issue.Number), state, issue.Title)
-	}
-	fmt.Fprintf(opts.IO.Out, "\n")
+	// Use printer interface for output
+	printer := output.NewPrinter(&output.Options{
+		Format: cmdutil.ParseFormat(opts.Format),
+	})
+	return printer.PrintIssues(opts.IO.Out, issues)
 
 	return nil
 }

@@ -43,10 +43,10 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 		`),
 		Example: heredoc.Doc(`
 			# Delete a release
-			$ gc release delete v1.0.0
+			$ gc release delete v1.0.0 -R owner/repo
 
 			# Delete without confirmation
-			$ gc release delete v1.0.0 --yes
+			$ gc release delete v1.0.0 -R owner/repo --yes
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

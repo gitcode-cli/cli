@@ -5,7 +5,6 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/create"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/delete"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/download"
@@ -13,6 +12,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/upload"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/view"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdRelease creates the release command
@@ -28,16 +28,16 @@ func NewCmdRelease(f *cmdutil.Factory) *cobra.Command {
 		`),
 		Example: heredoc.Doc(`
 			# Create a new release
-			$ gc release create v1.0.0
+			$ gc release create v1.0.0 -R owner/repo
 
 			# List releases
-			$ gc release list
+			$ gc release list -R owner/repo
 
 			# View a release
-			$ gc release view v1.0.0
+			$ gc release view v1.0.0 -R owner/repo
 
 			# Delete a release
-			$ gc release delete v1.0.0
+			$ gc release delete v1.0.0 -R owner/repo
 		`),
 		Annotations: map[string]string{
 			"IsCore": "true",

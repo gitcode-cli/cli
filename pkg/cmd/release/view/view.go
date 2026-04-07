@@ -42,10 +42,10 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		`),
 		Example: heredoc.Doc(`
 			# View a release
-			$ gc release view v1.0.0
+			$ gc release view v1.0.0 -R owner/repo
 
 			# View in browser
-			$ gc release view v1.0.0 --web
+			$ gc release view v1.0.0 -R owner/repo --web
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

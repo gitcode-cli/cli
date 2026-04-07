@@ -129,11 +129,11 @@ func createRun(opts *CreateOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create issue: %w", err)
 	}
-	if err := ensureAssigneesApplied(client, owner, repo, issue.Number, assigneeIDs, "created"); err != nil {
-		return err
-	}
 	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
+	if err := ensureAssigneesApplied(client, owner, repo, issue.Number, issue.HTMLURL, assigneeIDs, "created"); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -141,7 +141,7 @@ func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
 }
 
-func ensureAssigneesApplied(client *api.Client, owner, repo, issueNumber string, expectedIDs []string, action string) error {
+func ensureAssigneesApplied(client *api.Client, owner, repo, issueNumber, issueURL string, expectedIDs []string, action string) error {
 	if len(expectedIDs) == 0 {
 		return nil
 	}
@@ -157,6 +157,9 @@ func ensureAssigneesApplied(client *api.Client, owner, repo, issueNumber string,
 	}
 	if hasExpectedAssignees(issue, expectedIDs) {
 		return nil
+	}
+	if issueURL != "" {
+		return fmt.Errorf("issue #%s was %s at %s, but GitCode API did not apply the requested assignees", issueNumber, action, issueURL)
 	}
 	return fmt.Errorf("issue #%s was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
 }

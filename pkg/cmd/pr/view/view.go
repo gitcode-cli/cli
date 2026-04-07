@@ -49,13 +49,13 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		`),
 		Example: heredoc.Doc(`
 			# View a PR
-			$ gc pr view 123
+			$ gc pr view 123 -R owner/repo
 
 			# View PR in browser
-			$ gc pr view 123 --web
+			$ gc pr view 123 -R owner/repo --web
 
 			# View PR with relative time display
-			$ gc pr view 123 --time-format relative
+			$ gc pr view 123 -R owner/repo --time-format relative
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

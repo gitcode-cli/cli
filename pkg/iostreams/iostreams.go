@@ -3,10 +3,10 @@ package iostreams
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 // IOStreams holds the standard input, output, and error streams
@@ -57,7 +57,10 @@ func (s *IOStreams) StartPager() error {
 		return nil
 	}
 
-	parts := strings.Fields(s.pager)
+	parts, err := splitCommandLine(s.pager)
+	if err != nil {
+		return err
+	}
 	if len(parts) == 0 {
 		return nil
 	}
@@ -77,6 +80,55 @@ func (s *IOStreams) StartPager() error {
 
 	s.Out = stdin
 	return nil
+}
+
+func splitCommandLine(raw string) ([]string, error) {
+	var (
+		args      []string
+		current   []rune
+		inSingle  bool
+		inDouble  bool
+		escaping  bool
+		wasQuoted bool
+	)
+
+	flush := func() {
+		if len(current) == 0 && !wasQuoted {
+			return
+		}
+		args = append(args, string(current))
+		current = current[:0]
+		wasQuoted = false
+	}
+
+	for _, r := range raw {
+		switch {
+		case escaping:
+			current = append(current, r)
+			escaping = false
+		case r == '\\' && !inSingle:
+			escaping = true
+		case r == '\'' && !inDouble:
+			inSingle = !inSingle
+			wasQuoted = true
+		case r == '"' && !inSingle:
+			inDouble = !inDouble
+			wasQuoted = true
+		case (r == ' ' || r == '\t' || r == '\n') && !inSingle && !inDouble:
+			flush()
+		default:
+			current = append(current, r)
+		}
+	}
+
+	if escaping {
+		current = append(current, '\\')
+	}
+	if inSingle || inDouble {
+		return nil, fmt.Errorf("invalid pager command: unterminated quote")
+	}
+	flush()
+	return args, nil
 }
 
 // StopPager stops the pager

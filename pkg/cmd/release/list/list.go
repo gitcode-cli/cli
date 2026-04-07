@@ -39,13 +39,13 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 		`),
 		Example: heredoc.Doc(`
 			# List releases
-			$ gc release list
+			$ gc release list -R owner/repo
 
 			# List releases in a specific repository
 			$ gc release list -R owner/repo
 
 			# Limit the number of results
-			$ gc release list --limit 10
+			$ gc release list -R owner/repo --limit 10
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {

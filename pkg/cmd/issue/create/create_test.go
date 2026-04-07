@@ -1,6 +1,7 @@
 package create
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"strings"
@@ -84,6 +85,12 @@ func TestCreateRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
 	err := createRun(opts)
 	if err == nil {
 		t.Fatal("createRun() error = nil, want assignee verification error")
+	}
+	if !strings.Contains(f.IOStreams.Out.(*bytes.Buffer).String(), "Created issue #12") {
+		t.Fatalf("stdout = %q, want created issue output", f.IOStreams.Out.(*bytes.Buffer).String())
+	}
+	if !strings.Contains(err.Error(), "https://gitcode.com/owner/repo/issues/12") {
+		t.Fatalf("createRun() error = %v", err)
 	}
 	if !strings.Contains(err.Error(), "did not apply the requested assignees") {
 		t.Fatalf("createRun() error = %v", err)

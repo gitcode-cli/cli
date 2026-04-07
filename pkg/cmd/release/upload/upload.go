@@ -48,10 +48,10 @@ func NewCmdUpload(f *cmdutil.Factory, runF func(*UploadOptions) error) *cobra.Co
 		`),
 		Example: heredoc.Doc(`
 			# Upload a single file
-			$ gc release upload v1.0.0 app.zip
+			$ gc release upload v1.0.0 app.zip -R owner/repo
 
 			# Upload multiple files
-			$ gc release upload v1.0.0 app.zip checksum.txt
+			$ gc release upload v1.0.0 app.zip checksum.txt -R owner/repo
 
 			# Upload to a specific repository
 			$ gc release upload v1.0.0 app.zip -R owner/repo

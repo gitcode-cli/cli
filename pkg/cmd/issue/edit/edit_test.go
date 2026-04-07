@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"strings"
@@ -169,6 +170,9 @@ func TestEditRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
 	err := editRun(opts)
 	if err == nil {
 		t.Fatal("editRun() error = nil, want assignee verification error")
+	}
+	if !strings.Contains(f.IOStreams.Out.(*bytes.Buffer).String(), "Updated issue #12") {
+		t.Fatalf("stdout = %q, want updated issue output", f.IOStreams.Out.(*bytes.Buffer).String())
 	}
 	if !strings.Contains(err.Error(), "did not apply the requested assignees") {
 		t.Fatalf("editRun() error = %v", err)

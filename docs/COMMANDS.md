@@ -734,8 +734,8 @@ gc pr sync --source-pr owner/source-repo#123 \
 ```
 
 说明：
-- `--source-pr` 支持两种格式：`owner/repo#number` 或完整 URL
-- 命令会 cherry-pick 源 PR 的所有 commits 到目标仓库
+- `--source-pr` 支持两种格式：`owner/repo#number` 或完整 GitCode URL，例如 `https://gitcode.com/owner/repo/merge_requests/123`
+- 命令会按原顺序逐个 cherry-pick 源 PR 的所有 commits 到目标仓库，保留提交边界
 - 新 PR 标题默认格式：`[sync] {源 PR 标题}`
 - 新 PR 内容默认继承源 PR 内容并追加同步来源信息
 - 如遇 cherry-pick 冲突，命令会报错并提示手动处理

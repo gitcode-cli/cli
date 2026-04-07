@@ -19,7 +19,8 @@ type TokenOptions struct {
 	Config     func() (config.Config, error)
 
 	// Flags
-	Hostname string
+	Hostname     string
+	HostnameSet  bool
 }
 
 // NewCmdToken creates the token command
@@ -50,6 +51,7 @@ func NewCmdToken(f *cmdutil.Factory, runF func(*TokenOptions) error) *cobra.Comm
 			$ gc auth token --hostname gitcode.com
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.HostnameSet = cmd.Flags().Changed("hostname")
 			if runF != nil {
 				return runF(opts)
 			}
@@ -74,6 +76,9 @@ func tokenRun(opts *TokenOptions) error {
 	}
 
 	token, _ := authCfg.ActiveToken(opts.Hostname)
+	if opts.HostnameSet {
+		token, _ = authCfg.StoredToken(opts.Hostname)
+	}
 
 	if token == "" {
 		return fmt.Errorf("no authentication token found")

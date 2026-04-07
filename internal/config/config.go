@@ -40,6 +40,8 @@ type ConfigEntry struct {
 type AuthConfig interface {
 	// ActiveToken returns the active token for a host
 	ActiveToken(hostname string) (string, string)
+	// StoredToken returns the stored token for a host without environment overrides
+	StoredToken(hostname string) (string, string)
 	// HasActiveToken checks if a token exists for a host
 	HasActiveToken(hostname string) bool
 	// ActiveUser returns the active user for a host
@@ -153,7 +155,10 @@ func (c *config) Authentication() AuthConfig {
 // Write persists the configuration
 func (c *config) Write() error {
 	// Ensure config directory exists
-	if err := os.MkdirAll(c.configDir, 0755); err != nil {
+	if err := os.MkdirAll(c.configDir, 0o700); err != nil {
+		return err
+	}
+	if err := os.Chmod(c.configDir, 0o700); err != nil {
 		return err
 	}
 	// TODO: write config files

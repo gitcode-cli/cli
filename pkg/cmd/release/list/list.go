@@ -105,6 +105,7 @@ func listRun(opts *ListOptions) error {
 
 	// Output
 	fmt.Fprintf(opts.IO.Out, "\n")
+	latestPublishedMarked := false
 	for _, r := range releases {
 		tag := r.TagName
 		if r.Name != "" {
@@ -117,8 +118,11 @@ func listRun(opts *ListOptions) error {
 			status = cs.Gray("(draft)")
 		} else if r.Prerelease {
 			status = cs.Yellow("(pre-release)")
-		} else {
+		} else if !latestPublishedMarked {
 			status = cs.Green("(latest)")
+			latestPublishedMarked = true
+		} else {
+			status = cs.Green("(published)")
 		}
 
 		fmt.Fprintf(opts.IO.Out, "%s %s\n", cs.Bold(tag), status)

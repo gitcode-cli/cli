@@ -165,9 +165,11 @@ func editRun(opts *EditOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to update issue: %w", err)
 	}
+	if err := ensureAssigneesApplied(client, owner, repo, opts.Number, assigneeIDs, "updated"); err != nil {
+		return err
+	}
 	fmt.Fprintf(opts.IO.Out, "%s Updated issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
-	warnIfAssigneesNotApplied(opts.IO, client, owner, repo, opts.Number, assigneeIDs)
 	return nil
 }
 
@@ -185,22 +187,19 @@ func getEnvToken() string {
 	return cmdutil.EnvToken()
 }
 
-func warnIfAssigneesNotApplied(io *iostreams.IOStreams, client *api.Client, owner, repo string, issueNumber int, expectedIDs []string) {
+func ensureAssigneesApplied(client *api.Client, owner, repo string, issueNumber int, expectedIDs []string, action string) error {
 	if len(expectedIDs) == 0 {
-		return
+		return nil
 	}
 
 	issue, err := api.GetIssue(client, owner, repo, issueNumber)
 	if err != nil {
-		return
+		return nil
 	}
 	if hasExpectedAssignees(issue, expectedIDs) {
-		return
+		return nil
 	}
-
-	if io != nil && io.ErrOut != nil {
-		fmt.Fprintf(io.ErrOut, "! Issue #%d was updated, but GitCode API did not apply the requested assignees.\n", issueNumber)
-	}
+	return fmt.Errorf("issue #%d was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
 }
 
 func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {

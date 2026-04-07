@@ -55,6 +55,9 @@ func NewCmdUpload(f *cmdutil.Factory, runF func(*UploadOptions) error) *cobra.Co
 
 			# Upload to a specific repository
 			$ gc release upload v1.0.0 app.zip -R owner/repo
+
+			# Label is currently unsupported by the GitCode API
+			$ gc release upload v1.0.0 app.zip -R owner/repo --label "linux-amd64"
 		`),
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -76,6 +79,10 @@ func NewCmdUpload(f *cmdutil.Factory, runF func(*UploadOptions) error) *cobra.Co
 
 func uploadRun(opts *UploadOptions) error {
 	cs := opts.IO.ColorScheme()
+
+	if opts.Label != "" {
+		return cmdutil.NewUsageError("--label is not supported by the current GitCode release upload API")
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {

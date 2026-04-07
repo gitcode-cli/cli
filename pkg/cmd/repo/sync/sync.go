@@ -144,7 +144,7 @@ func syncRun(opts *SyncOptions) error {
 		return fmt.Errorf("failed to resolve current branch: %w", err)
 	}
 
-	sourcePath, err := resolveSourceDir(rootDir, opts.SourceDir)
+	sourcePath, sourceDisplayDir, err := resolveSourceDir(rootDir, opts.SourceDir)
 	if err != nil {
 		return err
 	}
@@ -181,12 +181,12 @@ func syncRun(opts *SyncOptions) error {
 
 	syncBranch := opts.BranchName
 	if strings.TrimSpace(syncBranch) == "" {
-		syncBranch = buildSyncBranch(sourceRepo, currentBranch, opts.SourceDir)
+		syncBranch = buildSyncBranch(sourceRepo, currentBranch, sourceDisplayDir)
 	}
 
 	title := opts.Title
 	if strings.TrimSpace(title) == "" {
-		title = fmt.Sprintf("sync: %s -> %s/%s", cleanPath(opts.SourceDir), targetRepo, cleanPath(targetDir))
+		title = fmt.Sprintf("sync: %s -> %s/%s", cleanPath(sourceDisplayDir), targetRepo, cleanPath(targetDir))
 	}
 
 	commitMsg := opts.CommitMsg
@@ -196,7 +196,7 @@ func syncRun(opts *SyncOptions) error {
 
 	body := opts.Body
 	if strings.TrimSpace(body) == "" {
-		body = defaultPRBody(sourceRepo, currentBranch, opts.SourceDir, opts.TargetRepo, targetDir)
+		body = defaultPRBody(sourceRepo, currentBranch, sourceDisplayDir, opts.TargetRepo, targetDir)
 	}
 
 	workDir, err := opts.MkdirTemp("", "gc-repo-sync-*")
@@ -226,7 +226,7 @@ func syncRun(opts *SyncOptions) error {
 
 	result := SyncResult{
 		SourceRepo:    sourceRepo,
-		SourceDir:     cleanPath(opts.SourceDir),
+		SourceDir:     cleanPath(sourceDisplayDir),
 		TargetRepo:    opts.TargetRepo,
 		TargetDir:     cleanPath(targetDir),
 		BaseBranch:    baseBranch,
@@ -286,22 +286,44 @@ func writeSyncResult(opts *SyncOptions, result SyncResult) error {
 	return nil
 }
 
-func resolveSourceDir(rootDir, sourceDir string) (string, error) {
+func resolveSourceDir(rootDir, sourceDir string) (string, string, error) {
 	if strings.TrimSpace(sourceDir) == "" {
-		return "", fmt.Errorf("source directory is required")
+		return "", "", fmt.Errorf("source directory is required")
 	}
+
+	rootPath, err := canonicalDir(rootDir)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to resolve repository root: %w", err)
+	}
+
 	sourcePath := sourceDir
 	if !filepath.IsAbs(sourcePath) {
-		sourcePath = filepath.Join(rootDir, filepath.FromSlash(sourceDir))
+		sourcePath = filepath.Join(rootPath, filepath.FromSlash(sourceDir))
 	}
+	sourcePath, err = canonicalDir(sourcePath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to access source directory: %w", err)
+	}
+
+	rel, err := filepath.Rel(rootPath, sourcePath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to resolve source directory: %w", err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", "", fmt.Errorf("source directory must stay inside the current repository")
+	}
+
 	info, err := os.Stat(sourcePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to access source directory: %w", err)
+		return "", "", fmt.Errorf("failed to access source directory: %w", err)
 	}
 	if !info.IsDir() {
-		return "", fmt.Errorf("source path must be a directory: %s", sourceDir)
+		return "", "", fmt.Errorf("source path must be a directory: %s", sourceDir)
 	}
-	return sourcePath, nil
+	if rel == "." {
+		rel = "."
+	}
+	return sourcePath, filepath.ToSlash(rel), nil
 }
 
 func validateTargetDir(targetDir string) (string, error) {
@@ -311,6 +333,9 @@ func validateTargetDir(targetDir string) (string, error) {
 	}
 	if strings.HasPrefix(cleaned, "../") || cleaned == ".." {
 		return "", fmt.Errorf("target directory must stay inside the target repository")
+	}
+	if cleaned == ".git" || strings.HasPrefix(cleaned, ".git/") {
+		return "", fmt.Errorf("target directory must not target the repository metadata directory")
 	}
 	return cleaned, nil
 }
@@ -406,6 +431,17 @@ func defaultPRBody(sourceRepo, currentBranch, sourceDir, targetRepo, targetDir s
 		targetRepo,
 		cleanPath(targetDir),
 	)
+}
+
+func canonicalDir(path string) (string, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	if resolved, err := filepath.EvalSymlinks(absPath); err == nil {
+		absPath = resolved
+	}
+	return absPath, nil
 }
 
 func repositoryGitURL(owner, repo string) string {

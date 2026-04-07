@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // IOStreams holds the standard input, output, and error streams
@@ -56,7 +57,12 @@ func (s *IOStreams) StartPager() error {
 		return nil
 	}
 
-	pagerCmd := exec.Command("sh", "-c", s.pager)
+	parts := strings.Fields(s.pager)
+	if len(parts) == 0 {
+		return nil
+	}
+
+	pagerCmd := exec.Command(parts[0], parts[1:]...)
 	pagerCmd.Stdout = os.Stdout
 	pagerCmd.Stderr = os.Stderr
 

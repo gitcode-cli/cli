@@ -4,9 +4,44 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 )
+
+func TestListPullRequestsBuildsQuery(t *testing.T) {
+	var gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+
+	_, err := ListPullRequests(client, "owner", "repo", &PRListOptions{
+		State:     "open",
+		Head:      "feature/login",
+		Base:      "main",
+		Sort:      "updated",
+		Direction: "asc",
+		PerPage:   50,
+		Page:      2,
+	})
+	if err != nil {
+		t.Fatalf("ListPullRequests() error = %v", err)
+	}
+
+	assertPRListRequest(t, gotPath, "/api/v5/repos/owner/repo/pulls", map[string]string{
+		"state":     "open",
+		"head":      "feature/login",
+		"base":      "main",
+		"sort":      "updated",
+		"direction": "asc",
+		"per_page":  "50",
+		"page":      "2",
+	})
+}
 
 func TestUpdatePullRequestUsesFormEncoding(t *testing.T) {
 	draft := false
@@ -153,5 +188,33 @@ func TestPRCommentAndReviewUnmarshal(t *testing.T) {
 	}
 	if review.State != "approved" || review.User == nil || review.User.Login != "reviewer2" {
 		t.Fatalf("Unexpected review payload: %#v", review)
+	}
+}
+
+func assertPRListRequest(t *testing.T, gotPath, wantPath string, wantQuery map[string]string) {
+	t.Helper()
+
+	if gotPath == "" {
+		t.Fatal("request path was empty")
+	}
+	if !strings.HasPrefix(gotPath, wantPath) {
+		t.Fatalf("request path = %q, want prefix %q", gotPath, wantPath)
+	}
+
+	rawQuery := ""
+	if len(gotPath) > len(wantPath) {
+		rawQuery = strings.TrimPrefix(gotPath[len(wantPath):], "?")
+	}
+	query, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		t.Fatalf("url.ParseQuery() error = %v", err)
+	}
+	for key, want := range wantQuery {
+		if got := query.Get(key); got != want {
+			t.Fatalf("query[%q] = %q, want %q", key, got, want)
+		}
+	}
+	if len(query) != len(wantQuery) {
+		t.Fatalf("query = %#v, want %#v", query, wantQuery)
 	}
 }

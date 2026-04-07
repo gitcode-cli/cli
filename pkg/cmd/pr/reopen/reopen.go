@@ -42,10 +42,10 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 		`),
 		Example: heredoc.Doc(`
 			# Reopen a PR
-			$ gc pr reopen 123
+			$ gc pr reopen 123 -R owner/repo
 
 			# Reopen with a comment
-			$ gc pr reopen 123 --comment "Reopening for further changes"
+			$ gc pr reopen 123 -R owner/repo --comment "Reopening for further changes"
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

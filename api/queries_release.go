@@ -1,5 +1,7 @@
 package api
 
+import "net/url"
+
 // Release represents a GitCode release
 type Release struct {
 	ID              interface{}    `json:"id"`
@@ -220,7 +222,9 @@ func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error
 
 // GetReleaseUploadURL fetches the upload URL for a release asset
 func GetReleaseUploadURL(client *Client, owner, repo, tag, filename string) (*AssetUploadURL, error) {
-	path := "/repos/" + owner + "/" + repo + "/releases/" + tag + "/upload_url?file_name=" + filename
+	values := url.Values{}
+	values.Set("file_name", filename)
+	path := "/repos/" + owner + "/" + repo + "/releases/" + tag + "/upload_url?" + values.Encode()
 
 	var result AssetUploadURL
 	err := client.Get(path, &result)

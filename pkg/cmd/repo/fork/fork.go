@@ -4,7 +4,6 @@ package fork
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -90,10 +89,7 @@ func forkRun(opts *ForkOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := os.Getenv("GC_TOKEN")
-	if token == "" {
-		token = os.Getenv("GITCODE_TOKEN")
-	}
+	token := cmdutil.EnvToken()
 	if token == "" {
 		return fmt.Errorf("not authenticated. Run: gc auth login")
 	}

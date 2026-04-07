@@ -1,23 +1,29 @@
 package api
 
+import (
+	"net/url"
+	"strconv"
+	"strings"
+)
+
 // Repository represents a GitCode repository
 type Repository struct {
-	ID          interface{} `json:"id"`
-	Name        string      `json:"name"`
-	FullName    string      `json:"full_name"`
-	Description string      `json:"description"`
-	Private     bool        `json:"private"`
-	Owner       *User       `json:"owner"`
-	HTMLURL     string      `json:"web_url"`
-	CloneURL    string      `json:"http_url_to_repo"`
-	SSHURL      string      `json:"ssh_url_to_repo"`
-	DefaultBranch string    `json:"default_branch"`
-	CreatedAt   FlexibleTime `json:"created_at"`
-	UpdatedAt   FlexibleTime `json:"updated_at"`
-	StargazersCount int     `json:"stargazers_count"`
-	ForksCount  int         `json:"forks_count"`
-	OpenIssuesCount int     `json:"open_issues_count"`
-	Language    string      `json:"language"`
+	ID              interface{}  `json:"id"`
+	Name            string       `json:"name"`
+	FullName        string       `json:"full_name"`
+	Description     string       `json:"description"`
+	Private         bool         `json:"private"`
+	Owner           *User        `json:"owner"`
+	HTMLURL         string       `json:"web_url"`
+	CloneURL        string       `json:"http_url_to_repo"`
+	SSHURL          string       `json:"ssh_url_to_repo"`
+	DefaultBranch   string       `json:"default_branch"`
+	CreatedAt       FlexibleTime `json:"created_at"`
+	UpdatedAt       FlexibleTime `json:"updated_at"`
+	StargazersCount int          `json:"stargazers_count"`
+	ForksCount      int          `json:"forks_count"`
+	OpenIssuesCount int          `json:"open_issues_count"`
+	Language        string       `json:"language"`
 }
 
 // RepoListOptions represents options for listing repositories
@@ -33,20 +39,29 @@ type RepoListOptions struct {
 
 // CreateRepoOptions represents options for creating a repository
 type CreateRepoOptions struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	Private     bool   `json:"private"`
-	AutoInit    bool   `json:"auto_init,omitempty"`
+	Name              string `json:"name"`
+	Description       string `json:"description,omitempty"`
+	Private           bool   `json:"private"`
+	AutoInit          bool   `json:"auto_init,omitempty"`
 	GitignoreTemplate string `json:"gitignore_template,omitempty"`
-	LicenseTemplate string `json:"license_template,omitempty"`
+	LicenseTemplate   string `json:"license_template,omitempty"`
 }
 
-// ListUserRepos lists repositories for the authenticated user
+// ListUserRepos lists repositories for the authenticated user.
 func ListUserRepos(client *Client, opts *RepoListOptions) ([]Repository, error) {
-	path := "/user/repos"
-	if opts != nil && opts.PerPage > 0 {
-		path = path + "?per_page=" + itoa(opts.PerPage)
+	path := buildRepoListPath("/user/repos", opts)
+
+	var repos []Repository
+	err := client.Get(path, &repos)
+	if err != nil {
+		return nil, err
 	}
+	return repos, nil
+}
+
+// ListOrgRepos lists repositories for an organization.
+func ListOrgRepos(client *Client, org string, opts *RepoListOptions) ([]Repository, error) {
+	path := buildRepoListPath("/orgs/"+url.PathEscape(org)+"/repos", opts)
 
 	var repos []Repository
 	err := client.Get(path, &repos)
@@ -177,11 +192,43 @@ func stringsJoin(s []string, sep string) string {
 	return result
 }
 
+func buildRepoListPath(base string, opts *RepoListOptions) string {
+	if opts == nil {
+		return base
+	}
+
+	values := url.Values{}
+	if v := strings.TrimSpace(opts.Visibility); v != "" {
+		values.Set("visibility", v)
+	}
+	if v := strings.TrimSpace(opts.Affiliation); v != "" {
+		values.Set("affiliation", v)
+	}
+	if v := strings.TrimSpace(opts.Type); v != "" {
+		values.Set("type", v)
+	}
+	if v := strings.TrimSpace(opts.Sort); v != "" {
+		values.Set("sort", v)
+	}
+	if v := strings.TrimSpace(opts.Direction); v != "" {
+		values.Set("direction", v)
+	}
+	if opts.PerPage > 0 {
+		values.Set("per_page", strconv.Itoa(opts.PerPage))
+	}
+	if opts.Page > 0 {
+		values.Set("page", strconv.Itoa(opts.Page))
+	}
+	if len(values) == 0 {
+		return base
+	}
+	return base + "?" + values.Encode()
+}
+
 func itoa(i int) string {
 	if i <= 0 {
 		return "30"
 	}
-	// simple conversion
 	s := ""
 	for i > 0 {
 		s = string(rune('0'+i%10)) + s

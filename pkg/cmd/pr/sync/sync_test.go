@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	"gitcode.com/gitcode-cli/cli/api"
@@ -236,5 +237,30 @@ func TestSyncCommitsReportsActualCountOnConflict(t *testing.T) {
 	}
 	if !reflect.DeepEqual(calls, wantCalls) {
 		t.Fatalf("syncCommits() calls = %#v, want %#v", calls, wantCalls)
+	}
+}
+
+func TestWriteSyncResultJSONReturnsConflictExitCode(t *testing.T) {
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+
+	err := writeSyncResult(&SyncOptions{
+		IO:   f.IOStreams,
+		JSON: true,
+	}, SyncResult{
+		SourcePR:      "owner/repo#1",
+		TargetRepo:    "target/repo",
+		SyncBranch:    "sync/test",
+		CommitsSynced: 1,
+	}, cmdutil.NewCLIError(cmdutil.ExitConflict, "conflict detected", nil))
+	if err == nil {
+		t.Fatal("writeSyncResult() error = nil, want conflict error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitConflict {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitConflict)
+	}
+	if !strings.Contains(out.String(), "\"conflict_error\": \"conflict detected\"") {
+		t.Fatalf("output = %q", out.String())
 	}
 }

@@ -43,13 +43,13 @@ func NewCmdMerge(f *cmdutil.Factory, runF func(*MergeOptions) error) *cobra.Comm
 		`),
 		Example: heredoc.Doc(`
 			# Merge a PR
-			$ gc pr merge 123
+			$ gc pr merge 123 -R owner/repo
 
 			# Merge with squash
-			$ gc pr merge 123 --squash
+			$ gc pr merge 123 -R owner/repo --method squash
 
 			# Merge and delete branch
-			$ gc pr merge 123 --delete-branch
+			$ gc pr merge 123 -R owner/repo --delete-branch
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

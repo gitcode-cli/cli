@@ -20,8 +20,9 @@ type StatusOptions struct {
 	Config     func() (config.Config, error)
 
 	// Flags
-	Hostname  string
-	ShowToken bool
+	Hostname    string
+	HostnameSet bool
+	ShowToken   bool
 }
 
 // NewCmdStatus creates the status command
@@ -38,7 +39,7 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 		Long: heredoc.Doc(`
 			View information about your authentication status.
 
-			Checks for token from:
+			When no hostname is specified, checks for token from:
 			1. GC_TOKEN environment variable
 			2. GITCODE_TOKEN environment variable
 			3. Stored credentials (keyring)
@@ -50,6 +51,7 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 			  ✓ Git operations protocol: https
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.HostnameSet = cmd.Flags().Changed("hostname")
 			if runF != nil {
 				return runF(opts)
 			}
@@ -58,7 +60,7 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 	}
 
 	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "Check a specific hostname")
-	cmd.Flags().BoolVar(&opts.ShowToken, "show-token", false, "Display the auth token")
+	cmd.Flags().BoolVar(&opts.ShowToken, "show-token", false, "Display the full auth token")
 
 	return cmd
 }
@@ -77,6 +79,9 @@ func statusRun(opts *StatusOptions) error {
 	cs := opts.IO.ColorScheme()
 
 	token, tokenSource := authCfg.ActiveToken(opts.Hostname)
+	if opts.HostnameSet {
+		token, tokenSource = authCfg.StoredToken(opts.Hostname)
+	}
 
 	fmt.Fprintf(opts.IO.Out, "%s\n", opts.Hostname)
 
@@ -106,17 +111,8 @@ func statusRun(opts *StatusOptions) error {
 	fmt.Fprintf(opts.IO.Out, "  %s Git operations protocol: %s\n", cs.Green("✓"), cfg.GitProtocol(opts.Hostname).Value)
 
 	if opts.ShowToken {
-		// Mask most of the token
-		maskedToken := maskToken(token)
-		fmt.Fprintf(opts.IO.Out, "  %s Token: %s\n", cs.Green("✓"), maskedToken)
+		fmt.Fprintf(opts.IO.Out, "  %s Token: %s\n", cs.Green("✓"), token)
 	}
 
 	return nil
-}
-
-func maskToken(token string) string {
-	if len(token) <= 8 {
-		return "********"
-	}
-	return token[:4] + "..." + token[len(token)-4:]
 }

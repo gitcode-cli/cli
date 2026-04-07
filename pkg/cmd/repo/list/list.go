@@ -4,6 +4,7 @@ package list
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -11,6 +12,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/output"
 )
 
 type ListOptions struct {
@@ -22,6 +24,7 @@ type ListOptions struct {
 	Visibility string
 	Owner      string
 	JSON       bool
+	Format     string
 }
 
 // NewCmdList creates the list command
@@ -46,6 +49,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# List only public repos
 			$ gc repo list --visibility public
+
+			# Render as a table
+			$ gc repo list --format table
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -59,12 +65,16 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.Visibility, "visibility", "v", "", "Filter by visibility (public/private)")
 	cmd.Flags().StringVarP(&opts.Owner, "owner", "o", "", "List repos for an organization")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
+	cmdutil.AddFormatFlag(cmd, &opts.Format)
 
 	return cmd
 }
 
 func listRun(opts *ListOptions) error {
-	cs := opts.IO.ColorScheme()
+	format, err := resolveOutputFormat(opts.JSON, opts.Format)
+	if err != nil {
+		return err
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {
@@ -82,36 +92,49 @@ func listRun(opts *ListOptions) error {
 	client.SetToken(token, "environment")
 
 	// List repos
-	repos, err := api.ListUserRepos(client, &api.RepoListOptions{
+	repoOpts := &api.RepoListOptions{
 		PerPage:    opts.Limit,
 		Visibility: opts.Visibility,
-	})
+	}
+	var repos []api.Repository
+	if owner := strings.TrimSpace(opts.Owner); owner != "" {
+		repos, err = api.ListOrgRepos(client, owner, repoOpts)
+	} else {
+		repos, err = api.ListUserRepos(client, repoOpts)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to list repositories: %w", err)
 	}
 
 	// Output
 	if len(repos) == 0 {
-		if opts.JSON {
+		if format == output.FormatJSON {
 			return cmdutil.WriteJSON(opts.IO.Out, repos)
 		}
 		fmt.Fprintf(opts.IO.Out, "No repositories found\n")
 		return nil
 	}
 
-	if opts.JSON {
+	if format == output.FormatJSON {
 		return cmdutil.WriteJSON(opts.IO.Out, repos)
 	}
-
-	fmt.Fprintf(opts.IO.Out, "\n")
-	for _, repo := range repos {
-		visibility := "public"
-		if repo.Private {
-			visibility = "private"
-		}
-		fmt.Fprintf(opts.IO.Out, "%s  %s  %s\n", cs.Bold(repo.FullName), visibility, repo.Description)
+	printer, err := output.NewRepoListPrinter(output.RepoListOptions{Format: format})
+	if err != nil {
+		return err
 	}
-	fmt.Fprintf(opts.IO.Out, "\n")
+	return printer.Print(opts.IO.Out, repos)
+}
 
-	return nil
+func resolveOutputFormat(jsonFlag bool, raw string) (output.Format, error) {
+	format, err := output.ParseFormat(raw)
+	if err != nil {
+		return "", cmdutil.NewUsageError(err.Error())
+	}
+	if jsonFlag {
+		if raw != "" && format != output.FormatJSON {
+			return "", cmdutil.NewUsageError("--json cannot be combined with --format unless --format json")
+		}
+		return output.FormatJSON, nil
+	}
+	return format, nil
 }

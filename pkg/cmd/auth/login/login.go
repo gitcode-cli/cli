@@ -79,6 +79,10 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 				return loginWithTokenFlag(opts)
 			}
 
+			if !opts.IO.CanPrompt() {
+				return cmdutil.NewUsageError("interactive login requires a TTY; use --token or --with-token")
+			}
+
 			if opts.Web {
 				return loginWithWeb(opts)
 			}

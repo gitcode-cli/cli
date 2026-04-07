@@ -49,18 +49,18 @@ func NewCmdDownload(f *cmdutil.Factory, runF func(*DownloadOptions) error) *cobr
 		`),
 		Example: heredoc.Doc(`
 			# Download all assets from latest release
-			$ gc release download
+			$ gc release download -R owner/repo
 
 			# Download all assets from a specific release
-			$ gc release download v1.0.0
+			$ gc release download v1.0.0 -R owner/repo
 
 			# Download a specific asset
-			$ gc release download v1.0.0 app.zip
+			$ gc release download v1.0.0 app.zip -R owner/repo
 
 			# Download to a specific directory
-			$ gc release download v1.0.0 --output ./downloads/
+			$ gc release download v1.0.0 -R owner/repo --output ./downloads/
 		`),
-		Args: cobra.MinimumNArgs(1),
+		Args: cobra.MaximumNArgs(64),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				opts.TagName = args[0]
@@ -94,7 +94,7 @@ func downloadRun(opts *DownloadOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 

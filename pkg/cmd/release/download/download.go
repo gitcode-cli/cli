@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -155,9 +156,7 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 	outputPath := filepath.Join(outputDir, asset.Name)
 	fmt.Fprintf(out, "%s Downloading %s...\n", cs.Blue("⬇"), asset.Name)
 
-	// Use GitCode API download endpoint
-	downloadURL := fmt.Sprintf("https://api.gitcode.com/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download",
-		owner, repo, tag, asset.Name)
+	downloadURL := assetDownloadURL(asset, owner, repo, tag)
 
 	// Create request
 	req, err := http.NewRequest("GET", downloadURL, nil)
@@ -194,6 +193,23 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 
 	fmt.Fprintf(out, "%s Downloaded %s (%s)\n", cs.Green("✓"), asset.Name, formatSize(int(written)))
 	return nil
+}
+
+func assetDownloadURL(asset api.ReleaseAsset, owner, repo, tag string) string {
+	if isSourceArchiveAsset(asset) {
+		return asset.BrowserDownloadURL
+	}
+
+	return fmt.Sprintf("https://api.gitcode.com/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download",
+		owner, repo, tag, url.PathEscape(asset.Name))
+}
+
+func isSourceArchiveAsset(asset api.ReleaseAsset) bool {
+	if strings.TrimSpace(asset.BrowserDownloadURL) == "" {
+		return false
+	}
+
+	return strings.Contains(asset.BrowserDownloadURL, "/archive/refs/heads/")
 }
 
 func filterAssets(assets []api.ReleaseAsset, names []string) []api.ReleaseAsset {

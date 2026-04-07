@@ -11,6 +11,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/output"
 )
 
 type ListOptions struct {
@@ -38,6 +39,9 @@ type ListOptions struct {
 	Search        string
 	Page          int
 	JSON          bool
+	Format        string
+	TimeFormat    string
+	Template      string
 }
 
 // NewCmdList creates the list command
@@ -87,6 +91,16 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# Combine multiple filters
 			$ gc issue list --state open --milestone "v1.0" --assignee username --sort updated
+
+			# Output as JSON
+			$ gc issue list --json
+			$ gc issue list --format json
+
+			# Render updated times relatively
+			$ gc issue list --time-format relative
+
+			# Render with a custom Go template
+			$ gc issue list --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"}}{{end}}'
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -113,12 +127,18 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.Search, "search", "", "Search by keyword in title or body")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number for pagination")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
+	cmdutil.AddFormatFlag(cmd, &opts.Format)
+	cmdutil.AddTimeFormatFlag(cmd, &opts.TimeFormat)
+	cmdutil.AddTemplateFlag(cmd, &opts.Template)
 
 	return cmd
 }
 
 func listRun(opts *ListOptions) error {
-	cs := opts.IO.ColorScheme()
+	outOpts, err := resolveOutputOptions(opts)
+	if err != nil {
+		return err
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {
@@ -167,32 +187,72 @@ func listRun(opts *ListOptions) error {
 
 	// Output
 	if len(issues) == 0 {
-		if opts.JSON {
+		if outOpts.Format == output.FormatJSON {
 			return cmdutil.WriteJSON(opts.IO.Out, issues)
 		}
 		fmt.Fprintf(opts.IO.Out, "No issues found\n")
 		return nil
 	}
 
-	if opts.JSON {
+	if outOpts.Format == output.FormatJSON {
 		return cmdutil.WriteJSON(opts.IO.Out, issues)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "\n")
-	for _, issue := range issues {
-		state := "open"
-		if issue.State == "closed" {
-			state = cs.Red("closed")
-		} else {
-			state = cs.Green("open")
-		}
-		fmt.Fprintf(opts.IO.Out, "#%-6s %s  %s\n", issue.Number, state, issue.Title)
+	printer, err := output.NewIssueListPrinter(output.IssueListOptions{
+		Format:     outOpts.Format,
+		TimeFormat: outOpts.TimeFormat,
+		Template:   outOpts.Template,
+		Color:      opts.IO.ColorScheme(),
+	})
+	if err != nil {
+		return err
 	}
-	fmt.Fprintf(opts.IO.Out, "\n")
 
-	return nil
+	return printer.Print(opts.IO.Out, issues)
 }
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+type resolvedOutputOptions struct {
+	Format     output.Format
+	TimeFormat output.TimeFormat
+	Template   string
+}
+
+func resolveOutputOptions(opts *ListOptions) (*resolvedOutputOptions, error) {
+	if opts == nil {
+		return nil, cmdutil.NewUsageError("missing options")
+	}
+
+	format, err := output.ParseFormat(opts.Format)
+	if err != nil {
+		return nil, cmdutil.NewUsageError(err.Error())
+	}
+	timeFormat, err := output.ParseTimeFormat(opts.TimeFormat)
+	if err != nil {
+		return nil, cmdutil.NewUsageError(err.Error())
+	}
+
+	template := opts.Template
+	if opts.JSON {
+		if opts.Format != "" && format != output.FormatJSON {
+			return nil, cmdutil.NewUsageError("--json cannot be combined with --format unless --format json")
+		}
+		if template != "" {
+			return nil, cmdutil.NewUsageError("--json cannot be combined with --template")
+		}
+		format = output.FormatJSON
+	}
+
+	if template != "" && opts.Format != "" {
+		return nil, cmdutil.NewUsageError("--template cannot be combined with --format")
+	}
+
+	return &resolvedOutputOptions{
+		Format:     format,
+		TimeFormat: timeFormat,
+		Template:   template,
+	}, nil
 }

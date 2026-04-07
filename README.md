@@ -164,6 +164,29 @@ gc auth status
 
 > 详细命令行为和完整示例请查看 [docs/COMMANDS.md](./docs/COMMANDS.md)。
 
+## 输出格式
+
+`gc` 的只读命令继续以文本输出为默认体验，同时为脚本和代理保留稳定的结构化入口。
+
+```bash
+# 结构化输出
+gc issue list -R owner/repo --json
+gc issue list -R owner/repo --format json
+
+# 常规文本与表格
+gc issue list -R owner/repo --format simple
+gc issue list -R owner/repo --format table
+
+# 时间格式切换
+gc issue list -R owner/repo --time-format absolute
+gc issue list -R owner/repo --time-format relative
+
+# 自定义模板输出
+gc issue list -R owner/repo --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"}}{{end}}'
+```
+
+`issue view` 和 `pr view` 的文本详情展示也会保持稳定布局，而 `--json` 仍然是面向机器调用的首选入口。
+
 ## 常见任务入口
 
 最常用的起步命令：

@@ -27,6 +27,11 @@ func TestNewCmdList(t *testing.T) {
 			args:    []string{"--limit", "10"},
 			wantErr: false,
 		},
+		{
+			name:    "list with json",
+			args:    []string{"--json"},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

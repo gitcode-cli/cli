@@ -2,23 +2,29 @@
 
 本指南帮助你通过 AI 助手（如 Claude Code）操作 GitCode 平台。
 
+边界说明：
+
+- 本文档只适用于“外部项目通过 AI 使用 `gc` 操作 GitCode”
+- 本文档不定义 gitcode-cli 仓库内部开发流程
+- 在 gitcode-cli 仓库内部参与开发时，应以 `AGENTS.md`、`CLAUDE.md`、`spec/README.md` 和 `spec/workflows/*` 为准
+
 ## 1. 安装 GitCode CLI
 
 **Linux (DEB/RPM):**
 
 ```bash
 # DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.7/gc_0.3.7_amd64.deb
-sudo dpkg -i gc_0.3.7_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.9/gc_0.3.9_amd64.deb
+sudo dpkg -i gc_0.3.9_amd64.deb
 
 # RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.7/gc-0.3.7-1.x86_64.rpm
-sudo rpm -i gc-0.3.7-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.9/gc-0.3.9-1.x86_64.rpm
+sudo rpm -i gc-0.3.9-1.x86_64.rpm
 ```
 
 **Wheel 包（跨平台，推荐）:**
 
-从 Release 归档下载 wheel 包安装：
+从 Release 归档下载 wheel 包安装，**内置全平台二进制**（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64）：
 
 ```bash
 # 创建虚拟环境
@@ -27,7 +33,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.7/gitcode_cli-0.3.7-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.9/gitcode_cli-0.3.9-py3-none-any.whl
 ```
 
 **PyPI（备选）:**
@@ -124,6 +130,20 @@ gc release delete v1.0.0 -R owner/repo --dry-run
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
 - 当前基础退出码语义：`0` 成功，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误。
 
+## 6. 在规范化仓库中的协作提醒
+
+如果目标仓库本身已经定义了开发规范，AI 应直接遵守目标仓库自己的正式规则、状态机和证据门禁，而不是套用本文档。
+
+## 7. 可参考的固定模板
+
+外部项目如需固定模板，应由目标项目自己定义。
+
+如果你只是参考 gitcode-cli 仓库的内部模板结构，请查看：
+
+- [AI-TEMPLATES.md](./AI-TEMPLATES.md)
+
+但这些模板不应被默认视为外部项目的正式流程模板。
+
 ## 完成后的使用方式
 
 安装完成后，直接告诉 AI 你想做什么：
@@ -143,4 +163,4 @@ AI 会自动使用 `gc` 命令执行操作。
 
 ---
 
-**最后更新**: 2026-03-30
+**最后更新**: 2026-04-02

@@ -2,6 +2,7 @@ package cmdutil
 
 import (
 	"errors"
+	"os"
 	"strings"
 	"testing"
 )
@@ -85,10 +86,6 @@ func TestParseRepo(t *testing.T) {
 			wantRepo:  "repo",
 		},
 		{
-			name:    "missing repo",
-			wantErr: "no repository specified. Use -R owner/repo",
-		},
-		{
 			name:    "invalid repo",
 			repo:    "owner/repo/extra",
 			wantErr: "invalid repository format",
@@ -114,5 +111,25 @@ func TestParseRepo(t *testing.T) {
 				t.Fatalf("ParseRepo() = (%q, %q), want (%q, %q)", owner, repo, tt.wantOwner, tt.wantRepo)
 			}
 		})
+	}
+}
+
+func TestParseRepoOutsideGitRepoRequiresExplicitRepo(t *testing.T) {
+	dir := t.TempDir()
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("os.Getwd() error = %v", err)
+	}
+	defer func() { _ = os.Chdir(oldWd) }()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("os.Chdir() error = %v", err)
+	}
+
+	_, _, err = ParseRepo("")
+	if err == nil {
+		t.Fatal("ParseRepo() error = nil, want missing repo error")
+	}
+	if !strings.Contains(err.Error(), "no repository specified. Use -R owner/repo") {
+		t.Fatalf("ParseRepo() error = %q", err.Error())
 	}
 }

@@ -60,7 +60,7 @@ func TestParseRepo(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:    "empty repo",
+			name:    "empty repo requires explicit repo",
 			repo:    "",
 			wantErr: true,
 		},

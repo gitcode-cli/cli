@@ -21,8 +21,8 @@ git@gitcode.com:owner/repo.git
 - 传入 HTTPS 或 SSH 仓库地址时，CLI 会统一解析出目标仓库，不再要求手工改写成 `owner/repo`。
 
 当前自动推断边界：
-- 已支持缺省 `-R` 的命令：`repo view`、`issue create/list/view/close/reopen/comment/edit/label/prs`
-- 仍需显式传 `-R` 的常见命令：`pr create/list/view/review`、`release *`、`label *`、`milestone *`、`commit *`
+- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令与 `repo view` 等“作用于当前仓库”的安全场景。
+- 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
 ### Agent-Friendly CLI 能力
 
@@ -43,6 +43,8 @@ git@gitcode.com:owner/repo.git
 - `pr view`
 - `release list`
 - `release view`
+- `label list`
+- `milestone list`
 
 ### 认证
 
@@ -155,6 +157,38 @@ gc repo list --visibility public
 # 输出 JSON
 gc repo list --json
 ```
+
+### repo sync - 同步目录到目标仓库并创建 PR
+
+```bash
+# 将当前仓库 docs/api 同步到目标仓库的 mirror/api 目录
+gc repo sync \
+  --target-repo infra-test/target-repo \
+  --source-dir docs/api \
+  --target-dir mirror/api
+
+# 指定 base 分支和 PR 标题
+gc repo sync \
+  --target-repo infra-test/target-repo \
+  --source-dir pkg/contracts \
+  --target-dir mirror/contracts \
+  --base main \
+  --title "sync: update contracts"
+
+# 结构化输出
+gc repo sync \
+  --target-repo infra-test/target-repo \
+  --source-dir docs/api \
+  --target-dir mirror/api \
+  --json
+```
+
+说明：
+- 该命令必须在本地 Git 仓库内执行
+- `--source-dir` 是当前仓库内要同步的目录
+- `--target-dir` 是目标仓库中的子目录，不能是仓库根目录
+- 命令会自动创建同步分支、提交、推送并创建目标 PR
+- 如果目标目录内容与源目录一致，命令会直接返回“无变更”
 
 ### repo create - 创建仓库
 
@@ -292,6 +326,10 @@ gc issue list -R infra-test/gctest1 --state open --milestone "v1.0" --sort updat
 # 输出 JSON
 gc issue list -R infra-test/gctest1 --json
 ```
+
+说明：
+- `--since`、`--created-after`、`--created-before`、`--updated-after`、`--updated-before` 支持 `YYYY-MM-DD` 和 ISO 8601 时间。
+- CLI 会在请求前自动规范化为 GitCode API 可接受的 RFC3339 时间戳。
 
 ### issue view - 查看 Issue
 
@@ -440,6 +478,24 @@ gc issue prs 123 --mode 1 -R infra-test/gctest1
 - `issue create/list/view/close/reopen/comment/comments/edit/label/prs` 在当前 Git 仓库中可缺省 `-R`，CLI 会优先解析 `origin` remote；若没有 `origin`，则回退到第一个 remote。
 - 若当前目录不是 Git 仓库，或仓库没有可用 remote，会返回明确错误并提示改用 `-R owner/repo`。
 
+### issue relations - 查看仓库内 Issue / PR 关联表
+
+```bash
+# 查看仓库内所有 issue / PR 关联关系
+gc issue relations -R infra-test/gctest1
+
+# 输出 JSON 关系行
+gc issue relations -R infra-test/gctest1 --json
+
+# 只扫描开放 issue
+gc issue relations -R infra-test/gctest1 --state open --limit 50
+```
+
+说明：
+- 该命令会遍历仓库 issue，并获取每个 issue 关联的 PR。
+- 文本输出按 PR 聚合，并同时显示关联 issue 的状态信息。
+- `--json` 输出为关系行数组，每一行包含 `pr` 和 `issue` 两部分。
+
 ---
 
 ## Pull Request 命令 (pr)
@@ -555,12 +611,22 @@ gc pr checkout 1 -R infra-test/gctest1
 # 合并 PR（默认合并提交）
 gc pr merge 1 -R infra-test/gctest1
 
+# 非交互执行
+gc pr merge 1 -R infra-test/gctest1 --yes
+
 # Squash 合并
 gc pr merge 1 -R infra-test/gctest1 --squash
 
 # Rebase 合并
 gc pr merge 1 -R infra-test/gctest1 --rebase
+
+# 非交互执行
+gc pr merge 1 -R infra-test/gctest1 --yes
 ```
+
+说明：
+- `pr merge` 属于高风险写操作，默认需要确认。
+- 非交互场景中显式传 `--yes`。
 
 ### pr close - 关闭 PR
 
@@ -639,6 +705,41 @@ gc pr test 1 -R infra-test/gctest1
 gc pr test 1 --force -R infra-test/gctest1
 ```
 
+### pr sync - 同步 PR 到另一个仓库
+
+```bash
+# 同步 PR 到目标仓库
+gc pr sync --source-pr owner/source-repo#123 --target-repo owner/target-repo
+
+# 指定目标分支
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --base release/v1.0
+
+# 自定义标题和内容
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --title "[sync] Fix login bug" \
+  --body "从 owner/source-repo#123 同步"
+
+# 创建草稿 PR
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --draft
+
+# 结构化输出
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --json
+```
+
+说明：
+- `--source-pr` 支持两种格式：`owner/repo#number` 或完整 URL
+- 命令会 cherry-pick 源 PR 的所有 commits 到目标仓库
+- 新 PR 标题默认格式：`[sync] {源 PR 标题}`
+- 新 PR 内容默认继承源 PR 内容并追加同步来源信息
+- 如遇 cherry-pick 冲突，命令会报错并提示手动处理
+
 ---
 
 ## Release 命令 (release)
@@ -683,6 +784,9 @@ gc release view v1.0.0 -R infra-test/gctest1 --web
 # 输出 JSON
 gc release view v1.0.0 -R infra-test/gctest1 --json
 ```
+
+说明：
+- 当 GitCode API 未返回资产大小时，文本输出会显示 `unknown size`，避免把未知值误写成 `0 bytes`。
 
 ### release upload - 上传资产
 
@@ -817,6 +921,9 @@ gc commit comments list-by-sha abc123 -R infra-test/gctest1
 ```bash
 # 列出所有标签
 gc label list -R infra-test/gctest1
+
+# 结构化输出
+gc label list -R infra-test/gctest1 --json
 ```
 
 ### label create - 创建标签
@@ -848,6 +955,9 @@ gc label delete bug -R infra-test/gctest1 --yes
 ```bash
 # 列出所有里程碑
 gc milestone list -R infra-test/gctest1
+
+# 结构化输出
+gc milestone list -R infra-test/gctest1 --json
 ```
 
 ### milestone create - 创建里程碑

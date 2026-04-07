@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GC_BIN="${GC_BIN:-$ROOT_DIR/gc}"
 READONLY_REPO="${GC_REGRESSION_REPO:-infra-test/gctest1}"
+RELEASE_TAG="${GC_REGRESSION_RELEASE_TAG:-v0.0.1-test}"
 RUN_WRITE_PATHS="${GC_REGRESSION_WRITE:-0}"
 
 SOURCE_TOKEN="${GC_TOKEN:-${GITCODE_TOKEN:-}}"
@@ -100,6 +101,10 @@ log "Repo View"
 run_capture repo_view_out "$GC_BIN" repo view "$READONLY_REPO"
 assert_contains "$repo_view_out" "$READONLY_REPO"
 
+log "Repo View JSON"
+run_capture repo_view_json "$GC_BIN" repo view "$READONLY_REPO" --json
+assert_contains "$repo_view_json" "\"full_name\""
+
 log "Issue List"
 run_capture issue_list_out "$GC_BIN" issue list -R "$READONLY_REPO" --limit 1
 assert_contains "$issue_list_out" "#"
@@ -112,6 +117,26 @@ fi
 log "Issue View"
 run_capture issue_view_out "$GC_BIN" issue view "$ISSUE_NUMBER" -R "$READONLY_REPO"
 assert_contains "$issue_view_out" "#$ISSUE_NUMBER"
+
+log "Issue List JSON"
+run_capture issue_list_json "$GC_BIN" issue list -R "$READONLY_REPO" --limit 1 --json
+assert_contains "$issue_list_json" "\"number\""
+
+log "Issue View JSON"
+run_capture issue_view_json "$GC_BIN" issue view "$ISSUE_NUMBER" -R "$READONLY_REPO" --json
+assert_contains "$issue_view_json" "\"number\""
+
+log "PR List JSON"
+run_capture pr_list_json "$GC_BIN" pr list -R "$READONLY_REPO" --limit 1 --json
+assert_contains "$pr_list_json" "["
+
+log "Release List JSON"
+run_capture release_list_json "$GC_BIN" release list -R "$READONLY_REPO" --json
+assert_contains "$release_list_json" "\"tag_name\""
+
+log "Release Delete Dry Run"
+run_capture release_delete_dry_run "$GC_BIN" release delete "$RELEASE_TAG" -R "$READONLY_REPO" --dry-run
+assert_contains "$release_delete_dry_run" "Dry run: would delete release"
 
 log "Non-Git Error Path"
 run_expect_fail nongit_out bash -lc "cd '$TMP_NON_GIT_DIR' && '$GC_BIN' repo view"

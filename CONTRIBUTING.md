@@ -12,6 +12,7 @@ Before contributing, please read the following documentation:
 |----------|-------------|
 | [README.md](./README.md) | Project overview and installation guide |
 | [CLAUDE.md](./CLAUDE.md) | AI-assisted development guide |
+| [AGENTS.md](./AGENTS.md) | Codex and general agent entry |
 
 ### Development Specifications (spec/)
 
@@ -31,6 +32,7 @@ Before contributing, please read the following documentation:
 | [评审流程](./spec/workflows/review-workflow.md) | Code review process |
 | [测试流程](./spec/workflows/test-workflow.md) | Testing workflow |
 | [开发流程](./spec/workflows/development-workflow.md) | End-to-end development workflow |
+| [AI 本地开发流程](./spec/workflows/ai-local-development-workflow.md) | AI-assisted local development workflow |
 | [构建打包规范](./spec/delivery/build-and-package.md) | Build and package |
 | [Release 规范](./spec/delivery/release-process.md) | Release process |
 
@@ -40,8 +42,25 @@ Before contributing, please read the following documentation:
 |----------|-------------|
 | [docs/COMMANDS.md](./docs/COMMANDS.md) | Command usage guide |
 | [docs/PACKAGING.md](./docs/PACKAGING.md) | Packaging guide |
+| [docs/AI-GUIDE.md](./docs/AI-GUIDE.md) | External-project AI usage guide for `gc` |
+| [docs/AI-TEMPLATES.md](./docs/AI-TEMPLATES.md) | Internal gitcode-cli issue/PR comment templates |
+| [source-of-truth-matrix.md](./spec/governance/source-of-truth-matrix.md) | What can and cannot be used as a fact source |
 
 > **Important**: When modifying command-related code, you MUST sync updates to `docs/COMMANDS.md`.
+>
+> **Important**: When modifying development or review workflow rules, you MUST sync `spec/`, `AGENTS.md`, `CLAUDE.md`, related shared skills, and AI workflow templates.
+>
+> **Important**: Do not treat `issues-plan/PROGRESS.md` as the real-time source for single issue/PR status; use the remote platform, merged PRs, and `origin/main`.
+>
+> **Important**: When changing `docs/AI-TEMPLATES.md` or `docs/ai-templates/*.md`, run `make validate-ai-templates`.
+
+## Workflow Expectations
+
+- Development and review flow is state-based, not a loose checklist.
+- Do not start coding on an issue before it reaches `status/verified`.
+- Do not treat author self-check as an independent review.
+- Do not close a fix issue before the related PR is merged to `main`.
+- Use the reusable templates in `docs/AI-TEMPLATES.md` or `docs/ai-templates/*.md` for issue comments, PR self-check, and review outcomes.
 
 ## Development Setup
 

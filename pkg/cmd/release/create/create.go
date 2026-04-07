@@ -4,7 +4,6 @@ package create
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -92,11 +91,11 @@ func createRun(opts *CreateOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
-	client.SetToken(token, "environment")
+	client.SetToken(token, "active")
 
 	// Get repository
 	owner, repo, err := parseRepo(opts.Repository)
@@ -124,11 +123,4 @@ func createRun(opts *CreateOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

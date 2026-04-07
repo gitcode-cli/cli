@@ -4,7 +4,6 @@ package stats
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -82,11 +81,11 @@ func statsRun(opts *StatsOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
-	client.SetToken(token, "environment")
+	client.SetToken(token, "active")
 
 	owner, repo, err := parseRepo(opts.Repository)
 	if err != nil {
@@ -128,11 +127,4 @@ func statsRun(opts *StatsOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

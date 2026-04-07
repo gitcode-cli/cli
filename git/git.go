@@ -3,6 +3,7 @@ package git
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -82,18 +83,35 @@ func DefaultRemote() (string, error) {
 
 // Run executes a git command and returns the output
 func Run(args ...string) (string, error) {
-	cmd := exec.Command("git", args...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, string(output))
-	}
-	return string(output), nil
+	return runWithEnv("", nil, args...)
 }
 
 // RunInDir executes a git command in a specific directory
 func RunInDir(dir string, args ...string) (string, error) {
+	return runWithEnv(dir, nil, args...)
+}
+
+// RunWithEnv executes a git command with extra environment variables.
+func RunWithEnv(env map[string]string, args ...string) (string, error) {
+	return runWithEnv("", env, args...)
+}
+
+// RunInDirWithEnv executes a git command in a specific directory with extra environment variables.
+func RunInDirWithEnv(dir string, env map[string]string, args ...string) (string, error) {
+	return runWithEnv(dir, env, args...)
+}
+
+func runWithEnv(dir string, env map[string]string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
-	cmd.Dir = dir
+	if dir != "" {
+		cmd.Dir = dir
+	}
+	if len(env) > 0 {
+		cmd.Env = os.Environ()
+		for key, value := range env {
+			cmd.Env = append(cmd.Env, key+"="+value)
+		}
+	}
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, string(output))

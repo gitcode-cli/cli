@@ -16,12 +16,14 @@
 - 以 `AGENTS.md` 和 `CLAUDE.md` 作为各自客户端入口
 - 以 `.ai/skills/` 作为共享 skill 真相源
 - 让 `.claude/skills/` 与 `.codex/skills/` 只承担适配职责
+- 让作者主体与独立评审主体保持分离
 
 ## 禁止
 
 - 在 AI 入口文档中定义与 `spec/` 冲突的项目规则
 - 把任一客户端的适配层当作跨 AI 的唯一来源
 - 让外部可分发 skill 依赖仓库私有 `spec/` 或 `docs/` 路径
+- 让同一执行主体同时扮演作者和独立评审
 
 ## 同步要求
 
@@ -41,9 +43,10 @@
 
 1. `spec/` 定义项目正式规则
 2. `AGENTS.md` / `CLAUDE.md` 定义不同 AI 客户端如何进入规则体系
-3. `.ai/skills/` 定义共享场景技能
-4. `.claude/skills/` / `.codex/skills/` 定义客户端适配
-5. `.ai/distribution/` 定义可分发的通用 skill 包
+3. `spec/governance/source-of-truth-matrix.md` 定义哪些文档可用于事实判定
+4. `.ai/skills/` 定义共享场景技能
+5. `.claude/skills/` / `.codex/skills/` 定义客户端适配
+6. `.ai/distribution/` 定义可分发的通用 skill 包
 
 ## 当前结构
 
@@ -56,3 +59,4 @@
 
 - 如果你在改技能分发，继续看 [../../.ai/distribution/gc-core/README.md](../../.ai/distribution/gc-core/README.md)
 - 如果你在改同步边界，继续看 [docs-governance.md](./docs-governance.md)
+- 如果你在执行仓库内 AI 本地开发，继续看 [../workflows/ai-local-development-workflow.md](../workflows/ai-local-development-workflow.md)

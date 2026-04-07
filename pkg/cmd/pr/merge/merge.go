@@ -4,7 +4,6 @@ package merge
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -26,6 +25,7 @@ type MergeOptions struct {
 	// Flags
 	MergeMethod  string
 	DeleteBranch bool
+	Yes          bool
 }
 
 // NewCmdMerge creates the merge command
@@ -69,6 +69,7 @@ func NewCmdMerge(f *cmdutil.Factory, runF func(*MergeOptions) error) *cobra.Comm
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.MergeMethod, "method", "m", "merge", "Merge method (merge/squash/rebase)")
 	cmd.Flags().BoolVarP(&opts.DeleteBranch, "delete-branch", "d", false, "Delete branch after merge")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
 
 	return cmd
 }
@@ -82,11 +83,11 @@ func mergeRun(opts *MergeOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
-	client.SetToken(token, "environment")
+	client.SetToken(token, "active")
 
 	// Get repository
 	owner, repo, err := parseRepo(opts.Repository)
@@ -98,6 +99,14 @@ func mergeRun(opts *MergeOptions) error {
 	pr, err := api.GetPullRequest(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)
+	}
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: strconv.Itoa(pr.Number),
+		Prompt:   fmt.Sprintf("! This will merge PR #%d %s\nType the PR number to confirm: ", pr.Number, cs.Bold(pr.Title)),
+	}); err != nil {
+		return err
 	}
 
 	// Merge PR
@@ -121,11 +130,4 @@ func mergeRun(opts *MergeOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	return os.Getenv("GITCODE_TOKEN")
 }

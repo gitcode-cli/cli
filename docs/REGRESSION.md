@@ -26,7 +26,7 @@ go build -o ./gc ./cmd/gc
 
 ## 默认回归集
 
-`./scripts/regression-core.sh` 默认执行稳定的读路径和错误路径：
+`./scripts/regression-core.sh` 默认执行稳定的读路径、agent-friendly 契约检查和错误路径：
 
 1. `auth login --token`
 2. `auth status`
@@ -34,13 +34,20 @@ go build -o ./gc ./cmd/gc
 4. `auth logout`
 5. `auth status` 登出后状态
 6. `repo view`
-7. `issue list --limit 1`
-8. `issue view <list 返回的首个 issue>`
-9. 非 Git 目录下的 `repo view` 错误路径
+7. `repo view --json`
+8. `issue list --limit 1`
+9. `issue list --json`
+10. `issue view <list 返回的首个 issue>`
+11. `issue view --json`
+12. `pr list --json`
+13. `release list --json`
+14. `release delete <tag> --dry-run`
+15. 非 Git 目录下的 `repo view` 错误路径
 
 说明：
 - 脚本会使用临时 `GC_CONFIG_DIR`，避免污染本地长期配置。
 - 登录阶段会把环境变量 token 写入临时配置，然后取消环境变量覆盖，以验证 config-backed auth 流程。
+- release dry-run 默认使用 `GC_REGRESSION_RELEASE_TAG`，未显式设置时默认取 `v0.0.1-test`。
 
 ## 可选写路径
 
@@ -60,7 +67,7 @@ export GC_REGRESSION_PR_BASE=main
 
 ## Agent-Friendly 契约补充回归
 
-当前里程碑新增了以下推荐补充检查：
+除核心脚本已覆盖的检查外，当前里程碑还推荐以下补充检查：
 
 ```bash
 # 命令元数据

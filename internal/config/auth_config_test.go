@@ -73,3 +73,17 @@ func TestAuthConfigLogoutRemovesStoredToken(t *testing.T) {
 		t.Fatalf("ActiveToken() after logout = %q, %q", token, source)
 	}
 }
+
+func TestAuthConfigLoginRejectsUnsupportedSecureStorage(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+
+	cfg := New()
+	authCfg := cfg.Authentication()
+	changed, err := authCfg.Login("gitcode.com", "tester", "stored-token", "https", true)
+	if err == nil {
+		t.Fatal("Login() error = nil, want unsupported secure storage error")
+	}
+	if changed {
+		t.Fatal("Login() changed = true, want false")
+	}
+}

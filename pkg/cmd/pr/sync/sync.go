@@ -21,15 +21,15 @@ import (
 )
 
 type SyncResult struct {
-	SourcePR       string `json:"source_pr"`
-	SourcePRURL    string `json:"source_pr_url"`
-	TargetRepo     string `json:"target_repo"`
-	TargetBranch   string `json:"target_branch"`
-	SyncBranch     string `json:"sync_branch"`
-	PRNumber       int    `json:"pr_number,omitempty"`
-	PRURL          string `json:"pr_url,omitempty"`
-	CommitsSynced  int    `json:"commits_synced"`
-	ConflictError  string `json:"conflict_error,omitempty"`
+	SourcePR      string `json:"source_pr"`
+	SourcePRURL   string `json:"source_pr_url"`
+	TargetRepo    string `json:"target_repo"`
+	TargetBranch  string `json:"target_branch"`
+	SyncBranch    string `json:"sync_branch"`
+	PRNumber      int    `json:"pr_number,omitempty"`
+	PRURL         string `json:"pr_url,omitempty"`
+	CommitsSynced int    `json:"commits_synced"`
+	ConflictError string `json:"conflict_error,omitempty"`
 }
 
 type SyncOptions struct {
@@ -42,6 +42,8 @@ type SyncOptions struct {
 	MkdirTemp     func(string, string) (string, error)
 	RemoveAll     func(string) error
 	WriteFile     func(string, []byte, os.FileMode) error
+	RunGitInDir   func(string, string, ...string) (string, error)
+	RunGit        func(string, ...string) (string, error)
 
 	SourcePR   string
 	TargetRepo string
@@ -77,7 +79,7 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 
 			The source PR can be specified as:
 			- owner/repo#number (e.g., gitcode-cli/cli#123)
-			- Full URL (e.g., https://gitcode.com/gitcode-cli/cli/pulls/123)
+			- Full URL (e.g., https://gitcode.com/gitcode-cli/cli/merge_requests/123)
 		`),
 		Example: heredoc.Doc(`
 			# Sync PR #123 from source repo to target repo
@@ -139,8 +141,8 @@ func ParsePRRef(ref string) (*PRRef, error) {
 		return nil, fmt.Errorf("source PR is required")
 	}
 
-	// Try URL format: https://gitcode.com/owner/repo/pulls/123
-	urlPattern := regexp.MustCompile(`^https?://gitcode\.com/([^/]+)/([^/]+)/pulls/(\d+)(?:/[^/]*)?$`)
+	// Try URL format: https://gitcode.com/owner/repo/merge_requests/123
+	urlPattern := regexp.MustCompile(`^https?://gitcode\.com/([^/]+)/([^/]+)/(?:merge_requests|pulls)/(\d+)(?:/[^/]*)?$`)
 	if matches := urlPattern.FindStringSubmatch(ref); matches != nil {
 		number, err := strconv.Atoi(matches[3])
 		if err != nil {
@@ -159,7 +161,7 @@ func ParsePRRef(ref string) (*PRRef, error) {
 		return &PRRef{Owner: matches[1], Repo: strings.TrimSuffix(matches[2], ".git"), Number: number}, nil
 	}
 
-	return nil, fmt.Errorf("invalid PR reference format. Use owner/repo#number or https://gitcode.com/owner/repo/pulls/number")
+	return nil, fmt.Errorf("invalid PR reference format. Use owner/repo#number or https://gitcode.com/owner/repo/merge_requests/number")
 }
 
 func syncRun(opts *SyncOptions) error {
@@ -261,44 +263,49 @@ echo "password=%s"
 	}
 
 	// Git commands with credential helper
-	gitCmd := func(args ...string) (string, error) {
-		fullArgs := append([]string{"-c", "credential.helper=" + credHelperPath}, args...)
-		return gitpkg.Run(fullArgs...)
+	gitCmd := opts.RunGit
+	if gitCmd == nil {
+		gitCmd = func(credHelperPath string, args ...string) (string, error) {
+			fullArgs := append([]string{"-c", "credential.helper=" + credHelperPath}, args...)
+			return gitpkg.Run(fullArgs...)
+		}
 	}
 
-	gitCmdInDir := func(dir string, args ...string) (string, error) {
-		fullArgs := append([]string{"-C", dir, "-c", "credential.helper=" + credHelperPath}, args...)
-		return gitpkg.Run(fullArgs...)
+	gitCmdInDir := opts.RunGitInDir
+	if gitCmdInDir == nil {
+		gitCmdInDir = func(dir string, credHelperPath string, args ...string) (string, error) {
+			fullArgs := append([]string{"-C", dir, "-c", "credential.helper=" + credHelperPath}, args...)
+			return gitpkg.Run(fullArgs...)
+		}
+	}
+
+	runGit := func(args ...string) (string, error) {
+		return gitCmd(credHelperPath, args...)
+	}
+
+	runGitInDir := func(dir string, args ...string) (string, error) {
+		return gitCmdInDir(dir, credHelperPath, args...)
 	}
 
 	// Clone target repository
-	if _, err := gitCmd("clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
+	if _, err := runGit("clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
 		return fmt.Errorf("failed to clone target repository: %w", err)
 	}
 
 	// Fetch source repository to get commits
-	if _, err := gitCmdInDir(workDir, "remote", "add", "source", repositoryGitURL(sourcePR.Owner, sourcePR.Repo)); err != nil {
+	if _, err := runGitInDir(workDir, "remote", "add", "source", repositoryGitURL(sourcePR.Owner, sourcePR.Repo)); err != nil {
 		return fmt.Errorf("failed to add source remote: %w", err)
 	}
-	if _, err := gitCmdInDir(workDir, "fetch", "source"); err != nil {
+	if _, err := runGitInDir(workDir, "fetch", "source"); err != nil {
 		return fmt.Errorf("failed to fetch source repository: %w", err)
 	}
 
 	// Create sync branch based on target base branch
-	if _, err := gitCmdInDir(workDir, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
+	if _, err := runGitInDir(workDir, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
 		return fmt.Errorf("failed to create sync branch: %w", err)
 	}
 
-	// Cherry-pick commits in order
-	conflictError := ""
-	for _, commit := range commits {
-		if _, err := gitCmdInDir(workDir, "cherry-pick", "--no-commit", commit.SHA); err != nil {
-			// Abort cherry-pick on conflict
-			_, _ = gitCmdInDir(workDir, "cherry-pick", "--abort")
-			conflictError = fmt.Sprintf("cherry-pick conflict on commit %s: %s", commit.SHA[:8], commit.Message)
-			break
-		}
-	}
+	commitsSynced, conflictError := syncCommits(runGitInDir, workDir, commits)
 
 	result := SyncResult{
 		SourcePR:      fmt.Sprintf("%s/%s#%d", sourcePR.Owner, sourcePR.Repo, sourcePR.Number),
@@ -306,7 +313,7 @@ echo "password=%s"
 		TargetRepo:    opts.TargetRepo,
 		TargetBranch:  baseBranch,
 		SyncBranch:    syncBranch,
-		CommitsSynced: len(commits),
+		CommitsSynced: commitsSynced,
 		ConflictError: conflictError,
 	}
 
@@ -314,16 +321,8 @@ echo "password=%s"
 		return writeSyncResult(opts, result, fmt.Errorf("%s. Manual resolution required.", conflictError))
 	}
 
-	// Commit all cherry-picked changes
-	commitMsg := fmt.Sprintf("sync: cherry-pick from %s/%s#%d\n\n%s",
-		sourcePR.Owner, sourcePR.Repo, sourcePR.Number,
-		buildCommitList(commits))
-	if _, err := gitCmdInDir(workDir, "commit", "-m", commitMsg); err != nil {
-		return fmt.Errorf("failed to create sync commit: %w", err)
-	}
-
 	// Push sync branch
-	if _, err := gitCmdInDir(workDir, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
+	if _, err := runGitInDir(workDir, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
 		return fmt.Errorf("failed to push sync branch: %w", err)
 	}
 
@@ -341,7 +340,7 @@ echo "password=%s"
 
 	prURL := newPR.HTMLURL
 	if strings.TrimSpace(prURL) == "" && newPR.Number > 0 {
-		prURL = fmt.Sprintf("https://gitcode.com/%s/%s/pulls/%d", targetOwner, targetRepo, newPR.Number)
+		prURL = pullRequestWebURL(targetOwner, targetRepo, newPR.Number)
 	}
 
 	result.PRNumber = newPR.Number
@@ -361,7 +360,7 @@ func writeSyncResult(opts *SyncOptions, result SyncResult, err error) error {
 	if err != nil {
 		fmt.Fprintf(opts.IO.ErrOut, "%s %s\n", cs.Red("✗"), err.Error())
 		fmt.Fprintf(opts.IO.Out, "Partial sync to %s (branch: %s)\n", result.TargetRepo, result.SyncBranch)
-		fmt.Fprintf(opts.IO.Out, "Commits attempted: %d\n", result.CommitsSynced)
+		fmt.Fprintf(opts.IO.Out, "Commits synced before conflict: %d\n", result.CommitsSynced)
 		return err
 	}
 
@@ -390,16 +389,27 @@ func buildSyncBody(pr *api.PullRequest, sourcePR *PRRef, targetRepo string) stri
 	return body
 }
 
-func buildCommitList(commits []api.Commit) string {
-	var list string
-	for i, commit := range commits {
-		list += fmt.Sprintf("- %s\n", commit.Message)
-		if i >= 9 { // Limit to 10 commits in list
-			list += fmt.Sprintf("... and %d more commits\n", len(commits)-10)
-			break
+func syncCommits(runGitInDir func(string, ...string) (string, error), workDir string, commits []api.Commit) (int, string) {
+	commitsSynced := 0
+	for _, commit := range commits {
+		if _, err := runGitInDir(workDir, "cherry-pick", "-x", commit.SHA); err != nil {
+			_, _ = runGitInDir(workDir, "cherry-pick", "--abort")
+			return commitsSynced, fmt.Sprintf("cherry-pick conflict on commit %s: %s", shortSHA(commit.SHA), commit.Message)
 		}
+		commitsSynced++
 	}
-	return list
+	return commitsSynced, ""
+}
+
+func shortSHA(sha string) string {
+	if len(sha) <= 8 {
+		return sha
+	}
+	return sha[:8]
+}
+
+func pullRequestWebURL(owner, repo string, number int) string {
+	return fmt.Sprintf("https://gitcode.com/%s/%s/merge_requests/%d", owner, repo, number)
 }
 
 // repositoryGitURL returns a Git URL without embedded credentials

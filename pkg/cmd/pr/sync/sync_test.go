@@ -3,7 +3,9 @@ package sync
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
+	"reflect"
 	"testing"
 
 	"gitcode.com/gitcode-cli/cli/api"
@@ -29,18 +31,23 @@ func TestParsePRRef(t *testing.T) {
 			want:  &PRRef{Owner: "owner", Repo: "repo", Number: 123},
 		},
 		{
-			name:  "URL format",
+			name:  "merge request URL format",
+			input: "https://gitcode.com/owner/repo/merge_requests/123",
+			want:  &PRRef{Owner: "owner", Repo: "repo", Number: 123},
+		},
+		{
+			name:  "pulls URL format remains supported",
 			input: "https://gitcode.com/owner/repo/pulls/123",
 			want:  &PRRef{Owner: "owner", Repo: "repo", Number: 123},
 		},
 		{
-			name:  "URL format with trailing slash",
-			input: "https://gitcode.com/owner/repo/pulls/123/",
+			name:  "merge request URL format with trailing slash",
+			input: "https://gitcode.com/owner/repo/merge_requests/123/",
 			want:  &PRRef{Owner: "owner", Repo: "repo", Number: 123},
 		},
 		{
-			name:  "URL format with additional path",
-			input: "https://gitcode.com/owner/repo/pulls/123/commits",
+			name:  "merge request URL format with additional path",
+			input: "https://gitcode.com/owner/repo/merge_requests/123/commits",
 			want:  &PRRef{Owner: "owner", Repo: "repo", Number: 123},
 		},
 		{
@@ -97,7 +104,7 @@ func TestBuildSyncBody(t *testing.T) {
 	pr := &api.PullRequest{
 		Title:   "Test PR",
 		Body:    "Original body",
-		HTMLURL: "https://gitcode.com/owner/repo/pulls/123",
+		HTMLURL: "https://gitcode.com/owner/repo/merge_requests/123",
 	}
 	sourcePR := &PRRef{Owner: "source-owner", Repo: "source-repo", Number: 123}
 	targetRepo := "target-owner/target-repo"
@@ -156,5 +163,78 @@ func TestRepositoryGitURL(t *testing.T) {
 	expected := "https://gitcode.com/owner/repo.git"
 	if url != expected {
 		t.Errorf("repositoryGitURL() = %q, want %q", url, expected)
+	}
+}
+
+func TestPullRequestWebURL(t *testing.T) {
+	url := pullRequestWebURL("owner", "repo", 123)
+	expected := "https://gitcode.com/owner/repo/merge_requests/123"
+	if url != expected {
+		t.Errorf("pullRequestWebURL() = %q, want %q", url, expected)
+	}
+}
+
+func TestSyncCommitsPreservesCommitBoundaries(t *testing.T) {
+	commits := []api.Commit{
+		{SHA: "1111111111111111111111111111111111111111", Message: "first"},
+		{SHA: "2222222222222222222222222222222222222222", Message: "second"},
+	}
+
+	var calls [][]string
+	runGitInDir := func(dir string, args ...string) (string, error) {
+		if dir != "/tmp/workdir" {
+			t.Fatalf("runGitInDir dir = %q, want /tmp/workdir", dir)
+		}
+		calls = append(calls, append([]string(nil), args...))
+		return "", nil
+	}
+
+	commitsSynced, conflictError := syncCommits(runGitInDir, "/tmp/workdir", commits)
+	if conflictError != "" {
+		t.Fatalf("syncCommits() unexpected conflict error = %q", conflictError)
+	}
+	if commitsSynced != 2 {
+		t.Fatalf("syncCommits() commitsSynced = %d, want 2", commitsSynced)
+	}
+
+	wantCalls := [][]string{
+		{"cherry-pick", "-x", commits[0].SHA},
+		{"cherry-pick", "-x", commits[1].SHA},
+	}
+	if !reflect.DeepEqual(calls, wantCalls) {
+		t.Fatalf("syncCommits() calls = %#v, want %#v", calls, wantCalls)
+	}
+}
+
+func TestSyncCommitsReportsActualCountOnConflict(t *testing.T) {
+	commits := []api.Commit{
+		{SHA: "1111111111111111111111111111111111111111", Message: "first"},
+		{SHA: "2222222222222222222222222222222222222222", Message: "second"},
+	}
+
+	var calls [][]string
+	runGitInDir := func(dir string, args ...string) (string, error) {
+		calls = append(calls, append([]string(nil), args...))
+		if len(args) == 3 && args[0] == "cherry-pick" && args[2] == commits[1].SHA {
+			return "", errors.New("conflict")
+		}
+		return "", nil
+	}
+
+	commitsSynced, conflictError := syncCommits(runGitInDir, "/tmp/workdir", commits)
+	if commitsSynced != 1 {
+		t.Fatalf("syncCommits() commitsSynced = %d, want 1", commitsSynced)
+	}
+	if conflictError == "" {
+		t.Fatal("syncCommits() conflictError = empty, want non-empty")
+	}
+
+	wantCalls := [][]string{
+		{"cherry-pick", "-x", commits[0].SHA},
+		{"cherry-pick", "-x", commits[1].SHA},
+		{"cherry-pick", "--abort"},
+	}
+	if !reflect.DeepEqual(calls, wantCalls) {
+		t.Fatalf("syncCommits() calls = %#v, want %#v", calls, wantCalls)
 	}
 }

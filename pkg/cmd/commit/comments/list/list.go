@@ -96,6 +96,15 @@ func listRun(opts *ListOptions) error {
 		return nil
 	}
 
+	// Calculate max ID width for alignment
+	maxIDWidth := 0
+	for _, c := range comments {
+		w := len(fmt.Sprintf("#%s", cmdutil.FormatAPIID(c.ID)))
+		if w > maxIDWidth {
+			maxIDWidth = w
+		}
+	}
+
 	// Output
 	fmt.Fprintf(opts.IO.Out, "\n")
 	for _, c := range comments {
@@ -107,7 +116,7 @@ func listRun(opts *ListOptions) error {
 		if len(body) > 50 {
 			body = body[:47] + "..."
 		}
-		fmt.Fprintf(opts.IO.Out, "#%-6s %s  %s\n", cmdutil.FormatAPIID(c.ID), cs.Bold(author), body)
+		fmt.Fprintf(opts.IO.Out, "%-*s  %s  %s\n", maxIDWidth, fmt.Sprintf("#%s", cmdutil.FormatAPIID(c.ID)), cs.Bold(author), body)
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")
 

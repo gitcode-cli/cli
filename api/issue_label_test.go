@@ -113,3 +113,33 @@ func TestRemoveIssueLabelErrorsWhenLabelStillPresent(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestRemoveIssueLabelFallsBackToIssueUpdateWhenSetLabelsFails(t *testing.T) {
+	var requests []string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests = append(requests, req.Method+" "+req.URL.Path)
+
+		switch len(requests) {
+		case 1:
+			return authTestResponse(http.StatusOK, `{"number":"7","title":"issue","labels":[{"name":"risk/high"},{"name":"status/verified"}]}`), nil
+		case 2:
+			return authTestResponse(http.StatusBadRequest, `{"message":"参数错误"}`), nil
+		case 3:
+			return authTestResponse(http.StatusOK, `{"number":"7","title":"issue","labels":[{"name":"risk/high"}]}`), nil
+		case 4:
+			return authTestResponse(http.StatusOK, `{"number":"7","title":"issue","labels":[{"name":"risk/high"}]}`), nil
+		default:
+			t.Fatalf("unexpected extra request %d: %s", len(requests), requests[len(requests)-1])
+			return nil, nil
+		}
+	})
+	client.SetToken("test-token", "test")
+
+	if err := RemoveIssueLabel(client, "owner", "repo", 7, "status/verified"); err != nil {
+		t.Fatalf("RemoveIssueLabel() error = %v", err)
+	}
+	if len(requests) != 4 {
+		t.Fatalf("request count = %d, want 4", len(requests))
+	}
+}

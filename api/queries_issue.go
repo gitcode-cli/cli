@@ -419,14 +419,31 @@ func RemoveIssueLabel(client *Client, owner, repo string, number int, label stri
 	}
 
 	if len(labels) == 0 {
-		err = ClearIssueLabels(client, owner, repo, number)
-	} else {
-		_, err = SetIssueLabels(client, owner, repo, number, labels)
+		if err := ClearIssueLabels(client, owner, repo, number); err != nil {
+			return err
+		}
+		return verifyIssueLabelRemoved(client, owner, repo, number, label)
 	}
+
+	if _, err := SetIssueLabels(client, owner, repo, number, labels); err == nil {
+		if err := verifyIssueLabelRemoved(client, owner, repo, number, label); err == nil {
+			return nil
+		}
+	}
+
+	_, err = UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
+		Repo:   repo,
+		Title:  issue.Title,
+		Labels: labels,
+	})
 	if err != nil {
 		return err
 	}
 
+	return verifyIssueLabelRemoved(client, owner, repo, number, label)
+}
+
+func verifyIssueLabelRemoved(client *Client, owner, repo string, number int, label string) error {
 	verified, err := GetIssue(client, owner, repo, number)
 	if err != nil {
 		return fmt.Errorf("failed to verify issue labels: %w", err)

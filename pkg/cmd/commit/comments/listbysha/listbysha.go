@@ -97,6 +97,15 @@ func listBySHARun(opts *ListBySHAOptions) error {
 		return nil
 	}
 
+	// Calculate max ID width for alignment
+	maxIDWidth := 0
+	for _, c := range comments {
+		w := len(fmt.Sprintf("#%s", cmdutil.FormatAPIID(c.ID)))
+		if w > maxIDWidth {
+			maxIDWidth = w
+		}
+	}
+
 	// Output
 	fmt.Fprintf(opts.IO.Out, "\n")
 	fmt.Fprintf(opts.IO.Out, "Comments for commit %s:\n\n", opts.SHA)
@@ -105,7 +114,7 @@ func listBySHARun(opts *ListBySHAOptions) error {
 		if c.User != nil {
 			author = c.User.Login
 		}
-		fmt.Fprintf(opts.IO.Out, "#%-6s %s at %s\n", cmdutil.FormatAPIID(c.ID), cs.Bold(author), c.CreatedAt)
+		fmt.Fprintf(opts.IO.Out, "%-*s  %s at %s\n", maxIDWidth, fmt.Sprintf("#%s", cmdutil.FormatAPIID(c.ID)), cs.Bold(author), c.CreatedAt)
 		fmt.Fprintf(opts.IO.Out, "  %s\n\n", c.Body)
 	}
 
@@ -120,5 +129,8 @@ func getEnvToken() string {
 	if token := os.Getenv("GC_TOKEN"); token != "" {
 		return token
 	}
-	return os.Getenv("GITCODE_TOKEN")
+	if token := os.Getenv("GITCODE_TOKEN"); token != "" {
+		return token
+	}
+	return cmdutil.EnvToken()
 }

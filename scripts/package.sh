@@ -14,6 +14,7 @@
 #   release  - Build DEB + RPM + PyPI (for release)
 
 set -e
+set -o pipefail
 
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -34,6 +35,14 @@ info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+verify_build() {
+    local display_name="$1"
+    local file_path="${display_name#"  "}"  # Remove leading "  " for display
+    if [[ ! -f "$file_path" ]]; then
+        error "Build failed: $file_path not found"
+    fi
+    success "$display_name"
+}
 
 # Usage
 usage() {
@@ -144,11 +153,11 @@ mkdir -p dist
 build_linux_binaries() {
     info "Building Linux amd64 binary..."
     GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o dist/gc_linux_amd64 ./cmd/gc
-    success "dist/gc_linux_amd64"
+    verify_build "dist/gc_linux_amd64"
 
     info "Building Linux arm64 binary..."
     GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o dist/gc_linux_arm64 ./cmd/gc
-    success "dist/gc_linux_arm64"
+    verify_build "dist/gc_linux_arm64"
 }
 
 # ============================================
@@ -158,10 +167,9 @@ build_deb() {
     info "Building DEB packages..."
 
     "$NFPMPATH" pkg -f nfpm-amd64.yaml -p deb -t "dist/gc_${VERSION}_amd64.deb" 2>&1 | sed 's/^/  /'
+    verify_build "dist/gc_${VERSION}_amd64.deb"
     "$NFPMPATH" pkg -f nfpm-arm64.yaml -p deb -t "dist/gc_${VERSION}_arm64.deb" 2>&1 | sed 's/^/  /'
-
-    success "gc_${VERSION}_amd64.deb"
-    success "gc_${VERSION}_arm64.deb"
+    verify_build "dist/gc_${VERSION}_arm64.deb"
 }
 
 # ============================================
@@ -171,10 +179,9 @@ build_rpm() {
     info "Building RPM packages..."
 
     "$NFPMPATH" pkg -f nfpm-amd64.yaml -p rpm -t "dist/gc-${VERSION}-1.x86_64.rpm" 2>&1 | sed 's/^/  /'
+    verify_build "dist/gc-${VERSION}-1.x86_64.rpm"
     "$NFPMPATH" pkg -f nfpm-arm64.yaml -p rpm -t "dist/gc-${VERSION}-1.aarch64.rpm" 2>&1 | sed 's/^/  /'
-
-    success "gc-${VERSION}-1.x86_64.rpm"
-    success "gc-${VERSION}-1.aarch64.rpm"
+    verify_build "dist/gc-${VERSION}-1.aarch64.rpm"
 }
 
 # ============================================
@@ -195,30 +202,30 @@ build_pypi() {
 
     # Linux amd64
     GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o gc_cli/bin/gc-linux-amd64 ./cmd/gc
-    success "  gc_cli/bin/gc-linux-amd64"
+    verify_build "  gc_cli/bin/gc-linux-amd64"
 
     # Linux arm64
     GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o gc_cli/bin/gc-linux-arm64 ./cmd/gc
-    success "  gc_cli/bin/gc-linux-arm64"
+    verify_build "  gc_cli/bin/gc-linux-arm64"
 
     # macOS amd64
     GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o gc_cli/bin/gc-darwin-amd64 ./cmd/gc
-    success "  gc_cli/bin/gc-darwin-amd64"
+    verify_build "  gc_cli/bin/gc-darwin-amd64"
 
     # macOS arm64
     GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o gc_cli/bin/gc-darwin-arm64 ./cmd/gc
-    success "  gc_cli/bin/gc-darwin-arm64"
+    verify_build "  gc_cli/bin/gc-darwin-arm64"
 
     # Windows amd64
     GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o gc_cli/bin/gc-windows-amd64.exe ./cmd/gc
-    success "  gc_cli/bin/gc-windows-amd64.exe"
+    verify_build "  gc_cli/bin/gc-windows-amd64.exe"
 
     # Build wheel and sdist
     info "  Building wheel and sdist..."
     python3 -m build --wheel --sdist --outdir dist/ 2>&1 | sed 's/^/  /'
 
-    success "gitcode_cli-${VERSION}-py3-none-any.whl"
-    success "gitcode_cli-${VERSION}.tar.gz"
+    verify_build "dist/gitcode_cli-${VERSION}-py3-none-any.whl"
+    verify_build "dist/gitcode_cli-${VERSION}.tar.gz"
 }
 
 # ============================================

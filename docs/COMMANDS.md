@@ -21,8 +21,8 @@ git@gitcode.com:owner/repo.git
 - 传入 HTTPS 或 SSH 仓库地址时，CLI 会统一解析出目标仓库，不再要求手工改写成 `owner/repo`。
 
 当前自动推断边界：
-- 已支持缺省 `-R` 的命令：`repo view`、`issue create/list/view/close/reopen/comment/edit/label/prs`
-- 仍需显式传 `-R` 的常见命令：`pr create/list/view/review`、`release *`、`label *`、`milestone *`、`commit *`
+- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令与 `repo view` 等“作用于当前仓库”的安全场景。
+- 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
 ### Agent-Friendly CLI 能力
 
@@ -354,6 +354,8 @@ gc issue list -R infra-test/gctest1 --template '{{range .}}#{{.Number}} {{.Title
 - `--time-format` 只影响文本展示中的时间格式，不改变 JSON 结构。
 - `--template` 使用 Go template 渲染 issue 列表，当前与 `--json`、`--format` 互斥。
 - 非法 `--format` 值会返回错误，不会静默降级为默认输出。
+- `--since`、`--created-after`、`--created-before`、`--updated-after`、`--updated-before` 支持 `YYYY-MM-DD` 和 ISO 8601 时间。
+- CLI 会在请求前自动规范化为 GitCode API 可接受的 RFC3339 时间戳。
 
 ### issue view - 查看 Issue
 
@@ -651,12 +653,22 @@ gc pr checkout 1 -R infra-test/gctest1
 # 合并 PR（默认合并提交）
 gc pr merge 1 -R infra-test/gctest1
 
+# 非交互执行
+gc pr merge 1 -R infra-test/gctest1 --yes
+
 # Squash 合并
 gc pr merge 1 -R infra-test/gctest1 --squash
 
 # Rebase 合并
 gc pr merge 1 -R infra-test/gctest1 --rebase
+
+# 非交互执行
+gc pr merge 1 -R infra-test/gctest1 --yes
 ```
+
+说明：
+- `pr merge` 属于高风险写操作，默认需要确认。
+- 非交互场景中显式传 `--yes`。
 
 ### pr close - 关闭 PR
 
@@ -735,6 +747,41 @@ gc pr test 1 -R infra-test/gctest1
 gc pr test 1 --force -R infra-test/gctest1
 ```
 
+### pr sync - 同步 PR 到另一个仓库
+
+```bash
+# 同步 PR 到目标仓库
+gc pr sync --source-pr owner/source-repo#123 --target-repo owner/target-repo
+
+# 指定目标分支
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --base release/v1.0
+
+# 自定义标题和内容
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --title "[sync] Fix login bug" \
+  --body "从 owner/source-repo#123 同步"
+
+# 创建草稿 PR
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --draft
+
+# 结构化输出
+gc pr sync --source-pr owner/source-repo#123 \
+  --target-repo owner/target-repo \
+  --json
+```
+
+说明：
+- `--source-pr` 支持两种格式：`owner/repo#number` 或完整 URL
+- 命令会 cherry-pick 源 PR 的所有 commits 到目标仓库
+- 新 PR 标题默认格式：`[sync] {源 PR 标题}`
+- 新 PR 内容默认继承源 PR 内容并追加同步来源信息
+- 如遇 cherry-pick 冲突，命令会报错并提示手动处理
+
 ---
 
 ## Release 命令 (release)
@@ -779,6 +826,9 @@ gc release view v1.0.0 -R infra-test/gctest1 --web
 # 输出 JSON
 gc release view v1.0.0 -R infra-test/gctest1 --json
 ```
+
+说明：
+- 当 GitCode API 未返回资产大小时，文本输出会显示 `unknown size`，避免把未知值误写成 `0 bytes`。
 
 ### release upload - 上传资产
 

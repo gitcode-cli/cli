@@ -174,6 +174,59 @@ func TestResolveOutputOptions(t *testing.T) {
 	}
 }
 
+func TestNormalizeIssueListTime(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		endOfDay bool
+		want     string
+		wantErr  bool
+	}{
+		{
+			name:     "date only start of day",
+			input:    "2026-03-31",
+			endOfDay: false,
+			want:     "2026-03-31T00:00:00Z",
+		},
+		{
+			name:     "date only end of day",
+			input:    "2026-03-31",
+			endOfDay: true,
+			want:     "2026-03-31T23:59:59Z",
+		},
+		{
+			name:     "rfc3339",
+			input:    "2026-03-31T12:30:00+08:00",
+			endOfDay: true,
+			want:     "2026-03-31T12:30:00+08:00",
+		},
+		{
+			name:     "invalid",
+			input:    "2026/03/31",
+			endOfDay: false,
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := normalizeIssueListTime(tt.input, tt.endOfDay)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("normalizeIssueListTime() error = nil, want error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("normalizeIssueListTime() error = %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("normalizeIssueListTime() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestListRunRejectsOutputUsageErrorsBeforeHTTP(t *testing.T) {
 	httpCalled := false
 	opts := &ListOptions{

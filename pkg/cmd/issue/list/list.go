@@ -4,6 +4,7 @@ package list
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -140,6 +141,10 @@ func listRun(opts *ListOptions) error {
 		return err
 	}
 
+	if err := normalizeDateFilters(opts); err != nil {
+		return err
+	}
+
 	httpClient, err := opts.HttpClient()
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
@@ -267,4 +272,55 @@ func resolveOutputOptions(opts *ListOptions) (*resolvedOutputOptions, error) {
 		TimeFormat: timeFormat,
 		Template:   template,
 	}, nil
+}
+
+func normalizeDateFilters(opts *ListOptions) error {
+	if opts == nil {
+		return nil
+	}
+
+	var err error
+	if opts.Since, err = normalizeIssueListTime(opts.Since, false); err != nil {
+		return fmt.Errorf("invalid --since: %w", err)
+	}
+	if opts.CreatedAfter, err = normalizeIssueListTime(opts.CreatedAfter, false); err != nil {
+		return fmt.Errorf("invalid --created-after: %w", err)
+	}
+	if opts.CreatedBefore, err = normalizeIssueListTime(opts.CreatedBefore, true); err != nil {
+		return fmt.Errorf("invalid --created-before: %w", err)
+	}
+	if opts.UpdatedAfter, err = normalizeIssueListTime(opts.UpdatedAfter, false); err != nil {
+		return fmt.Errorf("invalid --updated-after: %w", err)
+	}
+	if opts.UpdatedBefore, err = normalizeIssueListTime(opts.UpdatedBefore, true); err != nil {
+		return fmt.Errorf("invalid --updated-before: %w", err)
+	}
+	return nil
+}
+
+func normalizeIssueListTime(value string, endOfDay bool) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+	}
+	for _, format := range formats {
+		if ts, err := time.Parse(format, value); err == nil {
+			return ts.Format(time.RFC3339), nil
+		}
+	}
+
+	if ts, err := time.Parse("2006-01-02", value); err == nil {
+		if endOfDay {
+			ts = ts.Add(24*time.Hour - time.Second)
+		}
+		return ts.Format(time.RFC3339), nil
+	}
+
+	return "", fmt.Errorf("expected YYYY-MM-DD or ISO 8601 datetime")
 }

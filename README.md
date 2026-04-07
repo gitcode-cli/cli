@@ -4,7 +4,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v0.3.8-blue)](https://gitcode.com/gitcode-cli/cli/releases)
+[![Release](https://img.shields.io/badge/Release-v0.3.9-blue)](https://gitcode.com/gitcode-cli/cli/releases)
 
 GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
 
@@ -58,25 +58,25 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 # 从 Releases 下载 .deb 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.8/gc_0.3.8_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.9/gc_0.3.9_amd64.deb
 
 # 安装
-sudo dpkg -i gc_0.3.8_amd64.deb
+sudo dpkg -i gc_0.3.9_amd64.deb
 ```
 
 **RPM (RHEL/CentOS/Fedora):**
 
 ```bash
 # 从 Releases 下载 .rpm 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.8/gc-0.3.8-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.9/gc-0.3.9-1.x86_64.rpm
 
 # 安装
-sudo rpm -i gc-0.3.8-1.x86_64.rpm
+sudo rpm -i gc-0.3.9-1.x86_64.rpm
 ```
 
 ### Wheel 包（跨平台，推荐）
 
-从 Release 归档下载 wheel 包安装：
+从 Release 归档下载 wheel 包安装，**内置全平台二进制**（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64）：
 
 ```bash
 # 创建虚拟环境
@@ -85,7 +85,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.8/gitcode_cli-0.3.8-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.9/gitcode_cli-0.3.9-py3-none-any.whl
 ```
 
 ### PyPI（备选）

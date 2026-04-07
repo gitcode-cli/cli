@@ -108,5 +108,8 @@ func getEnvToken() string {
 	if token := os.Getenv("GC_TOKEN"); token != "" {
 		return token
 	}
-	return os.Getenv("GITCODE_TOKEN")
+	if token := os.Getenv("GITCODE_TOKEN"); token != "" {
+		return token
+	}
+	return cmdutil.EnvToken()
 }

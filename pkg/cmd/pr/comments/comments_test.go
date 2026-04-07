@@ -158,7 +158,7 @@ func TestParseRepo(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:    "empty repo",
+			name:    "empty repo requires explicit repo",
 			repo:    "",
 			wantErr: true,
 		},
@@ -218,12 +218,13 @@ func TestCommentsRunValidation(t *testing.T) {
 		errMsg  string
 	}{
 		{
-			name: "missing repo",
+			name: "invalid repo",
 			opts: &CommentsOptions{
-				Number: 123,
+				Number:     123,
+				Repository: "invalid",
 			},
 			wantErr: true,
-			errMsg:  "no repository specified",
+			errMsg:  "invalid repository format",
 		},
 	}
 

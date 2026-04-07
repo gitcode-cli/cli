@@ -3,6 +3,7 @@ package view
 import (
 	"testing"
 
+	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -42,5 +43,14 @@ func TestNewCmdView(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestAssetSizeLabel(t *testing.T) {
+	if got := assetSizeLabel(api.ReleaseAsset{Size: 0}); got != "unknown size" {
+		t.Fatalf("assetSizeLabel() = %q", got)
+	}
+	if got := assetSizeLabel(api.ReleaseAsset{Size: 42}); got != "42 bytes" {
+		t.Fatalf("assetSizeLabel() = %q", got)
 	}
 }

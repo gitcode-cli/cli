@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -37,6 +38,65 @@ func TestCreateIssueUsesAssigneeIDs(t *testing.T) {
 	}
 	if got := gotBody["assignee_ids[]"]; len(got) != 1 || got[0] != "4744798" {
 		t.Fatalf("assignee_ids[] = %v, want [%q]", got, "4744798")
+	}
+}
+
+func TestCreateIssueUsesOwnerPathForAdvancedFields(t *testing.T) {
+	var gotBody map[string]interface{}
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Path != "/api/v5/repos/owner/issues" {
+			t.Fatalf("request path = %s, want /api/v5/repos/owner/issues", req.URL.Path)
+		}
+		if got := req.Header.Get("Content-Type"); got != "application/json" {
+			t.Fatalf("content-type = %q, want application/json", got)
+		}
+
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			t.Fatalf("ReadAll() error = %v", err)
+		}
+		if err := json.Unmarshal(body, &gotBody); err != nil {
+			t.Fatalf("json.Unmarshal() error = %v", err)
+		}
+		return authTestResponse(http.StatusOK, `{"number":"2","title":"created"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := CreateIssue(client, "owner", "repo", &CreateIssueOptions{
+		Title:         "created",
+		Assignees:     []string{"alice", "bob"},
+		Labels:        []string{"bug", "enhancement"},
+		TemplatePath:  ".gitcode/ISSUE_TEMPLATE/feature.yaml",
+		SecurityHole:  "true",
+		IssueType:     "需求",
+		IssueSeverity: "高",
+		CustomFields: []map[string]interface{}{
+			{"id": "field", "value": "demo"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateIssue() error = %v", err)
+	}
+
+	if gotBody["repo"] != "repo" {
+		t.Fatalf("repo = %#v, want %q", gotBody["repo"], "repo")
+	}
+	if gotBody["assignee"] != "alice,bob" {
+		t.Fatalf("assignee = %#v, want %q", gotBody["assignee"], "alice,bob")
+	}
+	if gotBody["labels"] != "bug,enhancement" {
+		t.Fatalf("labels = %#v, want %q", gotBody["labels"], "bug,enhancement")
+	}
+	if gotBody["template_path"] != ".gitcode/ISSUE_TEMPLATE/feature.yaml" {
+		t.Fatalf("template_path = %#v", gotBody["template_path"])
+	}
+	if gotBody["security_hole"] != "true" {
+		t.Fatalf("security_hole = %#v, want %q", gotBody["security_hole"], "true")
+	}
+	fields, ok := gotBody["custom_fields"].([]interface{})
+	if !ok || len(fields) != 1 {
+		t.Fatalf("custom_fields = %#v, want one element", gotBody["custom_fields"])
 	}
 }
 

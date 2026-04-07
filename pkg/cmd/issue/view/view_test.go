@@ -1,9 +1,15 @@
 package view
 
 import (
+	"bytes"
+	"strings"
 	"testing"
+	"time"
 
+	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/output"
 )
 
 func TestNewCmdView(t *testing.T) {
@@ -23,6 +29,11 @@ func TestNewCmdView(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "view with relative time",
+			args:    []string{"123", "--time-format", "relative"},
+			wantErr: false,
+		},
+		{
 			name:    "no issue number",
 			args:    []string{},
 			wantErr: true,
@@ -30,6 +41,11 @@ func TestNewCmdView(t *testing.T) {
 		{
 			name:    "invalid issue number",
 			args:    []string{"abc"},
+			wantErr: true,
+		},
+		{
+			name:    "invalid time format",
+			args:    []string{"123", "--time-format", "yaml"},
 			wantErr: true,
 		},
 	}
@@ -47,5 +63,107 @@ func TestNewCmdView(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestParseTimeFormat(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    output.TimeFormat
+		wantErr bool
+	}{
+		{name: "default", input: "", want: output.TimeFormatAbsolute},
+		{name: "absolute", input: "absolute", want: output.TimeFormatAbsolute},
+		{name: "relative", input: "relative", want: output.TimeFormatRelative},
+		{name: "invalid", input: "yaml", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseTimeFormat(tt.input)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("parseTimeFormat() error = nil, want error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("parseTimeFormat() error = %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("parseTimeFormat() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFormatViewTime(t *testing.T) {
+	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
+	ts := api.FlexibleTime{Time: now.Add(-2 * time.Hour)}
+
+	if got := formatViewTime(ts.Time, output.TimeFormatAbsolute, now); got != "2026-03-26 10:00" {
+		t.Fatalf("absolute format = %q", got)
+	}
+	if got := formatViewTime(ts.Time, output.TimeFormatRelative, now); got != "2 hours ago" {
+		t.Fatalf("relative format = %q", got)
+	}
+	if got := formatViewTime(time.Time{}, output.TimeFormatAbsolute, now); got != "unknown" {
+		t.Fatalf("zero time format = %q", got)
+	}
+}
+
+func TestRenderIssueView(t *testing.T) {
+	io, _, _, _ := iostreams.Test()
+	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
+	closed := api.FlexibleTime{Time: now.Add(-time.Hour)}
+	issue := &api.Issue{
+		Title:     "Improve issue details",
+		Number:    "42",
+		State:     "closed",
+		HTMLURL:   "https://gitcode.com/owner/repo/issues/42",
+		Body:      "Issue body",
+		Comments:  1,
+		CreatedAt: api.FlexibleTime{Time: now.Add(-3 * time.Hour)},
+		UpdatedAt: api.FlexibleTime{Time: now.Add(-30 * time.Minute)},
+		ClosedAt:  &closed,
+		User:      &api.User{Login: "alice"},
+		Milestone: &api.Milestone{Title: "v1.0"},
+		Assignees: []*api.User{&api.User{Login: "bob"}},
+		Labels:    []*api.Label{&api.Label{Name: "bug"}},
+	}
+	comments := []api.IssueComment{
+		{
+			Body:      "Looks good",
+			User:      &api.User{Login: "carol"},
+			CreatedAt: api.FlexibleTime{Time: now.Add(-15 * time.Minute)},
+		},
+	}
+
+	var buf bytes.Buffer
+	if err := renderIssueView(&buf, io.ColorScheme(), issue, comments, output.TimeFormatRelative, now); err != nil {
+		t.Fatalf("renderIssueView() error = %v", err)
+	}
+
+	output := buf.String()
+	for _, want := range []string{
+		"Improve issue details #42",
+		"State: closed",
+		"Author: alice",
+		"Created: 3 hours ago",
+		"Updated: 30 minutes ago",
+		"Closed: 1 hour ago",
+		"Milestone: v1.0",
+		"Assignees: bob",
+		"Labels: bug",
+		"Comments: 1",
+		"Issue body",
+		"--- Comments (1) ---",
+		"carol at 15 minutes ago",
+		"Looks good",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("renderIssueView() output missing %q: %s", want, output)
+		}
 	}
 }

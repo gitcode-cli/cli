@@ -46,6 +46,15 @@ git@gitcode.com:owner/repo.git
 - `label list`
 - `milestone list`
 
+其中 `issue list` 额外支持：
+
+- `--format json|simple|table`
+- `--time-format absolute|relative`
+- `--template <go-template>`
+- `--json` 与 `--format json` 等价，二者都应作为稳定机器可消费入口
+
+`issue list` 的 `--format` 非法值应直接报用法错误，不应静默回退到默认格式。
+
 ### 认证
 
 ```bash
@@ -325,9 +334,26 @@ gc issue list -R infra-test/gctest1 --state open --milestone "v1.0" --sort updat
 
 # 输出 JSON
 gc issue list -R infra-test/gctest1 --json
+
+# 输出格式
+gc issue list -R infra-test/gctest1 --format json
+gc issue list -R infra-test/gctest1 --format simple
+gc issue list -R infra-test/gctest1 --format table
+
+# 时间格式
+gc issue list -R infra-test/gctest1 --time-format absolute
+gc issue list -R infra-test/gctest1 --time-format relative
+
+# 自定义模板
+gc issue list -R infra-test/gctest1 --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"}}{{end}}'
 ```
 
 说明：
+- `--json` 继续作为兼容入口保留，适合脚本和代理调用。
+- `--format json` 与 `--json` 输出一致。
+- `--time-format` 只影响文本展示中的时间格式，不改变 JSON 结构。
+- `--template` 使用 Go template 渲染 issue 列表，当前与 `--json`、`--format` 互斥。
+- 非法 `--format` 值会返回错误，不会静默降级为默认输出。
 - `--since`、`--created-after`、`--created-before`、`--updated-after`、`--updated-before` 支持 `YYYY-MM-DD` 和 ISO 8601 时间。
 - CLI 会在请求前自动规范化为 GitCode API 可接受的 RFC3339 时间戳。
 
@@ -349,7 +375,15 @@ gc issue view 1 -R infra-test/gctest1 --json
 
 # 查看评论并输出 JSON
 gc issue view 1 -R infra-test/gctest1 --comments --json
+
+# 相对时间
+gc issue view 1 -R infra-test/gctest1 --time-format relative
 ```
+
+说明：
+- `issue view` 的文本详情输出会使用更稳定的元信息排布，便于人工和代理阅读。
+- `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
+- `--json` 路径保持结构化输出，不受文本排版变化影响。
 
 ### issue close - 关闭 Issue
 
@@ -566,7 +600,15 @@ gc pr view 1 -R infra-test/gctest1 --json
 
 # 查看评论并输出 JSON
 gc pr view 1 -R infra-test/gctest1 --comments --json
+
+# 相对时间
+gc pr view 1 -R infra-test/gctest1 --time-format relative
 ```
+
+说明：
+- `pr view` 的文本详情输出会使用更稳定的元信息排布，便于人工和代理阅读。
+- `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
+- `--json` 路径保持结构化输出，不受文本排版变化影响。
 
 ### pr comments - 查看 PR 评论
 

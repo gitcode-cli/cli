@@ -47,7 +47,7 @@ go build -o ./gc ./cmd/gc
 说明：
 - 脚本会使用临时 `GC_CONFIG_DIR`，避免污染本地长期配置。
 - 登录阶段会把环境变量 token 写入临时配置，然后取消环境变量覆盖，以验证 config-backed auth 流程。
-- release dry-run 默认使用 `GC_REGRESSION_RELEASE_TAG`，未显式设置时默认取 `v0.0.1-test`。
+- `release delete` 的 dry-run 默认使用 `GC_REGRESSION_RELEASE_TAG`，未显式设置时默认取 `v0.0.1-test`。
 
 ## 可选写路径
 
@@ -77,8 +77,17 @@ export GC_REGRESSION_PR_BASE=main
 # 结构化输出
 ./gc repo view infra-test/gctest1 --json
 ./gc issue list -R infra-test/gctest1 --limit 1 --json
+./gc issue list -R infra-test/gctest1 --format json
+./gc issue list -R infra-test/gctest1 --format table
+./gc issue list -R infra-test/gctest1 --format simple
+./gc issue list -R infra-test/gctest1 --time-format absolute
+./gc issue list -R infra-test/gctest1 --time-format relative
+./gc issue list -R infra-test/gctest1 --template '{{range .}}{{.Number}}{{"\n"}}{{end}}'
 ./gc issue view 1 -R infra-test/gctest1 --json
+./gc issue view 1 -R infra-test/gctest1
 ./gc pr list -R infra-test/gctest1 --json
+./gc pr view 1 -R infra-test/gctest1 --json
+./gc pr view 1 -R infra-test/gctest1
 ./gc release list -R infra-test/gctest1 --json
 
 # dry-run
@@ -92,6 +101,11 @@ export GC_REGRESSION_PR_BASE=main
 说明：
 - 上述 dry-run 命令不应执行真实写入。
 - 非交互环境中未传 `--yes` 的删除命令应直接失败，不应挂起等待输入。
+- `issue list --format yaml` 应返回用法错误，不应静默回退到默认输出。
+- `issue list --json` 与 `issue list --format json` 应保持等价。
+- `issue list --time-format absolute|relative` 仅影响文本展示，不应改变 JSON 输出。
+- `issue list --template` 应输出模板结果，并与 `--json`、`--format` 的冲突保持稳定报错。
+- `issue view` 和 `pr view` 的文本输出应保留稳定的详情布局，`--json` 继续输出结构化数据。
 
 ## 推荐记录方式
 

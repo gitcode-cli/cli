@@ -52,16 +52,16 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 		`),
 		Example: heredoc.Doc(`
 				# Approve a PR
-				$ gc pr review 123 --approve
+				$ gc pr review 123 -R owner/repo --approve
 
 				# Comment on a PR
-				$ gc pr review 123 --comment "Looks good to me"
+				$ gc pr review 123 -R owner/repo --comment "Looks good to me"
 
 				# Approve a PR and leave a comment
-				$ gc pr review 123 --approve --comment "LGTM"
+				$ gc pr review 123 -R owner/repo --approve --comment "LGTM"
 
 				# Force approve a PR (admin only)
-				$ gc pr review 123 --approve --force
+				$ gc pr review 123 -R owner/repo --approve --force
 			`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

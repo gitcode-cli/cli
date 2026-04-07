@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/url"
+	"strings"
 )
 
 // Issue represents a GitCode issue
@@ -398,27 +399,62 @@ func AddIssueLabels(client *Client, owner, repo string, number int, labels []str
 
 // RemoveIssueLabel removes a label from an issue by updating the issue
 func RemoveIssueLabel(client *Client, owner, repo string, number int, label string) error {
-	// Get current issue
 	issue, err := GetIssue(client, owner, repo, number)
 	if err != nil {
 		return fmt.Errorf("failed to get issue: %w", err)
 	}
 
-	// Filter out the label to remove
 	labels := make([]string, 0)
+	found := false
 	for _, l := range issue.Labels {
 		if l.Name != label {
 			labels = append(labels, l.Name)
+			continue
+		}
+		found = true
+	}
+
+	if !found {
+		return nil
+	}
+
+	if len(labels) == 0 {
+		if err := ClearIssueLabels(client, owner, repo, number); err != nil {
+			return err
+		}
+		return verifyIssueLabelRemoved(client, owner, repo, number, label)
+	}
+
+	if _, err := SetIssueLabels(client, owner, repo, number, labels); err == nil {
+		if err := verifyIssueLabelRemoved(client, owner, repo, number, label); err == nil {
+			return nil
 		}
 	}
 
-	// Update issue with remaining labels
 	_, err = UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
 		Repo:   repo,
 		Title:  issue.Title,
 		Labels: labels,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	return verifyIssueLabelRemoved(client, owner, repo, number, label)
+}
+
+func verifyIssueLabelRemoved(client *Client, owner, repo string, number int, label string) error {
+	verified, err := GetIssue(client, owner, repo, number)
+	if err != nil {
+		return fmt.Errorf("failed to verify issue labels: %w", err)
+	}
+	for _, l := range verified.Labels {
+		if strings.EqualFold(l.Name, label) {
+			return fmt.Errorf("label %q is still present after removal", label)
+		}
+	}
+
+	return nil
 }
 
 // IssuePR represents a Pull Request associated with an issue

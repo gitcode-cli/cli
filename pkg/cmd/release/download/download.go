@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,18 +50,18 @@ func NewCmdDownload(f *cmdutil.Factory, runF func(*DownloadOptions) error) *cobr
 		`),
 		Example: heredoc.Doc(`
 			# Download all assets from latest release
-			$ gc release download
+			$ gc release download -R owner/repo
 
 			# Download all assets from a specific release
-			$ gc release download v1.0.0
+			$ gc release download v1.0.0 -R owner/repo
 
 			# Download a specific asset
-			$ gc release download v1.0.0 app.zip
+			$ gc release download v1.0.0 app.zip -R owner/repo
 
 			# Download to a specific directory
-			$ gc release download v1.0.0 --output ./downloads/
+			$ gc release download v1.0.0 -R owner/repo --output ./downloads/
 		`),
-		Args: cobra.MinimumNArgs(1),
+		Args: cobra.MaximumNArgs(64),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				opts.TagName = args[0]
@@ -94,7 +95,7 @@ func downloadRun(opts *DownloadOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -155,9 +156,7 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 	outputPath := filepath.Join(outputDir, asset.Name)
 	fmt.Fprintf(out, "%s Downloading %s...\n", cs.Blue("⬇"), asset.Name)
 
-	// Use GitCode API download endpoint
-	downloadURL := fmt.Sprintf("https://api.gitcode.com/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download",
-		owner, repo, tag, asset.Name)
+	downloadURL := assetDownloadURL(asset, owner, repo, tag)
 
 	// Create request
 	req, err := http.NewRequest("GET", downloadURL, nil)
@@ -194,6 +193,23 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 
 	fmt.Fprintf(out, "%s Downloaded %s (%s)\n", cs.Green("✓"), asset.Name, formatSize(int(written)))
 	return nil
+}
+
+func assetDownloadURL(asset api.ReleaseAsset, owner, repo, tag string) string {
+	if isSourceArchiveAsset(asset) {
+		return asset.BrowserDownloadURL
+	}
+
+	return fmt.Sprintf("https://api.gitcode.com/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download",
+		owner, repo, tag, url.PathEscape(asset.Name))
+}
+
+func isSourceArchiveAsset(asset api.ReleaseAsset) bool {
+	if strings.TrimSpace(asset.BrowserDownloadURL) == "" {
+		return false
+	}
+
+	return strings.Contains(asset.BrowserDownloadURL, "/archive/refs/heads/")
 }
 
 func filterAssets(assets []api.ReleaseAsset, names []string) []api.ReleaseAsset {

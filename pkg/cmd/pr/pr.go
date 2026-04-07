@@ -5,7 +5,6 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/checkout"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/close"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comments"
@@ -15,12 +14,13 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/merge"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/ready"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/reply"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/reopen"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/reply"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/review"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/sync"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/test"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/view"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdPR creates the pr command
@@ -35,16 +35,16 @@ func NewCmdPR(f *cmdutil.Factory) *cobra.Command {
 		`),
 		Example: heredoc.Doc(`
 			# Create a new pull request
-			$ gc pr create --title "Feature" --body "Description"
+			$ gc pr create -R owner/repo --title "Feature" --body "Description"
 
 			# List pull requests
-			$ gc pr list
+			$ gc pr list -R owner/repo
 
 			# View a pull request
-			$ gc pr view 123
+			$ gc pr view 123 -R owner/repo
 
 			# Review a pull request
-			$ gc pr review 123 --approve
+			$ gc pr review 123 -R owner/repo --approve
 		`),
 		Annotations: map[string]string{
 			"IsCore": "true",

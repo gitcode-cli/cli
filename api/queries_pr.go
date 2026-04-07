@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/url"
+	"strings"
 )
 
 // PullRequest represents a GitCode pull request
@@ -132,13 +133,7 @@ type MergePROptions struct {
 
 // ListPullRequests lists pull requests for a repository
 func ListPullRequests(client *Client, owner, repo string, opts *PRListOptions) ([]PullRequest, error) {
-	path := "/repos/" + owner + "/" + repo + "/pulls"
-	if opts != nil && opts.PerPage > 0 {
-		path = path + "?per_page=" + itoa(opts.PerPage)
-		if opts.State != "" {
-			path = path + "&state=" + opts.State
-		}
-	}
+	path := buildPRListPath("/repos/"+owner+"/"+repo+"/pulls", opts)
 
 	var prs []PullRequest
 	err := client.Get(path, &prs)
@@ -146,6 +141,39 @@ func ListPullRequests(client *Client, owner, repo string, opts *PRListOptions) (
 		return nil, err
 	}
 	return prs, nil
+}
+
+func buildPRListPath(base string, opts *PRListOptions) string {
+	if opts == nil {
+		return base
+	}
+
+	values := url.Values{}
+	if opts.State != "" {
+		values.Set("state", opts.State)
+	}
+	if opts.Head != "" {
+		values.Set("head", opts.Head)
+	}
+	if opts.Base != "" {
+		values.Set("base", opts.Base)
+	}
+	if opts.Sort != "" {
+		values.Set("sort", opts.Sort)
+	}
+	if opts.Direction != "" {
+		values.Set("direction", opts.Direction)
+	}
+	if opts.PerPage > 0 {
+		values.Set("per_page", itoa(opts.PerPage))
+	}
+	if opts.Page > 0 {
+		values.Set("page", itoa(opts.Page))
+	}
+	if len(values) == 0 {
+		return base
+	}
+	return base + "?" + values.Encode()
 }
 
 // GetPullRequest fetches a PR by number
@@ -225,32 +253,69 @@ func buildPRUpdateFormValues(opts *UpdatePROptions) url.Values {
 	return formValues
 }
 
+func isPullRequestClosed(pr *PullRequest) bool {
+	if pr == nil {
+		return false
+	}
+	return strings.EqualFold(pr.State, "closed") || strings.EqualFold(pr.State, "close")
+}
+
 // ClosePullRequest closes a PR
 func ClosePullRequest(client *Client, owner, repo string, number int) (*PullRequest, error) {
-	// GitCode API requires at least one other field along with state_event
-	// Get current PR to preserve its title
 	pr, err := GetPullRequest(client, owner, repo, number)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get PR: %w", err)
 	}
-	return UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
-		StateEvent: "close",
-		Title:      pr.Title,
+
+	updated, err := UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
+		State: "closed",
+		Title: pr.Title,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if isPullRequestClosed(updated) {
+		return updated, nil
+	}
+
+	verified, err := GetPullRequest(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify PR close state: %w", err)
+	}
+	if isPullRequestClosed(verified) {
+		return verified, nil
+	}
+
+	return nil, fmt.Errorf("pull request #%d is still open after close request", number)
 }
 
 // ReopenPullRequest reopens a closed PR
 func ReopenPullRequest(client *Client, owner, repo string, number int) (*PullRequest, error) {
-	// GitCode API requires at least one other field along with state_event
-	// Get current PR to preserve its title
 	pr, err := GetPullRequest(client, owner, repo, number)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get PR: %w", err)
 	}
-	return UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
-		StateEvent: "reopen",
-		Title:      pr.Title,
+
+	updated, err := UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
+		State: "open",
+		Title: pr.Title,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if !isPullRequestClosed(updated) {
+		return updated, nil
+	}
+
+	verified, err := GetPullRequest(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify PR reopen state: %w", err)
+	}
+	if !isPullRequestClosed(verified) {
+		return verified, nil
+	}
+
+	return nil, fmt.Errorf("pull request #%d is still closed after reopen request", number)
 }
 
 // MergePullRequest merges a PR

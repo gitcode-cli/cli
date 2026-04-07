@@ -87,6 +87,49 @@ func TestForkRunUsesRequestedRepository(t *testing.T) {
 	}
 }
 
+func TestForkRunUsesConfiguredTokenWhenEnvUnset(t *testing.T) {
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+
+	cfg := config.New()
+	if _, err := cfg.Authentication().Login("gitcode.com", "demo", "config-token", "https", false); err != nil {
+		t.Fatalf("Login() error = %v", err)
+	}
+
+	f := cmdutil.TestFactory()
+	var gotToken string
+
+	opts := &ForkOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Config: func() (config.Config, error) {
+			return fakeConfig{}, nil
+		},
+		ParseRepo: git.ParseRepo,
+		ForkRepo: func(client *api.Client, owner, name string) (*api.Repository, error) {
+			gotToken = client.Token()
+			return &api.Repository{
+				FullName: "fork-owner/fork-repo",
+				HTMLURL:  "https://gitcode.com/fork-owner/fork-repo",
+			}, nil
+		},
+		CloneRepo: func(repo *git.Repo, dir string, protocol string, depth int) error {
+			t.Fatalf("CloneRepo() should not be called when --clone is false")
+			return nil
+		},
+		Repository: "infra-test/gctest1",
+	}
+
+	err := forkRun(opts)
+	if err != nil {
+		t.Fatalf("forkRun() error = %v", err)
+	}
+	if gotToken != "config-token" {
+		t.Fatalf("client token = %q, want %q", gotToken, "config-token")
+	}
+}
+
 func TestForkRunCloneUsesForkedRepository(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	t.Setenv("GC_GIT_PROTOCOL", "ssh")

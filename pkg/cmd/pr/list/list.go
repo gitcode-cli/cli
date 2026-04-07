@@ -11,6 +11,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/output"
 )
 
 type ListOptions struct {
@@ -21,11 +22,15 @@ type ListOptions struct {
 	Repository string
 
 	// Flags
-	State string
-	Limit int
-	Head  string
-	Base  string
-	JSON  bool
+	State     string
+	Limit     int
+	Head      string
+	Base      string
+	Sort      string
+	Direction string
+	Page      int
+	JSON      bool
+	Format    string
 }
 
 // NewCmdList creates the list command
@@ -43,13 +48,19 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 		`),
 		Example: heredoc.Doc(`
 			# List open PRs
-			$ gc pr list
+			$ gc pr list -R owner/repo
 
 			# List closed PRs
-			$ gc pr list --state closed
+			$ gc pr list -R owner/repo --state closed
 
-			# List PRs in a specific repository
-			$ gc pr list -R owner/repo
+			# Filter by head and base branches
+			$ gc pr list -R owner/repo --head feature/login --base main
+
+			# Sort results
+			$ gc pr list -R owner/repo --sort updated --direction desc
+
+			# Render as a table
+			$ gc pr list -R owner/repo --format table
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -64,13 +75,20 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of PRs to list")
 	cmd.Flags().StringVarP(&opts.Head, "head", "H", "", "Filter by head branch")
 	cmd.Flags().StringVarP(&opts.Base, "base", "B", "", "Filter by base branch")
+	cmd.Flags().StringVar(&opts.Sort, "sort", "", "Sort by created/updated/popularity/long-running")
+	cmd.Flags().StringVar(&opts.Direction, "direction", "", "Sort direction (asc/desc)")
+	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number to fetch")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
+	cmdutil.AddFormatFlag(cmd, &opts.Format)
 
 	return cmd
 }
 
 func listRun(opts *ListOptions) error {
-	cs := opts.IO.ColorScheme()
+	format, err := resolveOutputFormat(opts.JSON, opts.Format)
+	if err != nil {
+		return err
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {
@@ -92,10 +110,13 @@ func listRun(opts *ListOptions) error {
 
 	// List PRs
 	prs, err := api.ListPullRequests(client, owner, repo, &api.PRListOptions{
-		State:   opts.State,
-		Head:    opts.Head,
-		Base:    opts.Base,
-		PerPage: opts.Limit,
+		State:     opts.State,
+		Head:      opts.Head,
+		Base:      opts.Base,
+		Sort:      opts.Sort,
+		Direction: opts.Direction,
+		PerPage:   opts.Limit,
+		Page:      opts.Page,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list PRs: %w", err)
@@ -103,48 +124,40 @@ func listRun(opts *ListOptions) error {
 
 	// Output
 	if len(prs) == 0 {
-		if opts.JSON {
+		if format == output.FormatJSON {
 			return cmdutil.WriteJSON(opts.IO.Out, prs)
 		}
 		fmt.Fprintf(opts.IO.Out, "No pull requests found\n")
 		return nil
 	}
 
-	if opts.JSON {
+	if format == output.FormatJSON {
 		return cmdutil.WriteJSON(opts.IO.Out, prs)
 	}
-
-	// Calculate max number width for alignment
-	maxNumWidth := 0
-	for _, pr := range prs {
-		w := len(fmt.Sprintf("#%d", pr.Number))
-		if w > maxNumWidth {
-			maxNumWidth = w
-		}
+	printer, err := output.NewPRListPrinter(output.PRListOptions{
+		Format: format,
+		Color:  opts.IO.ColorScheme(),
+	})
+	if err != nil {
+		return err
 	}
-
-	fmt.Fprintf(opts.IO.Out, "\n")
-	for _, pr := range prs {
-		var state string
-		switch pr.State {
-		case "merged":
-			state = cs.Magenta("merged")
-		case "closed":
-			state = cs.Red("closed")
-		default:
-			if pr.Draft {
-				state = cs.Gray("draft")
-			} else {
-				state = cs.Green("open")
-			}
-		}
-		fmt.Fprintf(opts.IO.Out, "%-*s  %s  %s\n", maxNumWidth, fmt.Sprintf("#%d", pr.Number), state, pr.Title)
-	}
-	fmt.Fprintf(opts.IO.Out, "\n")
-
-	return nil
+	return printer.Print(opts.IO.Out, prs)
 }
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+func resolveOutputFormat(jsonFlag bool, raw string) (output.Format, error) {
+	format, err := output.ParseFormat(raw)
+	if err != nil {
+		return "", cmdutil.NewUsageError(err.Error())
+	}
+	if jsonFlag {
+		if raw != "" && format != output.FormatJSON {
+			return "", cmdutil.NewUsageError("--json cannot be combined with --format unless --format json")
+		}
+		return output.FormatJSON, nil
+	}
+	return format, nil
 }

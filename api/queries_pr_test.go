@@ -4,9 +4,44 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 )
+
+func TestListPullRequestsBuildsQuery(t *testing.T) {
+	var gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+
+	_, err := ListPullRequests(client, "owner", "repo", &PRListOptions{
+		State:     "open",
+		Head:      "feature/login",
+		Base:      "main",
+		Sort:      "updated",
+		Direction: "asc",
+		PerPage:   50,
+		Page:      2,
+	})
+	if err != nil {
+		t.Fatalf("ListPullRequests() error = %v", err)
+	}
+
+	assertPRListRequest(t, gotPath, "/api/v5/repos/owner/repo/pulls", map[string]string{
+		"state":     "open",
+		"head":      "feature/login",
+		"base":      "main",
+		"sort":      "updated",
+		"direction": "asc",
+		"per_page":  "50",
+		"page":      "2",
+	})
+}
 
 func TestUpdatePullRequestUsesFormEncoding(t *testing.T) {
 	draft := false
@@ -120,6 +155,94 @@ func TestPullRequestUnmarshal(t *testing.T) {
 	}
 }
 
+func TestClosePullRequestUsesStateAndVerifiesClosedState(t *testing.T) {
+	var requests []string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		path := req.URL.Path
+		if req.URL.RawQuery != "" {
+			path += "?" + req.URL.RawQuery
+		}
+		requests = append(requests, req.Method+" "+path)
+
+		switch len(requests) {
+		case 1:
+			if req.Method != http.MethodGet {
+				t.Fatalf("request 1 method = %s, want GET", req.Method)
+			}
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"open"}`), nil
+		case 2:
+			if req.Method != http.MethodPatch {
+				t.Fatalf("request 2 method = %s, want PATCH", req.Method)
+			}
+			body, err := io.ReadAll(req.Body)
+			if err != nil {
+				t.Fatalf("failed to read request body: %v", err)
+			}
+			values, err := url.ParseQuery(string(body))
+			if err != nil {
+				t.Fatalf("ParseQuery() error = %v", err)
+			}
+			if got := values.Get("state"); got != "closed" {
+				t.Fatalf("state = %q, want %q", got, "closed")
+			}
+			if got := values.Get("title"); got != "updated" {
+				t.Fatalf("title = %q, want %q", got, "updated")
+			}
+			if got := values.Get("state_event"); got != "" {
+				t.Fatalf("state_event = %q, want empty", got)
+			}
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"closed"}`), nil
+		default:
+			t.Fatalf("unexpected extra request %d: %s", len(requests), requests[len(requests)-1])
+			return nil, nil
+		}
+	})
+	client.SetToken("test-token", "test")
+
+	pr, err := ClosePullRequest(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("ClosePullRequest() error = %v", err)
+	}
+	if pr.State != "closed" {
+		t.Fatalf("pr.State = %q, want %q", pr.State, "closed")
+	}
+	if len(requests) != 2 {
+		t.Fatalf("request count = %d, want 2", len(requests))
+	}
+}
+
+func TestClosePullRequestErrorsWhenVerificationStillOpen(t *testing.T) {
+	var requests int
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests++
+		switch requests {
+		case 1:
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"open"}`), nil
+		case 2:
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"open"}`), nil
+		case 3:
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"open"}`), nil
+		default:
+			t.Fatalf("unexpected request %d", requests)
+			return nil, nil
+		}
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := ClosePullRequest(client, "owner", "repo", 123)
+	if err == nil {
+		t.Fatal("expected ClosePullRequest() to return an error")
+	}
+	if !strings.Contains(err.Error(), "still open") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if requests != 3 {
+		t.Fatalf("request count = %d, want 3", requests)
+	}
+}
+
 func TestPRCommentAndReviewUnmarshal(t *testing.T) {
 	commentJSON := `{
 		"id": 1,
@@ -153,5 +276,33 @@ func TestPRCommentAndReviewUnmarshal(t *testing.T) {
 	}
 	if review.State != "approved" || review.User == nil || review.User.Login != "reviewer2" {
 		t.Fatalf("Unexpected review payload: %#v", review)
+	}
+}
+
+func assertPRListRequest(t *testing.T, gotPath, wantPath string, wantQuery map[string]string) {
+	t.Helper()
+
+	if gotPath == "" {
+		t.Fatal("request path was empty")
+	}
+	if !strings.HasPrefix(gotPath, wantPath) {
+		t.Fatalf("request path = %q, want prefix %q", gotPath, wantPath)
+	}
+
+	rawQuery := ""
+	if len(gotPath) > len(wantPath) {
+		rawQuery = strings.TrimPrefix(gotPath[len(wantPath):], "?")
+	}
+	query, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		t.Fatalf("url.ParseQuery() error = %v", err)
+	}
+	for key, want := range wantQuery {
+		if got := query.Get(key); got != want {
+			t.Fatalf("query[%q] = %q, want %q", key, got, want)
+		}
+	}
+	if len(query) != len(wantQuery) {
+		t.Fatalf("query = %#v, want %#v", query, wantQuery)
 	}
 }

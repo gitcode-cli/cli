@@ -318,7 +318,7 @@ echo "password=%s"
 	}
 
 	if conflictError != "" {
-		return writeSyncResult(opts, result, fmt.Errorf("%s. Manual resolution required.", conflictError))
+		return writeSyncResult(opts, result, cmdutil.NewCLIError(cmdutil.ExitConflict, fmt.Sprintf("%s. Manual resolution required.", conflictError), nil))
 	}
 
 	// Push sync branch
@@ -353,7 +353,10 @@ func writeSyncResult(opts *SyncOptions, result SyncResult, err error) error {
 		if err != nil {
 			result.ConflictError = err.Error()
 		}
-		return cmdutil.WriteJSON(opts.IO.Out, result)
+		if writeErr := cmdutil.WriteJSON(opts.IO.Out, result); writeErr != nil {
+			return writeErr
+		}
+		return err
 	}
 
 	cs := opts.IO.ColorScheme()

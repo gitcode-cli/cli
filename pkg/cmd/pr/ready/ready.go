@@ -43,10 +43,10 @@ func NewCmdReady(f *cmdutil.Factory, runF func(*ReadyOptions) error) *cobra.Comm
 		`),
 		Example: heredoc.Doc(`
 			# Mark PR as ready for review
-			$ gc pr ready 123
+			$ gc pr ready 123 -R owner/repo
 
 			# Mark PR as work-in-progress
-			$ gc pr ready 123 --wip
+			$ gc pr ready 123 -R owner/repo --wip
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -52,16 +52,20 @@
 - 校验 token 有效性
 - 成功后写入本地配置
 - 若同时存在环境变量，后续命令仍优先使用环境变量
+- 未显式传 `--token` 或 `--with-token` 时，需要交互式 TTY；非交互环境会直接报错
 
 ### auth status
 
 - 按统一优先级解析当前活动 token
 - 显示 token 来源：`GC_TOKEN`、`GITCODE_TOKEN` 或 `config`
+- 显式传 `--hostname` 时，按目标主机读取本地已存储 token，不再被通用环境变量覆盖
+- 传 `--show-token` 时会输出完整 token，仅建议在脚本或受控终端中使用
 
 ### auth token
 
 - 输出当前活动 token
 - 与 `auth status` 看到的来源保持一致
+- 显式传 `--hostname` 时，输出目标主机已存储 token，不再被通用环境变量覆盖
 
 ### auth logout
 

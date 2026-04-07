@@ -39,7 +39,7 @@ func NewCmdDiff(f *cmdutil.Factory, runF func(*DiffOptions) error) *cobra.Comman
 		`),
 		Example: heredoc.Doc(`
 			# View PR diff
-			$ gc pr diff 123
+			$ gc pr diff 123 -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

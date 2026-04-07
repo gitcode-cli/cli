@@ -65,6 +65,28 @@ export GC_REGRESSION_PR_BASE=main
 - 只有在明确提供目标仓库和 head 分支时才执行 `pr create`
 - 这样可以避免默认污染测试仓库，同时仍把 `pr create` 纳入统一回归矩阵
 
+如果本次改动涉及 issue 标签写路径、issue 状态流转或 PR 状态流转，再补以下真实命令验证：
+
+```bash
+# issue label / close
+issue_number=$(./gc issue create -R infra-test/gctest1 --title "Regression" --body "write-path" | sed -n 's/.*#\([0-9][0-9]*\).*/\1/p')
+./gc issue label "$issue_number" -R infra-test/gctest1 --add bug
+./gc issue label "$issue_number" -R infra-test/gctest1 --remove bug
+./gc issue label "$issue_number" -R infra-test/gctest1 --list
+./gc issue view "$issue_number" -R infra-test/gctest1 --json
+./gc issue close "$issue_number" -R infra-test/gctest1
+
+# pr close
+./gc pr create -R infra-test/gctest1 --head <test-branch> --base main --title "Regression PR" --body "write-path"
+./gc pr close <pr-number> -R infra-test/gctest1
+./gc pr view <pr-number> -R infra-test/gctest1 --json
+```
+
+说明：
+- 对写路径命令不能只看退出码，必须回读远端状态。
+- `issue label --remove` 后，`--list` / `issue view --json` 不应再包含目标标签。
+- `pr close` 后，`pr view --json` 的 `state` 应变为 `closed`。
+
 ## Agent-Friendly 契约补充回归
 
 除核心脚本已覆盖的检查外，当前里程碑还推荐以下补充检查：

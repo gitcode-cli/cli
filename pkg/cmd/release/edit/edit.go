@@ -49,13 +49,13 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 		`),
 		Example: heredoc.Doc(`
 			# Edit release title and notes
-			$ gc release edit v1.0.0 --title "New Title" --notes "New notes"
+			$ gc release edit v1.0.0 -R owner/repo --title "New Title" --notes "New notes"
 
 			# Mark release as prerelease
-			$ gc release edit v1.0.0 --prerelease
+			$ gc release edit v1.0.0 -R owner/repo --prerelease
 
 			# Read notes from a file
-			$ gc release edit v1.0.0 --notes-file RELEASE_NOTES.md
+			$ gc release edit v1.0.0 -R owner/repo --notes-file RELEASE_NOTES.md
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

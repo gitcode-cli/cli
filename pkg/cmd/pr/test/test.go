@@ -44,10 +44,10 @@ func NewCmdTest(f *cmdutil.Factory, runF func(*TestOptions) error) *cobra.Comman
 		`),
 		Example: heredoc.Doc(`
 			# Trigger tests for a PR
-			$ gc pr test 123
+			$ gc pr test 123 -R owner/repo
 
 			# Force test pass (admin only)
-			$ gc pr test 123 --force
+			$ gc pr test 123 -R owner/repo --force
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

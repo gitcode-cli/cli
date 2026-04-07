@@ -1,12 +1,14 @@
 package upload
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
@@ -44,5 +46,25 @@ func TestUploadRun(t *testing.T) {
 
 	if !strings.Contains(out.String(), "Uploaded asset.txt") {
 		t.Fatalf("unexpected output: %q", out.String())
+	}
+}
+
+func TestUploadRunRejectsUnsupportedLabel(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := testutil.NewTestIOStreams()
+	err := uploadRun(&UploadOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return nil, errors.New("should not be called") },
+		Repository: "owner/repo",
+		TagName:    "v1.0.0",
+		Files:      []string{"asset.txt"},
+		Label:      "linux-amd64",
+	})
+	if err == nil {
+		t.Fatal("uploadRun() error = nil, want usage error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
 	}
 }

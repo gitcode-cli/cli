@@ -131,7 +131,9 @@ func createRun(opts *CreateOptions) error {
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
-	warnIfAssigneesNotApplied(opts.IO, client, owner, repo, issue.Number, assigneeIDs)
+	if err := ensureAssigneesApplied(client, owner, repo, issue.Number, issue.HTMLURL, assigneeIDs, "created"); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -139,27 +141,27 @@ func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
 }
 
-func warnIfAssigneesNotApplied(io *iostreams.IOStreams, client *api.Client, owner, repo, issueNumber string, expectedIDs []string) {
+func ensureAssigneesApplied(client *api.Client, owner, repo, issueNumber, issueURL string, expectedIDs []string, action string) error {
 	if len(expectedIDs) == 0 {
-		return
+		return nil
 	}
 
 	number, err := strconv.Atoi(issueNumber)
 	if err != nil {
-		return
+		return nil
 	}
 
 	issue, err := api.GetIssue(client, owner, repo, number)
 	if err != nil {
-		return
+		return nil
 	}
 	if hasExpectedAssignees(issue, expectedIDs) {
-		return
+		return nil
 	}
-
-	if io != nil && io.ErrOut != nil {
-		fmt.Fprintf(io.ErrOut, "! Issue #%s was created, but GitCode API did not apply the requested assignees.\n", issueNumber)
+	if issueURL != "" {
+		return fmt.Errorf("issue #%s was %s at %s, but GitCode API did not apply the requested assignees", issueNumber, action, issueURL)
 	}
+	return fmt.Errorf("issue #%s was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
 }
 
 func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {

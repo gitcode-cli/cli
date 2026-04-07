@@ -47,16 +47,16 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 		`),
 		Example: heredoc.Doc(`
 			# Create a release
-			$ gc release create v1.0.0
+			$ gc release create v1.0.0 -R owner/repo
 
 			# Create a release with title and notes
-			$ gc release create v1.0.0 --title "Version 1.0" --notes "Release notes"
+			$ gc release create v1.0.0 -R owner/repo --title "Version 1.0" --notes "Release notes"
 
 			# Create a draft release
-			$ gc release create v1.0.0 --draft
+			$ gc release create v1.0.0 -R owner/repo --draft
 
 			# Create a prerelease
-			$ gc release create v1.0.0-beta --prerelease
+			$ gc release create v1.0.0-beta -R owner/repo --prerelease
 
 			# Create a release in a specific repository
 			$ gc release create v1.0.0 -R owner/repo

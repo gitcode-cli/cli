@@ -63,19 +63,23 @@ func (p *IssueListPrinter) Print(w io.Writer, issues []api.Issue) error {
 
 func (p *IssueListPrinter) printSimple(w io.Writer, issues []api.Issue) error {
 	maxNumWidth := 0
+	stateWidth := len("closed")
 	for _, issue := range issues {
 		if width := len(fmt.Sprintf("#%s", issue.Number)); width > maxNumWidth {
 			maxNumWidth = width
+		}
+		if width := len(p.stateText(issue.State)); width > stateWidth {
+			stateWidth = width
 		}
 	}
 
 	for _, issue := range issues {
 		fmt.Fprintf(
 			w,
-			"%-*s %-8s %-16s %s\n",
+			"%-*s %s %-16s %s\n",
 			maxNumWidth,
 			fmt.Sprintf("#%s", issue.Number),
-			p.stateLabel(issue.State),
+			p.stateLabel(issue.State, stateWidth),
 			FormatFlexibleTime(issue.UpdatedAt, p.opts.TimeFormat),
 			issue.Title,
 		)
@@ -93,7 +97,7 @@ func (p *IssueListPrinter) printTable(w io.Writer, issues []api.Issue) error {
 		if width := len(fmt.Sprintf("#%s", issue.Number)); width > maxNumWidth {
 			maxNumWidth = width
 		}
-		if width := len(issue.State); width > maxStateWidth {
+		if width := len(p.stateText(issue.State)); width > maxStateWidth {
 			maxStateWidth = width
 		}
 		if width := len(FormatFlexibleTime(issue.UpdatedAt, p.opts.TimeFormat)); width > maxUpdatedWidth {
@@ -109,7 +113,7 @@ func (p *IssueListPrinter) printTable(w io.Writer, issues []api.Issue) error {
 			maxNumWidth,
 			fmt.Sprintf("#%s", issue.Number),
 			maxStateWidth,
-			p.stateLabel(issue.State),
+			p.stateLabel(issue.State, maxStateWidth),
 			maxUpdatedWidth,
 			FormatFlexibleTime(issue.UpdatedAt, p.opts.TimeFormat),
 			issue.Title,
@@ -119,18 +123,23 @@ func (p *IssueListPrinter) printTable(w io.Writer, issues []api.Issue) error {
 	return nil
 }
 
-func (p *IssueListPrinter) stateLabel(state string) string {
+func (p *IssueListPrinter) stateLabel(state string, width int) string {
+	label := fmt.Sprintf("%-*s", width, p.stateText(state))
 	if p.opts.Color == nil {
-		return state
+		return label
 	}
 	switch state {
 	case "closed":
-		return p.opts.Color.Red("closed")
+		return p.opts.Color.Red(label)
 	case "open":
-		return p.opts.Color.Green("open")
+		return p.opts.Color.Green(label)
 	default:
-		return state
+		return label
 	}
+}
+
+func (p *IssueListPrinter) stateText(state string) string {
+	return state
 }
 
 func templateFuncs(timeFormat TimeFormat) template.FuncMap {

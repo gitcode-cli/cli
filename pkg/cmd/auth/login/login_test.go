@@ -86,6 +86,20 @@ func TestLoginWithWebOpensBrowser(t *testing.T) {
 	}
 }
 
+func TestNewCmdLoginRejectsInteractiveLoginWithoutTTY(t *testing.T) {
+	f := cmdutil.TestFactory()
+	cmd := NewCmdLogin(f, nil)
+	cmd.SetArgs([]string{})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want usage error")
+	}
+	if !strings.Contains(err.Error(), "interactive login requires a TTY") {
+		t.Fatalf("Execute() error = %q", err.Error())
+	}
+}
+
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {

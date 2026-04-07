@@ -1,6 +1,10 @@
 package create
 
 import (
+	"bytes"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -47,5 +51,63 @@ func TestNewCmdCreate(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestCreateRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					switch req.URL.Path {
+					case "/api/v5/users/alice":
+						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
+					case "/api/v5/repos/owner/repo/issues":
+						return issueResponse(http.StatusOK, `{"number":"12","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
+					case "/api/v5/repos/owner/repo/issues/12":
+						return issueResponse(http.StatusOK, `{"number":"12","assignees":[]}`), nil
+					default:
+						t.Fatalf("unexpected request: %s", req.URL.Path)
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Title:      "Bug report",
+		Assignees:  []string{"alice"},
+	}
+
+	err := createRun(opts)
+	if err == nil {
+		t.Fatal("createRun() error = nil, want assignee verification error")
+	}
+	if !strings.Contains(f.IOStreams.Out.(*bytes.Buffer).String(), "Created issue #12") {
+		t.Fatalf("stdout = %q, want created issue output", f.IOStreams.Out.(*bytes.Buffer).String())
+	}
+	if !strings.Contains(err.Error(), "https://gitcode.com/owner/repo/issues/12") {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if !strings.Contains(err.Error(), "did not apply the requested assignees") {
+		t.Fatalf("createRun() error = %v", err)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
+
+func issueResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Status:     http.StatusText(status),
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }

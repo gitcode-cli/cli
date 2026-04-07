@@ -1,6 +1,10 @@
 package edit
 
 import (
+	"bytes"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -131,5 +135,61 @@ func TestParseRepo(t *testing.T) {
 				t.Errorf("parseRepo() repo = %v, want %v", repo, tt.wantRepo)
 			}
 		})
+	}
+}
+
+func TestEditRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &EditOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					switch req.URL.Path {
+					case "/api/v5/users/alice":
+						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
+					case "/api/v5/repos/owner/issues/12":
+						return issueResponse(http.StatusOK, `{"number":"12","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
+					case "/api/v5/repos/owner/repo/issues/12":
+						return issueResponse(http.StatusOK, `{"number":"12","assignees":[]}`), nil
+					default:
+						t.Fatalf("unexpected request: %s", req.URL.Path)
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Number:     12,
+		Title:      "same title",
+		Assignees:  []string{"alice"},
+	}
+
+	err := editRun(opts)
+	if err == nil {
+		t.Fatal("editRun() error = nil, want assignee verification error")
+	}
+	if !strings.Contains(f.IOStreams.Out.(*bytes.Buffer).String(), "Updated issue #12") {
+		t.Fatalf("stdout = %q, want updated issue output", f.IOStreams.Out.(*bytes.Buffer).String())
+	}
+	if !strings.Contains(err.Error(), "did not apply the requested assignees") {
+		t.Fatalf("editRun() error = %v", err)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
+
+func issueResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Status:     http.StatusText(status),
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }

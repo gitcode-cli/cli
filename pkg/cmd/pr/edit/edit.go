@@ -51,25 +51,25 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 		`),
 		Example: heredoc.Doc(`
 			# Edit PR title
-			$ gc pr edit 123 --title "New title"
+			$ gc pr edit 123 -R owner/repo --title "New title"
 
 			# Edit PR body
-			$ gc pr edit 123 --body "New description"
+			$ gc pr edit 123 -R owner/repo --body "New description"
 
 			# Edit PR body from file
-			$ gc pr edit 123 --body-file description.md
+			$ gc pr edit 123 -R owner/repo --body-file description.md
 
 			# Mark PR as ready for review
-			$ gc pr edit 123 --draft false
+			$ gc pr edit 123 -R owner/repo --draft false
 
 			# Mark PR as draft
-			$ gc pr edit 123 --draft true
+			$ gc pr edit 123 -R owner/repo --draft true
 
 			# Add labels
-			$ gc pr edit 123 --labels bug,enhancement
+			$ gc pr edit 123 -R owner/repo --labels bug,enhancement
 
 			# Set milestone
-			$ gc pr edit 123 --milestone 5
+			$ gc pr edit 123 -R owner/repo --milestone 5
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

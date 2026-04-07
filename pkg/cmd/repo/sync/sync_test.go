@@ -38,12 +38,46 @@ func TestValidateTargetDir(t *testing.T) {
 	if _, err := validateTargetDir("."); err == nil {
 		t.Fatal("expected error for root target dir")
 	}
+	if _, err := validateTargetDir(".git"); err == nil {
+		t.Fatal("expected error for repository metadata directory")
+	}
+	if _, err := validateTargetDir(".git/hooks"); err == nil {
+		t.Fatal("expected error for repository metadata subdirectory")
+	}
 	got, err := validateTargetDir("sync/contracts")
 	if err != nil {
 		t.Fatalf("validateTargetDir() error = %v", err)
 	}
 	if got != "sync/contracts" {
 		t.Fatalf("validateTargetDir() = %q", got)
+	}
+}
+
+func TestResolveSourceDir(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "docs")
+	if err := os.MkdirAll(source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, display, err := resolveSourceDir(root, source)
+	if err != nil {
+		t.Fatalf("resolveSourceDir() error = %v", err)
+	}
+	if resolved != source {
+		t.Fatalf("resolveSourceDir() resolved = %q, want %q", resolved, source)
+	}
+	if display != "docs" {
+		t.Fatalf("resolveSourceDir() display = %q, want %q", display, "docs")
+	}
+}
+
+func TestResolveSourceDirRejectsOutsideRoot(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+
+	if _, _, err := resolveSourceDir(root, outside); err == nil {
+		t.Fatal("expected error for source directory outside repository root")
 	}
 }
 

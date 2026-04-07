@@ -43,10 +43,10 @@ func NewCmdCheckout(f *cmdutil.Factory, runF func(*CheckoutOptions) error) *cobr
 		`),
 		Example: heredoc.Doc(`
 			# Checkout PR branch
-			$ gc pr checkout 123
+			$ gc pr checkout 123 -R owner/repo
 
 			# Checkout with custom branch name
-			$ gc pr checkout 123 --branch my-feature
+			$ gc pr checkout 123 -R owner/repo --branch my-feature
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

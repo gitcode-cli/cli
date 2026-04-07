@@ -73,14 +73,14 @@ func TestGetReleaseUploadURLUsesAuthorizationHeader(t *testing.T) {
 	})
 	client.SetToken("test-token", "test")
 
-	_, err := GetReleaseUploadURL(client, "owner", "repo", "v1.0.0", "app.tar.gz")
+	_, err := GetReleaseUploadURL(client, "owner", "repo", "v1.0.0", "app bundle+linux.tar.gz")
 	if err != nil {
 		t.Fatalf("GetReleaseUploadURL() error = %v", err)
 	}
 
 	assertNoAccessTokenQuery(t, gotPath)
-	if !strings.Contains(gotPath, "file_name=app.tar.gz") {
-		t.Fatalf("request path = %q, want file_name query", gotPath)
+	if !strings.Contains(gotPath, "file_name=app+bundle%2Blinux.tar.gz") {
+		t.Fatalf("request path = %q, want encoded file_name query", gotPath)
 	}
 	if gotAuth != "Bearer test-token" {
 		t.Fatalf("Authorization header = %q, want %q", gotAuth, "Bearer test-token")

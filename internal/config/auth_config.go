@@ -40,6 +40,11 @@ func (a *authConfig) ActiveToken(hostname string) (string, string) {
 		return token, "GITCODE_TOKEN"
 	}
 
+	return a.StoredToken(hostname)
+}
+
+// StoredToken returns the stored token for a host without environment overrides.
+func (a *authConfig) StoredToken(hostname string) (string, string) {
 	state, err := a.config.readAuthState()
 	if err != nil {
 		return "", ""

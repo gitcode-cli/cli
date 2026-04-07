@@ -94,11 +94,18 @@ gc auth login --web
 说明：
 - `auth login --web` 会打开 GitCode Token 页面，然后继续在终端中读取你粘贴的 Token 完成登录。
 - 登录成功后 token 会写入本地配置；若同时设置了 `GC_TOKEN` 或 `GITCODE_TOKEN`，环境变量优先。
+- 未显式传 `--token` 或 `--with-token` 时需要交互式 TTY；非交互环境会直接报错，避免命令挂起等待输入。
 
 ### auth status - 查看认证状态
 
 ```bash
 gc auth status
+
+# 查看指定主机的持久化认证状态
+gc auth status --hostname gitcode.com
+
+# 显示完整 token（谨慎使用）
+gc auth status --show-token
 ```
 
 输出示例：
@@ -112,10 +119,14 @@ gitcode.com
 
 ```bash
 gc auth token
+
+# 输出指定主机的已存储 token
+gc auth token --hostname gitcode.com
 ```
 
 说明：
 - `auth token` 输出当前实际生效的 token，解析顺序与 `auth status` 一致。
+- 显式传 `--hostname` 时，会读取该主机已存储的 token，不再被通用环境变量覆盖。
 
 ### auth logout - 登出
 
@@ -165,6 +176,9 @@ gc repo list --visibility public
 
 # 输出 JSON
 gc repo list --json
+
+# 表格输出
+gc repo list --format table
 ```
 
 ### repo sync - 同步目录到目标仓库并创建 PR
@@ -576,11 +590,20 @@ gc pr list -R infra-test/gctest1 --state closed
 # 只列出已合并的 PRs
 gc pr list -R infra-test/gctest1 --state merged
 
+# 按 head / base 分支过滤
+gc pr list -R infra-test/gctest1 --head feature/login --base main
+
 # 限制数量
 gc pr list -R infra-test/gctest1 --limit 10
 
+# 排序与分页
+gc pr list -R infra-test/gctest1 --sort updated --direction desc --page 2
+
 # 输出 JSON
 gc pr list -R infra-test/gctest1 --json
+
+# 表格输出
+gc pr list -R infra-test/gctest1 --format table
 ```
 
 ### pr view - 查看 PR
@@ -657,13 +680,10 @@ gc pr merge 1 -R infra-test/gctest1
 gc pr merge 1 -R infra-test/gctest1 --yes
 
 # Squash 合并
-gc pr merge 1 -R infra-test/gctest1 --squash
+gc pr merge 1 -R infra-test/gctest1 --method squash
 
 # Rebase 合并
-gc pr merge 1 -R infra-test/gctest1 --rebase
-
-# 非交互执行
-gc pr merge 1 -R infra-test/gctest1 --yes
+gc pr merge 1 -R infra-test/gctest1 --method rebase
 ```
 
 说明：
@@ -814,6 +834,10 @@ gc release list -R infra-test/gctest1
 gc release list -R infra-test/gctest1 --json
 ```
 
+说明：
+- 文本输出中只有最新一个正式 release 会标记为 `(latest)`。
+- 其他正式 release 会标记为 `(published)`；草稿和预发布仍分别显示 `(draft)`、`(pre-release)`。
+
 ### release view - 查看 Release
 
 ```bash
@@ -840,10 +864,16 @@ gc release upload v1.0.0 app.zip -R infra-test/gctest1
 gc release upload v1.0.0 app.zip checksum.txt -R infra-test/gctest1
 ```
 
+说明：
+- `--label` 参数当前不受 GitCode release upload API 支持；CLI 现在会直接报错，不再静默忽略。
+
 ### release download - 下载资产
 
 ```bash
-# 下载所有资产到当前目录
+# 下载 latest release 的所有资产到当前目录
+gc release download -R infra-test/gctest1
+
+# 下载指定 release 的所有资产到当前目录
 gc release download v1.0.0 -R infra-test/gctest1
 
 # 下载到指定目录

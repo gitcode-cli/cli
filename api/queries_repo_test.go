@@ -2,6 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -134,5 +137,91 @@ func TestUser_IDIsString(t *testing.T) {
 	// ID should be stored in ID field which is interface{}
 	if user.ID == nil {
 		t.Error("User.ID should not be nil")
+	}
+}
+
+func TestListUserReposBuildsQuery(t *testing.T) {
+	var gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+
+	_, err := ListUserRepos(client, &RepoListOptions{
+		Visibility:  "private",
+		Affiliation: "owner",
+		Type:        "member",
+		Sort:        "pushed",
+		Direction:   "desc",
+		PerPage:     50,
+		Page:        2,
+	})
+	if err != nil {
+		t.Fatalf("ListUserRepos() error = %v", err)
+	}
+
+	assertRepoListRequest(t, gotPath, "/api/v5/user/repos", map[string]string{
+		"visibility":  "private",
+		"affiliation": "owner",
+		"type":        "member",
+		"sort":        "pushed",
+		"direction":   "desc",
+		"per_page":    "50",
+		"page":        "2",
+	})
+}
+
+func TestListOrgReposBuildsQuery(t *testing.T) {
+	var gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+
+	_, err := ListOrgRepos(client, "infra-test", &RepoListOptions{
+		Visibility: "public",
+		PerPage:    25,
+	})
+	if err != nil {
+		t.Fatalf("ListOrgRepos() error = %v", err)
+	}
+
+	assertRepoListRequest(t, gotPath, "/api/v5/orgs/infra-test/repos", map[string]string{
+		"visibility": "public",
+		"per_page":   "25",
+	})
+}
+
+func assertRepoListRequest(t *testing.T, gotPath, wantPath string, wantQuery map[string]string) {
+	t.Helper()
+
+	if gotPath == "" {
+		t.Fatal("request path was empty")
+	}
+	if !strings.HasPrefix(gotPath, wantPath) {
+		t.Fatalf("request path = %q, want prefix %q", gotPath, wantPath)
+	}
+
+	rawQuery := ""
+	if len(gotPath) > len(wantPath) {
+		rawQuery = strings.TrimPrefix(gotPath[len(wantPath):], "?")
+	}
+	query, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		t.Fatalf("url.ParseQuery() error = %v", err)
+	}
+	for key, want := range wantQuery {
+		if got := query.Get(key); got != want {
+			t.Fatalf("query[%q] = %q, want %q", key, got, want)
+		}
+	}
+	if len(query) != len(wantQuery) {
+		t.Fatalf("query = %#v, want %#v", query, wantQuery)
 	}
 }

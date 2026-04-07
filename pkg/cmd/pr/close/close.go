@@ -42,10 +42,10 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 		`),
 		Example: heredoc.Doc(`
 			# Close a PR
-			$ gc pr close 123
+			$ gc pr close 123 -R owner/repo
 
 			# Close with a comment
-			$ gc pr close 123 --comment "Not needed anymore"
+			$ gc pr close 123 -R owner/repo --comment "Not needed anymore"
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

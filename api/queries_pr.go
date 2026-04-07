@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/url"
 )
 
 // PullRequest represents a GitCode pull request
@@ -169,12 +170,59 @@ func CreatePullRequest(client *Client, owner, repo string, opts *CreatePROptions
 
 // UpdatePullRequest updates an existing PR
 func UpdatePullRequest(client *Client, owner, repo string, number int, opts *UpdatePROptions) (*PullRequest, error) {
+	formValues := buildPRUpdateFormValues(opts)
+
 	var pr PullRequest
-	err := client.Patch("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number), opts, &pr)
+	err := client.PatchForm("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number), formValues, &pr)
 	if err != nil {
 		return nil, err
 	}
 	return &pr, nil
+}
+
+func buildPRUpdateFormValues(opts *UpdatePROptions) url.Values {
+	formValues := url.Values{}
+
+	if opts == nil {
+		return formValues
+	}
+	if opts.Title != "" {
+		formValues.Set("title", opts.Title)
+	}
+	if opts.Body != "" {
+		formValues.Set("body", opts.Body)
+	}
+	if opts.State != "" {
+		formValues.Set("state", opts.State)
+	}
+	if opts.StateEvent != "" {
+		formValues.Set("state_event", opts.StateEvent)
+	}
+	if opts.Base != "" {
+		formValues.Set("base", opts.Base)
+	}
+	if opts.Draft != nil {
+		if *opts.Draft {
+			formValues.Set("draft", "true")
+		} else {
+			formValues.Set("draft", "false")
+		}
+	}
+	if opts.MilestoneNumber > 0 {
+		formValues.Set("milestone_number", itoa(opts.MilestoneNumber))
+	}
+	for _, label := range opts.Labels {
+		formValues.Add("labels[]", label)
+	}
+	if opts.CloseRelatedIssue != nil {
+		if *opts.CloseRelatedIssue {
+			formValues.Set("close_related_issue", "true")
+		} else {
+			formValues.Set("close_related_issue", "false")
+		}
+	}
+
+	return formValues
 }
 
 // ClosePullRequest closes a PR
@@ -257,12 +305,7 @@ func ReviewPR(client *Client, owner, repo string, number int, opts *ReviewPROpti
 
 // EditPR updates a PR's information
 func EditPR(client *Client, owner, repo string, number int, opts *UpdatePROptions) (*PullRequest, error) {
-	var pr PullRequest
-	err := client.Patch("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number), opts, &pr)
-	if err != nil {
-		return nil, err
-	}
-	return &pr, nil
+	return UpdatePullRequest(client, owner, repo, number, opts)
 }
 
 // TestPROptions represents options for PR test

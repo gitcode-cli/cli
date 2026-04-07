@@ -2,7 +2,9 @@ package edit
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -105,6 +107,56 @@ func TestEditRun(t *testing.T) {
 	}
 }
 
+func TestEditRunUsesFormEncodedLabels(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	var gotPath string
+	var gotContentType string
+	var gotBody string
+
+	ioStreams, _, _, _ := iostreams.Test()
+	opts := &EditOptions{
+		IO:         ioStreams,
+		HttpClient: func() (*http.Client, error) { return &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			gotPath = req.URL.Path
+			gotContentType = req.Header.Get("Content-Type")
+			body, err := io.ReadAll(req.Body)
+			if err != nil {
+				t.Fatalf("failed to read request body: %v", err)
+			}
+			gotBody = string(body)
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     http.StatusText(http.StatusOK),
+				Header:     make(http.Header),
+				Body:       io.NopCloser(strings.NewReader(`{"number":123,"title":"updated"}`)),
+			}, nil
+		})}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Labels:     []string{"type/feature", "risk/medium"},
+	}
+
+	if err := editRun(opts); err != nil {
+		t.Fatalf("editRun() error = %v", err)
+	}
+
+	if gotPath != "/api/v5/repos/owner/repo/pulls/123" {
+		t.Fatalf("request path = %q, want %q", gotPath, "/api/v5/repos/owner/repo/pulls/123")
+	}
+	if gotContentType != "application/x-www-form-urlencoded" {
+		t.Fatalf("Content-Type = %q, want %q", gotContentType, "application/x-www-form-urlencoded")
+	}
+	for _, pair := range []string{
+		"labels%5B%5D=type%2Ffeature",
+		"labels%5B%5D=risk%2Fmedium",
+	} {
+		if !strings.Contains(gotBody, pair) {
+			t.Fatalf("request body %q does not contain %q", gotBody, pair)
+		}
+	}
+}
+
 func TestParseRepo(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -154,4 +206,10 @@ func TestParseRepo(t *testing.T) {
 			}
 		})
 	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
 }

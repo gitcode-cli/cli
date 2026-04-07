@@ -105,15 +105,24 @@ func listRun(opts *ListOptions) error {
 		return cmdutil.WriteJSON(opts.IO.Out, milestones)
 	}
 
+	// Calculate max number width for alignment
+	maxNumWidth := 0
+	for _, ms := range milestones {
+		w := len(fmt.Sprintf("#%d", ms.Number))
+		if w > maxNumWidth {
+			maxNumWidth = w
+		}
+	}
+
 	fmt.Fprintf(opts.IO.Out, "\n")
 	for _, ms := range milestones {
 		state := cs.Green("open")
 		if ms.State == "closed" {
 			state = cs.Red("closed")
 		}
-		fmt.Fprintf(opts.IO.Out, "#%-6d %s  %s\n", ms.Number, state, ms.Title)
+		fmt.Fprintf(opts.IO.Out, "%-*s  %s  %s\n", maxNumWidth, fmt.Sprintf("#%d", ms.Number), state, ms.Title)
 		if ms.Description != "" {
-			fmt.Fprintf(opts.IO.Out, "        %s\n", ms.Description)
+			fmt.Fprintf(opts.IO.Out, "%-*s  %s\n", maxNumWidth, "", ms.Description)
 		}
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")

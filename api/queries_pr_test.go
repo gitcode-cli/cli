@@ -155,6 +155,94 @@ func TestPullRequestUnmarshal(t *testing.T) {
 	}
 }
 
+func TestClosePullRequestUsesStateAndVerifiesClosedState(t *testing.T) {
+	var requests []string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		path := req.URL.Path
+		if req.URL.RawQuery != "" {
+			path += "?" + req.URL.RawQuery
+		}
+		requests = append(requests, req.Method+" "+path)
+
+		switch len(requests) {
+		case 1:
+			if req.Method != http.MethodGet {
+				t.Fatalf("request 1 method = %s, want GET", req.Method)
+			}
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"open"}`), nil
+		case 2:
+			if req.Method != http.MethodPatch {
+				t.Fatalf("request 2 method = %s, want PATCH", req.Method)
+			}
+			body, err := io.ReadAll(req.Body)
+			if err != nil {
+				t.Fatalf("failed to read request body: %v", err)
+			}
+			values, err := url.ParseQuery(string(body))
+			if err != nil {
+				t.Fatalf("ParseQuery() error = %v", err)
+			}
+			if got := values.Get("state"); got != "closed" {
+				t.Fatalf("state = %q, want %q", got, "closed")
+			}
+			if got := values.Get("title"); got != "updated" {
+				t.Fatalf("title = %q, want %q", got, "updated")
+			}
+			if got := values.Get("state_event"); got != "" {
+				t.Fatalf("state_event = %q, want empty", got)
+			}
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"closed"}`), nil
+		default:
+			t.Fatalf("unexpected extra request %d: %s", len(requests), requests[len(requests)-1])
+			return nil, nil
+		}
+	})
+	client.SetToken("test-token", "test")
+
+	pr, err := ClosePullRequest(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("ClosePullRequest() error = %v", err)
+	}
+	if pr.State != "closed" {
+		t.Fatalf("pr.State = %q, want %q", pr.State, "closed")
+	}
+	if len(requests) != 2 {
+		t.Fatalf("request count = %d, want 2", len(requests))
+	}
+}
+
+func TestClosePullRequestErrorsWhenVerificationStillOpen(t *testing.T) {
+	var requests int
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests++
+		switch requests {
+		case 1:
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"open"}`), nil
+		case 2:
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"open"}`), nil
+		case 3:
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"updated","state":"open"}`), nil
+		default:
+			t.Fatalf("unexpected request %d", requests)
+			return nil, nil
+		}
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := ClosePullRequest(client, "owner", "repo", 123)
+	if err == nil {
+		t.Fatal("expected ClosePullRequest() to return an error")
+	}
+	if !strings.Contains(err.Error(), "still open") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if requests != 3 {
+		t.Fatalf("request count = %d, want 3", requests)
+	}
+}
+
 func TestPRCommentAndReviewUnmarshal(t *testing.T) {
 	commentJSON := `{
 		"id": 1,

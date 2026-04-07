@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/url"
+	"strings"
 )
 
 // PullRequest represents a GitCode pull request
@@ -252,32 +253,69 @@ func buildPRUpdateFormValues(opts *UpdatePROptions) url.Values {
 	return formValues
 }
 
+func isPullRequestClosed(pr *PullRequest) bool {
+	if pr == nil {
+		return false
+	}
+	return strings.EqualFold(pr.State, "closed") || strings.EqualFold(pr.State, "close")
+}
+
 // ClosePullRequest closes a PR
 func ClosePullRequest(client *Client, owner, repo string, number int) (*PullRequest, error) {
-	// GitCode API requires at least one other field along with state_event
-	// Get current PR to preserve its title
 	pr, err := GetPullRequest(client, owner, repo, number)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get PR: %w", err)
 	}
-	return UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
-		StateEvent: "close",
-		Title:      pr.Title,
+
+	updated, err := UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
+		State: "closed",
+		Title: pr.Title,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if isPullRequestClosed(updated) {
+		return updated, nil
+	}
+
+	verified, err := GetPullRequest(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify PR close state: %w", err)
+	}
+	if isPullRequestClosed(verified) {
+		return verified, nil
+	}
+
+	return nil, fmt.Errorf("pull request #%d is still open after close request", number)
 }
 
 // ReopenPullRequest reopens a closed PR
 func ReopenPullRequest(client *Client, owner, repo string, number int) (*PullRequest, error) {
-	// GitCode API requires at least one other field along with state_event
-	// Get current PR to preserve its title
 	pr, err := GetPullRequest(client, owner, repo, number)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get PR: %w", err)
 	}
-	return UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
-		StateEvent: "reopen",
-		Title:      pr.Title,
+
+	updated, err := UpdatePullRequest(client, owner, repo, number, &UpdatePROptions{
+		State: "open",
+		Title: pr.Title,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if !isPullRequestClosed(updated) {
+		return updated, nil
+	}
+
+	verified, err := GetPullRequest(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify PR reopen state: %w", err)
+	}
+	if !isPullRequestClosed(verified) {
+		return verified, nil
+	}
+
+	return nil, fmt.Errorf("pull request #%d is still closed after reopen request", number)
 }
 
 // MergePullRequest merges a PR

@@ -172,3 +172,16 @@ func TestRenderPRView(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderPRCommentsEmpty(t *testing.T) {
+	var buf bytes.Buffer
+	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
+
+	if err := renderPRComments(&buf, nil, output.TimeFormatAbsolute, now); err != nil {
+		t.Fatalf("renderPRComments() error = %v", err)
+	}
+
+	if got := buf.String(); got != "\n--- No comments ---\n\n" {
+		t.Fatalf("renderPRComments() = %q", got)
+	}
+}

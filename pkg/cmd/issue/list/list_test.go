@@ -1,10 +1,13 @@
 package list
 
 import (
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 func TestNewCmdList(t *testing.T) {
@@ -189,4 +192,37 @@ func TestListRunRejectsOutputUsageErrorsBeforeHTTP(t *testing.T) {
 	if httpCalled {
 		t.Fatal("listRun() called HttpClient before validating output flags")
 	}
+}
+
+func TestListRunAllowsTemplateOutputForEmptyResults(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, stdout, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO:         ioStreams,
+		HttpClient: func() (*http.Client, error) { return &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     http.StatusText(http.StatusOK),
+				Header:     make(http.Header),
+				Body:       io.NopCloser(strings.NewReader(`[]`)),
+			}, nil
+		})}, nil },
+		Repository: "owner/repo",
+		Template:   "{{len .}} issues",
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	if got := stdout.String(); got != "0 issues" {
+		t.Fatalf("stdout = %q, want %q", got, "0 issues")
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
 }

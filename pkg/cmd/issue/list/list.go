@@ -190,6 +190,18 @@ func listRun(opts *ListOptions) error {
 		if outOpts.Format == output.FormatJSON {
 			return cmdutil.WriteJSON(opts.IO.Out, issues)
 		}
+		if outOpts.Template != "" {
+			printer, err := output.NewIssueListPrinter(output.IssueListOptions{
+				Format:     outOpts.Format,
+				TimeFormat: outOpts.TimeFormat,
+				Template:   outOpts.Template,
+				Color:      opts.IO.ColorScheme(),
+			})
+			if err != nil {
+				return err
+			}
+			return printer.Print(opts.IO.Out, issues)
+		}
 		fmt.Fprintf(opts.IO.Out, "No issues found\n")
 		return nil
 	}

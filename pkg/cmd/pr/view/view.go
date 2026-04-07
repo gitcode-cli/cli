@@ -294,7 +294,7 @@ func renderPRDetails(out io.Writer, cs *iostreams.ColorScheme, pr *api.PullReque
 
 func renderPRComments(out io.Writer, comments []api.PRComment, timeFormat output.TimeFormat, now time.Time) error {
 	if len(comments) == 0 {
-		fmt.Fprintf(out, "\n")
+		fmt.Fprintf(out, "\n--- No comments ---\n\n")
 		return nil
 	}
 

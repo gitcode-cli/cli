@@ -373,10 +373,14 @@ gc issue view 1 -R infra-test/gctest1 --json
 
 # 查看评论并输出 JSON
 gc issue view 1 -R infra-test/gctest1 --comments --json
+
+# 相对时间
+gc issue view 1 -R infra-test/gctest1 --time-format relative
 ```
 
 说明：
 - `issue view` 的文本详情输出会使用更稳定的元信息排布，便于人工和代理阅读。
+- `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
 - `--json` 路径保持结构化输出，不受文本排版变化影响。
 
 ### issue close - 关闭 Issue
@@ -594,10 +598,14 @@ gc pr view 1 -R infra-test/gctest1 --json
 
 # 查看评论并输出 JSON
 gc pr view 1 -R infra-test/gctest1 --comments --json
+
+# 相对时间
+gc pr view 1 -R infra-test/gctest1 --time-format relative
 ```
 
 说明：
 - `pr view` 的文本详情输出会使用更稳定的元信息排布，便于人工和代理阅读。
+- `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
 - `--json` 路径保持结构化输出，不受文本排版变化影响。
 
 ### pr comments - 查看 PR 评论

@@ -2,9 +2,12 @@
 package create
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -29,6 +32,13 @@ type CreateOptions struct {
 	Assignees []string
 	Milestone int
 	DryRun    bool
+
+	TemplatePath     string
+	SecurityHole     bool
+	IssueType        string
+	IssueSeverity    string
+	CustomFieldsJSON string
+	CustomFieldsFile string
 }
 
 // NewCmdCreate creates the create command
@@ -46,9 +56,6 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 			Create a new issue in a GitCode repository.
 		`),
 		Example: heredoc.Doc(`
-			# Create an issue interactively
-			$ gc issue create
-
 			# Create an issue with title and body
 			$ gc issue create --title "Bug" --body "Description"
 
@@ -57,6 +64,12 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 			# Create an issue in a specific repository
 			$ gc issue create -R owner/repo --title "Bug"
+
+			# Create an issue with a template path
+			$ gc issue create -R owner/repo --title "Feature" --template-path .gitcode/ISSUE_TEMPLATE/feature.yaml
+
+			# Create an issue with advanced custom fields
+			$ gc issue create -R owner/repo --title "Feature" --custom-fields-json '[{"id":"field","value":"demo"}]'
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -73,6 +86,12 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringSliceVarP(&opts.Assignees, "assignee", "a", []string{}, "Assignees")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Milestone number")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview the create request without creating the issue")
+	cmd.Flags().StringVar(&opts.TemplatePath, "template-path", "", "Issue template path")
+	cmd.Flags().BoolVar(&opts.SecurityHole, "security-hole", false, "Mark as private issue")
+	cmd.Flags().StringVar(&opts.IssueType, "issue-type", "", "Issue type (enterprise)")
+	cmd.Flags().StringVar(&opts.IssueSeverity, "issue-severity", "", "Issue severity (enterprise)")
+	cmd.Flags().StringVar(&opts.CustomFieldsJSON, "custom-fields-json", "", "Custom fields JSON array")
+	cmd.Flags().StringVar(&opts.CustomFieldsFile, "custom-fields-file", "", "Read custom fields JSON array from file")
 
 	return cmd
 }
@@ -96,8 +115,28 @@ func createRun(opts *CreateOptions) error {
 		return cmdutil.NewUsageError("title is required. Use --title flag")
 	}
 
+	customFields, err := getCustomFields(opts)
+	if err != nil {
+		return err
+	}
+
 	if opts.DryRun {
 		fmt.Fprintf(opts.IO.Out, "Dry run: would create issue %q in %s/%s\n", opts.Title, owner, repo)
+		if opts.TemplatePath != "" {
+			fmt.Fprintf(opts.IO.Out, "  template-path: %s\n", opts.TemplatePath)
+		}
+		if opts.SecurityHole {
+			fmt.Fprintln(opts.IO.Out, "  security-hole: true")
+		}
+		if opts.IssueType != "" {
+			fmt.Fprintf(opts.IO.Out, "  issue-type: %s\n", opts.IssueType)
+		}
+		if opts.IssueSeverity != "" {
+			fmt.Fprintf(opts.IO.Out, "  issue-severity: %s\n", opts.IssueSeverity)
+		}
+		if len(customFields) > 0 {
+			fmt.Fprintf(opts.IO.Out, "  custom-fields: %d item(s)\n", len(customFields))
+		}
 		return nil
 	}
 
@@ -113,19 +152,30 @@ func createRun(opts *CreateOptions) error {
 	}
 	client.SetToken(token, "environment")
 
-	assigneeIDs, err := api.ResolveUserIDs(client, opts.Assignees)
-	if err != nil {
-		return fmt.Errorf("failed to resolve assignees: %w", err)
+	createOpts := &api.CreateIssueOptions{
+		Title:         opts.Title,
+		Body:          opts.Body,
+		Assignees:     opts.Assignees,
+		Labels:        opts.Labels,
+		Milestone:     opts.Milestone,
+		SecurityHole:  boolString(opts.SecurityHole),
+		TemplatePath:  opts.TemplatePath,
+		IssueType:     opts.IssueType,
+		IssueSeverity: opts.IssueSeverity,
+		CustomFields:  customFields,
+	}
+
+	var assigneeIDs []string
+	if !useOwnerIssueCreate(createOpts) {
+		assigneeIDs, err = api.ResolveUserIDs(client, opts.Assignees)
+		if err != nil {
+			return fmt.Errorf("failed to resolve assignees: %w", err)
+		}
+		createOpts.AssigneeIDs = assigneeIDs
 	}
 
 	// Create issue
-	issue, err := api.CreateIssue(client, owner, repo, &api.CreateIssueOptions{
-		Title:       opts.Title,
-		Body:        opts.Body,
-		Labels:      opts.Labels,
-		AssigneeIDs: assigneeIDs,
-		Milestone:   opts.Milestone,
-	})
+	issue, err := api.CreateIssue(client, owner, repo, createOpts)
 	if err != nil {
 		return fmt.Errorf("failed to create issue: %w", err)
 	}
@@ -139,6 +189,51 @@ func createRun(opts *CreateOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+func getCustomFields(opts *CreateOptions) ([]map[string]interface{}, error) {
+	if opts.CustomFieldsJSON != "" && opts.CustomFieldsFile != "" {
+		return nil, cmdutil.NewUsageError("cannot use both --custom-fields-json and --custom-fields-file")
+	}
+
+	var raw string
+	switch {
+	case opts.CustomFieldsJSON != "":
+		raw = opts.CustomFieldsJSON
+	case opts.CustomFieldsFile != "":
+		content, err := os.ReadFile(opts.CustomFieldsFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read custom fields file %s: %w", opts.CustomFieldsFile, err)
+		}
+		raw = string(content)
+	default:
+		return nil, nil
+	}
+
+	var customFields []map[string]interface{}
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &customFields); err != nil {
+		return nil, cmdutil.NewUsageError(fmt.Sprintf("invalid custom fields JSON: %v", err))
+	}
+	return customFields, nil
+}
+
+func boolString(v bool) string {
+	if v {
+		return "true"
+	}
+	return ""
+}
+
+func useOwnerIssueCreate(opts *api.CreateIssueOptions) bool {
+	if opts == nil {
+		return false
+	}
+
+	return opts.SecurityHole != "" ||
+		opts.TemplatePath != "" ||
+		opts.IssueType != "" ||
+		opts.IssueSeverity != "" ||
+		len(opts.CustomFields) > 0
 }
 
 func ensureAssigneesApplied(client *api.Client, owner, repo, issueNumber, issueURL string, expectedIDs []string, action string) error {

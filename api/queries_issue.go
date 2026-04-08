@@ -80,11 +80,17 @@ type IssueListOptions struct {
 
 // CreateIssueOptions represents options for creating an issue
 type CreateIssueOptions struct {
-	Title       string   `json:"title"`
-	Body        string   `json:"body,omitempty"`
-	AssigneeIDs []string `json:"assignee_ids,omitempty"`
-	Labels      []string `json:"labels,omitempty"`
-	Milestone   int      `json:"milestone,omitempty"`
+	Title         string                   `json:"title"`
+	Body          string                   `json:"body,omitempty"`
+	AssigneeIDs   []string                 `json:"-"`
+	Assignees     []string                 `json:"-"`
+	Labels        []string                 `json:"-"`
+	Milestone     int                      `json:"milestone,omitempty"`
+	SecurityHole  string                   `json:"security_hole,omitempty"`
+	TemplatePath  string                   `json:"template_path,omitempty"`
+	IssueType     string                   `json:"issue_type,omitempty"`
+	IssueSeverity string                   `json:"issue_severity,omitempty"`
+	CustomFields  []map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
 // UpdateIssueOptions represents options for updating an issue
@@ -188,6 +194,10 @@ func GetIssue(client *Client, owner, repo string, number int) (*Issue, error) {
 
 // CreateIssue creates a new issue
 func CreateIssue(client *Client, owner, repo string, opts *CreateIssueOptions) (*Issue, error) {
+	if shouldUseOwnerIssueCreate(opts) {
+		return createIssueViaOwnerPath(client, owner, repo, opts)
+	}
+
 	formValues := url.Values{}
 	formValues.Set("title", opts.Title)
 	if opts.Body != "" {
@@ -207,6 +217,66 @@ func CreateIssue(client *Client, owner, repo string, opts *CreateIssueOptions) (
 		return nil, err
 	}
 	return &issue, nil
+}
+
+func shouldUseOwnerIssueCreate(opts *CreateIssueOptions) bool {
+	if opts == nil {
+		return false
+	}
+
+	return opts.SecurityHole != "" ||
+		opts.TemplatePath != "" ||
+		opts.IssueType != "" ||
+		opts.IssueSeverity != "" ||
+		len(opts.CustomFields) > 0
+}
+
+func createIssueViaOwnerPath(client *Client, owner, repo string, opts *CreateIssueOptions) (*Issue, error) {
+	body := map[string]interface{}{
+		"repo":  repo,
+		"title": opts.Title,
+	}
+	if opts.Body != "" {
+		body["body"] = opts.Body
+	}
+	if assignees := createIssueAssignees(opts); len(assignees) > 0 {
+		body["assignee"] = strings.Join(assignees, ",")
+	}
+	if len(opts.Labels) > 0 {
+		body["labels"] = strings.Join(opts.Labels, ",")
+	}
+	if opts.Milestone > 0 {
+		body["milestone"] = opts.Milestone
+	}
+	if opts.SecurityHole != "" {
+		body["security_hole"] = opts.SecurityHole
+	}
+	if opts.TemplatePath != "" {
+		body["template_path"] = opts.TemplatePath
+	}
+	if opts.IssueType != "" {
+		body["issue_type"] = opts.IssueType
+	}
+	if opts.IssueSeverity != "" {
+		body["issue_severity"] = opts.IssueSeverity
+	}
+	if len(opts.CustomFields) > 0 {
+		body["custom_fields"] = opts.CustomFields
+	}
+
+	var issue Issue
+	err := client.Post("/repos/"+owner+"/issues", body, &issue)
+	if err != nil {
+		return nil, err
+	}
+	return &issue, nil
+}
+
+func createIssueAssignees(opts *CreateIssueOptions) []string {
+	if len(opts.Assignees) > 0 {
+		return opts.Assignees
+	}
+	return opts.AssigneeIDs
 }
 
 // UpdateIssue updates an existing issue

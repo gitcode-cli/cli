@@ -292,14 +292,32 @@ gc issue create -R infra-test/gctest1 --title "Feature request" --body "Descript
 # 指定受理人
 gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --assignee username
 
+# 使用模板路径创建
+gc issue create -R infra-test/gctest1 --title "Feature request" --template-path .gitcode/ISSUE_TEMPLATE/feature.yaml
+
+# 创建私有 Issue
+gc issue create -R infra-test/gctest1 --title "Security report" --security-hole
+
+# 传入高级字段（企业版）
+gc issue create -R infra-test/gctest1 --title "Feature request" --issue-type "需求" --issue-severity "高"
+
+# 通过 JSON 传入 custom_fields
+gc issue create -R infra-test/gctest1 --title "Feature request" --custom-fields-json '[{"id":"field","value":"demo"}]'
+
+# 从文件读取 custom_fields
+gc issue create -R infra-test/gctest1 --title "Feature request" --custom-fields-file custom-fields.json
+
 # 预演创建
 gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --dry-run
 ```
 
 说明：
 - `issue create` 当前已支持 `--dry-run` 预演创建参数。
-- 创建时携带 `--label`、`--milestone`、`--assignee` 已走兼容的 form 提交路径。
-- `--assignee` 继续使用用户名输入，但客户端会先解析为 GitCode user ID，再提交到 issue API。
+- 仅使用基础字段时，创建会继续走兼容的 repo 级 form 提交路径。
+- 基础路径中的 `--assignee` 继续使用用户名输入，但客户端会先解析为 GitCode user ID，再提交到 issue API。
+- 显式传入 `--template-path`、`--security-hole`、`--issue-type`、`--issue-severity`、`--custom-fields-json`、`--custom-fields-file` 时，会切换到 GitCode 文档化的 owner 级创建接口并透传高级字段。
+- `--custom-fields-json` 与 `--custom-fields-file` 不能同时使用；两者都要求 JSON 顶层是 `object[]`。
+- 模板路径支持仓库下的 `.gitcode`、`.github`、`.gitee` 目录；组织模板可能来自 `owner/.gitcode`，第一阶段仅支持显式传路径，不保证自动发现。
 - 若 GitCode API 未实际应用 assignee，命令会成功完成创建并在 stderr 给出告警，避免自动化重试制造重复 issue。
 
 ### issue list - 列出 Issues

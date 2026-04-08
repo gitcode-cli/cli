@@ -160,6 +160,43 @@ func TestCreateRunUsesOwnerIssueCreateWhenAdvancedFieldsAreSet(t *testing.T) {
 	}
 }
 
+func TestCreateRunSkipsAssigneeResolutionForAdvancedOwnerPath(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO:           f.IOStreams,
+		Repository:   "owner/repo",
+		Title:        "Feature request",
+		Assignees:    []string{"alice"},
+		TemplatePath: ".gitcode/ISSUE_TEMPLATE/feature.yaml",
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					if req.URL.Path == "/api/v5/users/alice" {
+						t.Fatal("advanced owner path should not resolve assignee IDs")
+					}
+					if req.URL.Path != "/api/v5/repos/owner/issues" {
+						t.Fatalf("request path = %s, want /api/v5/repos/owner/issues", req.URL.Path)
+					}
+					body, err := io.ReadAll(req.Body)
+					if err != nil {
+						t.Fatalf("ReadAll() error = %v", err)
+					}
+					if !strings.Contains(string(body), `"assignee":"alice"`) {
+						t.Fatalf("request body = %s, want assignee username", string(body))
+					}
+					return issueResponse(http.StatusOK, `{"number":"35","html_url":"https://gitcode.com/owner/repo/issues/35"}`), nil
+				}),
+			}, nil
+		},
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+}
+
 func TestCreateRunDryRunShowsAdvancedFields(t *testing.T) {
 	f := cmdutil.TestFactory()
 	opts := &CreateOptions{

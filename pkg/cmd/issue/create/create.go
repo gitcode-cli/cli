@@ -152,25 +152,30 @@ func createRun(opts *CreateOptions) error {
 	}
 	client.SetToken(token, "environment")
 
-	assigneeIDs, err := api.ResolveUserIDs(client, opts.Assignees)
-	if err != nil {
-		return fmt.Errorf("failed to resolve assignees: %w", err)
-	}
-
-	// Create issue
-	issue, err := api.CreateIssue(client, owner, repo, &api.CreateIssueOptions{
+	createOpts := &api.CreateIssueOptions{
 		Title:         opts.Title,
 		Body:          opts.Body,
-		Labels:        opts.Labels,
-		AssigneeIDs:   assigneeIDs,
 		Assignees:     opts.Assignees,
+		Labels:        opts.Labels,
 		Milestone:     opts.Milestone,
 		SecurityHole:  boolString(opts.SecurityHole),
 		TemplatePath:  opts.TemplatePath,
 		IssueType:     opts.IssueType,
 		IssueSeverity: opts.IssueSeverity,
 		CustomFields:  customFields,
-	})
+	}
+
+	var assigneeIDs []string
+	if !useOwnerIssueCreate(createOpts) {
+		assigneeIDs, err = api.ResolveUserIDs(client, opts.Assignees)
+		if err != nil {
+			return fmt.Errorf("failed to resolve assignees: %w", err)
+		}
+		createOpts.AssigneeIDs = assigneeIDs
+	}
+
+	// Create issue
+	issue, err := api.CreateIssue(client, owner, repo, createOpts)
 	if err != nil {
 		return fmt.Errorf("failed to create issue: %w", err)
 	}
@@ -217,6 +222,18 @@ func boolString(v bool) string {
 		return "true"
 	}
 	return ""
+}
+
+func useOwnerIssueCreate(opts *api.CreateIssueOptions) bool {
+	if opts == nil {
+		return false
+	}
+
+	return opts.SecurityHole != "" ||
+		opts.TemplatePath != "" ||
+		opts.IssueType != "" ||
+		opts.IssueSeverity != "" ||
+		len(opts.CustomFields) > 0
 }
 
 func ensureAssigneesApplied(client *api.Client, owner, repo, issueNumber, issueURL string, expectedIDs []string, action string) error {

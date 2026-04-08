@@ -239,8 +239,8 @@ func createIssueViaOwnerPath(client *Client, owner, repo string, opts *CreateIss
 	if opts.Body != "" {
 		body["body"] = opts.Body
 	}
-	if len(opts.Assignees) > 0 {
-		body["assignee"] = strings.Join(opts.Assignees, ",")
+	if assignees := createIssueAssignees(opts); len(assignees) > 0 {
+		body["assignee"] = strings.Join(assignees, ",")
 	}
 	if len(opts.Labels) > 0 {
 		body["labels"] = strings.Join(opts.Labels, ",")
@@ -270,6 +270,13 @@ func createIssueViaOwnerPath(client *Client, owner, repo string, opts *CreateIss
 		return nil, err
 	}
 	return &issue, nil
+}
+
+func createIssueAssignees(opts *CreateIssueOptions) []string {
+	if len(opts.Assignees) > 0 {
+		return opts.Assignees
+	}
+	return opts.AssigneeIDs
 }
 
 // UpdateIssue updates an existing issue

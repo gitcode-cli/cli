@@ -100,6 +100,39 @@ func TestCreateIssueUsesOwnerPathForAdvancedFields(t *testing.T) {
 	}
 }
 
+func TestCreateIssueOwnerPathFallsBackToAssigneeIDs(t *testing.T) {
+	var gotBody map[string]interface{}
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Path != "/api/v5/repos/owner/issues" {
+			t.Fatalf("request path = %s, want /api/v5/repos/owner/issues", req.URL.Path)
+		}
+
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			t.Fatalf("ReadAll() error = %v", err)
+		}
+		if err := json.Unmarshal(body, &gotBody); err != nil {
+			t.Fatalf("json.Unmarshal() error = %v", err)
+		}
+		return authTestResponse(http.StatusOK, `{"number":"3","title":"created"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := CreateIssue(client, "owner", "repo", &CreateIssueOptions{
+		Title:        "created",
+		AssigneeIDs:  []string{"101", "202"},
+		TemplatePath: ".gitcode/ISSUE_TEMPLATE/feature.yaml",
+	})
+	if err != nil {
+		t.Fatalf("CreateIssue() error = %v", err)
+	}
+
+	if gotBody["assignee"] != "101,202" {
+		t.Fatalf("assignee = %#v, want %q", gotBody["assignee"], "101,202")
+	}
+}
+
 func TestUpdateIssueUsesAssigneeIDs(t *testing.T) {
 	var gotBody url.Values
 

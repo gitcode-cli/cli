@@ -65,8 +65,8 @@ export GC_TOKEN="your_gitcode_token"
 echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
 source ~/.bashrc
 
-# 方式二：交互式登录
-gc auth login --token YOUR_TOKEN
+# 方式二：非交互登录
+echo "YOUR_TOKEN" | gc auth login --with-token
 ```
 
 ### 测试仓库
@@ -84,8 +84,8 @@ gc auth login --token YOUR_TOKEN
 # 交互式登录
 gc auth login
 
-# 使用 Token 登录
-gc auth login --token YOUR_TOKEN
+# 从 stdin 读取 Token 登录
+echo "YOUR_TOKEN" | gc auth login --with-token
 
 # 打开浏览器生成 Token 后继续登录
 gc auth login --web
@@ -94,7 +94,7 @@ gc auth login --web
 说明：
 - `auth login --web` 会打开 GitCode Token 页面，然后继续在终端中读取你粘贴的 Token 完成登录。
 - 登录成功后 token 会写入本地配置；若同时设置了 `GC_TOKEN` 或 `GITCODE_TOKEN`，环境变量优先。
-- 未显式传 `--token` 或 `--with-token` 时需要交互式 TTY；非交互环境会直接报错，避免命令挂起等待输入。
+- 未显式传 `--with-token` 时需要交互式 TTY；非交互环境会直接报错，避免命令挂起等待输入。
 
 ### auth status - 查看认证状态
 

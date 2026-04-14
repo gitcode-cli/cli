@@ -133,8 +133,8 @@ source ~/.bashrc
 # 交互式登录（需输入 Token）
 gc auth login
 
-# 使用 Token 参数登录
-gc auth login --token YOUR_TOKEN
+# 非交互登录（从 stdin 读取 Token）
+echo "YOUR_TOKEN" | gc auth login --with-token
 ```
 
 当前版本认证优先级：

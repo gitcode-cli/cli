@@ -18,13 +18,13 @@ func TestNewCmdLogin(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "login with token flag",
-			args:    []string{"--token", "test-token"},
+			name:    "login with with-token flag",
+			args:    []string{"--with-token"},
 			wantErr: false,
 		},
 		{
 			name:    "login with hostname flag",
-			args:    []string{"--hostname", "gitcode.com", "--token", "test-token"},
+			args:    []string{"--hostname", "gitcode.com", "--with-token"},
 			wantErr: false,
 		},
 	}
@@ -95,7 +95,21 @@ func TestNewCmdLoginRejectsInteractiveLoginWithoutTTY(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute() error = nil, want usage error")
 	}
-	if !strings.Contains(err.Error(), "interactive login requires a TTY") {
+	if !strings.Contains(err.Error(), "use --with-token") {
+		t.Fatalf("Execute() error = %q", err.Error())
+	}
+}
+
+func TestNewCmdLoginRejectsRemovedTokenFlag(t *testing.T) {
+	f := cmdutil.TestFactory()
+	cmd := NewCmdLogin(f, nil)
+	cmd.SetArgs([]string{"--token", "test-token"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want unknown flag error")
+	}
+	if !strings.Contains(err.Error(), "unknown flag: --token") {
 		t.Fatalf("Execute() error = %q", err.Error())
 	}
 }

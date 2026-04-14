@@ -51,8 +51,8 @@ export GC_TOKEN="your_gitcode_token"
 # 或
 export GITCODE_TOKEN="your_gitcode_token"
 
-# 方式二：交互式登录
-gc auth login --token YOUR_TOKEN
+# 方式二：stdin 登录
+echo "YOUR_TOKEN" | gc auth login --with-token
 ```
 
 本地配置默认写入：

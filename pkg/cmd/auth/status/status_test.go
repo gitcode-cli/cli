@@ -18,6 +18,12 @@ func TestNewCmdStatus(t *testing.T) {
 	if cmd.Use != "status" {
 		t.Errorf("Expected Use 'status', got %q", cmd.Use)
 	}
+	if strings.Contains(cmd.Long, "keyring") {
+		t.Fatalf("status help unexpectedly references keyring: %q", cmd.Long)
+	}
+	if !strings.Contains(cmd.Long, "auth.json") {
+		t.Fatalf("status help should reference local config storage: %q", cmd.Long)
+	}
 }
 
 func TestStatusRunUsesStoredToken(t *testing.T) {

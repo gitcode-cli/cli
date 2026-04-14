@@ -27,10 +27,12 @@ type LoginOptions struct {
 
 	// Flags
 	Hostname    string
-	Token       string
 	WithToken   bool
 	GitProtocol string
 	Web         bool
+
+	// Internal state populated from stdin or interactive input.
+	Token string
 }
 
 // NewCmdLogin creates the login command
@@ -46,14 +48,15 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 		Use:   "login",
 		Short: "Log in to a GitCode account",
 		Long: heredoc.Doc(`
-			Authenticate with a GitCode account.
+				Authenticate with a GitCode account.
 
-			The default authentication mode is a web-based flow.
-			Alternatively, use --with-token to pass a token on standard input.
-		`),
+				By default, gc prompts for a token in an interactive terminal.
+				In non-interactive environments, use --with-token to read the token
+				from standard input.
+			`),
 		Example: heredoc.Doc(`
-			# Start interactive login
-			$ gc auth login
+				# Start interactive login
+				$ gc auth login
 
 			# Login with a token from stdin
 			$ echo "your-token" | gc auth login --with-token
@@ -74,13 +77,8 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 				return loginWithToken(opts)
 			}
 
-			// Handle --token flag
-			if opts.Token != "" {
-				return loginWithTokenFlag(opts)
-			}
-
 			if !opts.IO.CanPrompt() {
-				return cmdutil.NewUsageError("interactive login requires a TTY; use --token or --with-token")
+				return cmdutil.NewUsageError("interactive login requires a TTY; use --with-token")
 			}
 
 			if opts.Web {
@@ -93,7 +91,6 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 	}
 
 	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "The hostname of the GitCode instance to authenticate with")
-	cmd.Flags().StringVarP(&opts.Token, "token", "t", "", "An authentication token for GitCode")
 	cmd.Flags().BoolVar(&opts.WithToken, "with-token", false, "Read token from standard input")
 	cmd.Flags().StringVarP(&opts.GitProtocol, "git-protocol", "p", "https", "The Git protocol to use for operations (https/ssh)")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open a browser to authenticate")

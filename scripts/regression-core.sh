@@ -71,7 +71,11 @@ export GC_CONFIG_DIR="$TMP_CONFIG_DIR"
 unset GC_TOKEN GITCODE_TOKEN
 
 log "Auth Login"
-run_capture login_out "$GC_BIN" auth login --token "$SOURCE_TOKEN"
+login_out="$(printf '%s\n' "$SOURCE_TOKEN" | "$GC_BIN" auth login --with-token 2>&1)" || {
+  printf '%s\n' "$login_out" >&2
+  exit 1
+}
+printf '%s\n' "$login_out"
 assert_contains "$login_out" "Logged in as"
 
 log "Auth Status"

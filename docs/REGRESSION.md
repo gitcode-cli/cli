@@ -28,7 +28,7 @@ go build -o ./gc ./cmd/gc
 
 `./scripts/regression-core.sh` 默认执行稳定的读路径、agent-friendly 契约检查和错误路径：
 
-1. `auth login --token`
+1. `auth login --with-token`
 2. `auth status`
 3. `auth token`
 4. `auth logout`

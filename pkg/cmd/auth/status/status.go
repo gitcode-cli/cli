@@ -37,13 +37,13 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 		Use:   "status",
 		Short: "View authentication status",
 		Long: heredoc.Doc(`
-			View information about your authentication status.
+				View information about your authentication status.
 
-			When no hostname is specified, checks for token from:
-			1. GC_TOKEN environment variable
-			2. GITCODE_TOKEN environment variable
-			3. Stored credentials (keyring)
-		`),
+				When no hostname is specified, checks for token from:
+				1. GC_TOKEN environment variable
+				2. GITCODE_TOKEN environment variable
+				3. Stored credentials from local config (~/.config/gc/auth.json)
+			`),
 		Example: heredoc.Doc(`
 			$ gc auth status
 			gitcode.com

@@ -1,6 +1,8 @@
 # .goreleaser.yaml
 # GitCode CLI Release Configuration
 
+version: 2
+
 project_name: gc
 
 before:

@@ -1,0 +1,36 @@
+{
+  "name": "gitcode-cli",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "containerEnv": {
+    "GC_CONFIG_DIR": "/home/vscode/.config/gc",
+    "GOPATH": "/home/vscode/go"
+  },
+  "mounts": [
+    "source=gitcode-cli-go-pkg-mod,target=/home/vscode/go/pkg/mod,type=volume",
+    "source=gitcode-cli-go-build-cache,target=/home/vscode/.cache/go-build,type=volume",
+    "source=gitcode-cli-pip-cache,target=/home/vscode/.cache/pip,type=volume"
+  ],
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "go.useLanguageServer": true,
+        "go.toolsManagement.checkForUpdates": "local",
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}

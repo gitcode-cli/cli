@@ -138,6 +138,41 @@ make lint           # Run linter
 make completions    # Generate shell completions
 ```
 
+### Pre-commit
+
+The repository now includes a lightweight [`.pre-commit-config.yaml`](./.pre-commit-config.yaml)
+for local commit-time hygiene checks.
+
+It is intentionally limited to fast, deterministic checks:
+
+- trailing whitespace and EOF fixes
+- YAML / JSON / TOML syntax checks
+- merge-conflict marker detection
+- large-file guard
+- private-key detection
+- `gofmt` on staged Go files
+
+It does **not** replace the formal gates in `spec/` and does **not** run heavy checks such as:
+
+- `go test ./...`
+- `./scripts/regression-core.sh`
+- `./scripts/package.sh`
+- `make release-local`
+
+Recommended usage:
+
+```bash
+pre-commit install
+pre-commit run --files path/to/changed-file.go path/to/changed-file.md
+```
+
+Use `pre-commit run --all-files` only when you intentionally want a repository-wide
+cleanup pass. The current repository still contains some historical files that would
+trigger large unrelated formatting or EOF-only diffs in a full sweep.
+
+If `pre-commit` is not installed on your machine, install it with your preferred package manager
+or Python tooling first.
+
 ### Workspace Hygiene
 
 Do not commit local build outputs, package artifacts, evaluation workspaces, or statistics files.

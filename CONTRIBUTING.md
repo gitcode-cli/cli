@@ -71,6 +71,41 @@ Before contributing, please read the following documentation:
 - Docker (optional)
 - GoReleaser (optional, for releases)
 
+### Dev Container
+
+If you use VS Code Dev Containers or GitHub Codespaces, the repository now includes
+`.devcontainer/` for the local build, UT, packaging, and release-validation baseline.
+
+The dev container provides:
+
+- Go 1.22
+- Python 3 + `build`, `wheel`, `setuptools`
+- `nfpm` for DEB/RPM packaging
+- `goreleaser` for snapshot release validation
+- `rpm`, `make`, `git`, and standard shell tooling
+
+For safety, the committed devcontainer config does not automatically forward local
+`GC_TOKEN` or `GITCODE_TOKEN` into the container.
+
+If you need real command verification, export the token manually only after you trust
+the checked-out code:
+
+```bash
+export GC_TOKEN="your_gitcode_token"
+```
+
+After the container starts, the recommended minimum checks remain:
+
+```bash
+go test ./...
+go build -o ./gc ./cmd/gc
+./gc version
+./scripts/regression-core.sh
+```
+
+Real command verification still requires a valid token and must only target
+`infra-test/*` repositories.
+
 ### Building
 
 ```bash

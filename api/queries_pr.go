@@ -330,12 +330,27 @@ func MergePullRequest(client *Client, owner, repo string, number int, opts *Merg
 
 // ListPRComments lists comments on a PR
 func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment, error) {
-	var comments []PRComment
-	err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/comments", &comments)
-	if err != nil {
-		return nil, err
+	const perPage = 100
+
+	var allComments []PRComment
+	for page := 1; ; page++ {
+		var comments []PRComment
+		path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments"
+		values := url.Values{}
+		values.Set("per_page", itoa(perPage))
+		values.Set("page", itoa(page))
+
+		err := client.Get(path+"?"+values.Encode(), &comments)
+		if err != nil {
+			return nil, err
+		}
+
+		allComments = append(allComments, comments...)
+		if len(comments) < perPage {
+			break
+		}
 	}
-	return comments, nil
+	return allComments, nil
 }
 
 // CreatePRComment creates a comment on a PR

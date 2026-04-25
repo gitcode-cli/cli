@@ -204,6 +204,7 @@ gc release upload v0.3.11 \
   dist/gc-0.3.11-1.x86_64.rpm \
   dist/gc-0.3.11-1.aarch64.rpm \
   dist/gitcode_cli-0.3.11-py3-none-any.whl \
+  dist/gitcode_cli-0.3.11.tar.gz \
   -R gitcode-cli/cli
 ```
 

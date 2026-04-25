@@ -120,6 +120,74 @@ func TestBuildPRUpdateFormValuesNilOptions(t *testing.T) {
 	}
 }
 
+func TestListPRCommentsPaginatesUntilShortPage(t *testing.T) {
+	var gotPaths []string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath := req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotPaths = append(gotPaths, gotPath)
+
+		query := req.URL.Query()
+		if got := query.Get("per_page"); got != "100" {
+			t.Fatalf("per_page = %q, want %q", got, "100")
+		}
+
+		switch query.Get("page") {
+		case "1":
+			return authTestResponse(http.StatusOK, prCommentsJSON(100, 0)), nil
+		case "2":
+			return authTestResponse(http.StatusOK, prCommentsJSON(2, 100)), nil
+		default:
+			t.Fatalf("unexpected page %q", query.Get("page"))
+			return nil, nil
+		}
+	})
+
+	comments, err := ListPRComments(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("ListPRComments() error = %v", err)
+	}
+
+	if len(comments) != 102 {
+		t.Fatalf("len(comments) = %d, want 102", len(comments))
+	}
+	if comments[0].Body != "comment-1" || comments[101].Body != "comment-102" {
+		t.Fatalf("unexpected comment order: first=%q last=%q", comments[0].Body, comments[101].Body)
+	}
+	if len(gotPaths) != 2 {
+		t.Fatalf("request count = %d, want 2", len(gotPaths))
+	}
+}
+
+func TestListPRCommentsStopsAfterEmptyPage(t *testing.T) {
+	var requests int
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests++
+		if got := req.URL.Query().Get("page"); got != "1" {
+			t.Fatalf("page = %q, want %q", got, "1")
+		}
+		if got := req.URL.Query().Get("per_page"); got != "100" {
+			t.Fatalf("per_page = %q, want %q", got, "100")
+		}
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+
+	comments, err := ListPRComments(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("ListPRComments() error = %v", err)
+	}
+	if len(comments) != 0 {
+		t.Fatalf("len(comments) = %d, want 0", len(comments))
+	}
+	if requests != 1 {
+		t.Fatalf("request count = %d, want 1", requests)
+	}
+}
+
 func TestPullRequestUnmarshal(t *testing.T) {
 	jsonResp := `{
 		"id": 8483763,
@@ -305,4 +373,18 @@ func assertPRListRequest(t *testing.T, gotPath, wantPath string, wantQuery map[s
 	if len(query) != len(wantQuery) {
 		t.Fatalf("query = %#v, want %#v", query, wantQuery)
 	}
+}
+
+func prCommentsJSON(count, offset int) string {
+	comments := make([]PRComment, count)
+	for i := range comments {
+		comments[i].ID = offset + i + 1
+		comments[i].Body = "comment-" + itoa(offset+i+1)
+	}
+
+	data, err := json.Marshal(comments)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
 }

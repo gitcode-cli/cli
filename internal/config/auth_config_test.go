@@ -129,3 +129,92 @@ func TestConfigWriteCreatesRestrictedDirectory(t *testing.T) {
 		t.Fatalf("config dir permissions = %o, want no group/other access", info.Mode().Perm())
 	}
 }
+
+func TestConfigSetGetAndWritePersistValues(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+
+	cfg := New()
+	if err := cfg.Set("gitcode.com", "editor", "nano"); err != nil {
+		t.Fatalf("Set() error = %v", err)
+	}
+	if err := cfg.Set("gitcode.com", "browser", "firefox"); err != nil {
+		t.Fatalf("Set() error = %v", err)
+	}
+	if err := cfg.Write(); err != nil {
+		t.Fatalf("Write() error = %v", err)
+	}
+
+	cfg = New()
+	editor, err := cfg.Get("gitcode.com", "editor")
+	if err != nil {
+		t.Fatalf("Get(editor) error = %v", err)
+	}
+	if editor != "nano" {
+		t.Fatalf("Get(editor) = %q, want nano", editor)
+	}
+	if got := cfg.Editor("gitcode.com"); got.Value != "nano" || got.Source != "config" {
+		t.Fatalf("Editor() = %+v, want config nano", got)
+	}
+	if got := cfg.Browser("gitcode.com"); got.Value != "firefox" || got.Source != "config" {
+		t.Fatalf("Browser() = %+v, want config firefox", got)
+	}
+}
+
+func TestConfigEnvironmentOverridesStoredValue(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_EDITOR", "code")
+
+	cfg := New()
+	if err := cfg.Set("gitcode.com", "editor", "nano"); err != nil {
+		t.Fatalf("Set() error = %v", err)
+	}
+
+	editor, err := cfg.Get("gitcode.com", "editor")
+	if err != nil {
+		t.Fatalf("Get(editor) error = %v", err)
+	}
+	if editor != "code" {
+		t.Fatalf("Get(editor) = %q, want environment value code", editor)
+	}
+}
+
+func TestConfigRejectsUnsupportedKeys(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+
+	cfg := New()
+	if err := cfg.Set("gitcode.com", "token", "secret"); err == nil {
+		t.Fatal("Set(token) error = nil, want unsupported config key error")
+	}
+	if _, err := cfg.Get("gitcode.com", "token"); err == nil {
+		t.Fatal("Get(token) error = nil, want unsupported config key error")
+	}
+}
+
+func TestNormalizeTrustedHost(t *testing.T) {
+	tests := []struct {
+		name    string
+		host    string
+		want    string
+		wantErr bool
+	}{
+		{name: "empty defaults", want: "gitcode.com"},
+		{name: "trims and lowercases", host: " Enterprise.Example.COM ", want: "enterprise.example.com"},
+		{name: "rejects scheme", host: "https://gitcode.com", wantErr: true},
+		{name: "rejects path", host: "gitcode.com/path", wantErr: true},
+		{name: "rejects port", host: "gitcode.com:8443", wantErr: true},
+		{name: "rejects userinfo", host: "user@gitcode.com", wantErr: true},
+		{name: "rejects embedded whitespace", host: "git code.com", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NormalizeTrustedHost(tt.host)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("NormalizeTrustedHost() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err == nil && got != tt.want {
+				t.Fatalf("NormalizeTrustedHost() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

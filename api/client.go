@@ -30,7 +30,7 @@ type Client struct {
 func NewClient(httpClient *http.Client, host, token string) *Client {
 	return &Client{
 		httpClient: httpClient,
-		host:       host,
+		host:       apiHostForGitCodeHost(host),
 		token:      token,
 	}
 }
@@ -51,12 +51,25 @@ func (c *Client) SetToken(token, source string) {
 
 // SetHost sets the API host
 func (c *Client) SetHost(host string) {
-	c.host = host
+	c.host = apiHostForGitCodeHost(host)
 }
 
 // Host returns the current host
 func (c *Client) Host() string {
 	return c.host
+}
+
+func apiHostForGitCodeHost(host string) string {
+	if host == "" || host == "gitcode.com" {
+		return DefaultHost
+	}
+	if host == DefaultHost {
+		return host
+	}
+	if len(host) > 4 && host[:4] == "api." {
+		return host
+	}
+	return "api." + host
 }
 
 // Token returns the current token

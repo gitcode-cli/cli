@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -109,8 +110,8 @@ func TestDownloadRunLatestWithAllUsesBrowserDownloadURLForSourceArchives(t *test
 					}`)),
 				}, nil
 			case "https://raw.gitcode.com/owner/repo/archive/refs/heads/v1.0.0.zip":
-				if got := req.Header.Get("Authorization"); got != "Bearer test-token" {
-					t.Fatalf("Authorization header for source archive = %q, want %q", got, "Bearer test-token")
+				if got := req.Header.Get("Authorization"); got != "" {
+					t.Fatalf("Authorization header for source archive = %q, want empty", got)
 				}
 				return &http.Response{
 					StatusCode: http.StatusOK,
@@ -164,6 +165,66 @@ func TestDownloadRunLatestWithAllUsesBrowserDownloadURLForSourceArchives(t *test
 	}
 	if string(assetContent) != "asset-body" {
 		t.Fatalf("asset content = %q, want %q", string(assetContent), "asset-body")
+	}
+}
+
+func TestDownloadRunUsesConfiguredHostForReleaseAndAssetRequests(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_HOST", "enterprise.example.com")
+	t.Setenv("GC_TOKEN", "env-token")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	cfg := config.New()
+	if _, err := cfg.Authentication().Login("enterprise.example.com", "tester", "stored-token", "https", false); err != nil {
+		t.Fatalf("Login() error = %v", err)
+	}
+
+	tempDir := t.TempDir()
+	ioStreams, _, _, _ := iostreams.Test()
+	var gotURLs []string
+	httpClient := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			gotURLs = append(gotURLs, req.URL.String())
+			if got := req.Header.Get("Authorization"); got != "Bearer stored-token" {
+				t.Fatalf("Authorization = %q, want stored token", got)
+			}
+
+			switch req.URL.String() {
+			case "https://api.enterprise.example.com/api/v5/repos/owner/repo/releases/latest":
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Status:     http.StatusText(http.StatusOK),
+					Header:     make(http.Header),
+					Body: io.NopCloser(strings.NewReader(`{
+						"tag_name":"v1.0.0",
+						"assets":[{"name":"asset.txt"}]
+					}`)),
+				}, nil
+			case "https://api.enterprise.example.com/api/v5/repos/owner/repo/releases/v1.0.0/attach_files/asset.txt/download":
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Status:     http.StatusText(http.StatusOK),
+					Header:     make(http.Header),
+					Body:       io.NopCloser(strings.NewReader("asset-body")),
+				}, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", req.Method, req.URL.String())
+				return nil, nil
+			}
+		}),
+	}
+
+	err := downloadRun(&DownloadOptions{
+		IO:         ioStreams,
+		HttpClient: func() (*http.Client, error) { return httpClient, nil },
+		Repository: "owner/repo",
+		Output:     tempDir,
+	})
+	if err != nil {
+		t.Fatalf("downloadRun() error = %v", err)
+	}
+	if len(gotURLs) != 2 {
+		t.Fatalf("requests = %#v, want release lookup and asset download", gotURLs)
 	}
 }
 

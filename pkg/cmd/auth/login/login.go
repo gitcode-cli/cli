@@ -121,9 +121,11 @@ func loginWithTokenFlag(opts *LoginOptions) error {
 	}
 
 	// Set default hostname
-	if opts.Hostname == "" {
-		opts.Hostname = "gitcode.com"
+	hostname, err := config.NormalizeTrustedHost(opts.Hostname)
+	if err != nil {
+		return err
 	}
+	opts.Hostname = hostname
 
 	// Verify the token
 	httpClient, err := opts.HttpClient()
@@ -155,9 +157,11 @@ func loginWithTokenFlag(opts *LoginOptions) error {
 }
 
 func loginWithWeb(opts *LoginOptions) error {
-	if opts.Hostname == "" {
-		opts.Hostname = "gitcode.com"
+	hostname, err := config.NormalizeTrustedHost(opts.Hostname)
+	if err != nil {
+		return err
 	}
+	opts.Hostname = hostname
 
 	loginURL := fmt.Sprintf("https://%s/-/profile/personal_access_tokens", opts.Hostname)
 	fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", loginURL)
@@ -171,9 +175,11 @@ func loginWithWeb(opts *LoginOptions) error {
 
 func loginInteractive(opts *LoginOptions) error {
 	// Set default hostname
-	if opts.Hostname == "" {
-		opts.Hostname = "gitcode.com"
+	hostname, err := config.NormalizeTrustedHost(opts.Hostname)
+	if err != nil {
+		return err
 	}
+	opts.Hostname = hostname
 
 	cs := opts.IO.ColorScheme()
 

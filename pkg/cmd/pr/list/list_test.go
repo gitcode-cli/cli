@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/output"
 )
@@ -99,6 +100,48 @@ func TestListRunBuildsFullQuery(t *testing.T) {
 	want := "/api/v5/repos/owner/repo/pulls?base=main&direction=asc&head=feature%2Flogin&page=2&per_page=25&sort=updated&state=open"
 	if gotPath != want {
 		t.Fatalf("request path = %q, want %q", gotPath, want)
+	}
+}
+
+func TestListRunUsesBaseRepoAndConfiguredHost(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GC_HOST", "enterprise.example.com")
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	cfg := config.New()
+	if _, err := cfg.Authentication().Login("enterprise.example.com", "tester", "stored-token", "https", false); err != nil {
+		t.Fatalf("Login() error = %v", err)
+	}
+
+	f := cmdutil.TestFactory()
+	var gotHost string
+	var gotPath string
+	opts := &ListOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotHost = req.URL.Host
+					gotPath = req.URL.Path
+					return listTestResponse(http.StatusOK, `[]`), nil
+				}),
+			}, nil
+		},
+		BaseRepo: func() (string, error) {
+			return "owner/repo", nil
+		},
+		State: "open",
+		Limit: 30,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	if gotHost != "api.enterprise.example.com" {
+		t.Fatalf("request host = %q, want api.enterprise.example.com", gotHost)
+	}
+	if gotPath != "/api/v5/repos/owner/repo/pulls" {
+		t.Fatalf("request path = %q, want /api/v5/repos/owner/repo/pulls", gotPath)
 	}
 }
 

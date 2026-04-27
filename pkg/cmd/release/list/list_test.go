@@ -91,6 +91,38 @@ func TestListRunMarksOnlyFirstPublishedReleaseAsLatest(t *testing.T) {
 	}
 }
 
+func TestListRunUsesBaseRepoWhenRepoOmitted(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	var gotPath string
+	err := listRun(&ListOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotPath = req.URL.Path
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Status:     http.StatusText(http.StatusOK),
+						Header:     make(http.Header),
+						Body:       io.NopCloser(strings.NewReader(`[]`)),
+					}, nil
+				}),
+			}, nil
+		},
+		BaseRepo: func() (string, error) {
+			return "owner/repo", nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	if gotPath != "/api/v5/repos/owner/repo/releases" {
+		t.Fatalf("request path = %q, want /api/v5/repos/owner/repo/releases", gotPath)
+	}
+}
+
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {

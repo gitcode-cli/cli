@@ -86,6 +86,56 @@ func TestLoginWithWebOpensBrowser(t *testing.T) {
 	}
 }
 
+func TestLoginWithTokenRejectsMalformedHost(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	io, _, _, _ := iostreams.Test()
+
+	opts := &LoginOptions{
+		IO:       io,
+		Hostname: "https://gitcode.com",
+		Token:    "test-token",
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					t.Fatalf("unexpected request to %s", req.URL.String())
+					return nil, nil
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) {
+			return config.New(), nil
+		},
+	}
+
+	err := loginWithTokenFlag(opts)
+	if err == nil {
+		t.Fatal("loginWithTokenFlag() error = nil, want invalid host")
+	}
+	if !strings.Contains(err.Error(), "invalid host") {
+		t.Fatalf("loginWithTokenFlag() error = %q, want invalid host", err.Error())
+	}
+}
+
+func TestLoginWithWebRejectsMalformedHost(t *testing.T) {
+	io, _, _, _ := iostreams.Test()
+	opts := &LoginOptions{
+		IO:       io,
+		Hostname: "bad/host",
+		OpenBrowser: func(url string) error {
+			t.Fatalf("unexpected browser open: %s", url)
+			return nil
+		},
+	}
+
+	err := loginWithWeb(opts)
+	if err == nil {
+		t.Fatal("loginWithWeb() error = nil, want invalid host")
+	}
+	if !strings.Contains(err.Error(), "invalid host") {
+		t.Fatalf("loginWithWeb() error = %q, want invalid host", err.Error())
+	}
+}
+
 func TestNewCmdLoginRejectsInteractiveLoginWithoutTTY(t *testing.T) {
 	f := cmdutil.TestFactory()
 	cmd := NewCmdLogin(f, nil)

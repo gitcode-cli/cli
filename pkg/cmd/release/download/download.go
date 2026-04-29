@@ -21,6 +21,7 @@ import (
 type DownloadOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	TagName string
@@ -37,6 +38,7 @@ func NewCmdDownload(f *cmdutil.Factory, runF func(*DownloadOptions) error) *cobr
 	opts := &DownloadOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -91,16 +93,17 @@ func downloadRun(opts *DownloadOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
-
-	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
-	if token == "" {
-		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
+	client, err := cmdutil.AuthenticatedClient(httpClient)
+	if err != nil {
+		return err
 	}
-	client.SetToken(token, "environment")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -156,14 +159,14 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 	outputPath := filepath.Join(outputDir, asset.Name)
 	fmt.Fprintf(out, "%s Downloading %s...\n", cs.Blue("⬇"), asset.Name)
 
-	downloadURL := assetDownloadURL(asset, owner, repo, tag)
+	downloadURL := assetDownloadURL(asset, client.Host(), owner, repo, tag)
 
 	// Create request
 	req, err := http.NewRequest("GET", downloadURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	if token := client.Token(); token != "" {
+	if token := client.Token(); token != "" && req.URL.Host == client.Host() {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 
@@ -195,13 +198,13 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 	return nil
 }
 
-func assetDownloadURL(asset api.ReleaseAsset, owner, repo, tag string) string {
+func assetDownloadURL(asset api.ReleaseAsset, apiHost, owner, repo, tag string) string {
 	if isSourceArchiveAsset(asset) {
 		return asset.BrowserDownloadURL
 	}
 
-	return fmt.Sprintf("https://api.gitcode.com/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download",
-		owner, repo, tag, url.PathEscape(asset.Name))
+	return fmt.Sprintf("https://%s/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download",
+		apiHost, owner, repo, tag, url.PathEscape(asset.Name))
 }
 
 func isSourceArchiveAsset(asset api.ReleaseAsset) bool {
@@ -258,14 +261,4 @@ func formatSize(bytes int) string {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	if token := os.Getenv("GITCODE_TOKEN"); token != "" {
-		return token
-	}
-	return cmdutil.EnvToken()
 }

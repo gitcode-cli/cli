@@ -75,11 +75,15 @@ func statusRun(opts *StatusOptions) error {
 	if opts.Hostname == "" {
 		opts.Hostname, _ = authCfg.DefaultHost()
 	}
+	opts.Hostname, err = config.NormalizeTrustedHost(opts.Hostname)
+	if err != nil {
+		return err
+	}
 
 	cs := opts.IO.ColorScheme()
 
 	token, tokenSource := authCfg.ActiveToken(opts.Hostname)
-	if opts.HostnameSet {
+	if opts.HostnameSet || opts.Hostname != "gitcode.com" {
 		token, tokenSource = authCfg.StoredToken(opts.Hostname)
 	}
 

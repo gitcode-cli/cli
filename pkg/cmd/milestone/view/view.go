@@ -4,7 +4,6 @@ package view
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -19,6 +18,7 @@ import (
 type ViewOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -33,6 +33,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 	opts := &ViewOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -69,20 +70,17 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 func viewRun(opts *ViewOptions) error {
 	cs := opts.IO.ColorScheme()
 
-	httpClient, err := opts.HttpClient()
+	client, err := cmdutil.AuthenticatedClientFromFactory(opts.HttpClient)
 	if err != nil {
-		return fmt.Errorf("failed to create HTTP client: %w", err)
+		return err
 	}
-
-	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
-	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
-	}
-	client.SetToken(token, "environment")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -121,14 +119,4 @@ func viewRun(opts *ViewOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	if token := os.Getenv("GITCODE_TOKEN"); token != "" {
-		return token
-	}
-	return cmdutil.EnvToken()
 }

@@ -9,6 +9,7 @@
 1. 环境变量认证
 2. 本地配置持久化认证
 3. 单主机单活动用户模型
+4. 通用偏好配置持久化
 
 当前版本不支持：
 
@@ -44,6 +45,25 @@
 ```
 
 可通过 `GC_CONFIG_DIR` 覆盖配置目录。
+
+通用偏好配置写入同一配置目录下的：
+
+```bash
+~/.config/gc/config.json
+```
+
+当前通用配置用于保存 `editor`、`browser`、`pager` 等非敏感偏好。认证 token 仍只写入 `auth.json`。
+通用配置会拒绝 `token`、`password`、`secret` 等未列入允许列表的键。
+
+## 主机传播语义
+
+- `GC_HOST` 或登录配置中的默认 host 会决定已接入共享 host-aware 认证入口的业务命令所使用的 GitCode 主机。
+- host 必须是受信的 hostname-only 值，例如 `gitcode.com` 或 `enterprise.example.com`；不能包含 URL scheme、路径、端口、用户名或空白字符。
+- 业务 API 请求会把 GitCode Web 主机映射为对应 API 主机，例如 `gitcode.com` 映射到 `api.gitcode.com`，`enterprise.example.com` 映射到 `api.enterprise.example.com`。
+- 默认 `gitcode.com` 下，环境变量 token 仍优先于本地 token。
+- 非默认 host 下，业务命令只使用该 host 本地登录保存的 token，不会把通用 `GC_TOKEN` / `GITCODE_TOKEN` 转发到自定义 host。
+- 如果需要使用非默认 host，请先使用 `gc auth login --hostname <host>` 为该 host 建立本地认证。
+- 显式支持 `--hostname` 的 auth 子命令仍按该参数读取目标主机认证信息。
 
 ## 各命令统一语义
 

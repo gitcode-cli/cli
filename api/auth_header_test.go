@@ -130,6 +130,13 @@ func TestReviewPRReturnsErrorMessageField(t *testing.T) {
 	}
 }
 
+func TestNewClientMapsGitCodeHostToAPIHost(t *testing.T) {
+	client := NewClient(&http.Client{}, "gitcode.com", "")
+	if client.Host() != DefaultHost {
+		t.Fatalf("Host() = %q, want %q", client.Host(), DefaultHost)
+	}
+}
+
 func newAuthTestClient(fn func(*http.Request) (*http.Response, error)) *Client {
 	return NewClientFromHTTP(&http.Client{
 		Transport: roundTripFunc(fn),

@@ -19,8 +19,8 @@ type TokenOptions struct {
 	Config     func() (config.Config, error)
 
 	// Flags
-	Hostname     string
-	HostnameSet  bool
+	Hostname    string
+	HostnameSet bool
 }
 
 // NewCmdToken creates the token command
@@ -74,9 +74,13 @@ func tokenRun(opts *TokenOptions) error {
 	if opts.Hostname == "" {
 		opts.Hostname, _ = authCfg.DefaultHost()
 	}
+	opts.Hostname, err = config.NormalizeTrustedHost(opts.Hostname)
+	if err != nil {
+		return err
+	}
 
 	token, _ := authCfg.ActiveToken(opts.Hostname)
-	if opts.HostnameSet {
+	if opts.HostnameSet || opts.Hostname != "gitcode.com" {
 		token, _ = authCfg.StoredToken(opts.Hostname)
 	}
 

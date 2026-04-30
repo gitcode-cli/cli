@@ -82,6 +82,7 @@ func NewCmdRelations(f *cmdutil.Factory, runF func(*RelationsOptions) error) *co
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.State, "state", "s", "all", "Filter source issues by state (open/closed/all)")
+	cmdutil.SetFlagEnum(cmd, "state", "open", "closed", "all")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 100, "Maximum number of issues to inspect")
 	cmd.Flags().IntVar(&opts.Mode, "mode", 1, "Issue PR lookup mode: 0 (default), 1 (enhanced with mergeable status)")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)

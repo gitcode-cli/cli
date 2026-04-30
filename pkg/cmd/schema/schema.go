@@ -108,6 +108,7 @@ func buildFlags(cmd *cobra.Command) []schemaFlag {
 			Type:      flag.Value.Type(),
 			Default:   flag.DefValue,
 			Required:  flag.Annotations != nil && len(flag.Annotations[cobra.BashCompOneRequiredFlag]) > 0,
+			Enum:      append([]string(nil), flag.Annotations[cmdutil.FlagEnumAnnotation]...),
 		})
 	})
 	return flags

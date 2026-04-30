@@ -96,6 +96,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.Title, "title", "t", "", "New title")
 	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "New body/description")
 	cmd.Flags().StringVarP(&opts.State, "state", "s", "", "State: open, closed, reopen, close")
+	cmdutil.SetFlagEnum(cmd, "state", "open", "closed", "reopen", "close")
 	cmd.Flags().StringSliceVarP(&opts.Assignees, "assignee", "a", []string{}, "Assignees (comma-separated)")
 	cmd.Flags().StringSliceVarP(&opts.Labels, "label", "l", []string{}, "Labels (comma-separated)")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Milestone number")

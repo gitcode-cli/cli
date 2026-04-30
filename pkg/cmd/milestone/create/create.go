@@ -80,7 +80,7 @@ func createRun(opts *CreateOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -95,7 +95,7 @@ func createRun(opts *CreateOptions) error {
 	if opts.DueDate != "" {
 		_, err := time.Parse("2006-01-02", opts.DueDate)
 		if err != nil {
-			return fmt.Errorf("invalid due date format, use YYYY-MM-DD: %w", err)
+			return cmdutil.NewCLIError(cmdutil.ExitUsage, "invalid due date format, use YYYY-MM-DD", err)
 		}
 		dueOn = opts.DueDate
 	} else {

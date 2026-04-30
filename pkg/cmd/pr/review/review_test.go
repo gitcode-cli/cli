@@ -117,6 +117,49 @@ func TestReviewRun_RequestUnsupported(t *testing.T) {
 	if !strings.Contains(err.Error(), "not supported by the current GitCode API") {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
+	}
+}
+
+func TestReviewRun_NoActionReturnsUsageExitCode(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+	})
+	if err == nil {
+		t.Fatal("expected error for missing review action")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
+	}
+}
+
+func TestReviewRun_MissingTokenReturnsAuthExitCode(t *testing.T) {
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	io, _, _, _ := testutil.NewTestIOStreams()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Approve:    true,
+	})
+	if err == nil {
+		t.Fatal("expected auth error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitAuth {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitAuth)
+	}
 }
 
 func TestNewCmdReview(t *testing.T) {
@@ -150,6 +193,11 @@ func TestNewCmdReview(t *testing.T) {
 			args:    []string{},
 			wantErr: true,
 		},
+		{
+			name:    "invalid PR number",
+			args:    []string{"abc", "--approve"},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -164,5 +212,20 @@ func TestNewCmdReview(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestNewCmdReview_InvalidNumberReturnsUsageExitCode(t *testing.T) {
+	cmd := NewCmdReview(cmdutil.TestFactory(), func(opts *ReviewOptions) error {
+		return nil
+	})
+	cmd.SetArgs([]string{"abc", "--approve"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("expected invalid number error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
 	}
 }

@@ -44,6 +44,9 @@ func TestResolveRepo(t *testing.T) {
 				if err == nil {
 					t.Fatalf("ResolveRepo() error = nil, want %q", tt.wantErr)
 				}
+				if got := ExitCode(err); got != ExitUsage {
+					t.Fatalf("ExitCode() = %d, want %d", got, ExitUsage)
+				}
 				if err.Error() == tt.wantErr || strings.Contains(err.Error(), tt.wantErr) {
 					return
 				}
@@ -99,6 +102,9 @@ func TestParseRepo(t *testing.T) {
 				if err == nil {
 					t.Fatalf("ParseRepo() error = nil, want %q", tt.wantErr)
 				}
+				if got := ExitCode(err); got != ExitUsage {
+					t.Fatalf("ExitCode() = %d, want %d", got, ExitUsage)
+				}
 				if err.Error() == tt.wantErr || strings.Contains(err.Error(), tt.wantErr) {
 					return
 				}
@@ -131,5 +137,8 @@ func TestParseRepoOutsideGitRepoRequiresExplicitRepo(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "no repository specified. Use -R owner/repo") {
 		t.Fatalf("ParseRepo() error = %q", err.Error())
+	}
+	if got := ExitCode(err); got != ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, ExitUsage)
 	}
 }

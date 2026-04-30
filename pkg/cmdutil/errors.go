@@ -111,6 +111,12 @@ func ExitCode(err error) int {
 
 	var apiErr *api.APIError
 	if errors.As(err, &apiErr) {
+		switch apiErr.ErrorCode {
+		case 404:
+			return ExitNotFound
+		case 409:
+			return ExitConflict
+		}
 		switch apiErr.StatusCode {
 		case 400:
 			return ExitUsage

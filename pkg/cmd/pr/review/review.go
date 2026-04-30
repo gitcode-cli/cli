@@ -67,7 +67,7 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid PR number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %s", args[0]))
 			}
 			opts.Number = number
 
@@ -98,7 +98,7 @@ func reviewRun(opts *ReviewOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -111,7 +111,7 @@ func reviewRun(opts *ReviewOptions) error {
 	// Handle force approval (admin only)
 	if opts.Force {
 		if !opts.Approve {
-			return fmt.Errorf("--force can only be used with --approve")
+			return cmdutil.NewUsageError("--force can only be used with --approve")
 		}
 		err := opts.ReviewPR(client, owner, repo, opts.Number, &api.ReviewPROptions{
 			Force: true,
@@ -139,7 +139,7 @@ func reviewRun(opts *ReviewOptions) error {
 	}
 
 	if opts.Request {
-		return fmt.Errorf("requesting changes is not supported by the current GitCode API. Use --comment to leave review feedback")
+		return cmdutil.NewUsageError("requesting changes is not supported by the current GitCode API. Use --comment to leave review feedback")
 	}
 
 	if opts.Approve {
@@ -162,7 +162,7 @@ func reviewRun(opts *ReviewOptions) error {
 		return nil
 	}
 
-	return fmt.Errorf("no review action specified. Use --comment, --approve, or --force with --approve")
+	return cmdutil.NewUsageError("no review action specified. Use --comment, --approve, or --force with --approve")
 }
 
 func parseRepo(repo string) (string, string, error) {

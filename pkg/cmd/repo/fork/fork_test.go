@@ -1,6 +1,8 @@
 package fork
 
 import (
+	"bytes"
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -27,6 +29,11 @@ func TestNewCmdFork(t *testing.T) {
 			args:    []string{"owner/repo", "--clone"},
 			wantErr: false,
 		},
+		{
+			name:    "fork with json output",
+			args:    []string{"owner/repo", "--json"},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -42,6 +49,86 @@ func TestNewCmdFork(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestForkRunJSONWritesForkedRepository(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+
+	opts := &ForkOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Config: func() (config.Config, error) {
+			return fakeConfig{}, nil
+		},
+		ParseRepo: git.ParseRepo,
+		ForkRepo: func(client *api.Client, owner, name string) (*api.Repository, error) {
+			return &api.Repository{
+				FullName: "fork-owner/fork-repo",
+				HTMLURL:  "https://gitcode.com/fork-owner/fork-repo",
+				CloneURL: "https://gitcode.com/fork-owner/fork-repo.git",
+			}, nil
+		},
+		CloneRepo: func(repo *git.Repo, dir string, protocol string, depth int) error {
+			t.Fatalf("CloneRepo() should not be called when --json is used without --clone")
+			return nil
+		},
+		Repository: "infra-test/gctest1",
+		JSON:       true,
+	}
+
+	if err := forkRun(opts); err != nil {
+		t.Fatalf("forkRun() error = %v", err)
+	}
+
+	var got map[string]interface{}
+	out := f.IOStreams.Out.(*bytes.Buffer).Bytes()
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v\n%s", err, string(out))
+	}
+	if got["full_name"] != "fork-owner/fork-repo" || got["web_url"] != "https://gitcode.com/fork-owner/fork-repo" {
+		t.Fatalf("JSON output = %#v", got)
+	}
+	if strings.Contains(string(out), "Forked repository") {
+		t.Fatalf("JSON output contains text banner: %q", string(out))
+	}
+}
+
+func TestForkRunRejectsJSONWithCloneBeforeFork(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &ForkOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Config: func() (config.Config, error) {
+			return fakeConfig{}, nil
+		},
+		ParseRepo: git.ParseRepo,
+		ForkRepo: func(client *api.Client, owner, name string) (*api.Repository, error) {
+			t.Fatalf("ForkRepo() should not be called when --json and --clone conflict")
+			return nil, nil
+		},
+		CloneRepo: func(repo *git.Repo, dir string, protocol string, depth int) error {
+			t.Fatalf("CloneRepo() should not be called when --json and --clone conflict")
+			return nil
+		},
+		Repository: "infra-test/gctest1",
+		JSON:       true,
+		Clone:      true,
+	}
+
+	err := forkRun(opts)
+	if err == nil {
+		t.Fatal("forkRun() error = nil")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
+	}
+	if out := f.IOStreams.Out.(*bytes.Buffer).String(); out != "" {
+		t.Fatalf("stdout = %q, want empty output", out)
 	}
 }
 

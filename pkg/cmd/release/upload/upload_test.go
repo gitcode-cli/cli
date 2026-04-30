@@ -1,6 +1,7 @@
 package upload
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -46,6 +47,51 @@ func TestUploadRun(t *testing.T) {
 
 	if !strings.Contains(out.String(), "Uploaded asset.txt") {
 		t.Fatalf("unexpected output: %q", out.String())
+	}
+}
+
+func TestUploadRunJSONWritesUploadedFiles(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	filePath := filepath.Join(t.TempDir(), "asset.txt")
+	if err := os.WriteFile(filePath, []byte("hello"), 0o644); err != nil {
+		t.Fatalf("os.WriteFile() error = %v", err)
+	}
+
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/api/v5/repos/owner/repo/releases/v1.0.0/upload_url"):
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"url":"https://uploads.gitcode.test/upload/asset.txt","headers":{"X-Test":"1"}}`))
+		case r.Method == http.MethodPut && r.URL.Path == "/upload/asset.txt":
+			w.WriteHeader(http.StatusCreated)
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+
+	err := uploadRun(&UploadOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		Repository: "owner/repo",
+		TagName:    "v1.0.0",
+		Files:      []string{filePath},
+		JSON:       true,
+	})
+	if err != nil {
+		t.Fatalf("uploadRun() error = %v", err)
+	}
+
+	var got []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v\n%s", err, out.String())
+	}
+	if len(got) != 1 || got[0]["name"] != "asset.txt" || got[0]["size"] != float64(5) || got[0]["content_type"] != "text/plain" {
+		t.Fatalf("JSON output = %#v", got)
+	}
+	if strings.Contains(out.String(), "Uploaded asset.txt") {
+		t.Fatalf("JSON output contains text banner: %q", out.String())
 	}
 }
 

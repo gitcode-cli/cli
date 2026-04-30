@@ -53,7 +53,9 @@ git@gitcode.com:owner/repo.git
 - `pr create`
 - `pr merge`
 - `repo create`
+- `repo fork`
 - `release create`
+- `release upload`
 
 其中 `issue list` 额外支持：
 
@@ -251,11 +253,15 @@ gc repo fork owner/repo
 
 # Fork 并克隆到本地
 gc repo fork owner/repo --clone
+
+# Fork 后输出 JSON
+gc repo fork owner/repo --json
 ```
 
 说明：
 - `repo fork` 现在会按传入的 `owner/repo` 执行 fork，不再使用硬编码仓库路径。
 - `--clone` 会在 fork 成功后将 fork 出来的仓库克隆到当前目录。
+- `--json` 只在 fork 成功后输出 fork 仓库对象；不能与 `--clone` 同时使用。
 
 ### repo delete - 删除仓库
 
@@ -957,10 +963,14 @@ gc release upload v1.0.0 app.zip -R infra-test/gctest1
 
 # 上传多个文件
 gc release upload v1.0.0 app.zip checksum.txt -R infra-test/gctest1
+
+# 上传后输出 JSON
+gc release upload v1.0.0 app.zip -R infra-test/gctest1 --json
 ```
 
 说明：
 - `--label` 参数当前不受 GitCode release upload API 支持；CLI 现在会直接报错，不再静默忽略。
+- `--json` 只在所有文件上传完成后输出上传结果数组；每项包含 `name`、`path`、`size` 和 `content_type`，不会混入文本提示。
 
 ### release download - 下载资产
 

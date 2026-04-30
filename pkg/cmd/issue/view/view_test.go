@@ -12,6 +12,19 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/output"
 )
 
+func TestNewCmdViewTimeFormatEnumAnnotation(t *testing.T) {
+	f := cmdutil.TestFactory()
+	cmd := NewCmdView(f, nil)
+	flag := cmd.Flags().Lookup("time-format")
+	if flag == nil {
+		t.Fatal("time-format flag not found")
+	}
+	got := strings.Join(flag.Annotations[cmdutil.FlagEnumAnnotation], ",")
+	if got != "absolute,relative" {
+		t.Fatalf("time-format enum = %q", got)
+	}
+}
+
 func TestNewCmdView(t *testing.T) {
 	tests := []struct {
 		name    string

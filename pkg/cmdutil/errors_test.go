@@ -21,6 +21,13 @@ func TestExitCode(t *testing.T) {
 		}
 	})
 
+	t.Run("api embedded not found error code", func(t *testing.T) {
+		err := &api.APIError{StatusCode: 400, ErrorCode: 404, ErrorMessage: "404 Not Found Commit"}
+		if got := ExitCode(err); got != ExitNotFound {
+			t.Fatalf("ExitCode() = %d, want %d", got, ExitNotFound)
+		}
+	})
+
 	t.Run("generic error", func(t *testing.T) {
 		if got := ExitCode(errors.New("boom")); got != ExitError {
 			t.Fatalf("ExitCode() = %d, want %d", got, ExitError)

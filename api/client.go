@@ -379,6 +379,7 @@ func (c *Client) UploadAsset(path, filename string, content []byte, contentType 
 // APIError represents an API error
 type APIError struct {
 	StatusCode    int    `json:"-"`
+	ErrorCode     int    `json:"error_code"`
 	Message       string `json:"message"`
 	ErrorMessage  string `json:"error_message"`
 	ErrorName     string `json:"error"`

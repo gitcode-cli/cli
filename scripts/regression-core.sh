@@ -170,6 +170,10 @@ log "Non-Git Error Path"
 run_expect_status nongit_out 2 bash -lc "cd '$TMP_NON_GIT_DIR' && '$GC_BIN' repo view"
 assert_contains "$nongit_out" "not in a git repository"
 
+log "Commit Not Found Exit Code"
+run_expect_status commit_not_found_out 3 "$GC_BIN" commit view definitely-missing-sha-for-exit-code-probe -R "$READONLY_REPO"
+assert_contains "$commit_not_found_out" "Not Found Commit"
+
 if [[ "$RUN_WRITE_PATHS" == "1" ]]; then
   PR_REPO="${GC_REGRESSION_PR_REPO:-}"
   PR_HEAD="${GC_REGRESSION_PR_HEAD:-}"

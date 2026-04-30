@@ -198,6 +198,25 @@ func TestListOrgReposBuildsQuery(t *testing.T) {
 	})
 }
 
+func TestDeleteBranchEscapesBranchPath(t *testing.T) {
+	var gotMethod, gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotMethod = req.Method
+		gotPath = req.URL.EscapedPath()
+		return authTestResponse(http.StatusNoContent, ``), nil
+	})
+
+	if err := DeleteBranch(client, "owner", "repo", "feature/test"); err != nil {
+		t.Fatalf("DeleteBranch() error = %v", err)
+	}
+	if gotMethod != http.MethodDelete {
+		t.Fatalf("method = %q, want DELETE", gotMethod)
+	}
+	if gotPath != "/api/v5/repos/owner/repo/branches/feature%2Ftest" {
+		t.Fatalf("path = %q", gotPath)
+	}
+}
+
 func assertRepoListRequest(t *testing.T, gotPath, wantPath string, wantQuery map[string]string) {
 	t.Helper()
 

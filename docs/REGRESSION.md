@@ -74,17 +74,18 @@ issue_number=$(./gc issue create -R infra-test/gctest1 --title "Regression" --bo
 ./gc issue label "$issue_number" -R infra-test/gctest1 --remove bug
 ./gc issue label "$issue_number" -R infra-test/gctest1 --list
 ./gc issue view "$issue_number" -R infra-test/gctest1 --json
-./gc issue close "$issue_number" -R infra-test/gctest1
+./gc issue close "$issue_number" -R infra-test/gctest1 --yes
 
 # pr close
 ./gc pr create -R infra-test/gctest1 --head <test-branch> --base main --title "Regression PR" --body "write-path"
-./gc pr close <pr-number> -R infra-test/gctest1
+./gc pr close <pr-number> -R infra-test/gctest1 --yes
 ./gc pr view <pr-number> -R infra-test/gctest1 --json
 ```
 
 说明：
 - 对写路径命令不能只看退出码，必须回读远端状态。
 - `issue label --remove` 后，`--list` / `issue view --json` 不应再包含目标标签。
+- `issue close` 后，`issue view --json` 的 `state` 应变为 `closed`。
 - `pr close` 后，`pr view --json` 的 `state` 应变为 `closed`。
 
 ## Agent-Friendly 契约补充回归
@@ -122,7 +123,7 @@ issue_number=$(./gc issue create -R infra-test/gctest1 --title "Regression" --bo
 
 说明：
 - 上述 dry-run 命令不应执行真实写入。
-- 非交互环境中未传 `--yes` 的删除命令应直接失败，不应挂起等待输入。
+- 非交互环境中未传 `--yes` 的删除、关闭、重开、PR 状态切换、合并、同步推送/建 PR 命令应直接失败，不应挂起等待输入。
 - `issue list --format yaml` 应返回用法错误，不应静默回退到默认输出。
 - `issue list --json` 与 `issue list --format json` 应保持等价。
 - `issue list --time-format absolute|relative` 仅影响文本展示，不应改变 JSON 输出。

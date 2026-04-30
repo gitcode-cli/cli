@@ -2,6 +2,8 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -180,5 +182,105 @@ func TestIssueComment_Unmarshal(t *testing.T) {
 
 	if comment.Body != "Test comment" {
 		t.Errorf("Expected Body 'Test comment', got '%s'", comment.Body)
+	}
+}
+
+func TestCloseIssueUsesStateAndVerifiesClosedState(t *testing.T) {
+	var requests []string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests = append(requests, req.Method+" "+req.URL.Path)
+		switch len(requests) {
+		case 1:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"open"}`), nil
+		case 2:
+			body := readAuthTestRequestBody(t, req)
+			if !strings.Contains(body, "state=close") {
+				t.Fatalf("PATCH body = %q, want state=close", body)
+			}
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"closed"}`), nil
+		default:
+			t.Fatalf("unexpected request %d: %s %s", len(requests), req.Method, req.URL.Path)
+			return nil, nil
+		}
+	})
+
+	issue, err := CloseIssue(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("CloseIssue() error = %v", err)
+	}
+	if issue.State != "closed" {
+		t.Fatalf("CloseIssue() state = %q, want closed", issue.State)
+	}
+}
+
+func TestCloseIssueErrorsWhenVerificationStillOpen(t *testing.T) {
+	var requests int
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests++
+		switch requests {
+		case 1:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"open"}`), nil
+		case 2:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"open"}`), nil
+		case 3:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"open"}`), nil
+		default:
+			t.Fatalf("unexpected request %d", requests)
+			return nil, nil
+		}
+	})
+
+	_, err := CloseIssue(client, "owner", "repo", 123)
+	if err == nil || !strings.Contains(err.Error(), "still open") {
+		t.Fatalf("CloseIssue() error = %v, want still open", err)
+	}
+}
+
+func TestReopenIssueErrorsWhenVerificationStillClosed(t *testing.T) {
+	var requests int
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests++
+		switch requests {
+		case 1:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"closed"}`), nil
+		case 2:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"closed"}`), nil
+		case 3:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"closed"}`), nil
+		default:
+			t.Fatalf("unexpected request %d", requests)
+			return nil, nil
+		}
+	})
+
+	_, err := ReopenIssue(client, "owner", "repo", 123)
+	if err == nil || !strings.Contains(err.Error(), "still closed") {
+		t.Fatalf("ReopenIssue() error = %v, want still closed", err)
+	}
+}
+
+func TestReopenIssueVerifiesEmptyUpdateState(t *testing.T) {
+	var requests int
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests++
+		switch requests {
+		case 1:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"closed"}`), nil
+		case 2:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug"}`), nil
+		case 3:
+			return authTestResponse(http.StatusOK, `{"number":"123","title":"Bug","state":"open"}`), nil
+		default:
+			t.Fatalf("unexpected request %d", requests)
+			return nil, nil
+		}
+	})
+
+	issue, err := ReopenIssue(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("ReopenIssue() error = %v", err)
+	}
+	if issue.State != "open" {
+		t.Fatalf("ReopenIssue() state = %q, want open", issue.State)
 	}
 }

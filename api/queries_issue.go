@@ -340,11 +340,27 @@ func CloseIssue(client *Client, owner, repo string, number int) (*Issue, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get issue: %w", err)
 	}
-	return UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
+	updated, err := UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
 		Repo:  repo,
 		State: "close",
 		Title: issue.Title,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if isIssueClosed(updated) {
+		return updated, nil
+	}
+
+	verified, err := GetIssue(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify issue close state: %w", err)
+	}
+	if isIssueClosed(verified) {
+		return verified, nil
+	}
+
+	return nil, fmt.Errorf("issue #%d is still open after close request", number)
 }
 
 // ReopenIssue reopens a closed issue
@@ -354,11 +370,41 @@ func ReopenIssue(client *Client, owner, repo string, number int) (*Issue, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get issue: %w", err)
 	}
-	return UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
+	updated, err := UpdateIssue(client, owner, repo, number, &UpdateIssueOptions{
 		Repo:  repo,
 		State: "reopen",
 		Title: issue.Title,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if isIssueOpen(updated) {
+		return updated, nil
+	}
+
+	verified, err := GetIssue(client, owner, repo, number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify issue reopen state: %w", err)
+	}
+	if isIssueOpen(verified) {
+		return verified, nil
+	}
+
+	return nil, fmt.Errorf("issue #%d is still closed after reopen request", number)
+}
+
+func isIssueClosed(issue *Issue) bool {
+	if issue == nil {
+		return false
+	}
+	return strings.EqualFold(issue.State, "closed") || strings.EqualFold(issue.State, "close")
+}
+
+func isIssueOpen(issue *Issue) bool {
+	if issue == nil {
+		return false
+	}
+	return strings.EqualFold(issue.State, "open") || strings.EqualFold(issue.State, "reopen")
 }
 
 // ListIssueComments lists comments on an issue

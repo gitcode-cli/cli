@@ -26,6 +26,7 @@ type ReopenOptions struct {
 
 	// Flags
 	Comment string
+	Yes     bool
 }
 
 // NewCmdReopen creates the reopen command
@@ -66,6 +67,7 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Add a comment before reopening")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
 
 	return cmd
 }
@@ -93,6 +95,15 @@ func reopenRun(opts *ReopenOptions) error {
 
 	owner, repo, err := parseRepo(repository)
 	if err != nil {
+		return err
+	}
+
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: strconv.Itoa(opts.Number),
+		Prompt:   fmt.Sprintf("! This will reopen issue #%d in %s/%s\nType the issue number to confirm: ", opts.Number, owner, repo),
+	}); err != nil {
 		return err
 	}
 

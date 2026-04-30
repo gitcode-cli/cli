@@ -51,6 +51,7 @@ type SyncOptions struct {
 	Title      string
 	Body       string
 	Draft      bool
+	Yes        bool
 	JSON       bool
 }
 
@@ -120,6 +121,7 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.Title, "title", "", "Pull request title (default: [sync] <source title>)")
 	cmd.Flags().StringVar(&opts.Body, "body", "", "Pull request body (default: inherit from source PR with sync info)")
 	cmd.Flags().BoolVar(&opts.Draft, "draft", false, "Create the pull request as draft")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt before pushing and creating the target PR")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmd.MarkFlagRequired("source-pr")
 	cmd.MarkFlagRequired("target-repo")
@@ -319,6 +321,19 @@ echo "password=%s"
 
 	if conflictError != "" {
 		return writeSyncResult(opts, result, cmdutil.NewCLIError(cmdutil.ExitConflict, fmt.Sprintf("%s. Manual resolution required.", conflictError), nil))
+	}
+
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: opts.TargetRepo,
+		Prompt: fmt.Sprintf(
+			"! This will push branch %s and create a PR in %s\nType the target repository to confirm: ",
+			syncBranch,
+			opts.TargetRepo,
+		),
+	}); err != nil {
+		return err
 	}
 
 	// Push sync branch

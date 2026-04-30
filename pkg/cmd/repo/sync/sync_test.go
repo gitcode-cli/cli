@@ -24,6 +24,9 @@ func TestNewCmdSync(t *testing.T) {
 	if cmd.Use != "sync" {
 		t.Fatalf("cmd.Use = %q", cmd.Use)
 	}
+	if cmd.Flags().Lookup("yes") == nil {
+		t.Fatal("NewCmdSync() missing yes flag")
+	}
 }
 
 func TestBuildSyncBranch(t *testing.T) {
@@ -276,6 +279,7 @@ func TestSyncRunBuildsPRURLWhenCreateResponseOmitsHTMLURL(t *testing.T) {
 		SourceDir:  "docs",
 		TargetDir:  "mirror",
 		CommitMsg:  "sync: owner/source -> target",
+		Yes:        true,
 		JSON:       true,
 	}
 
@@ -297,5 +301,86 @@ func TestSyncRunBuildsPRURLWhenCreateResponseOmitsHTMLURL(t *testing.T) {
 	}
 	if result.PRURL != "https://gitcode.com/infra-test/target/merge_requests/7" {
 		t.Fatalf("result.PRURL = %q", result.PRURL)
+	}
+}
+
+func TestSyncRunRequiresConfirmationBeforePush(t *testing.T) {
+	t.Setenv("GC_TOKEN", "token")
+
+	f := cmdutil.TestFactory()
+	root := t.TempDir()
+	source := filepath.Join(root, "docs")
+	if err := os.MkdirAll(source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(source, "api.txt"), []byte("new"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	targetRepoDir := filepath.Join(root, "target")
+	if err := os.MkdirAll(targetRepoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	pushCalled := false
+	createPRCalled := false
+	opts := &SyncOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		RootDir: func() (string, error) {
+			return root, nil
+		},
+		Branch: func() (string, error) {
+			return "feature/demo", nil
+		},
+		BaseRepo: func() (string, error) {
+			return "owner/source", nil
+		},
+		GetRepo: func(client *api.Client, owner, repo string) (*api.Repository, error) {
+			return &api.Repository{DefaultBranch: "main"}, nil
+		},
+		CreatePR: func(client *api.Client, owner, repo string, opts *api.CreatePROptions) (*api.PullRequest, error) {
+			createPRCalled = true
+			return &api.PullRequest{Number: 7}, nil
+		},
+		GitRun: func(dir string, env map[string]string, args ...string) (string, error) {
+			if len(args) > 0 && args[0] == "push" {
+				pushCalled = true
+			}
+			switch strings.Join(args, " ") {
+			case "checkout -B sync/owner-source/feature-demo/docs origin/main":
+				return "", nil
+			case "status --porcelain":
+				return "M  mirror/api.txt\n", nil
+			case "add --all -- mirror":
+				return "", nil
+			case "commit -m sync: docs -> target/mirror":
+				return "", nil
+			default:
+				return "", nil
+			}
+		},
+		MkdirTemp: func(dir, pattern string) (string, error) {
+			return targetRepoDir, nil
+		},
+		RemoveAll:  func(string) error { return nil },
+		TargetRepo: "infra-test/target",
+		SourceDir:  "docs",
+		TargetDir:  "mirror",
+		CommitMsg:  "sync: docs -> target/mirror",
+	}
+
+	originalGitRun := gitRun
+	gitRun = func(env map[string]string, args ...string) (string, error) { return "", nil }
+	t.Cleanup(func() { gitRun = originalGitRun })
+
+	err := syncRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "confirmation required") {
+		t.Fatalf("syncRun() error = %v, want confirmation required", err)
+	}
+	if pushCalled {
+		t.Fatal("push should not run before confirmation")
+	}
+	if createPRCalled {
+		t.Fatal("CreatePR should not run before confirmation")
 	}
 }

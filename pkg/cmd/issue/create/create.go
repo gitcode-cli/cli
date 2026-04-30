@@ -32,6 +32,7 @@ type CreateOptions struct {
 	Assignees []string
 	Milestone int
 	DryRun    bool
+	JSON      bool
 
 	TemplatePath     string
 	SecurityHole     bool
@@ -86,6 +87,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringSliceVarP(&opts.Assignees, "assignee", "a", []string{}, "Assignees")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Milestone number")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview the create request without creating the issue")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmd.Flags().StringVar(&opts.TemplatePath, "template-path", "", "Issue template path")
 	cmd.Flags().BoolVar(&opts.SecurityHole, "security-hole", false, "Mark as private issue")
 	cmd.Flags().StringVar(&opts.IssueType, "issue-type", "", "Issue type (enterprise)")
@@ -121,6 +123,22 @@ func createRun(opts *CreateOptions) error {
 	}
 
 	if opts.DryRun {
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
+				"dry_run":        true,
+				"repository":     fmt.Sprintf("%s/%s", owner, repo),
+				"title":          opts.Title,
+				"body":           opts.Body,
+				"labels":         opts.Labels,
+				"assignees":      opts.Assignees,
+				"milestone":      opts.Milestone,
+				"template_path":  opts.TemplatePath,
+				"security_hole":  opts.SecurityHole,
+				"issue_type":     opts.IssueType,
+				"issue_severity": opts.IssueSeverity,
+				"custom_fields":  customFields,
+			})
+		}
 		fmt.Fprintf(opts.IO.Out, "Dry run: would create issue %q in %s/%s\n", opts.Title, owner, repo)
 		if opts.TemplatePath != "" {
 			fmt.Fprintf(opts.IO.Out, "  template-path: %s\n", opts.TemplatePath)
@@ -178,6 +196,12 @@ func createRun(opts *CreateOptions) error {
 	issue, err := api.CreateIssue(client, owner, repo, createOpts)
 	if err != nil {
 		return fmt.Errorf("failed to create issue: %w", err)
+	}
+	if opts.JSON {
+		if err := ensureAssigneesApplied(client, owner, repo, issue.Number, issue.HTMLURL, assigneeIDs, "created"); err != nil {
+			return err
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, issue)
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)

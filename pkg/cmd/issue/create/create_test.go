@@ -2,6 +2,7 @@ package create
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -44,6 +45,11 @@ func TestNewCmdCreate(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "create with json output",
+			args:    []string{"--title", "Test", "--json"},
+			wantErr: false,
+		},
+		{
 			name:    "no title",
 			args:    []string{},
 			wantErr: false, // Command runs, error in run function
@@ -63,6 +69,43 @@ func TestNewCmdCreate(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestCreateRunJSONWritesCreatedIssue(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		Repository: "owner/repo",
+		Title:      "Bug report",
+		JSON:       true,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					if req.URL.Path != "/api/v5/repos/owner/repo/issues" {
+						t.Fatalf("unexpected request: %s", req.URL.Path)
+					}
+					return issueResponse(http.StatusOK, `{"number":"12","title":"Bug report","state":"open","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
+				}),
+			}, nil
+		},
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+
+	var got map[string]interface{}
+	if err := json.Unmarshal(f.IOStreams.Out.(*bytes.Buffer).Bytes(), &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v\n%s", err, f.IOStreams.Out.(*bytes.Buffer).String())
+	}
+	if got["number"] != "12" || got["html_url"] != "https://gitcode.com/owner/repo/issues/12" {
+		t.Fatalf("JSON output = %#v", got)
+	}
+	if strings.Contains(f.IOStreams.Out.(*bytes.Buffer).String(), "Created issue") {
+		t.Fatalf("JSON output contains text banner: %q", f.IOStreams.Out.(*bytes.Buffer).String())
 	}
 }
 
@@ -106,6 +149,44 @@ func TestCreateRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "did not apply the requested assignees") {
 		t.Fatalf("createRun() error = %v", err)
+	}
+}
+
+func TestCreateRunJSONSuppressesOutputWhenAssigneesAreNotApplied(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					switch req.URL.Path {
+					case "/api/v5/users/alice":
+						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
+					case "/api/v5/repos/owner/repo/issues":
+						return issueResponse(http.StatusOK, `{"number":"12","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
+					case "/api/v5/repos/owner/repo/issues/12":
+						return issueResponse(http.StatusOK, `{"number":"12","assignees":[]}`), nil
+					default:
+						t.Fatalf("unexpected request: %s", req.URL.Path)
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Title:      "Bug report",
+		Assignees:  []string{"alice"},
+		JSON:       true,
+	}
+
+	err := createRun(opts)
+	if err == nil {
+		t.Fatal("createRun() error = nil, want assignee verification error")
+	}
+	if out := f.IOStreams.Out.(*bytes.Buffer).String(); out != "" {
+		t.Fatalf("stdout = %q, want empty JSON output on failed verification", out)
 	}
 }
 
@@ -227,6 +308,43 @@ func TestCreateRunDryRunShowsAdvancedFields(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Fatalf("stdout = %q, want substring %q", out, want)
 		}
+	}
+}
+
+func TestCreateRunDryRunWithJSONWritesPreview(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO:               f.IOStreams,
+		HttpClient:       func() (*http.Client, error) { t.Fatal("HttpClient should not be called for dry-run"); return nil, nil },
+		BaseRepo:         func() (string, error) { return "owner/repo", nil },
+		Title:            "Feature request",
+		Body:             "Description",
+		Labels:           []string{"bug", "enhancement"},
+		Assignees:        []string{"alice"},
+		Milestone:        5,
+		DryRun:           true,
+		JSON:             true,
+		TemplatePath:     ".gitcode/ISSUE_TEMPLATE/feature.yaml",
+		SecurityHole:     true,
+		IssueType:        "需求",
+		IssueSeverity:    "高",
+		CustomFieldsJSON: `[{"id":"field","value":"demo"}]`,
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+
+	var got map[string]interface{}
+	out := f.IOStreams.Out.(*bytes.Buffer).Bytes()
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v\n%s", err, string(out))
+	}
+	if got["dry_run"] != true || got["repository"] != "owner/repo" || got["title"] != "Feature request" {
+		t.Fatalf("JSON output = %#v", got)
+	}
+	if strings.Contains(string(out), "Dry run:") {
+		t.Fatalf("JSON output contains text banner: %q", string(out))
 	}
 }
 

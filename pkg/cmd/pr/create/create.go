@@ -35,6 +35,7 @@ type CreateOptions struct {
 	Draft bool
 	Fill  bool
 	Web   bool
+	JSON  bool
 	Fork  string // 跨仓库 PR：fork 项目路径【owner/repo】
 }
 
@@ -84,6 +85,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().BoolVarP(&opts.Draft, "draft", "d", false, "Create as draft")
 	cmd.Flags().BoolVarP(&opts.Fill, "fill", "f", false, "Fill from last commit")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmd.Flags().StringVarP(&opts.Fork, "fork", "F", "", "Fork repository path for cross-repo PR (owner/repo)")
 
 	return cmd
@@ -91,6 +93,10 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 func createRun(opts *CreateOptions) error {
 	cs := opts.IO.ColorScheme()
+
+	if opts.JSON && opts.Web {
+		return cmdutil.NewUsageError("cannot use --json with --web")
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {
@@ -118,22 +124,22 @@ func createRun(opts *CreateOptions) error {
 	}
 
 	if opts.Title == "" {
-		return fmt.Errorf("title is required. Use --title flag")
+		return cmdutil.NewUsageError("title is required. Use --title flag")
 	}
 
 	// Auto-detect head branch if not specified
 	head := opts.Head
 	if head == "" {
 		if opts.Branch == nil {
-			return fmt.Errorf("head branch is required. Use --head flag")
+			return cmdutil.NewUsageError("head branch is required. Use --head flag")
 		}
 		output, err := opts.Branch()
 		if err != nil {
-			return fmt.Errorf("could not determine current branch. Use --head flag: %w", err)
+			return cmdutil.NewCLIError(cmdutil.ExitUsage, "could not determine current branch. Use --head flag", err)
 		}
 		head = strings.TrimSpace(output)
 		if head == "" || head == "HEAD" {
-			return fmt.Errorf("could not determine current branch. Use --head flag")
+			return cmdutil.NewUsageError("could not determine current branch. Use --head flag")
 		}
 	}
 
@@ -150,6 +156,9 @@ func createRun(opts *CreateOptions) error {
 		return fmt.Errorf("failed to create PR: %w", err)
 	}
 
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, pr)
+	}
 	fmt.Fprintf(opts.IO.Out, "%s Created PR #%d in %s/%s\n", cs.Green("✓"), pr.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", pr.HTMLURL)
 	if opts.Web {

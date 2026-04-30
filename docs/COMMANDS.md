@@ -49,8 +49,11 @@ git@gitcode.com:owner/repo.git
 当前已支持 `--json` 的高频写路径命令：
 
 - `issue create`
+- `issue edit`
 - `pr create`
+- `pr merge`
 - `repo create`
+- `release create`
 
 其中 `issue list` 额外支持：
 
@@ -481,11 +484,15 @@ gc issue edit 1 --security-hole -R infra-test/gctest1
 
 # 组合使用
 gc issue edit 1 --title "Bug fix" --assignee username --label bug --milestone 1 -R infra-test/gctest1
+
+# 更新后输出 JSON
+gc issue edit 1 --title "Bug fix" -R infra-test/gctest1 --json
 ```
 
 说明：
 - `issue edit --assignee` 使用用户名输入，客户端会先解析为 GitCode user ID，再调用 issue 更新接口。
-- 若 GitCode API 未实际应用 assignee，命令会成功完成更新并在 stderr 给出告警，避免自动化流程误把已成功更新当成失败重试。
+- 若 GitCode API 未实际应用 assignee，命令会返回失败并包含已更新 issue 的 URL，避免自动化流程静默误判。
+- `--json` 只在成功更新并完成必要回读验证后输出 issue 对象；不会混入文本提示。
 
 ### issue reopen - 重开 Issue
 
@@ -743,12 +750,16 @@ gc pr merge 1 -R infra-test/gctest1 --method rebase
 
 # 合并后删除源分支
 gc pr merge 1 -R infra-test/gctest1 --delete-branch --yes
+
+# 合并后输出 JSON
+gc pr merge 1 -R infra-test/gctest1 --yes --json
 ```
 
 说明：
 - `pr merge` 属于高风险写操作，默认需要确认。
 - 非交互场景中显式传 `--yes`。
 - `--delete-branch` 会在合并成功后调用远端分支删除接口；删除失败时命令返回失败。
+- `--json` 只在合并和可选删除分支都完成后输出结构化结果，包含顶层 `number`、`merged`、`pull_request` 和可选 `deleted_branch`；不会混入文本提示。
 
 ### pr close - 关闭 PR
 
@@ -900,9 +911,13 @@ gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Draft" 
 
 # 指定目标分支
 gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Release" --target main
+
+# 创建后输出 JSON
+gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Release" --json
 ```
 
 > **注意**: `--notes` 参数是必需的，不带此参数可能返回 400 错误。
+> `--json` 只在成功创建后输出 release 对象；不会混入文本提示。
 
 ### release list - 列出 Releases
 

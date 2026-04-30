@@ -31,6 +31,7 @@ type EditOptions struct {
 	Labels       []string
 	Milestone    int
 	SecurityHole bool
+	JSON         bool
 }
 
 // NewCmdEdit creates the edit command
@@ -101,6 +102,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringSliceVarP(&opts.Labels, "label", "l", []string{}, "Labels (comma-separated)")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Milestone number")
 	cmd.Flags().BoolVar(&opts.SecurityHole, "security-hole", false, "Mark as private issue")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -165,6 +167,12 @@ func editRun(opts *EditOptions) error {
 	issue, err := api.UpdateIssue(client, owner, repo, opts.Number, updateOpts)
 	if err != nil {
 		return fmt.Errorf("failed to update issue: %w", err)
+	}
+	if opts.JSON {
+		if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, assigneeIDs, "updated"); err != nil {
+			return err
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, issue)
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Updated issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)

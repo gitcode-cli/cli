@@ -27,6 +27,14 @@ type MergeOptions struct {
 	MergeMethod  string
 	DeleteBranch bool
 	Yes          bool
+	JSON         bool
+}
+
+type mergeResult struct {
+	Number        int              `json:"number"`
+	Merged        bool             `json:"merged"`
+	PullRequest   *api.PullRequest `json:"pull_request"`
+	DeletedBranch string           `json:"deleted_branch,omitempty"`
 }
 
 // NewCmdMerge creates the merge command
@@ -72,6 +80,7 @@ func NewCmdMerge(f *cmdutil.Factory, runF func(*MergeOptions) error) *cobra.Comm
 	cmdutil.SetFlagEnum(cmd, "method", "merge", "squash", "rebase")
 	cmd.Flags().BoolVarP(&opts.DeleteBranch, "delete-branch", "d", false, "Delete branch after merge")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -117,20 +126,37 @@ func mergeRun(opts *MergeOptions) error {
 	}
 
 	// Merge PR
-	_, err = api.MergePullRequest(client, owner, repo, opts.Number, &api.MergePROptions{
+	mergedPR, err := api.MergePullRequest(client, owner, repo, opts.Number, &api.MergePROptions{
 		MergeMethod: opts.MergeMethod,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to merge PR: %w", err)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Merged PR #%d\n", cs.Green("✓"), opts.Number)
-
 	// Delete branch if requested
 	if opts.DeleteBranch {
 		if err := api.DeleteBranch(client, deleteOwner, deleteRepo, deleteRef); err != nil {
 			return fmt.Errorf("failed to delete branch %s: %w", deleteRef, err)
 		}
+	}
+
+	if opts.JSON {
+		result := mergeResult{
+			Number:      opts.Number,
+			Merged:      true,
+			PullRequest: mergedPR,
+		}
+		if mergedPR != nil && mergedPR.Merged {
+			result.Merged = mergedPR.Merged
+		}
+		if opts.DeleteBranch {
+			result.DeletedBranch = deleteRef
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, result)
+	}
+
+	fmt.Fprintf(opts.IO.Out, "%s Merged PR #%d\n", cs.Green("✓"), opts.Number)
+	if opts.DeleteBranch {
 		fmt.Fprintf(opts.IO.Out, "  Deleted branch %s\n", deleteRef)
 	}
 

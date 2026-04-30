@@ -126,6 +126,9 @@ gc release delete v1.0.0 -R owner/repo --dry-run
 # 高频写路径需要解析结果时使用 JSON
 gc issue create -R owner/repo --title "Bug" --body "..." --json
 gc pr create -R owner/repo --head feature-branch --title "Feature" --body "..." --json
+gc issue edit 123 -R owner/repo --title "Updated" --json
+gc pr merge 123 -R owner/repo --yes --json
+gc release create v1.0.0 -R owner/repo --title "v1.0.0" --notes "..." --json
 ```
 
 说明：

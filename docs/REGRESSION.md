@@ -97,6 +97,11 @@ issue_number=$(printf '%s\n' "$issue_json" | python3 -c 'import json,sys; print(
 # pr create --json: 仅在显式准备好测试 head 分支时执行，并回读 PR
 ./gc pr create -R infra-test/gctest1 --head <test-branch> --base main --title "Regression PR" --body "write-path json" --json
 ./gc pr view <pr-number> -R infra-test/gctest1 --json
+
+# P1 写路径 JSON：只在准备好可清理测试资源时执行真实写入；否则至少执行 help/schema 和 no-write 错误路径验证
+./gc issue edit <issue-number> -R infra-test/gctest1 --title "Regression JSON edit" --json | python3 -m json.tool
+./gc release create <test-tag> -R infra-test/gctest1 --title "Regression JSON release" --notes "write-path json" --json | python3 -m json.tool
+./gc pr merge <test-pr-number> -R infra-test/gctest1 --yes --json | python3 -m json.tool
 ```
 
 说明：

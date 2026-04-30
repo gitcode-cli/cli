@@ -27,6 +27,7 @@ type CreateOptions struct {
 	Draft      bool
 	Prerelease bool
 	Target     string
+	JSON       bool
 }
 
 // NewCmdCreate creates the create command
@@ -78,6 +79,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().BoolVarP(&opts.Draft, "draft", "d", false, "Mark as draft")
 	cmd.Flags().BoolVarP(&opts.Prerelease, "prerelease", "p", false, "Mark as prerelease")
 	cmd.Flags().StringVarP(&opts.Target, "target", "", "", "Target commitish")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -116,6 +118,9 @@ func createRun(opts *CreateOptions) error {
 		return fmt.Errorf("failed to create release: %w", err)
 	}
 
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, release)
+	}
 	fmt.Fprintf(opts.IO.Out, "%s Created release %s\n", cs.Green("✓"), release.TagName)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", release.HTMLURL)
 	return nil

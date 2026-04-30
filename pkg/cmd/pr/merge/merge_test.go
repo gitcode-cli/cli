@@ -1,6 +1,8 @@
 package merge
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -36,6 +38,11 @@ func TestNewCmdMerge(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "merge with json output",
+			args:    []string{"123", "--json", "--yes"},
+			wantErr: false,
+		},
+		{
 			name:    "no PR number",
 			args:    []string{},
 			wantErr: true,
@@ -55,6 +62,59 @@ func TestNewCmdMerge(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestMergeRunJSONWritesMergeResult(t *testing.T) {
+	t.Setenv("GC_TOKEN", "token")
+
+	var requests []string
+	httpClient := &http.Client{Transport: mergeRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		requests = append(requests, req.Method+" "+req.URL.EscapedPath())
+		switch len(requests) {
+		case 1:
+			return mergeResponse(http.StatusOK, `{"number":123,"title":"Fix","head":{"ref":"feature/test","repo":{"full_name":"source-owner/source-repo"}}}`), nil
+		case 2:
+			return mergeResponse(http.StatusOK, `{"number":123,"state":"merged","title":"Fix","html_url":"https://gitcode.com/owner/repo/merge_requests/123"}`), nil
+		case 3:
+			return mergeResponse(http.StatusNoContent, ``), nil
+		default:
+			t.Fatalf("unexpected request %d: %s %s", len(requests), req.Method, req.URL.Path)
+			return nil, nil
+		}
+	})}
+
+	f := cmdutil.TestFactory()
+	err := mergeRun(&MergeOptions{
+		IO:           f.IOStreams,
+		HttpClient:   func() (*http.Client, error) { return httpClient, nil },
+		Repository:   "owner/repo",
+		Number:       123,
+		MergeMethod:  "merge",
+		DeleteBranch: true,
+		Yes:          true,
+		JSON:         true,
+	})
+	if err != nil {
+		t.Fatalf("mergeRun() error = %v", err)
+	}
+
+	var got map[string]interface{}
+	out := f.IOStreams.Out.(*bytes.Buffer).Bytes()
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v\n%s", err, string(out))
+	}
+	if got["deleted_branch"] != "feature/test" {
+		t.Fatalf("JSON output = %#v", got)
+	}
+	if got["number"] != float64(123) || got["merged"] != true {
+		t.Fatalf("JSON output = %#v", got)
+	}
+	if _, ok := got["pull_request"].(map[string]interface{}); !ok {
+		t.Fatalf("JSON output missing pull_request: %#v", got)
+	}
+	if strings.Contains(string(out), "Merged PR") || strings.Contains(string(out), "Deleted branch") {
+		t.Fatalf("JSON output contains text banner: %q", string(out))
 	}
 }
 

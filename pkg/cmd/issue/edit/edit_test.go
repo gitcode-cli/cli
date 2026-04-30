@@ -2,6 +2,7 @@ package edit
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -62,6 +63,11 @@ func TestNewCmdEdit(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "edit with json output",
+			args:    []string{"123", "--title", "Title", "--json", "-R", "owner/repo"},
+			wantErr: false,
+		},
+		{
 			name:    "missing issue number",
 			args:    []string{"-R", "owner/repo"},
 			wantErr: true,
@@ -87,6 +93,45 @@ func TestNewCmdEdit(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestEditRunJSONWritesUpdatedIssue(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &EditOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					if req.URL.Path != "/api/v5/repos/owner/issues/12" {
+						t.Fatalf("unexpected request: %s", req.URL.Path)
+					}
+					return issueResponse(http.StatusOK, `{"number":"12","title":"updated","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Number:     12,
+		Title:      "updated",
+		JSON:       true,
+	}
+
+	if err := editRun(opts); err != nil {
+		t.Fatalf("editRun() error = %v", err)
+	}
+
+	var got map[string]interface{}
+	out := f.IOStreams.Out.(*bytes.Buffer).Bytes()
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v\n%s", err, string(out))
+	}
+	if got["number"] != "12" || got["html_url"] != "https://gitcode.com/owner/repo/issues/12" {
+		t.Fatalf("JSON output = %#v", got)
+	}
+	if strings.Contains(string(out), "Updated issue") {
+		t.Fatalf("JSON output contains text banner: %q", string(out))
 	}
 }
 
@@ -176,6 +221,45 @@ func TestEditRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "did not apply the requested assignees") {
 		t.Fatalf("editRun() error = %v", err)
+	}
+}
+
+func TestEditRunJSONSuppressesOutputWhenAssigneesAreNotApplied(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &EditOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					switch req.URL.Path {
+					case "/api/v5/users/alice":
+						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
+					case "/api/v5/repos/owner/issues/12":
+						return issueResponse(http.StatusOK, `{"number":"12","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
+					case "/api/v5/repos/owner/repo/issues/12":
+						return issueResponse(http.StatusOK, `{"number":"12","assignees":[]}`), nil
+					default:
+						t.Fatalf("unexpected request: %s", req.URL.Path)
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Number:     12,
+		Title:      "same title",
+		Assignees:  []string{"alice"},
+		JSON:       true,
+	}
+
+	err := editRun(opts)
+	if err == nil {
+		t.Fatal("editRun() error = nil, want assignee verification error")
+	}
+	if out := f.IOStreams.Out.(*bytes.Buffer).String(); out != "" {
+		t.Fatalf("stdout = %q, want empty JSON output on failed verification", out)
 	}
 }
 

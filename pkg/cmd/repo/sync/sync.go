@@ -55,6 +55,7 @@ type SyncOptions struct {
 	BranchName string
 	CommitMsg  string
 	Draft      bool
+	Yes        bool
 	JSON       bool
 }
 
@@ -115,6 +116,7 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.BranchName, "branch", "", "Sync branch name in the target repository")
 	cmd.Flags().StringVar(&opts.CommitMsg, "commit-message", "", "Commit message for the sync commit")
 	cmd.Flags().BoolVar(&opts.Draft, "draft", false, "Create the target pull request as draft")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt before pushing and creating the target PR")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmd.MarkFlagRequired("target-repo")
 	cmd.MarkFlagRequired("source-dir")
@@ -244,6 +246,18 @@ func syncRun(opts *SyncOptions) error {
 	}
 	if _, err := opts.GitRun(workDir, nil, "commit", "-m", commitMsg); err != nil {
 		return fmt.Errorf("failed to create sync commit: %w", err)
+	}
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: opts.TargetRepo,
+		Prompt: fmt.Sprintf(
+			"! This will push branch %s and create a PR in %s\nType the target repository to confirm: ",
+			syncBranch,
+			opts.TargetRepo,
+		),
+	}); err != nil {
+		return err
 	}
 	if _, err := opts.GitRun(workDir, authEnv, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
 		return fmt.Errorf("failed to push sync branch: %w", err)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -109,6 +110,11 @@ func mergeRun(opts *MergeOptions) error {
 		return err
 	}
 
+	deleteOwner, deleteRepo, deleteRef, err := deleteBranchTarget(pr, opts.DeleteBranch)
+	if err != nil {
+		return err
+	}
+
 	// Merge PR
 	_, err = api.MergePullRequest(client, owner, repo, opts.Number, &api.MergePROptions{
 		MergeMethod: opts.MergeMethod,
@@ -120,12 +126,34 @@ func mergeRun(opts *MergeOptions) error {
 	fmt.Fprintf(opts.IO.Out, "%s Merged PR #%d\n", cs.Green("✓"), opts.Number)
 
 	// Delete branch if requested
-	if opts.DeleteBranch && pr.Head != nil {
-		// TODO: delete branch via API
-		fmt.Fprintf(opts.IO.Out, "  Branch %s can be deleted\n", pr.Head.Ref)
+	if opts.DeleteBranch {
+		if err := api.DeleteBranch(client, deleteOwner, deleteRepo, deleteRef); err != nil {
+			return fmt.Errorf("failed to delete branch %s: %w", deleteRef, err)
+		}
+		fmt.Fprintf(opts.IO.Out, "  Deleted branch %s\n", deleteRef)
 	}
 
 	return nil
+}
+
+func deleteBranchTarget(pr *api.PullRequest, enabled bool) (string, string, string, error) {
+	if !enabled {
+		return "", "", "", nil
+	}
+	if pr == nil || pr.Head == nil {
+		return "", "", "", fmt.Errorf("failed to delete branch: PR head metadata is missing")
+	}
+	if strings.TrimSpace(pr.Head.Ref) == "" {
+		return "", "", "", fmt.Errorf("failed to delete branch: PR head branch is empty")
+	}
+	if pr.Head.Repo == nil || strings.TrimSpace(pr.Head.Repo.FullName) == "" {
+		return "", "", "", fmt.Errorf("failed to delete branch %s: PR head repository is missing", pr.Head.Ref)
+	}
+	owner, repo, err := cmdutil.ParseRepo(pr.Head.Repo.FullName)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to delete branch %s: invalid PR head repository: %w", pr.Head.Ref, err)
+	}
+	return owner, repo, pr.Head.Ref, nil
 }
 
 func parseRepo(repo string) (string, string, error) {

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -151,7 +152,7 @@ func TestNewCmdSync(t *testing.T) {
 	}
 
 	// Check optional flags
-	optionalFlags := []string{"base", "title", "body", "draft", "json"}
+	optionalFlags := []string{"base", "title", "body", "draft", "yes", "json"}
 	for _, flag := range optionalFlags {
 		if cmd.Flags().Lookup(flag) == nil {
 			t.Errorf("NewCmdSync() missing optional flag %q", flag)
@@ -262,5 +263,63 @@ func TestWriteSyncResultJSONReturnsConflictExitCode(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "\"conflict_error\": \"conflict detected\"") {
 		t.Fatalf("output = %q", out.String())
+	}
+}
+
+func TestSyncRunRequiresConfirmationBeforePush(t *testing.T) {
+	t.Setenv("GC_TOKEN", "token")
+
+	f := cmdutil.TestFactory()
+	workDir := t.TempDir()
+	credDir := t.TempDir()
+	mkdirCalls := 0
+	pushCalled := false
+	createPRCalled := false
+
+	opts := &SyncOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		GetPR: func(client *api.Client, owner, repo string, number int) (*api.PullRequest, error) {
+			return &api.PullRequest{Title: "Fix", HTMLURL: "https://gitcode.com/owner/source/merge_requests/1"}, nil
+		},
+		ListPRCommits: func(client *api.Client, owner, repo string, number int) ([]api.Commit, error) {
+			return []api.Commit{{SHA: "1111111111111111111111111111111111111111", Message: "fix"}}, nil
+		},
+		GetRepo: func(client *api.Client, owner, repo string) (*api.Repository, error) {
+			return &api.Repository{DefaultBranch: "main"}, nil
+		},
+		CreatePR: func(client *api.Client, owner, repo string, opts *api.CreatePROptions) (*api.PullRequest, error) {
+			createPRCalled = true
+			return &api.PullRequest{Number: 1}, nil
+		},
+		MkdirTemp: func(dir, pattern string) (string, error) {
+			mkdirCalls++
+			if mkdirCalls == 1 {
+				return workDir, nil
+			}
+			return credDir, nil
+		},
+		RemoveAll: func(string) error { return nil },
+		WriteFile: os.WriteFile,
+		RunGit:    func(string, ...string) (string, error) { return "", nil },
+		RunGitInDir: func(dir string, credHelperPath string, args ...string) (string, error) {
+			if len(args) > 0 && args[0] == "push" {
+				pushCalled = true
+			}
+			return "", nil
+		},
+		SourcePR:   "owner/source#1",
+		TargetRepo: "infra-test/target",
+	}
+
+	err := syncRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "confirmation required") {
+		t.Fatalf("syncRun() error = %v, want confirmation required", err)
+	}
+	if pushCalled {
+		t.Fatal("push should not run before confirmation")
+	}
+	if createPRCalled {
+		t.Fatal("CreatePR should not run before confirmation")
 	}
 }

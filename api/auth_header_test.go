@@ -158,6 +158,15 @@ func authTestResponse(status int, body string) *http.Response {
 	}
 }
 
+func readAuthTestRequestBody(t *testing.T, req *http.Request) string {
+	t.Helper()
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		t.Fatalf("io.ReadAll() error = %v", err)
+	}
+	return string(body)
+}
+
 func assertNoAccessTokenQuery(t *testing.T, path string) {
 	t.Helper()
 	if strings.Contains(path, "access_token=") {

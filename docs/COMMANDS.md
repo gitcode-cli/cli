@@ -203,6 +203,7 @@ gc repo sync \
   --target-repo infra-test/target-repo \
   --source-dir docs/api \
   --target-dir mirror/api \
+  --yes \
   --json
 ```
 
@@ -211,6 +212,7 @@ gc repo sync \
 - `--source-dir` 是当前仓库内要同步的目录
 - `--target-dir` 是目标仓库中的子目录，不能是仓库根目录
 - 命令会自动创建同步分支、提交、推送并创建目标 PR
+- 推送同步分支并创建目标 PR 前默认需要确认；非交互场景中显式传 `--yes`
 - 如果目标目录内容与源目录一致，命令会直接返回“无变更”
 
 ### repo create - 创建仓库
@@ -423,7 +425,14 @@ gc issue view 1 -R infra-test/gctest1 --time-format relative
 # 关闭 Issue
 gc issue close 1 -R infra-test/gctest1
 gc issue close 1
+
+# 非交互执行
+gc issue close 1 -R infra-test/gctest1 --yes
 ```
+
+说明：
+- `issue close` 属于写操作，默认需要确认；非交互场景中显式传 `--yes`。
+- 命令会在关闭请求后验证 Issue 状态，避免服务端未实际关闭时误报成功。
 
 ### issue edit - 编辑 Issue
 
@@ -466,7 +475,14 @@ gc issue edit 1 --title "Bug fix" --assignee username --label bug --milestone 1 
 # 重开 Issue
 gc issue reopen 1 -R infra-test/gctest1
 gc issue reopen 1
+
+# 非交互执行
+gc issue reopen 1 -R infra-test/gctest1 --yes
 ```
+
+说明：
+- `issue reopen` 属于写操作，默认需要确认；非交互场景中显式传 `--yes`。
+- 命令会在重开请求后验证 Issue 状态。
 
 ### issue comment - 添加评论
 
@@ -702,25 +718,41 @@ gc pr merge 1 -R infra-test/gctest1 --method squash
 
 # Rebase 合并
 gc pr merge 1 -R infra-test/gctest1 --method rebase
+
+# 合并后删除源分支
+gc pr merge 1 -R infra-test/gctest1 --delete-branch --yes
 ```
 
 说明：
 - `pr merge` 属于高风险写操作，默认需要确认。
 - 非交互场景中显式传 `--yes`。
+- `--delete-branch` 会在合并成功后调用远端分支删除接口；删除失败时命令返回失败。
 
 ### pr close - 关闭 PR
 
 ```bash
 # 关闭 PR
 gc pr close 1 -R infra-test/gctest1
+
+# 非交互执行
+gc pr close 1 -R infra-test/gctest1 --yes
 ```
+
+说明：
+- `pr close` 属于写操作，默认需要确认；非交互场景中显式传 `--yes`。
 
 ### pr reopen - 重开 PR
 
 ```bash
 # 重开 PR
 gc pr reopen 1 -R infra-test/gctest1
+
+# 非交互执行
+gc pr reopen 1 -R infra-test/gctest1 --yes
 ```
+
+说明：
+- `pr reopen` 属于写操作，默认需要确认；非交互场景中显式传 `--yes`。
 
 ### pr ready - 标记就绪状态
 
@@ -730,7 +762,13 @@ gc pr ready 1 -R infra-test/gctest1
 
 # 标记为草稿
 gc pr ready 1 -R infra-test/gctest1 --wip
+
+# 非交互执行
+gc pr ready 1 -R infra-test/gctest1 --ready --yes
 ```
+
+说明：
+- `pr ready` 会修改 PR 草稿/就绪状态，默认需要确认；非交互场景中显式传 `--yes`。
 
 ### pr review - 评审 PR
 
@@ -810,12 +848,14 @@ gc pr sync --source-pr owner/source-repo#123 \
 # 结构化输出
 gc pr sync --source-pr owner/source-repo#123 \
   --target-repo owner/target-repo \
+  --yes \
   --json
 ```
 
 说明：
 - `--source-pr` 支持两种格式：`owner/repo#number` 或完整 GitCode URL，例如 `https://gitcode.com/owner/repo/merge_requests/123`
 - 命令会按原顺序逐个 cherry-pick 源 PR 的所有 commits 到目标仓库，保留提交边界
+- 推送同步分支并创建目标 PR 前默认需要确认；非交互场景中显式传 `--yes`
 - 新 PR 标题默认格式：`[sync] {源 PR 标题}`
 - 新 PR 内容默认继承源 PR 内容并追加同步来源信息
 - 如遇 cherry-pick 冲突，命令会报错并提示手动处理

@@ -106,6 +106,11 @@ func DeleteRepo(client *Client, owner, name string) error {
 	return client.Delete("/repos/" + owner + "/" + name)
 }
 
+// DeleteBranch deletes a branch from a repository.
+func DeleteBranch(client *Client, owner, name, branch string) error {
+	return client.Delete("/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(name) + "/branches/" + url.PathEscape(branch))
+}
+
 // ForkRepo forks a repository
 func ForkRepo(client *Client, owner, name string) (*Repository, error) {
 	var repo Repository

@@ -1,6 +1,9 @@
 package reopen
 
 import (
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -20,6 +23,11 @@ func TestNewCmdReopen(t *testing.T) {
 		{
 			name:    "reopen with comment",
 			args:    []string{"123", "--comment", "Reopening"},
+			wantErr: false,
+		},
+		{
+			name:    "reopen with yes",
+			args:    []string{"123", "--yes"},
 			wantErr: false,
 		},
 		{
@@ -43,4 +51,44 @@ func TestNewCmdReopen(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReopenRunRequiresConfirmationBeforeWrite(t *testing.T) {
+	t.Setenv("GC_TOKEN", "token")
+
+	requests := 0
+	f := cmdutil.TestFactory()
+	err := reopenRun(&ReopenOptions{
+		IO:         f.IOStreams,
+		HttpClient: testHTTPClient(&requests),
+		Repository: "owner/repo",
+		Number:     123,
+		Comment:    "Reopening",
+	})
+	if err == nil || !strings.Contains(err.Error(), "confirmation required") {
+		t.Fatalf("reopenRun() error = %v, want confirmation required", err)
+	}
+	if requests != 0 {
+		t.Fatalf("HTTP requests = %d, want 0 before confirmation", requests)
+	}
+}
+
+func testHTTPClient(requests *int) func() (*http.Client, error) {
+	return func() (*http.Client, error) {
+		return &http.Client{Transport: prReopenRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			*requests = *requests + 1
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     http.StatusText(http.StatusOK),
+				Header:     make(http.Header),
+				Body:       io.NopCloser(strings.NewReader(`{}`)),
+			}, nil
+		})}, nil
+	}
+}
+
+type prReopenRoundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn prReopenRoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
 }

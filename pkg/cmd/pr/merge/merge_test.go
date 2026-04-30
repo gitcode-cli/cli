@@ -1,6 +1,9 @@
 package merge
 
 import (
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -52,5 +55,94 @@ func TestNewCmdMerge(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestMergeRunDeletesHeadBranch(t *testing.T) {
+	t.Setenv("GC_TOKEN", "token")
+
+	var requests []string
+	httpClient := &http.Client{Transport: mergeRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		requests = append(requests, req.Method+" "+req.URL.EscapedPath())
+		switch len(requests) {
+		case 1:
+			return mergeResponse(http.StatusOK, `{"number":123,"title":"Fix","head":{"ref":"feature/test","repo":{"full_name":"source-owner/source-repo"}}}`), nil
+		case 2:
+			return mergeResponse(http.StatusOK, `{"number":123,"state":"closed","merged":true}`), nil
+		case 3:
+			return mergeResponse(http.StatusNoContent, ``), nil
+		default:
+			t.Fatalf("unexpected request %d: %s %s", len(requests), req.Method, req.URL.Path)
+			return nil, nil
+		}
+	})}
+
+	f := cmdutil.TestFactory()
+	err := mergeRun(&MergeOptions{
+		IO:           f.IOStreams,
+		HttpClient:   func() (*http.Client, error) { return httpClient, nil },
+		Repository:   "owner/repo",
+		Number:       123,
+		MergeMethod:  "merge",
+		DeleteBranch: true,
+		Yes:          true,
+	})
+	if err != nil {
+		t.Fatalf("mergeRun() error = %v", err)
+	}
+
+	want := []string{
+		"GET /api/v5/repos/owner/repo/pulls/123",
+		"PUT /api/v5/repos/owner/repo/pulls/123/merge",
+		"DELETE /api/v5/repos/source-owner/source-repo/branches/feature%2Ftest",
+	}
+	if strings.Join(requests, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("requests = %#v, want %#v", requests, want)
+	}
+}
+
+func TestMergeRunDeleteBranchFailsBeforeMergeWithoutHeadRepo(t *testing.T) {
+	t.Setenv("GC_TOKEN", "token")
+
+	var requests []string
+	httpClient := &http.Client{Transport: mergeRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		requests = append(requests, req.Method+" "+req.URL.EscapedPath())
+		if len(requests) == 1 {
+			return mergeResponse(http.StatusOK, `{"number":123,"title":"Fix","head":{"ref":"feature/test"}}`), nil
+		}
+		t.Fatalf("unexpected request after missing head repo: %s %s", req.Method, req.URL.Path)
+		return nil, nil
+	})}
+
+	f := cmdutil.TestFactory()
+	err := mergeRun(&MergeOptions{
+		IO:           f.IOStreams,
+		HttpClient:   func() (*http.Client, error) { return httpClient, nil },
+		Repository:   "owner/repo",
+		Number:       123,
+		MergeMethod:  "merge",
+		DeleteBranch: true,
+		Yes:          true,
+	})
+	if err == nil || !strings.Contains(err.Error(), "PR head repository is missing") {
+		t.Fatalf("mergeRun() error = %v, want missing head repository", err)
+	}
+	if len(requests) != 1 {
+		t.Fatalf("requests = %#v, want only initial GET", requests)
+	}
+}
+
+type mergeRoundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn mergeRoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
+
+func mergeResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Status:     http.StatusText(status),
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }

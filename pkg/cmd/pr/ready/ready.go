@@ -26,6 +26,7 @@ type ReadyOptions struct {
 	// Flags
 	WIP   bool
 	Ready bool
+	Yes   bool
 }
 
 // NewCmdReady creates the ready command
@@ -66,6 +67,7 @@ func NewCmdReady(f *cmdutil.Factory, runF func(*ReadyOptions) error) *cobra.Comm
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.WIP, "wip", "w", false, "Mark as work-in-progress")
 	cmd.Flags().BoolVarP(&opts.Ready, "ready", "r", false, "Mark as ready for review")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
 
 	return cmd
 }
@@ -101,6 +103,19 @@ func readyRun(opts *ReadyOptions) error {
 	draft := opts.WIP
 	if opts.Ready {
 		draft = false
+	}
+
+	action := "mark PR as ready"
+	if draft {
+		action = "mark PR as work-in-progress"
+	}
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: strconv.Itoa(opts.Number),
+		Prompt:   fmt.Sprintf("! This will %s #%d in %s/%s\nType the PR number to confirm: ", action, opts.Number, owner, repo),
+	}); err != nil {
+		return err
 	}
 
 	// Update PR

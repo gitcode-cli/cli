@@ -122,12 +122,17 @@ gc schema "issue view"
 # 高风险删除命令先 dry-run，再决定是否执行
 gc repo delete owner/repo --dry-run
 gc release delete v1.0.0 -R owner/repo --dry-run
+
+# 高频写路径需要解析结果时使用 JSON
+gc issue create -R owner/repo --title "Bug" --body "..." --json
+gc pr create -R owner/repo --head feature-branch --title "Feature" --body "..." --json
 ```
 
 说明：
 
 - 删除、关闭、重开、状态切换、合并、同步推送/建 PR 等高风险写操作在非交互环境中不会再隐式等待输入；如果未显式传 `--yes`，会直接失败。
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
+- 写路径 `--json` 只在操作成功后输出结构化结果；执行失败时不要从 stdout 解析半成品结果。
 - 当前基础退出码语义：`0` 成功，`1` 通用错误，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误，`5` 资源冲突。
 
 ## 6. 在规范化仓库中的协作提醒

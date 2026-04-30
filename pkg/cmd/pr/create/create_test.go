@@ -1,7 +1,10 @@
 package create
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -38,6 +41,11 @@ func TestNewCmdCreate(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "create with json output",
+			args:    []string{"--title", "Feature", "--head", "feature", "--repo", "owner/repo", "--json"},
+			wantErr: false,
+		},
+		{
 			name:    "missing title",
 			args:    []string{"--head", "feature", "--repo", "owner/repo"},
 			wantErr: true,
@@ -63,6 +71,109 @@ func TestNewCmdCreate(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestCreateRunJSONWritesCreatedPR(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		Body:       "body",
+		Head:       "feature-branch",
+		Base:       "main",
+		JSON:       true,
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			return &api.PullRequest{Number: 7, Title: createOpts.Title, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+
+	var got map[string]interface{}
+	out := f.IOStreams.Out.(*bytes.Buffer).String()
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v", err)
+	}
+	if got["number"] != float64(7) || got["html_url"] != "https://gitcode.com/owner/repo/merge_requests/7" {
+		t.Fatalf("JSON output = %#v", got)
+	}
+	if strings.Contains(out, "Created PR") {
+		t.Fatalf("JSON output contains text banner: %q", out)
+	}
+}
+
+func TestCreateRunJSONWithWebReturnsUsageBeforeCreate(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	called := false
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		Head:       "feature-branch",
+		Base:       "main",
+		JSON:       true,
+		Web:        true,
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			called = true
+			return nil, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	err := createRun(opts)
+	if err == nil {
+		t.Fatal("createRun() error = nil")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
+	}
+	if called {
+		t.Fatal("CreatePR should not be called when --json and --web conflict")
+	}
+}
+
+func TestCreateRunJSONWithWebReturnsUsageBeforeAuth(t *testing.T) {
+	f := cmdutil.TestFactory()
+	called := false
+	opts := &CreateOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			t.Fatal("HttpClient should not be called when --json and --web conflict")
+			return nil, nil
+		},
+		Repository: "owner/repo",
+		Title:      "title",
+		Head:       "feature-branch",
+		Base:       "main",
+		JSON:       true,
+		Web:        true,
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			called = true
+			return nil, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	err := createRun(opts)
+	if err == nil {
+		t.Fatal("createRun() error = nil")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
+	}
+	if called {
+		t.Fatal("CreatePR should not be called when --json and --web conflict")
 	}
 }
 

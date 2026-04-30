@@ -28,7 +28,7 @@ git@gitcode.com:owner/repo.git
 
 当前版本已开始收口面向 AI 代理和脚本的 CLI 契约：
 
-- 高频只读命令逐步支持 `--json`
+- 高频只读命令和高频写路径结果逐步支持 `--json`
 - 删除类命令支持 `--dry-run`
 - 非交互环境下删除命令未显式传 `--yes` 会直接失败，不再隐式等待输入
 - 可通过 `gc schema` 查询命令树和单命令元数据
@@ -45,6 +45,12 @@ git@gitcode.com:owner/repo.git
 - `release view`
 - `label list`
 - `milestone list`
+
+当前已支持 `--json` 的高频写路径命令：
+
+- `issue create`
+- `pr create`
+- `repo create`
 
 其中 `issue list` 额外支持：
 
@@ -226,9 +232,13 @@ gc repo create my-repo --private
 
 # 创建带描述的仓库
 gc repo create my-repo --public --description "My project"
+
+# 创建后输出 JSON
+gc repo create my-repo --private --json
 ```
 
 > **注意**: 在组织下创建仓库需要有组织的相应权限。
+> `--json` 只在成功创建后输出仓库对象；不会混入文本提示。
 
 ### repo fork - Fork 仓库
 
@@ -311,10 +321,18 @@ gc issue create -R infra-test/gctest1 --title "Feature request" --custom-fields-
 
 # 预演创建
 gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --dry-run
+
+# 预演创建并输出 JSON
+gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --dry-run --json
+
+# 创建后输出 JSON
+gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --json
 ```
 
 说明：
 - `issue create` 当前已支持 `--dry-run` 预演创建参数。
+- `issue create --dry-run --json` 输出结构化预览，不执行真实创建。
+- `--json` 只在成功创建并完成必要回读验证后输出 issue 对象；不会混入文本提示。
 - 仅使用基础字段时，创建会继续走兼容的 repo 级 form 提交路径。
 - 基础路径中的 `--assignee` 继续使用用户名输入，但客户端会先解析为 GitCode user ID，再提交到 issue API。
 - 显式传入 `--template-path`、`--security-hole`、`--issue-type`、`--issue-severity`、`--custom-fields-json`、`--custom-fields-file` 时，会切换到 GitCode 文档化的 owner 级创建接口并透传高级字段。
@@ -605,11 +623,15 @@ gc pr create -R infra-test/gctest1 --fill
 
 # 创建成功后在浏览器中打开 PR
 gc pr create -R infra-test/gctest1 --title "New feature" --body "Description" --web
+
+# 创建后输出 JSON
+gc pr create -R infra-test/gctest1 --head feature-branch --title "Feature" --body "Description" --json
 ```
 
 > **说明**: `--head` 参数可选，未指定时自动检测当前 Git 分支。
 > `--fill` 会使用最近一次 Git commit 的标题和正文补全未显式提供的 `--title` / `--body`。
 > `--web` 会在 PR 创建成功后打开新建 PR 页面。
+> `--json` 只在成功创建后输出 PR 对象；不能与 `--web` 同时使用。
 > 当前分支解析已统一接入 `Factory.Branch`；若当前目录不是 Git 仓库或无法识别分支，会明确提示改用 `--head`。
 
 ### pr list - 列出 PRs

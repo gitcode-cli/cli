@@ -24,6 +24,7 @@ type CreateOptions struct {
 	Description string
 	Public      bool
 	Private     bool
+	JSON        bool
 }
 
 // NewCmdCreate creates the create command
@@ -63,6 +64,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Description, "description", "d", "", "Description of the repository")
 	cmd.Flags().BoolVarP(&opts.Public, "public", "p", false, "Make the repository public")
 	cmd.Flags().BoolVarP(&opts.Private, "private", "P", false, "Make the repository private")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -78,7 +80,7 @@ func createRun(opts *CreateOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -95,7 +97,7 @@ func createRun(opts *CreateOptions) error {
 	if strings.Contains(name, "/") {
 		parts := strings.SplitN(name, "/", 2)
 		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-			return fmt.Errorf("invalid repository name format: %s (expected 'repo' or 'org/repo')", name)
+			return cmdutil.NewUsageError(fmt.Sprintf("invalid repository name format: %s (expected 'repo' or 'org/repo')", name))
 		}
 		org, repoName := parts[0], parts[1]
 		repo, err = api.CreateOrgRepo(client, org, &api.CreateRepoOptions{
@@ -117,6 +119,9 @@ func createRun(opts *CreateOptions) error {
 		return fmt.Errorf("failed to create repository: %w", err)
 	}
 
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, repo)
+	}
 	fmt.Fprintf(opts.IO.Out, "%s Created repository %s\n", cs.Green("✓"), repo.FullName)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", repo.HTMLURL)
 

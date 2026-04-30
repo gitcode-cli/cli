@@ -84,8 +84,24 @@ issue_number=$(./gc issue create -R infra-test/gctest1 --title "Regression" --bo
 ./gc pr view <pr-number> -R infra-test/gctest1 --json
 ```
 
+如果本次改动涉及写路径 `--json`，再补以下测试仓库验证：
+
+```bash
+# issue create --json: 必须创建到 infra-test/*，并用返回 number 回读后关闭
+./gc issue create -R infra-test/gctest1 --title "Regression JSON dry-run" --body "dry-run json" --dry-run --json | python3 -m json.tool
+issue_json=$(./gc issue create -R infra-test/gctest1 --title "Regression JSON" --body "write-path json" --json)
+issue_number=$(printf '%s\n' "$issue_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["number"])')
+./gc issue view "$issue_number" -R infra-test/gctest1 --json
+./gc issue close "$issue_number" -R infra-test/gctest1 --yes
+
+# pr create --json: 仅在显式准备好测试 head 分支时执行，并回读 PR
+./gc pr create -R infra-test/gctest1 --head <test-branch> --base main --title "Regression PR" --body "write-path json" --json
+./gc pr view <pr-number> -R infra-test/gctest1 --json
+```
+
 说明：
 - 对写路径命令不能只看退出码，必须回读远端状态。
+- 对写路径 `--json`，还必须确认 stdout 是可解析 JSON，且没有混入文本提示。
 - `issue label --remove` 后，`--list` / `issue view --json` 不应再包含目标标签。
 - `issue close` 后，`issue view --json` 的 `state` 应变为 `closed`。
 - `pr close` 后，`pr view --json` 的 `state` 应变为 `closed`。

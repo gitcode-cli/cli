@@ -57,6 +57,26 @@ run_expect_fail() {
   printf '%s\n' "$output"
 }
 
+run_expect_status() {
+  local __var_name="$1"
+  local expected_status="$2"
+  shift 2
+
+  local output
+  set +e
+  output="$("$@" 2>&1)"
+  local status=$?
+  set -e
+
+  if [[ $status -ne $expected_status ]]; then
+    printf '%s\n' "$output" >&2
+    echo "expected exit status $expected_status, got $status: $*" >&2
+    exit 1
+  fi
+  printf -v "$__var_name" '%s' "$output"
+  printf '%s\n' "$output"
+}
+
 log "Build"
 (cd "$ROOT_DIR" && go build -o "$GC_BIN" ./cmd/gc)
 
@@ -98,6 +118,10 @@ assert_contains "$logout_out" "Cleared stored authentication"
 log "Auth Status After Logout"
 run_capture status_out_out "$GC_BIN" auth status
 assert_contains "$status_out_out" "Not logged in"
+
+log "Auth Exit Code"
+run_expect_status auth_exit_out 4 "$GC_BIN" pr review 1 -R "$READONLY_REPO" --approve
+assert_contains "$auth_exit_out" "not authenticated"
 
 export GC_TOKEN="$SOURCE_TOKEN"
 
@@ -143,7 +167,7 @@ run_capture release_delete_dry_run "$GC_BIN" release delete "$RELEASE_TAG" -R "$
 assert_contains "$release_delete_dry_run" "Dry run: would delete release"
 
 log "Non-Git Error Path"
-run_expect_fail nongit_out bash -lc "cd '$TMP_NON_GIT_DIR' && '$GC_BIN' repo view"
+run_expect_status nongit_out 2 bash -lc "cd '$TMP_NON_GIT_DIR' && '$GC_BIN' repo view"
 assert_contains "$nongit_out" "not in a git repository"
 
 if [[ "$RUN_WRITE_PATHS" == "1" ]]; then

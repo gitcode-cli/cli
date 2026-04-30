@@ -33,16 +33,17 @@ go build -o ./gc ./cmd/gc
 3. `auth token`
 4. `auth logout`
 5. `auth status` 登出后状态
-6. `repo view`
-7. `repo view --json`
-8. `issue list --limit 1`
-9. `issue list --json`
-10. `issue view <list 返回的首个 issue>`
-11. `issue view --json`
-12. `pr list --json`
-13. `release list --json`
-14. `release delete <tag> --dry-run`
-15. 非 Git 目录下的 `repo view` 错误路径
+6. 无认证 `pr review --approve` 错误路径，期望退出码 `4`
+7. `repo view`
+8. `repo view --json`
+9. `issue list --limit 1`
+10. `issue list --json`
+11. `issue view <list 返回的首个 issue>`
+12. `issue view --json`
+13. `pr list --json`
+14. `release list --json`
+15. `release delete <tag> --dry-run`
+16. 非 Git 目录下的 `repo view` 错误路径，期望退出码 `2`
 
 说明：
 - 脚本会使用临时 `GC_CONFIG_DIR`，避免污染本地长期配置。
@@ -126,6 +127,7 @@ issue_number=$(./gc issue create -R infra-test/gctest1 --title "Regression" --bo
 - 上述 dry-run 命令不应执行真实写入。
 - 非交互环境中未传 `--yes` 的删除、关闭、重开、PR 状态切换、合并、同步推送/建 PR 命令应直接失败，不应挂起等待输入。
 - `issue list --format yaml` 应返回用法错误，不应静默回退到默认输出。
+- 参数/用法错误应返回退出码 `2`；认证或权限错误应返回退出码 `4`；API 404 应返回退出码 `3`。
 - `issue list --json` 与 `issue list --format json` 应保持等价。
 - `issue list --time-format absolute|relative` 仅影响文本展示，不应改变 JSON 输出。
 - `gc schema "issue list"` 应为 `format`、`time-format`、`state` 暴露稳定 `enum` 值。

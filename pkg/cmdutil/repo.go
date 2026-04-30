@@ -13,15 +13,15 @@ func ResolveRepo(repo string, baseRepo func() (string, error)) (string, error) {
 		return repo, nil
 	}
 	if baseRepo == nil {
-		return "", fmt.Errorf("no repository specified. Use -R owner/repo")
+		return "", NewUsageError("no repository specified. Use -R owner/repo")
 	}
 
 	detectedRepo, err := baseRepo()
 	if err != nil {
-		return "", fmt.Errorf("no repository specified and could not determine current repository: %w", err)
+		return "", NewCLIError(ExitUsage, "no repository specified and could not determine current repository", err)
 	}
 	if detectedRepo == "" {
-		return "", fmt.Errorf("no repository specified and could not determine current repository")
+		return "", NewUsageError("no repository specified and could not determine current repository")
 	}
 
 	return detectedRepo, nil
@@ -31,12 +31,12 @@ func ResolveRepo(repo string, baseRepo func() (string, error)) (string, error) {
 // name. It supports owner/repo, HTTPS URLs, and SSH URLs.
 func ParseRepo(repo string) (string, string, error) {
 	if repo == "" {
-		return "", "", fmt.Errorf("no repository specified. Use -R owner/repo")
+		return "", "", NewUsageError("no repository specified. Use -R owner/repo")
 	}
 
 	parsedRepo, err := gitpkg.ParseRepo(repo)
 	if err != nil {
-		return "", "", fmt.Errorf("invalid repository format: %s", repo)
+		return "", "", NewCLIError(ExitUsage, fmt.Sprintf("invalid repository format: %s", repo), err)
 	}
 
 	return parsedRepo.Owner, parsedRepo.Name, nil

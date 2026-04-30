@@ -26,6 +26,7 @@ type CommentsOptions struct {
 
 	// Flags
 	Limit int
+	JSON  bool
 }
 
 // NewCmdComments creates the comments command
@@ -50,6 +51,9 @@ func NewCmdComments(f *cmdutil.Factory, runF func(*CommentsOptions) error) *cobr
 
 			# List latest 5 comments
 			$ gc pr comments 123 --limit 5 -R owner/repo
+
+			# List comments as JSON
+			$ gc pr comments 123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -68,6 +72,7 @@ func NewCmdComments(f *cmdutil.Factory, runF func(*CommentsOptions) error) *cobr
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 0, "Maximum number of comments to list (0 = all)")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -99,16 +104,23 @@ func commentsRun(opts *CommentsOptions) error {
 		return fmt.Errorf("failed to list comments: %w", err)
 	}
 
-	// Output
-	if len(comments) == 0 {
-		fmt.Fprintf(opts.IO.Out, "No comments on PR #%d\n", opts.Number)
-		return nil
-	}
-
 	// Apply limit
 	if opts.Limit > 0 && len(comments) > opts.Limit {
 		// Show the latest comments (from the end)
 		comments = comments[len(comments)-opts.Limit:]
+	}
+
+	// Output
+	if opts.JSON {
+		if comments == nil {
+			comments = []api.PRComment{}
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, comments)
+	}
+
+	if len(comments) == 0 {
+		fmt.Fprintf(opts.IO.Out, "No comments on PR #%d\n", opts.Number)
+		return nil
 	}
 
 	fmt.Fprintf(opts.IO.Out, "\nComments on PR #%d (%d total):\n\n", opts.Number, len(comments))

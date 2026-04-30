@@ -294,6 +294,9 @@ gc repo stats --branch main --only-self -R infra-test/gctest1
 
 # 指定日期范围
 gc repo stats --branch main --since 2024-01-01 --until 2024-12-31 -R infra-test/gctest1
+
+# JSON 输出
+gc repo stats --branch main -R infra-test/gctest1 --json
 ```
 
 ---
@@ -585,6 +588,9 @@ gc issue prs 123
 
 # 获取增强信息（包含可合并状态）
 gc issue prs 123 --mode 1 -R infra-test/gctest1
+
+# JSON 输出
+gc issue prs 123 -R infra-test/gctest1 --json
 ```
 
 说明：
@@ -710,9 +716,13 @@ gc pr comments 1 -R infra-test/gctest1
 
 # 限制评论数量
 gc pr comments 1 --limit 5 -R infra-test/gctest1
+
+# JSON 输出
+gc pr comments 1 -R infra-test/gctest1 --json
 ```
 
 评论列表会显示 `Discussion ID`，可直接用于 `gc pr reply --discussion`。
+`--json` 输出评论对象数组；无评论时输出 `[]`，不会混入文本提示。
 当前 GitCode 公开 API 不支持通过 CLI 将 PR 评论标记为已解决或未解决；resolved 状态需要在 Web UI 中手动处理。
 
 ### pr reply - 回复 PR 评论
@@ -1063,6 +1073,9 @@ gc commit comments create abc123 --body "Nice work!" -R infra-test/gctest1
 ```bash
 # 查看指定评论
 gc commit comments view 123 -R infra-test/gctest1
+
+# JSON 输出
+gc commit comments view 123 -R infra-test/gctest1 --json
 ```
 
 ### commit comments edit - 编辑提交评论
@@ -1080,6 +1093,9 @@ gc commit comments list -R infra-test/gctest1
 
 # 分页
 gc commit comments list -R infra-test/gctest1 --page 1 --per-page 50
+
+# JSON 输出
+gc commit comments list -R infra-test/gctest1 --json
 ```
 
 ### commit comments list-by-sha - 列出指定提交的评论
@@ -1087,7 +1103,13 @@ gc commit comments list -R infra-test/gctest1 --page 1 --per-page 50
 ```bash
 # 列出某提交的所有评论
 gc commit comments list-by-sha abc123 -R infra-test/gctest1
+
+# JSON 输出
+gc commit comments list-by-sha abc123 -R infra-test/gctest1 --json
 ```
+
+说明：
+- `commit comments list` 和 `commit comments list-by-sha` 的 `--json` 输出评论对象数组；无评论时输出 `[]`。
 
 ---
 
@@ -1155,7 +1177,14 @@ gc milestone create "v1.0" -R infra-test/gctest1 --description "First release"
 ```bash
 # 查看里程碑详情
 gc milestone view 1 -R infra-test/gctest1
+
+# JSON 输出
+gc milestone view 1 -R infra-test/gctest1 --json
 ```
+
+说明：
+- `milestone view --json` 输出里程碑对象。
+- `--json` 不能与 `--web` 同时使用。
 
 ### milestone delete - 删除里程碑
 

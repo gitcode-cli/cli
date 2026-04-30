@@ -25,7 +25,8 @@ type ViewOptions struct {
 	Number     int
 
 	// Flags
-	Web bool
+	Web  bool
+	JSON bool
 }
 
 // NewCmdView creates the view command
@@ -45,6 +46,9 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		Example: heredoc.Doc(`
 			# View a milestone
 			$ gc milestone view 1 -R owner/repo
+
+			# View a milestone as JSON
+			$ gc milestone view 1 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -63,12 +67,17 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
 
 func viewRun(opts *ViewOptions) error {
 	cs := opts.IO.ColorScheme()
+
+	if opts.JSON && opts.Web {
+		return cmdutil.NewUsageError("cannot use --json with --web")
+	}
 
 	client, err := cmdutil.AuthenticatedClientFromFactory(opts.HttpClient)
 	if err != nil {
@@ -97,6 +106,10 @@ func viewRun(opts *ViewOptions) error {
 	if opts.Web {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", milestoneURL)
 		return browser.Open(milestoneURL)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, ms)
 	}
 
 	// Output

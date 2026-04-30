@@ -139,7 +139,15 @@ issue_number=$(printf '%s\n' "$issue_json" | python3 -c 'import json,sys; print(
 ./gc pr list -R infra-test/gctest1 --json
 ./gc pr view 1 -R infra-test/gctest1 --json
 ./gc pr view 1 -R infra-test/gctest1
+./gc pr comments 1 -R infra-test/gctest1 --json
+./gc issue prs 1 -R infra-test/gctest1 --json
+./gc repo stats -R infra-test/gctest1 --branch main --json
+./gc milestone list -R infra-test/gctest1 --json
+./gc milestone view <milestone-number> -R infra-test/gctest1 --json
 ./gc release list -R infra-test/gctest1 --json
+./gc commit comments list -R infra-test/gctest1 --json
+./gc commit comments list-by-sha <sha> -R infra-test/gctest1 --json
+./gc commit comments view <comment-id> -R infra-test/gctest1 --json
 
 # dry-run
 ./gc repo delete infra-test/gctest1 --dry-run

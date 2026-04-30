@@ -2,11 +2,13 @@
 package comments
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdComments(t *testing.T) {
@@ -23,6 +25,11 @@ func TestNewCmdComments(t *testing.T) {
 		{
 			name:    "with limit",
 			args:    []string{"123", "-R", "owner/repo", "--limit", "5"},
+			wantErr: false,
+		},
+		{
+			name:    "with json",
+			args:    []string{"123", "-R", "owner/repo", "--json"},
 			wantErr: false,
 		},
 		{
@@ -101,6 +108,11 @@ func TestCommentsFlags(t *testing.T) {
 		t.Error("--repo flag should be registered")
 	} else if repoFlag.Shorthand != "R" {
 		t.Errorf("--repo shorthand should be 'R', got '%s'", repoFlag.Shorthand)
+	}
+
+	jsonFlag := cmd.Flags().Lookup("json")
+	if jsonFlag == nil {
+		t.Error("--json flag should be registered")
 	}
 }
 
@@ -200,6 +212,7 @@ func TestCommentsOptions(t *testing.T) {
 	opts := &CommentsOptions{
 		Number: 123,
 		Limit:  5,
+		JSON:   true,
 	}
 
 	if opts.Number != 123 {
@@ -207,6 +220,66 @@ func TestCommentsOptions(t *testing.T) {
 	}
 	if opts.Limit != 5 {
 		t.Errorf("Limit = %d, want 5", opts.Limit)
+	}
+	if !opts.JSON {
+		t.Error("JSON = false, want true")
+	}
+}
+
+func TestCommentsRunJSONOutput(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v5/repos/owner/repo/pulls/123/comments" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"id":1,"body":"first"},{"id":2,"body":"second"}]`))
+	}))
+
+	err := commentsRun(&CommentsOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Limit:      1,
+		JSON:       true,
+	})
+	if err != nil {
+		t.Fatalf("commentsRun() error = %v", err)
+	}
+
+	var comments []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &comments); err != nil {
+		t.Fatalf("output is not valid JSON: %v; output=%q", err, out.String())
+	}
+	if len(comments) != 1 || comments[0]["body"] != "second" {
+		t.Fatalf("unexpected JSON output: %#v", comments)
+	}
+}
+
+func TestCommentsRunJSONEmptyOutput(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+
+	err := commentsRun(&CommentsOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		JSON:       true,
+	})
+	if err != nil {
+		t.Fatalf("commentsRun() error = %v", err)
+	}
+	if got := out.String(); got != "[]\n" {
+		t.Fatalf("output = %q, want JSON empty array", got)
 	}
 }
 

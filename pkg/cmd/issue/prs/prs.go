@@ -27,6 +27,7 @@ type PrsOptions struct {
 
 	// Flags
 	Mode int
+	JSON bool
 }
 
 // NewCmdPrs creates the prs command
@@ -51,6 +52,9 @@ func NewCmdPrs(f *cmdutil.Factory, runF func(*PrsOptions) error) *cobra.Command 
 
 			# Get enhanced info including mergeable status
 			$ gc issue prs 123 --mode 1 -R owner/repo
+
+			# List associated PRs as JSON
+			$ gc issue prs 123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -69,6 +73,7 @@ func NewCmdPrs(f *cmdutil.Factory, runF func(*PrsOptions) error) *cobra.Command 
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().IntVar(&opts.Mode, "mode", 0, "Mode: 0 (default), 1 (enhanced with mergeable status)")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -103,6 +108,13 @@ func prsRun(opts *PrsOptions) error {
 	prs, err := api.GetIssuePullRequests(client, owner, repo, opts.Number, opts.Mode)
 	if err != nil {
 		return fmt.Errorf("failed to get issue pull requests: %w", err)
+	}
+
+	if opts.JSON {
+		if prs == nil {
+			prs = []api.IssuePR{}
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, prs)
 	}
 
 	if len(prs) == 0 {

@@ -24,6 +24,7 @@ type StatsOptions struct {
 	OnlySelf   bool
 	Since      string
 	Until      string
+	JSON       bool
 }
 
 // NewCmdStats creates the stats command
@@ -51,6 +52,9 @@ func NewCmdStats(f *cmdutil.Factory, runF func(*StatsOptions) error) *cobra.Comm
 
 			# Get stats for a date range
 			$ gc repo stats --branch main --since 2024-01-01 --until 2024-12-31 -R owner/repo
+
+			# Get stats as JSON
+			$ gc repo stats --branch main -R owner/repo --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -66,6 +70,7 @@ func NewCmdStats(f *cmdutil.Factory, runF func(*StatsOptions) error) *cobra.Comm
 	cmd.Flags().BoolVar(&opts.OnlySelf, "only-self", false, "Only show your own stats")
 	cmd.Flags().StringVar(&opts.Since, "since", "", "Only commits after this date (YYYY-MM-DD)")
 	cmd.Flags().StringVar(&opts.Until, "until", "", "Only commits before this date (YYYY-MM-DD)")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	cmd.MarkFlagRequired("branch")
 
@@ -103,6 +108,10 @@ func statsRun(opts *StatsOptions) error {
 	stats, err := api.GetCommitStatistics(client, owner, repo, statsOpts)
 	if err != nil {
 		return fmt.Errorf("failed to get commit statistics: %w", err)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, stats)
 	}
 
 	// Output

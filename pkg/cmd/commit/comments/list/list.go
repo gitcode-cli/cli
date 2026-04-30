@@ -22,6 +22,7 @@ type ListOptions struct {
 	Page       int
 	PerPage    int
 	Order      string
+	JSON       bool
 }
 
 // NewCmdList creates the list command
@@ -43,6 +44,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# List with pagination
 			$ gc commit comments list -R owner/repo --page 1 --per-page 50
+
+			# List comments as JSON
+			$ gc commit comments list -R owner/repo --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -56,6 +60,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().IntVarP(&opts.Page, "page", "p", 1, "Page number")
 	cmd.Flags().IntVarP(&opts.PerPage, "per-page", "P", 20, "Results per page (max 100)")
 	cmd.Flags().StringVar(&opts.Order, "order", "", "Sort order: asc or desc")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -89,6 +94,13 @@ func listRun(opts *ListOptions) error {
 	comments, err := api.ListCommitComments(client, owner, repo, listOpts)
 	if err != nil {
 		return fmt.Errorf("failed to list comments: %w", err)
+	}
+
+	if opts.JSON {
+		if comments == nil {
+			comments = []api.CommitComment{}
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, comments)
 	}
 
 	if len(comments) == 0 {

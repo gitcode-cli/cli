@@ -22,6 +22,7 @@ type ListBySHAOptions struct {
 	SHA        string
 	Page       int
 	PerPage    int
+	JSON       bool
 }
 
 // NewCmdListBySHA creates the list-by-sha command
@@ -43,6 +44,9 @@ func NewCmdListBySHA(f *cmdutil.Factory, runF func(*ListBySHAOptions) error) *co
 
 			# List with pagination
 			$ gc commit comments list-by-sha abc123 -R owner/repo --page 1 --per-page 50
+
+			# List comments as JSON
+			$ gc commit comments list-by-sha abc123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -58,6 +62,7 @@ func NewCmdListBySHA(f *cmdutil.Factory, runF func(*ListBySHAOptions) error) *co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().IntVarP(&opts.Page, "page", "p", 1, "Page number")
 	cmd.Flags().IntVarP(&opts.PerPage, "per-page", "P", 20, "Results per page (max 100)")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -90,6 +95,13 @@ func listBySHARun(opts *ListBySHAOptions) error {
 	comments, err := api.ListCommentsForCommit(client, owner, repo, opts.SHA, listOpts)
 	if err != nil {
 		return fmt.Errorf("failed to list comments: %w", err)
+	}
+
+	if opts.JSON {
+		if comments == nil {
+			comments = []api.CommitComment{}
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, comments)
 	}
 
 	if len(comments) == 0 {

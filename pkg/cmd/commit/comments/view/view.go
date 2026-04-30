@@ -20,6 +20,7 @@ type ViewOptions struct {
 
 	Repository string
 	ID         string
+	JSON       bool
 }
 
 // NewCmdView creates the view command
@@ -38,6 +39,9 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		Example: heredoc.Doc(`
 			# View a comment
 			$ gc commit comments view 123 -R owner/repo
+
+			# View a comment as JSON
+			$ gc commit comments view 123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -51,6 +55,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -78,6 +83,10 @@ func viewRun(opts *ViewOptions) error {
 	comment, err := api.GetCommitComment(client, owner, repo, opts.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get comment: %w", err)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, comment)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "\n%s #%s\n", cs.Bold("Comment:"), cmdutil.FormatAPIID(comment.ID))

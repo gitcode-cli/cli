@@ -84,6 +84,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 	cmd.Flags().BoolVarP(&opts.Comments, "comments", "c", false, "View issue comments")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
 	cmd.Flags().StringVar(&opts.TimeFormat, "time-format", "absolute", "Time format for dates (absolute/relative)")
+	cmdutil.SetFlagEnum(cmd, "time-format", "absolute", "relative")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd

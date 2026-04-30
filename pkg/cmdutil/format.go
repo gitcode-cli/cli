@@ -5,11 +5,13 @@ import "github.com/spf13/cobra"
 // AddFormatFlag adds a consistent format flag to a command.
 func AddFormatFlag(cmd *cobra.Command, target *string) {
 	cmd.Flags().StringVar(target, "format", "", "Output format (json/simple/table)")
+	SetFlagEnum(cmd, "format", "json", "simple", "table")
 }
 
 // AddTimeFormatFlag adds a consistent time-format flag to a command.
 func AddTimeFormatFlag(cmd *cobra.Command, target *string) {
 	cmd.Flags().StringVar(target, "time-format", "", "Time format (absolute/relative)")
+	SetFlagEnum(cmd, "time-format", "absolute", "relative")
 }
 
 // AddTemplateFlag adds a consistent template flag to a command.

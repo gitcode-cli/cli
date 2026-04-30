@@ -18,16 +18,6 @@ func TestNewCmdList(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "list closed",
-			args:    []string{"--state", "closed"},
-			wantErr: false,
-		},
-		{
-			name:    "list with limit",
-			args:    []string{"--limit", "10"},
-			wantErr: false,
-		},
-		{
 			name:    "list with json",
 			args:    []string{"--json"},
 			wantErr: false,
@@ -47,5 +37,16 @@ func TestNewCmdList(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestNewCmdListDoesNotExposeDeadFlags(t *testing.T) {
+	f := cmdutil.TestFactory()
+	cmd := NewCmdList(f, nil)
+
+	for _, name := range []string{"state", "limit"} {
+		if flag := cmd.Flags().Lookup(name); flag != nil {
+			t.Fatalf("unexpected dead flag %q", name)
+		}
 	}
 }

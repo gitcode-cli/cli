@@ -69,6 +69,7 @@ func NewCmdMerge(f *cmdutil.Factory, runF func(*MergeOptions) error) *cobra.Comm
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.MergeMethod, "method", "m", "merge", "Merge method (merge/squash/rebase)")
+	cmdutil.SetFlagEnum(cmd, "method", "merge", "squash", "rebase")
 	cmd.Flags().BoolVarP(&opts.DeleteBranch, "delete-branch", "d", false, "Delete branch after merge")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
 

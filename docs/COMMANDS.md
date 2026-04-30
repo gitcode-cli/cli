@@ -1056,6 +1056,9 @@ gc label list -R infra-test/gctest1
 gc label list -R infra-test/gctest1 --json
 ```
 
+说明：
+- `label list` 当前不提供 `--limit`，因为 GitCode labels list API 没有对应分页/limit 参数。
+
 ### label create - 创建标签
 
 ```bash
@@ -1089,6 +1092,9 @@ gc milestone list -R infra-test/gctest1
 # 结构化输出
 gc milestone list -R infra-test/gctest1 --json
 ```
+
+说明：
+- `milestone list` 当前不提供 `--state` 或 `--limit`，因为 GitCode milestones list API 还没有对应筛选参数。
 
 ### milestone create - 创建里程碑
 
@@ -1147,6 +1153,9 @@ gc schema
 # 输出单个命令的元数据
 gc schema "issue view"
 ```
+
+说明：
+- 对带预定义取值的 flag，schema 会在 `enum` 字段中暴露合法值，例如 `format`、`time-format`、`method`、部分 `state`/`sort`/`direction` flag。
 
 ---
 

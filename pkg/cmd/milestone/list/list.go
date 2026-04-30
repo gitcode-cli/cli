@@ -22,9 +22,7 @@ type ListOptions struct {
 	Repository string
 
 	// Flags
-	State string
-	Limit int
-	JSON  bool
+	JSON bool
 }
 
 // NewCmdList creates the list command
@@ -42,11 +40,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			List milestones in a GitCode repository.
 		`),
 		Example: heredoc.Doc(`
-			# List open milestones
+			# List milestones
 			$ gc milestone list -R owner/repo
-
-			# List closed milestones
-			$ gc milestone list --state closed
 
 			# List milestones as JSON
 			$ gc milestone list -R owner/repo --json
@@ -60,8 +55,6 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
-	cmd.Flags().StringVarP(&opts.State, "state", "s", "open", "Filter by state (open/closed/all)")
-	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of milestones to list")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd

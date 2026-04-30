@@ -23,8 +23,7 @@ type ListOptions struct {
 	Repository string
 
 	// Flags
-	Limit int
-	JSON  bool
+	JSON bool
 }
 
 // NewCmdList creates the list command
@@ -57,7 +56,6 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
-	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 50, "Maximum number of labels to list")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd

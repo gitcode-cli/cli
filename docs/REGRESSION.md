@@ -96,6 +96,7 @@ issue_number=$(./gc issue create -R infra-test/gctest1 --title "Regression" --bo
 # 命令元数据
 ./gc schema
 ./gc schema "issue view"
+./gc schema "issue list"
 
 # 结构化输出
 ./gc repo view infra-test/gctest1 --json
@@ -127,6 +128,7 @@ issue_number=$(./gc issue create -R infra-test/gctest1 --title "Regression" --bo
 - `issue list --format yaml` 应返回用法错误，不应静默回退到默认输出。
 - `issue list --json` 与 `issue list --format json` 应保持等价。
 - `issue list --time-format absolute|relative` 仅影响文本展示，不应改变 JSON 输出。
+- `gc schema "issue list"` 应为 `format`、`time-format`、`state` 暴露稳定 `enum` 值。
 - `issue list --template` 应输出模板结果，并与 `--json`、`--format` 的冲突保持稳定报错。
 - `issue view` 和 `pr view` 的文本输出应保留稳定的详情布局，`--json` 继续输出结构化数据。
 

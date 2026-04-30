@@ -73,8 +73,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
-	cmd.Flags().StringVarP(&opts.State, "state", "s", "open", "Filter by state (open/closed/all)")
-	cmdutil.SetFlagEnum(cmd, "state", "open", "closed", "all")
+	cmd.Flags().StringVarP(&opts.State, "state", "s", "open", "Filter by state (open/closed/merged/all)")
+	cmdutil.SetFlagEnum(cmd, "state", "open", "closed", "merged", "all")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of PRs to list")
 	cmd.Flags().StringVarP(&opts.Head, "head", "H", "", "Filter by head branch")
 	cmd.Flags().StringVarP(&opts.Base, "base", "B", "", "Filter by base branch")

@@ -3,6 +3,7 @@ package list
 import (
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
@@ -62,6 +63,23 @@ func TestNewCmdList(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestNewCmdListStateEnumIncludesMerged(t *testing.T) {
+	cmd := NewCmdList(cmdutil.TestFactory(), func(opts *ListOptions) error {
+		return nil
+	})
+
+	flag := cmd.Flags().Lookup("state")
+	if flag == nil {
+		t.Fatal("state flag missing")
+	}
+	got := flag.Annotations[cmdutil.FlagEnumAnnotation]
+	for _, want := range []string{"open", "closed", "merged", "all"} {
+		if !slices.Contains(got, want) {
+			t.Fatalf("state enum = %v, missing %q", got, want)
+		}
 	}
 }
 

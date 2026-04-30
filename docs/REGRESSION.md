@@ -102,6 +102,10 @@ issue_number=$(printf '%s\n' "$issue_json" | python3 -c 'import json,sys; print(
 ./gc issue edit <issue-number> -R infra-test/gctest1 --title "Regression JSON edit" --json | python3 -m json.tool
 ./gc release create <test-tag> -R infra-test/gctest1 --title "Regression JSON release" --notes "write-path json" --json | python3 -m json.tool
 ./gc pr merge <test-pr-number> -R infra-test/gctest1 --yes --json | python3 -m json.tool
+
+# P2 写路径 JSON：fork/upload 容易产生远端残留，真实写入前必须确认测试资源可清理
+./gc repo fork <owner/repo> --json | python3 -m json.tool
+./gc release upload <test-tag> <file> -R infra-test/gctest1 --json | python3 -m json.tool
 ```
 
 说明：

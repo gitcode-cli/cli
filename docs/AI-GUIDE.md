@@ -128,7 +128,9 @@ gc issue create -R owner/repo --title "Bug" --body "..." --json
 gc pr create -R owner/repo --head feature-branch --title "Feature" --body "..." --json
 gc issue edit 123 -R owner/repo --title "Updated" --json
 gc pr merge 123 -R owner/repo --yes --json
+gc repo fork owner/repo --json
 gc release create v1.0.0 -R owner/repo --title "v1.0.0" --notes "..." --json
+gc release upload v1.0.0 app.zip -R owner/repo --json
 ```
 
 说明：

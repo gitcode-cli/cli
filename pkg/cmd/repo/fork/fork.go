@@ -28,6 +28,7 @@ type ForkOptions struct {
 
 	// Flags
 	Clone bool
+	JSON  bool
 }
 
 // NewCmdFork creates the fork command
@@ -67,6 +68,7 @@ func NewCmdFork(f *cmdutil.Factory, runF func(*ForkOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().BoolVarP(&opts.Clone, "clone", "c", false, "Clone the fork after creating")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -76,6 +78,9 @@ func forkRun(opts *ForkOptions) error {
 
 	if opts.Repository == "" {
 		return fmt.Errorf("repository is required. Usage: gc repo fork owner/repo")
+	}
+	if opts.JSON && opts.Clone {
+		return cmdutil.NewUsageError("cannot use --json with --clone")
 	}
 
 	sourceRepo, err := opts.ParseRepo(opts.Repository)
@@ -101,6 +106,9 @@ func forkRun(opts *ForkOptions) error {
 		return fmt.Errorf("failed to fork repository: %w", err)
 	}
 
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, repo)
+	}
 	fmt.Fprintf(opts.IO.Out, "%s Forked repository %s\n", cs.Green("✓"), repo.FullName)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", repo.HTMLURL)
 

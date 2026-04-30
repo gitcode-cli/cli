@@ -29,6 +29,14 @@ type UploadOptions struct {
 	// Flags
 	Repository string
 	Label      string
+	JSON       bool
+}
+
+type uploadResult struct {
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Size        int    `json:"size"`
+	ContentType string `json:"content_type"`
 }
 
 // NewCmdUpload creates the upload command
@@ -73,6 +81,7 @@ func NewCmdUpload(f *cmdutil.Factory, runF func(*UploadOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Label, "label", "l", "", "Asset label")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -102,29 +111,36 @@ func uploadRun(opts *UploadOptions) error {
 		return err
 	}
 
+	results := make([]uploadResult, 0, len(opts.Files))
+
 	// Upload each file using two-step process
 	for _, file := range opts.Files {
-		err := uploadFile(client, owner, repo, opts.TagName, file, opts.Label, cs, opts.IO.Out)
+		result, err := uploadFile(client, owner, repo, opts.TagName, file, opts.Label, cs, opts.IO.Out, !opts.JSON)
 		if err != nil {
 			return err
 		}
+		results = append(results, result)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, results)
 	}
 
 	return nil
 }
 
-func uploadFile(client *api.Client, owner, repo, tag, filePath, label string, cs *iostreams.ColorScheme, out io.Writer) error {
+func uploadFile(client *api.Client, owner, repo, tag, filePath, label string, cs *iostreams.ColorScheme, out io.Writer, writeText bool) (uploadResult, error) {
 	// Open file
 	file, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
+		return uploadResult{}, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
 
 	// Read file content
 	content, err := io.ReadAll(file)
 	if err != nil {
-		return fmt.Errorf("failed to read file: %w", err)
+		return uploadResult{}, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	// Get filename
@@ -136,12 +152,21 @@ func uploadFile(client *api.Client, owner, repo, tag, filePath, label string, cs
 	// Upload using two-step process
 	err = api.UploadReleaseAssetByTag(client, owner, repo, tag, filename, content, contentType)
 	if err != nil {
-		return fmt.Errorf("failed to upload %s: %w", filename, err)
+		return uploadResult{}, fmt.Errorf("failed to upload %s: %w", filename, err)
 	}
 
-	fmt.Fprintf(out, "%s Uploaded %s (%s)\n", cs.Green("✓"), filename, formatSize(len(content)))
+	result := uploadResult{
+		Name:        filename,
+		Path:        filePath,
+		Size:        len(content),
+		ContentType: contentType,
+	}
 
-	return nil
+	if writeText {
+		fmt.Fprintf(out, "%s Uploaded %s (%s)\n", cs.Green("✓"), filename, formatSize(len(content)))
+	}
+
+	return result, nil
 }
 
 func detectContentType(filename string, content []byte) string {

@@ -91,3 +91,34 @@
 
 - 清理本地配置中的认证信息
 - 如果当前活动 token 来自环境变量，会明确提示用户手动 `unset`
+
+## 代理配置
+
+GitCode CLI 使用 Go 标准库 HTTP client，自动支持标准代理环境变量：
+
+```bash
+# HTTP 代理
+export HTTP_PROXY="http://proxy.example.com:8080"
+
+# HTTPS 代理
+export HTTPS_PROXY="http://proxy.example.com:8080"
+
+# 不走代理的地址（可选）
+export NO_PROXY="localhost,127.0.0.1,.internal"
+```
+
+**注意事项**：
+
+1. 代理 URL 必须包含完整协议前缀（`http://` 或 `https://`）
+2. 小写环境变量（`http_proxy`、`https_proxy`）也支持，但大写优先级更高
+3. 如果代理认证失败或 URL 格式错误，会报错：`proxyconnect tcp: dial tcp: lookup ...`
+
+**常见错误**：
+
+```bash
+# 错误：缺少协议前缀
+export HTTP_PROXY="proxy.example.com:8080"  # ✗
+
+# 正确：包含完整 URL
+export HTTP_PROXY="http://proxy.example.com:8080"  # ✓
+```

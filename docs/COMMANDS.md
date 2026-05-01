@@ -639,7 +639,7 @@ gc pr create -R infra-test/gctest1 --base main --title "Feature" --body "Descrip
 gc pr create -R infra-test/gctest1 --title "WIP: Feature" --draft
 
 # 创建跨仓库 PR（从 fork 到 upstream）
-gc pr create -R upstream/repo --fork myfork/repo --head feature-branch --title "Feature"
+gc pr create -R upstream/repo --fork myfork/repo --head myfork:feature-branch --title "Feature"
 
 # 从最后一次提交填充标题和内容
 gc pr create -R infra-test/gctest1 --fill
@@ -655,6 +655,7 @@ gc pr create -R infra-test/gctest1 --head feature-branch --title "Feature" --bod
 > `--fill` 会使用最近一次 Git commit 的标题和正文补全未显式提供的 `--title` / `--body`。
 > `--web` 会在 PR 创建成功后打开新建 PR 页面。
 > `--json` 只在成功创建后输出 PR 对象；不能与 `--web` 同时使用。
+> **跨仓库 PR**: 当使用 `--fork` 创建跨仓库 PR 时，`--head` 必须使用 `owner:branch` 格式（如 `myfork:feature-branch`），否则会报错。
 > 当前分支解析已统一接入 `Factory.Branch`；若当前目录不是 Git 仓库或无法识别分支，会明确提示改用 `--head`。
 
 ### pr list - 列出 PRs

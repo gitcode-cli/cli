@@ -23,6 +23,9 @@ Available commands:
   logout   Log out of a GitCode account
   status   View authentication status
   token    Print an authentication token`,
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "auth",
+		},
 	}
 
 	cmd.AddCommand(login.NewCmdLogin(f, nil))

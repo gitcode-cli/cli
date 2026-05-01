@@ -30,6 +30,9 @@ Available commands:
   list     List repositories
   sync     Sync a local directory into another repository and create a PR
   delete   Delete a repository`,
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "repo",
+		},
 	}
 
 	cmd.AddCommand(clone.NewCmdClone(f, nil))

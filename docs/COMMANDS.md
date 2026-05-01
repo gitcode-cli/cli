@@ -1263,7 +1263,23 @@ gc help
 # 显示命令帮助
 gc help issue
 gc help issue create
+
+# 搜索命令（按关键词搜索）
+gc help --search pr
+gc help --search issue
+
+# 列出所有主题
+gc help --topics
+
+# 按主题过滤命令
+gc help --topic pull-requests
+gc help --topic issues
 ```
+
+说明：
+- `--search` 按关键词搜索命令名称、路径、描述和别名
+- `--topics` 列出所有已定义的主题分类
+- `--topic` 显示指定主题下的所有命令
 
 ### schema - 命令元数据
 

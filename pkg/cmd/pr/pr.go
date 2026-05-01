@@ -47,7 +47,8 @@ func NewCmdPR(f *cmdutil.Factory) *cobra.Command {
 			$ gc pr review 123 -R owner/repo --approve
 		`),
 		Annotations: map[string]string{
-			"IsCore": "true",
+			"IsCore":                "true",
+			cmdutil.TopicAnnotation: "pull-requests",
 		},
 	}
 

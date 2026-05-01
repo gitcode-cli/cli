@@ -5,11 +5,11 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/comments"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/diff"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/patch"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/view"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdCommit creates the commit command
@@ -33,7 +33,8 @@ func NewCmdCommit(f *cmdutil.Factory) *cobra.Command {
 			$ gc commit diff abc123 -R owner/repo
 		`),
 		Annotations: map[string]string{
-			"IsCore": "true",
+			"IsCore":                "true",
+			cmdutil.TopicAnnotation: "commits",
 		},
 	}
 

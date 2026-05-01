@@ -35,7 +35,11 @@ It provides convenient access to GitCode features including:
   • Authentication management (auth login, auth status)
   • Repository operations (repo clone, repo create)
   • Issue management (issue create, issue list)
-  • Pull Request management (pr create, pr review)`,
+  • Pull Request management (pr create, pr review)
+
+Windows PowerShell defines "gc" as an alias for Get-Content.
+If "gc" is intercepted by PowerShell, use "gitcode", "gc.exe", or
+"python -m gc_cli" instead.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}

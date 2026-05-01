@@ -34,7 +34,14 @@ source .venv/bin/activate  # Linux/macOS
 
 # 安装（一行命令）
 pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gitcode_cli-0.3.11-py3-none-any.whl
+
+# Windows PowerShell 中推荐使用 gitcode，避免 gc 被内置 Get-Content 别名覆盖
+gitcode version
 ```
+
+说明：
+- wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。
+- Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
 
 **PyPI（备选）:**
 
@@ -48,6 +55,9 @@ source .venv/bin/activate  # Linux/macOS
 
 # 使用官方 PyPI 源安装
 pip install -i https://pypi.org/simple/ gitcode-cli
+
+# Windows PowerShell 中推荐使用 gitcode
+gitcode version
 ```
 
 **从源码构建:**

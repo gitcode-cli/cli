@@ -41,6 +41,8 @@ dist/
 
 # Python packaging
 *.egg-info/
+__pycache__/
+*.py[cod]
 
 # Local evaluation and analysis outputs
 issue-reviewer-workspace/

@@ -52,14 +52,20 @@ def get_binary_path() -> Path:
     return binary_path
 
 
+def ensure_executable(binary_path: Path) -> None:
+    """Ensure packaged binaries are executable on POSIX platforms."""
+    if platform.system() == "Windows":
+        return
+    if not os.access(binary_path, os.X_OK):
+        binary_path.chmod(0o755)
+
+
 def main() -> int:
     """Main entry point for the gc command."""
     try:
         binary_path = get_binary_path()
 
-        # Make sure the binary is executable
-        if not os.access(binary_path, os.X_OK):
-            binary_path.chmod(0o755)
+        ensure_executable(binary_path)
 
         # Run the binary with all arguments
         result = subprocess.run(

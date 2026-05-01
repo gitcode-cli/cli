@@ -12,13 +12,13 @@
 
 `CLAUDE.md` 的职责是：
 
-- 告诉 Claude 应先看哪些正式规范
-- 说明仓库中的 AI 协作入口和场景化 skill
-- 提醒 Claude 不得绕过 `spec/` 中定义的正式规则
+- 为 Claude 提供仓库级入口
+- 指向正式规范、用户文档和后续 skill 分层
+- 约束代理不得绕过项目正式规则
 
 `CLAUDE.md` 不是项目规则源。
 
-项目规则以 [spec/README.md](./spec/README.md) 和 `spec/` 目录中的正式规范为准。
+项目正式规则以 [spec/README.md](./spec/README.md) 和 `spec/` 目录中的规范文档为准。
 
 ## 2. 必读文档
 
@@ -37,7 +37,7 @@
 - 提交 PR / 做 review：`spec/workflows/pr-workflow.md`、`spec/workflows/review-workflow.md`
 - 改构建 / 打包 / 发布：`spec/delivery/build-and-package.md`、`spec/delivery/release-process.md`
 
-如果任务是具体操作流程，再进入：
+具体流程任务再进入：
 
 - [Issue 流程](./spec/workflows/issue-workflow.md)
 - [PR 流程](./spec/workflows/pr-workflow.md)
@@ -48,41 +48,46 @@
 
 Claude 在本仓库中必须遵守：
 
-- 命令名固定为 `gc`
+- 项目命令固定为 `gc`
 - 项目正式规范以 `spec/` 为准
 - 命令行为以 [docs/COMMANDS.md](./docs/COMMANDS.md) 为准
 - 项目阶段说明可参考 [issues-plan/PROGRESS.md](./issues-plan/PROGRESS.md)，但该文档可能滞后，不作为单个 issue / PR 实时状态真相源
-- 流程推进以 `spec/workflows/*` 定义的状态机为准，不能只按松散 checklist 执行
+- 流程推进以 `spec/workflows/*` 定义的状态机为准，不能只把 checklist 当完成标准
+- 判断"某个 issue / 功能是否已合入主干"时，必须以 merged PR 和 `origin/main` 为准，不能只依据 issue 状态、issue comment、release 文案或功能分支存在与否
+- 如果 issue 已关闭但没有 merged PR 或 `origin/main` 不包含对应代码，必须明确判定为"未完成主干合入"
 - 外部项目使用 AI 操作 GitCode 的说明以 `docs/AI-GUIDE.md` 为准，但该文档不定义本仓库内部开发流程
-- 代码变更后必须同步检查相关文档
+- 代码或流程变化后必须同步检查相关文档
 - 实际命令测试只能使用 `infra-test/*`
 - 不得在 `main` 直接开发
-- 不得在文档中写入真实 token 或凭证
-- 不得在缺少验证记录、自检证据或独立执行主体评审的情况下宣称“已完成”
+- 不得提交构建产物、评估输出或真实凭证
+- 不得在缺少验证记录、自检证据或独立执行主体评审的情况下宣称"已完成"
+- 遇到规范未覆盖的情况，必须先向用户确认，不得自由发挥
+- 发现规范之间有冲突，必须先向用户报告，以用户确认为准
+- MEMORY.md 是会话级记忆摘要，如果与 spec/ 冲突，以 spec/ 为准
 
-## 4. AI 协作入口
+## 4. Claude 入口边界
 
-Claude 侧的项目内 skill 目录位于：
+当前仓库内的 Claude 项目级入口是：
 
-- [.claude/skills](./.claude/skills)
+- `CLAUDE.md`
 
-使用原则：
+当前仓库已引入：
 
-- `.ai/skills/` 是共享 skill 真相源
-- `.claude/skills/` 是 Claude 适配层
-- 场景技能不能定义与 `spec/` 冲突的项目规则
-- 行为变化后，必须同步检查相关 skill 文档
+- `.ai/skills/` 共享 skill 真相源
+- `.claude/skills/` Claude 适配层
 
-Codex 侧适配层位于 `.codex/skills/`。
+Claude 仍应先以 `spec/` 和本文件为主要入口，再进入共享源或适配层。
 
 ## 5. 常用入口
 
-- 用户命令手册：[docs/COMMANDS.md](./docs/COMMANDS.md)
+- 用户文档入口：[docs/README.md](./docs/README.md)
+- 命令手册：[docs/COMMANDS.md](./docs/COMMANDS.md)
 - 认证说明：[docs/AUTH.md](./docs/AUTH.md)
 - 回归说明：[docs/REGRESSION.md](./docs/REGRESSION.md)
 - 打包说明：[docs/PACKAGING.md](./docs/PACKAGING.md)
 - 发布说明：[RELEASE.md](./RELEASE.md)
 - 贡献说明：[CONTRIBUTING.md](./CONTRIBUTING.md)
+- Codex 入口：[AGENTS.md](./AGENTS.md)
 
 ## 6. 当前阶段说明
 
@@ -93,6 +98,6 @@ Codex 侧适配层位于 `.codex/skills/`。
 - `spec/delivery/release-process.md`
 - `spec/foundations/code-quality-gates.md`
 - `.ai/skills/` 共享 skill 真相源
-- `.codex/skills/` 适配层结构
+- `.claude/skills/` 适配层结构
 
-当前阶段目标是继续校准共享 skill 与客户端适配层，而不是扩展新的规则源。
+当前阶段目标是继续校准共享源与客户端适配层，而不是新建额外规则源。

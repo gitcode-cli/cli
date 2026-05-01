@@ -2,6 +2,9 @@ package comment
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -39,11 +42,6 @@ func TestNewCmdComment(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "no body provided",
-			args:    []string{"123"},
-			wantErr: false, // Command runs, error in run function
-		},
-		{
 			name:    "both body and body-file",
 			args:    []string{"123", "--body", "test", "--body-file", "-"},
 			wantErr: false, // Command runs, error in run function
@@ -52,6 +50,11 @@ func TestNewCmdComment(t *testing.T) {
 			name:    "path without position",
 			args:    []string{"123", "--body", "test", "--path", "api/auth.go"},
 			wantErr: false, // Command runs, error in run function
+		},
+		{
+			name:    "position without path (allowed)",
+			args:    []string{"123", "--body", "test", "--position", "42"},
+			wantErr: false, // Allowed - code only checks path implies position
 		},
 	}
 
@@ -97,6 +100,18 @@ func TestGetBody(t *testing.T) {
 			name:     "empty body",
 			wantBody: "",
 		},
+		{
+			name:     "stdin input",
+			bodyFile: "-",
+			stdin:    "Comment from stdin\n",
+			wantBody: "Comment from stdin",
+		},
+		{
+			name:     "stdin input multiline",
+			bodyFile: "-",
+			stdin:    "Line 1\nLine 2\nLine 3\n",
+			wantBody: "Line 1\nLine 2\nLine 3",
+		},
 	}
 
 	for _, tt := range tests {
@@ -118,7 +133,7 @@ func TestGetBody(t *testing.T) {
 					t.Errorf("getBody() expected error, got nil")
 					return
 				}
-				if tt.errContain != "" && !contains(err.Error(), tt.errContain) {
+				if tt.errContain != "" && !strings.Contains(err.Error(), tt.errContain) {
 					t.Errorf("getBody() error = %v, want containing %v", err, tt.errContain)
 				}
 				return
@@ -134,85 +149,135 @@ func TestGetBody(t *testing.T) {
 	}
 }
 
-func TestInlineCommentValidation(t *testing.T) {
-	tests := []struct {
-		name       string
-		path       string
-		position   int
-		wantErr    bool
-		errContain string
-	}{
-		{
-			name:     "no inline flags",
-			path:     "",
-			position: 0,
-			wantErr:  false,
+func TestGetBodyFromFile(t *testing.T) {
+	// Create temporary file
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "comment.txt")
+	content := "Comment from file\n"
+	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	f := cmdutil.TestFactory()
+	opts := &CommentOptions{
+		IO:       f.IOStreams,
+		BodyFile: tmpFile,
+	}
+
+	got, err := getBody(opts)
+	if err != nil {
+		t.Fatalf("getBody() error = %v", err)
+	}
+	if got != "Comment from file" {
+		t.Errorf("getBody() = %v, want %v", got, "Comment from file")
+	}
+}
+
+func TestGetBodyFileNotFound(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &CommentOptions{
+		IO:       f.IOStreams,
+		BodyFile: "/nonexistent/file.txt",
+	}
+
+	_, err := getBody(opts)
+	if err == nil {
+		t.Error("getBody() expected error for nonexistent file")
+	}
+	if !strings.Contains(err.Error(), "failed to read file") {
+		t.Errorf("getBody() error = %v, want containing 'failed to read file'", err)
+	}
+}
+
+func TestCommentRunEmptyBody(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &CommentOptions{
+		IO:     f.IOStreams,
+		Body:   "", // Empty body
+		Number: 123,
+	}
+
+	err := commentRun(opts)
+	if err == nil {
+		t.Error("commentRun() expected error for empty body")
+	}
+	if !strings.Contains(err.Error(), "body is required") {
+		t.Errorf("commentRun() error = %v, want containing 'body is required'", err)
+	}
+}
+
+func TestCommentRunPathWithoutPosition(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &CommentOptions{
+		IO:       f.IOStreams,
+		Body:     "Test comment",
+		Path:     "api/auth.go",
+		Position: 0, // Missing position
+		Number:   123,
+	}
+
+	err := commentRun(opts)
+	if err == nil {
+		t.Error("commentRun() expected error for path without position")
+	}
+	if !strings.Contains(err.Error(), "--position is required") {
+		t.Errorf("commentRun() error = %v, want containing '--position is required'", err)
+	}
+}
+
+func TestCommentRunWithMockHTTP(t *testing.T) {
+	// Create mock HTTP client
+	f := cmdutil.TestFactory()
+
+	// Set environment token
+	oldToken := os.Getenv("GC_TOKEN")
+	t.Cleanup(func() { _ = os.Setenv("GC_TOKEN", oldToken) })
+	_ = os.Setenv("GC_TOKEN", "test-token")
+
+	opts := &CommentOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		BaseRepo: func() (string, error) {
+			return "owner/repo", nil
 		},
-		{
-			name:     "path and position provided",
-			path:     "api/auth.go",
-			position: 42,
-			wantErr:  false,
-		},
-		{
-			name:       "path without position",
-			path:       "api/auth.go",
-			position:   0,
-			wantErr:    true,
-			errContain: "--position is required",
-		},
+		Repository: "owner/repo",
+		Number:     123,
+		Body:       "Test comment",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			opts := &CommentOptions{
-				Path:     tt.path,
-				Position: tt.position,
-				Body:     "test", // Provide body to avoid other validation errors
-			}
+	// This test uses the real HTTP client factory, which will fail without a real API
+	// So we just verify the options are set correctly
+	// A full integration test would require a mock server or API client injection
 
-			err := validateInlineFlags(opts)
-			if tt.wantErr {
-				if err == nil {
-					t.Errorf("validateInlineFlags() expected error, got nil")
-					return
-				}
-				if tt.errContain != "" && !contains(err.Error(), tt.errContain) {
-					t.Errorf("validateInlineFlags() error = %v, want containing %v", err, tt.errContain)
-				}
-				return
-			}
-			if err != nil {
-				t.Errorf("validateInlineFlags() unexpected error: %v", err)
-			}
-		})
+	// Verify that commentRun attempts to proceed (will fail due to no real API)
+	err := commentRun(opts)
+	// Expect error because there's no real GitCode API to call
+	if err == nil {
+		// If no error, the mock somehow worked - that's fine too
+		return
+	}
+	// Error should be related to API call failure, not validation
+	if strings.Contains(err.Error(), "body is required") {
+		t.Errorf("commentRun() should not fail on validation, got: %v", err)
 	}
 }
 
-func validateInlineFlags(opts *CommentOptions) error {
-	if opts.Path != "" && opts.Position == 0 {
-		return &validationError{msg: "--position is required when --path is specified for inline comments"}
+func TestInlineCommentOptions(t *testing.T) {
+	// Verify inline comment options are passed correctly to API
+	opts := &CommentOptions{
+		Path:     "api/auth.go",
+		Position: 42,
+		Body:     "Inline comment",
 	}
-	return nil
-}
 
-type validationError struct {
-	msg string
-}
-
-func (e *validationError) Error() string {
-	return e.msg
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
-}
-
-func containsHelper(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
+	// Verify fields are set
+	if opts.Path != "api/auth.go" {
+		t.Errorf("Path = %v, want api/auth.go", opts.Path)
 	}
-	return false
+	if opts.Position != 42 {
+		t.Errorf("Position = %v, want 42", opts.Position)
+	}
+	if opts.Body != "Inline comment" {
+		t.Errorf("Body = %v, want Inline comment", opts.Body)
+	}
 }

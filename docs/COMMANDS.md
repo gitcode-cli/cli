@@ -830,13 +830,22 @@ gc pr ready 1 -R infra-test/gctest1 --ready --yes
 
 ```bash
 # 评论 PR
-gc pr review 1 --comment "评审意见" -R infra-test/gctest1
+gc pr review 1 --comment “评审意见” -R infra-test/gctest1
+
+# 从文件读取评论
+gc pr review 1 --comment-file review-notes.md -R infra-test/gctest1
+
+# 从 stdin 读取评论
+echo “评审意见” | gc pr review 1 --comment-file - -R infra-test/gctest1
 
 # 批准 PR
 gc pr review 1 --approve -R infra-test/gctest1
 
 # 批准 PR 并附带评论
-gc pr review 1 --approve --comment "LGTM" -R infra-test/gctest1
+gc pr review 1 --approve --comment “LGTM” -R infra-test/gctest1
+
+# 批准 PR 并从文件读取评论
+gc pr review 1 --approve --comment-file self-check.md -R infra-test/gctest1
 
 # 强制通过审批（管理员权限）
 gc pr review 1 --approve --force -R infra-test/gctest1
@@ -845,7 +854,9 @@ gc pr review 1 --approve --force -R infra-test/gctest1
 说明：
 - `--approve` 现在走 GitCode 实际可用的 `/pulls/:number/review` endpoint，不再命中错误的 `/reviews` 路径。
 - `--approve --comment` 会先提交普通评论，再执行批准动作。
-- GitCode 当前公开 API 不支持“request changes”动作，`--request` 会明确报错并提示改用 `--comment` 留下审查意见。
+- `--comment-file` 支持从文件读取多行评论，使用 `-` 可从 stdin 读取。
+- `--comment` 与 `--comment-file` 互斥，不能同时使用。
+- GitCode 当前公开 API 不支持”request changes”动作，`--request` 会明确报错并提示改用 `--comment` 留下审查意见。
 
 ### pr edit - 编辑 PR
 

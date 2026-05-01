@@ -1,6 +1,7 @@
 package help
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -203,5 +204,206 @@ func TestBuildIndexSkipsHelp(t *testing.T) {
 		if cmd.Name == "help" {
 			t.Error("BuildIndex should skip 'help' command")
 		}
+	}
+}
+
+func TestNewCmdHelp(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "issues",
+		},
+	}
+	prCmd := &cobra.Command{
+		Use:   "pr",
+		Short: "Manage pull requests",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "pull-requests",
+		},
+	}
+	root.AddCommand(issueCmd, prCmd)
+
+	tests := []struct {
+		name       string
+		args       []string
+		contains   string
+		notContain string
+	}{
+		{
+			name:     "search by keyword",
+			args:     []string{"--search", "issue"},
+			contains: "Commands matching 'issue'",
+		},
+		{
+			name:     "search no match",
+			args:     []string{"--search", "nonexistent"},
+			contains: "No commands found matching 'nonexistent'",
+		},
+		{
+			name:     "list topics",
+			args:     []string{"--topics"},
+			contains: "Available topics:",
+		},
+		{
+			name:     "filter by topic",
+			args:     []string{"--topic", "issues"},
+			contains: "Commands in topic 'issues'",
+		},
+		{
+			name:       "filter by nonexistent topic",
+			args:       []string{"--topic", "nonexistent"},
+			contains:   "No commands found for topic 'nonexistent'",
+			notContain: "Commands in topic",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a new help command for each test to avoid flag state pollution
+			testHelpCmd := NewCmdHelp(root)
+			buf := &bytes.Buffer{}
+			testHelpCmd.SetOut(buf)
+			testHelpCmd.SetArgs(tt.args)
+			testHelpCmd.Execute()
+
+			output := buf.String()
+			if tt.contains != "" && !bytes.Contains(buf.Bytes(), []byte(tt.contains)) {
+				t.Errorf("output should contain '%s', got:\n%s", tt.contains, output)
+			}
+			if tt.notContain != "" && bytes.Contains(buf.Bytes(), []byte(tt.notContain)) {
+				t.Errorf("output should not contain '%s', got:\n%s", tt.notContain, output)
+			}
+		})
+	}
+}
+
+func TestSearchCommands(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+	}
+	prCmd := &cobra.Command{
+		Use:   "pr",
+		Short: "Manage pull requests",
+	}
+	root.AddCommand(issueCmd, prCmd)
+
+	tests := []struct {
+		name     string
+		keyword  string
+		expected int
+	}{
+		{"match issue", "issue", 1},
+		{"match pr", "pr", 1},
+		{"match both", "manage", 2},
+		{"empty keyword", "", 3},
+		{"no match", "xyz", 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			err := searchCommands(root, tt.keyword, buf)
+			if err != nil {
+				t.Errorf("searchCommands returned error: %v", err)
+			}
+			output := buf.String()
+			if tt.expected == 0 && !bytes.Contains(buf.Bytes(), []byte("No commands found")) {
+				t.Errorf("expected 'No commands found' for keyword '%s', got:\n%s", tt.keyword, output)
+			}
+		})
+	}
+}
+
+func TestListTopics(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "issues",
+		},
+	}
+	authCmd := &cobra.Command{
+		Use:   "auth",
+		Short: "Authentication",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "auth",
+		},
+	}
+	root.AddCommand(issueCmd, authCmd)
+
+	buf := &bytes.Buffer{}
+	err := listTopics(root, buf)
+	if err != nil {
+		t.Errorf("listTopics returned error: %v", err)
+	}
+
+	output := buf.String()
+	if !bytes.Contains(buf.Bytes(), []byte("Available topics:")) {
+		t.Errorf("output should contain 'Available topics:', got:\n%s", output)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("auth")) {
+		t.Errorf("output should contain topic 'auth', got:\n%s", output)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("issues")) {
+		t.Errorf("output should contain topic 'issues', got:\n%s", output)
+	}
+}
+
+func TestFilterByTopicOutput(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "issues",
+		},
+	}
+	authCmd := &cobra.Command{
+		Use:   "auth",
+		Short: "Authentication",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "auth",
+		},
+	}
+	root.AddCommand(issueCmd, authCmd)
+
+	tests := []struct {
+		name     string
+		topic    string
+		contains string
+	}{
+		{"match issues topic", "issues", "Commands in topic 'issues'"},
+		{"match auth topic", "auth", "Commands in topic 'auth'"},
+		{"no match topic", "nonexistent", "No commands found for topic 'nonexistent'"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			err := filterByTopic(root, tt.topic, buf)
+			if err != nil {
+				t.Errorf("filterByTopic returned error: %v", err)
+			}
+			if !bytes.Contains(buf.Bytes(), []byte(tt.contains)) {
+				t.Errorf("output should contain '%s', got:\n%s", tt.contains, buf.String())
+			}
+		})
 	}
 }

@@ -2,10 +2,13 @@
 package review
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -118,11 +121,28 @@ func reviewRun(opts *ReviewOptions) error {
 		if opts.Comment != "" {
 			return cmdutil.NewUsageError("--comment and --comment-file are mutually exclusive")
 		}
-		data, err := os.ReadFile(opts.CommentFile)
-		if err != nil {
-			return fmt.Errorf("failed to read comment file: %w", err)
+		if opts.CommentFile == "-" {
+			// Read from stdin
+			reader := bufio.NewReader(opts.IO.In)
+			var sb strings.Builder
+			for {
+				line, err := reader.ReadString('\n')
+				if err != nil && err != io.EOF {
+					return fmt.Errorf("failed to read from stdin: %w", err)
+				}
+				sb.WriteString(line)
+				if err == io.EOF {
+					break
+				}
+			}
+			opts.Comment = strings.TrimSpace(sb.String())
+		} else {
+			data, err := os.ReadFile(opts.CommentFile)
+			if err != nil {
+				return fmt.Errorf("failed to read comment file: %w", err)
+			}
+			opts.Comment = strings.TrimSpace(string(data))
 		}
-		opts.Comment = string(data)
 	}
 
 	// Get repository

@@ -78,8 +78,8 @@ Issue 进度记录
 对于纯文档更新的 PR，可使用简化评审路径：
 
 **docs-only PR 判定标准**：
-- 仅修改 `docs/`、`README.md`、`CONTRIBUTING.md` 等文档文件
-- 无代码文件改动（`.go`、`.py`、`.sh` 等除外）
+- 仅修改 `docs/`、`README.md`、`CONTRIBUTING.md`、`spec/` 等文档/规范文件
+- 无代码文件改动（排除 `.go`、`.py`、`.sh` 等代码文件）
 - 无测试文件改动
 
 **简化评审路径**：
@@ -112,7 +112,11 @@ Agent(description="安全审查", subagent_type="general-purpose")
 - 无逻辑变更（仅格式、拼写、注释）
 - 无新增功能
 
-trivial PR 可仅执行 **文档审查 + 安全审查**，或由人工直接批准。
+**与 docs-only PR 的区别**：
+- docs-only PR：仅文档文件改动
+- trivial PR：可含代码改动（如单行拼写修复），但逻辑不变
+
+trivial PR 仍需执行简化评审路径（**文档审查 + 安全审查**），或由人工确认后直接批准（需记录人工批准理由）。
 
 ### 2.2 第二轮评审（深度角色，发现问题时执行）
 

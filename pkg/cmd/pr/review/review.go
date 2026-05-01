@@ -2,10 +2,13 @@
 package review
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -26,10 +29,11 @@ type ReviewOptions struct {
 	Number     int
 
 	// Flags
-	Approve bool
-	Request bool
-	Comment string
-	Force   bool // Force approval (admin only)
+	Approve     bool
+	Request     bool
+	Comment     string
+	CommentFile string
+	Force       bool // Force approval (admin only)
 }
 
 // NewCmdReview creates the review command
@@ -57,8 +61,17 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 				# Comment on a PR
 				$ gc pr review 123 -R owner/repo --comment "Looks good to me"
 
+				# Comment from a file
+				$ gc pr review 123 -R owner/repo --comment-file review-notes.md
+
+				# Comment from stdin
+				$ gc pr review 123 -R owner/repo --comment-file -
+
 				# Approve a PR and leave a comment
 				$ gc pr review 123 -R owner/repo --approve --comment "LGTM"
+
+				# Approve a PR with comment from file
+				$ gc pr review 123 -R owner/repo --approve --comment-file self-check.md
 
 				# Force approve a PR (admin only)
 				$ gc pr review 123 -R owner/repo --approve --force
@@ -82,6 +95,7 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 	cmd.Flags().BoolVarP(&opts.Approve, "approve", "a", false, "Approve the PR")
 	cmd.Flags().BoolVarP(&opts.Request, "request", "r", false, "Request changes on the PR (currently unsupported by GitCode API)")
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Comment body")
+	cmd.Flags().StringVarP(&opts.CommentFile, "comment-file", "F", "", "Read comment from file (use - for stdin)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Force approval (admin only)")
 
 	return cmd
@@ -96,11 +110,40 @@ func reviewRun(opts *ReviewOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
 		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
-	client.SetToken(token, "environment")
+	client.SetToken(token, "active")
+
+	// Read comment from file if specified
+	if opts.CommentFile != "" {
+		if opts.Comment != "" {
+			return cmdutil.NewUsageError("--comment and --comment-file are mutually exclusive")
+		}
+		if opts.CommentFile == "-" {
+			// Read from stdin
+			reader := bufio.NewReader(opts.IO.In)
+			var sb strings.Builder
+			for {
+				line, err := reader.ReadString('\n')
+				if err != nil && err != io.EOF {
+					return fmt.Errorf("failed to read from stdin: %w", err)
+				}
+				sb.WriteString(line)
+				if err == io.EOF {
+					break
+				}
+			}
+			opts.Comment = strings.TrimSpace(sb.String())
+		} else {
+			data, err := os.ReadFile(opts.CommentFile)
+			if err != nil {
+				return fmt.Errorf("failed to read comment file: %w", err)
+			}
+			opts.Comment = strings.TrimSpace(string(data))
+		}
+	}
 
 	// Get repository
 	owner, repo, err := parseRepo(opts.Repository)
@@ -167,14 +210,4 @@ func reviewRun(opts *ReviewOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	if token := os.Getenv("GITCODE_TOKEN"); token != "" {
-		return token
-	}
-	return cmdutil.EnvToken()
 }

@@ -114,6 +114,13 @@ cp .ai/distribution/gc-core/pr/SKILL.md ~/.codex/skills/gc-pr/SKILL.md
 gc repo view owner/repo --json
 gc issue list -R owner/repo --json
 gc pr view 123 -R owner/repo --json
+gc pr comments 123 -R owner/repo --json
+gc issue prs 123 -R owner/repo --json
+gc repo stats -R owner/repo --branch main --json
+gc milestone view 1 -R owner/repo --json
+gc commit comments list -R owner/repo --json
+gc commit comments list-by-sha <sha> -R owner/repo --json
+gc commit comments view <id> -R owner/repo --json
 
 # 探索命令结构优先使用 schema
 gc schema

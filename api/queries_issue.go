@@ -186,15 +186,17 @@ func ListRepoIssues(client *Client, owner, repo string, opts *IssueListOptions) 
 func ListRepoIssuesAll(client *Client, owner, repo string, opts *IssueListOptions) ([]Issue, error) {
 	const perPage = 100
 
-	if opts == nil {
-		opts = &IssueListOptions{}
+	// Create a copy of opts to avoid mutating caller's object
+	localOpts := &IssueListOptions{}
+	if opts != nil {
+		*localOpts = *opts
 	}
-	opts.PerPage = perPage
+	localOpts.PerPage = perPage
 
 	var allIssues []Issue
 	for page := 1; ; page++ {
-		opts.Page = page
-		issues, err := ListRepoIssues(client, owner, repo, opts)
+		localOpts.Page = page
+		issues, err := ListRepoIssues(client, owner, repo, localOpts)
 		if err != nil {
 			return nil, err
 		}

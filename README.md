@@ -39,26 +39,29 @@ GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验
 - Go 1.22+
 
 ```bash
-# 克隆仓库
+# 克隆仓库（需要 git clone 才能获取版本信息）
 git clone https://gitcode.com/gitcode-cli/cli.git
 cd cli
 
 # 方式一：使用 go build（推荐）
-# 版本信息会从 git 自动获取
 go build -o gc ./cmd/gc
+# 安装
+mkdir -p ~/.local/bin
+mv gc ~/.local/bin/
 
 # 方式二：使用 make build（带完整版本标签）
 make build
-# 二进制输出到 bin/gc
-
-# 安装到用户目录
+# 安装
 mkdir -p ~/.local/bin
-mv gc ~/.local/bin/  # 或 mv bin/gc ~/.local/bin/
+mv bin/gc ~/.local/bin/
+
+# 添加到 PATH
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-> **说明**: `go build` 构建时会从 `debug.ReadBuildInfo()` 自动获取 git commit 和构建时间。
-> `make build` 使用 `-ldflags` 注入完整版本标签（如 `v0.3.11-38-g1128f2b`）。
+> **说明**:
+> - `go build` 从 `debug.ReadBuildInfo()` 自动获取 git commit 和构建时间（需要 `git clone` 源码）。
+> - `make build` 使用 `-ldflags` 注入完整版本标签（如 `v0.3.11-38-g1128f2b`）。
 
 ### Linux 包管理器
 

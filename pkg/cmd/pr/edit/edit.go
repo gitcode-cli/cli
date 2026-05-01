@@ -18,6 +18,7 @@ import (
 type EditOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -32,6 +33,7 @@ type EditOptions struct {
 	Labels            []string
 	Milestone         int
 	CloseRelatedIssue string // "true", "false", or "" (not specified)
+	JSON              bool
 }
 
 // NewCmdEdit creates the edit command
@@ -39,6 +41,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	opts := &EditOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -95,6 +98,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringSliceVarP(&opts.Labels, "labels", "l", nil, "Add labels (comma-separated)")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Set milestone by number")
 	cmd.Flags().StringVar(&opts.CloseRelatedIssue, "close-related-issue", "", "Close related issues when merged (true/false)")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -108,14 +112,18 @@ func editRun(opts *EditOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
-	client.SetToken(token, "environment")
+	client.SetToken(token, "active")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -168,24 +176,21 @@ func editRun(opts *EditOptions) error {
 		return fmt.Errorf("failed to edit PR: %w", err)
 	}
 
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, pr)
+	}
+
 	prNumber := pr.Number
 	if prNumber == 0 {
 		prNumber = opts.Number
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Updated PR #%d: %s\n", cs.Green("✓"), prNumber, pr.Title)
+	if pr.HTMLURL != "" {
+		fmt.Fprintf(opts.IO.Out, "  %s\n", pr.HTMLURL)
+	}
 	return nil
 }
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	if token := os.Getenv("GITCODE_TOKEN"); token != "" {
-		return token
-	}
-	return cmdutil.EnvToken()
 }

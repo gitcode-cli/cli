@@ -669,6 +669,9 @@ gc pr list -R infra-test/gctest1 --state merged
 # 按 head / base 分支过滤
 gc pr list -R infra-test/gctest1 --head feature/login --base main
 
+# 按里程碑筛选
+gc pr list -R infra-test/gctest1 --milestone "v1.0"
+
 # 限制数量
 gc pr list -R infra-test/gctest1 --limit 10
 
@@ -706,8 +709,9 @@ gc pr view 1 -R infra-test/gctest1 --time-format relative
 
 说明：
 - `pr view` 的文本详情输出会使用更稳定的元信息排布，便于人工和代理阅读。
+- 文本输出包含里程碑信息（如果 PR 关联了里程碑）。
 - `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
-- `--json` 路径保持结构化输出，不受文本排版变化影响。
+- `--json` 路径保持结构化输出，milestone 字段会自动包含在 JSON 中。
 
 ### pr comments - 查看 PR 评论
 

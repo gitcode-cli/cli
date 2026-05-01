@@ -35,6 +35,7 @@ type PullRequest struct {
 	Labels       []*Label     `json:"labels"`
 	Assignees    []*User      `json:"assignees"`
 	Reviewers    []*User      `json:"requested_reviewers"`
+	Milestone    *Milestone   `json:"milestone"`
 }
 
 // PRBranch represents a branch in a PR
@@ -77,6 +78,7 @@ type PRListOptions struct {
 	Direction string `url:"direction,omitempty"`
 	PerPage   int    `url:"per_page,omitempty"`
 	Page      int    `url:"page,omitempty"`
+	Milestone string `url:"milestone,omitempty"`
 }
 
 // CreatePROptions represents options for creating a PR
@@ -169,6 +171,9 @@ func buildPRListPath(base string, opts *PRListOptions) string {
 	}
 	if opts.Page > 0 {
 		values.Set("page", itoa(opts.Page))
+	}
+	if opts.Milestone != "" {
+		values.Set("milestone", opts.Milestone)
 	}
 	if len(values) == 0 {
 		return base

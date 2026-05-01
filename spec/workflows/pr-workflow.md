@@ -5,7 +5,7 @@
 ## 职责
 
 - 定义 PR 的标准状态流转
-- 约束作者自检与独立执行主体评审的边界
+- 约束作者自检与多角色独立执行主体评审的边界
 - 明确合并前必须具备的证据
 
 ## 流程概览
@@ -18,8 +18,8 @@
 → 创建 PR draft
 → 作者自检
 → 风险分级
-→ ready-for-review
-→ 独立执行主体评审
+→ 第一轮多角色评审（基础角色）
+→ 发现问题则修复 → 第二轮多角色评审（深度角色）
 → approved
 → merged
 ```
@@ -125,7 +125,7 @@ Refs #23" \
 
 ## 6. 作者自检
 
-作者自检是必需步骤，但不等同于独立执行主体评审。
+作者自检是必需步骤，但不等同于多角色评审。
 
 ### 作者自检模板
 
@@ -147,57 +147,95 @@ Refs #23" \
 ### 自检要求
 
 - 自检记录应写在 PR 中
-- 自检记录必须包含可追踪的作者主体标识，例如 agent role、agent id、会话标识或明确人工身份
-- 自检记录必须包含安全审查结果；若本次改动不涉及认证、凭证、权限或危险写路径，应明确写出无相关影响
+- 自检记录必须包含可追踪的作者主体标识
 - 自检完成后，PR 才能进入 `status/self-checked`
 - 只有自检，不代表可以直接合并
 
-示例：
+## 7. 多角色评审（必须执行）
+
+### 7.1 第一轮评审（基础角色）
+
+提交 PR 前必须完成 **4 个基础评审角色**：
+
+| 角色 | 检查内容 |
+|------|----------|
+| 代码审查 | 代码逻辑、项目模式遵循、命名规范 |
+| 安全审查 | 凭证泄漏、Token 处理、API 安全 |
+| 测试审查 | 测试覆盖、测试质量、边界条件 |
+| 文档审查 | COMMANDS.md 更新、示例正确 |
+
+### 7.2 第二轮评审（深度角色）
+
+发现问题时执行 **4 个深度评审角色**：
+
+| 角色 | 检查内容 |
+|------|----------|
+| 架构一致性 | Options 结构、函数命名、与其他命令对比 |
+| API 契约 | API 参数、调用时序、错误处理 |
+| 边界条件 | 输入验证、空值处理、错误场景 |
+| 用户体验 | 帮助文本、错误消息、输出格式 |
+
+### 7.3 评审执行
 
 ```bash
-gc pr review <number> --comment "## 作者自检
+# 1. 创建评审团队
+TeamCreate
 
-- 作者主体标识: codex-author/session-123
-- 根因或实现理由: ...
-- 主要修改: ...
-- 单元测试: go test ./...
-- 构建: go build -o ./gc ./cmd/gc
-- 实际命令验证: ./gc issue label 1 --add bug -R infra-test/gctest1
-- 安全审查: 已检查无硬编码凭证，本次改动不涉及认证和危险写路径
-- 文档同步: 已更新 docs/COMMANDS.md 与 spec
-- 风险: ...
-- 未覆盖项: ..." -R gitcode-cli/cli
+# 2. 启动第一轮 4 个评审 Agent（并行）
+Agent(description="代码审查", subagent_type="general-purpose")
+Agent(description="安全审查", subagent_type="general-purpose")
+Agent(description="测试审查", subagent_type="general-purpose")
+Agent(description="文档审查", subagent_type="general-purpose")
+
+# 3. 收集评审结论，发现问题则修复
+
+# 4. 启动第二轮评审（如有需要）
+Agent(description="架构一致性", subagent_type="general-purpose")
+Agent(description="API 契约", subagent_type="general-purpose")
+Agent(description="边界条件", subagent_type="general-purpose")
+Agent(description="用户体验", subagent_type="general-purpose")
+
+# 5. 添加评审汇总评论到 PR
+gc pr review <number> --comment "## 多角色评审汇总..." -R owner/repo
 ```
 
-## 7. Ready For Review
+### 7.4 评审汇总要求
+
+评审汇总评论必须包含：
+- 各角色评审结论表格
+- 发现问题及修复情况
+- 后续跟踪 Issues（非阻塞问题）
+- 总体评审结论
+- 评审执行主体标识
+
+详见 [评审流程](./review-workflow.md)。
+
+## 8. Ready For Review
 
 进入 `status/ready-for-review` 前必须满足：
 
 - PR 已有作者自检记录
+- PR 已完成第一轮多角色评审
+- 所有评审角色结论为 approved
 - 关联 issue 已进入 `status/ready-for-review`
 - 所有本地门禁已完成
 - 安全审查已完成
-- 文档同步已完成或明确说明无需更新
-- 风险分级已完成，并已明确对应评审策略
+- 文档同步已完成
+- 风险分级已完成
 
-## 8. 独立执行主体评审与合并
+## 9. Approved 与合并
 
-### 评审前提
-
-- 评审者不能把作者自检当作评审完成
-- 作者本人不得把自己的评论当作独立通过结论
-- 评审主体必须与作者分离，且不得是同一执行主体
-- `risk/high` 改动在独立 AI 评审后仍需人工最终确认
-
-### 合并前检查
+### Approved 前检查
 
 - [ ] 单元测试通过
 - [ ] 构建通过
-- [ ] 实际命令测试通过，或已说明未执行原因
-- [ ] 安全审查已完成，或已明确说明本次改动无安全敏感影响
+- [ ] 实际命令测试通过
+- [ ] 第一轮多角色评审全部通过
+- [ ] 第二轮多角色评审全部通过（如有）
+- [ ] 安全审查已完成
 - [ ] issue 已有验证记录和开发进度记录
 - [ ] PR 已有作者自检记录
-- [ ] PR 已有独立执行主体评审结论
+- [ ] PR 已有评审汇总评论
 - [ ] 文档已同步
 - [ ] 风险分级结果已记录
 - [ ] `risk/high` 改动已完成人工最终确认
@@ -212,25 +250,30 @@ gc pr merge <number> -R gitcode-cli/cli
 
 ```bash
 git checkout main
-git pull
+git pull origin main
 ```
 
 合并后更新状态：
 
 - PR：`status/merged`
 - Issue：`status/merged` 或关闭
+- 删除本地开发分支：`git branch -d feature/issue-xxx`
 
-## 9. 检查清单
+## 10. 检查清单
 
 - [ ] 分支已创建
 - [ ] 代码已开发
 - [ ] 测试已编写并执行
 - [ ] PR 已以 `status/draft` 创建
 - [ ] 作者自检已完成
-- [ ] PR 已进入 `status/ready-for-review`
-- [ ] PR 已获得独立执行主体评审结论
+- [ ] PR 已进入 `status/self-checked`
+- [ ] **第一轮多角色评审已完成**（必须）
+- [ ] **第二轮多角色评审已完成**（如有问题）
+- [ ] 评审汇总评论已添加
+- [ ] PR 已进入 `status/approved`
 - [ ] PR 已合并
+- [ ] Issue 已关闭
 
 ---
 
-**最后更新**: 2026-04-03
+**最后更新**: 2026-05-01

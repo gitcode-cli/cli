@@ -121,11 +121,35 @@ pip install gitcode-cli
 gitcode version
 ```
 
+### 预编译二进制文件
+
+从 Release Assets 直接下载对应平台的二进制文件：
+
+| 平台 | 文件 |
+|------|------|
+| Linux x64 | `gc_<version>_linux_amd64.tar.gz` |
+| Linux ARM64 | `gc_<version>_linux_arm64.tar.gz` |
+| macOS Intel | `gc_<version>_darwin_amd64.tar.gz` |
+| macOS Apple Silicon | `gc_<version>_darwin_arm64.tar.gz` |
+| Windows x64 | `gc_<version>_windows_amd64.zip` |
+
+下载地址: https://gitcode.com/gitcode-cli/cli/releases
+
+解压后将二进制文件放到 PATH 目录：
+
+```bash
+# Linux/macOS
+tar -xzf gc_*.tar.gz
+mv gc ~/.local/bin/
+
+# Windows
+# 解压 zip 文件后，将 gc.exe 放到 PATH 目录
+```
+
 ### 规划中的安装方式
 
 以下安装方式正在开发中：
 
-- [ ] 预编译二进制文件（Linux/macOS/Windows）
 - [ ] Homebrew (macOS/Linux)
 - [ ] Scoop (Windows)
 - [ ] Docker 镜像

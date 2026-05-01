@@ -182,6 +182,30 @@ func ListRepoIssues(client *Client, owner, repo string, opts *IssueListOptions) 
 	return issues, nil
 }
 
+// ListRepoIssuesAll lists all issues with automatic pagination
+func ListRepoIssuesAll(client *Client, owner, repo string, opts *IssueListOptions) ([]Issue, error) {
+	const perPage = 100
+
+	if opts == nil {
+		opts = &IssueListOptions{}
+	}
+	opts.PerPage = perPage
+
+	var allIssues []Issue
+	for page := 1; ; page++ {
+		opts.Page = page
+		issues, err := ListRepoIssues(client, owner, repo, opts)
+		if err != nil {
+			return nil, err
+		}
+		allIssues = append(allIssues, issues...)
+		if len(issues) < perPage {
+			break
+		}
+	}
+	return allIssues, nil
+}
+
 // GetIssue fetches an issue by number
 func GetIssue(client *Client, owner, repo string, number int) (*Issue, error) {
 	var issue Issue

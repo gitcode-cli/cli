@@ -2,6 +2,18 @@
 
 本文档提供 Issue/PR 状态标签更新的简明 checklist，确保流程推进时状态标签同步更新。
 
+## 重要说明
+
+**`gc pr edit --labels` 是替换行为，不是追加。**
+
+每次使用 `--labels` 更新状态时，必须携带 **完整四维标签**，否则其他维度标签会丢失。
+
+四维标签要求：
+- **status**: 状态标签（随流程推进变化）
+- **type**: 类型标签（feature/bug/docs/refactor）
+- **risk**: 风险标签（low/medium/high）
+- **scope**: 范围标签（auth/repo/issue/pr/release/docs/testing）
+
 ## Issue 状态更新时机
 
 | 步骤 | 操作命令 | 必须添加 | 必须移除 |
@@ -13,13 +25,15 @@
 
 ## PR 状态更新时机
 
-| 步骤 | 操作命令 | 必须添加 | 必须移除 |
-|------|----------|----------|----------|
-| 创建 PR 后 | `gc pr edit <n> -R owner/repo --labels status/draft,type/*,risk/*,scope/*` | `status/draft`, `type/*`, `risk/*`, `scope/*` | - |
-| 自检完成后 | `gc pr edit <n> -R owner/repo --labels status/self-checked` | `status/self-checked` | `status/draft` |
-| 进入评审前 | `gc pr edit <n> -R owner/repo --labels status/ready-for-review` | `status/ready-for-review` | `status/self-checked` |
-| 评审通过后 | `gc pr edit <n> -R owner/repo --labels status/approved` | `status/approved` | `status/ready-for-review` |
-| 合入主干后 | `gc pr edit <n> -R owner/repo --labels status/merged` | `status/merged` | `status/approved` |
+**注意**：`gc pr edit --labels` 是替换操作，每次必须携带完整四维标签。
+
+| 步骤 | 操作命令 | 状态变化 |
+|------|----------|----------|
+| 创建 PR 后 | `gc pr edit <n> -R owner/repo --labels status/draft,type/*,risk/*,scope/*` | 设置初始四维标签 |
+| 自检完成后 | `gc pr edit <n> -R owner/repo --labels status/self-checked,type/*,risk/*,scope/*` | status: draft → self-checked |
+| 进入评审前 | `gc pr edit <n> -R owner/repo --labels status/ready-for-review,type/*,risk/*,scope/*` | status: self-checked → ready-for-review |
+| 评审通过后 | `gc pr edit <n> -R owner/repo --labels status/approved,type/*,risk/*,scope/*` | status: ready-for-review → approved |
+| 合入主干后 | `gc pr edit <n> -R owner/repo --labels status/merged,type/*,risk/*,scope/*` | status: approved → merged |
 
 ## Label 维度要求
 
@@ -40,17 +54,17 @@
 ## 快速参考命令
 
 ```bash
-# Issue 状态推进
+# Issue 状态推进（issue label 是增量操作）
 gc issue label 123 --add status/verified --remove status/triage -R owner/repo
 gc issue label 123 --add status/in-progress -R owner/repo
 gc issue label 123 --add status/merged --remove status/in-progress,status/triage -R owner/repo
 
-# PR 状态推进
+# PR 状态推进（pr edit --labels 是替换操作，必须携带完整四维标签）
 gc pr edit 456 -R owner/repo --labels status/draft,type/feature,risk/low,scope/pr
-gc pr edit 456 -R owner/repo --labels status/self-checked
-gc pr edit 456 -R owner/repo --labels status/ready-for-review
-gc pr edit 456 -R owner/repo --labels status/approved
-gc pr edit 456 -R owner/repo --labels status/merged
+gc pr edit 456 -R owner/repo --labels status/self-checked,type/feature,risk/low,scope/pr
+gc pr edit 456 -R owner/repo --labels status/ready-for-review,type/feature,risk/low,scope/pr
+gc pr edit 456 -R owner/repo --labels status/approved,type/feature,risk/low,scope/pr
+gc pr edit 456 -R owner/repo --labels status/merged,type/feature,risk/low,scope/pr
 ```
 
 ---

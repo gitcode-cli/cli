@@ -3,7 +3,6 @@ package edit
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -107,7 +106,7 @@ func editRun(opts *EditOptions) error {
 	// Read description from file if specified
 	description := opts.Description
 	if opts.DescriptionFile != "" {
-		content, err := ioutil.ReadFile(opts.DescriptionFile)
+		content, err := os.ReadFile(opts.DescriptionFile)
 		if err != nil {
 			return fmt.Errorf("failed to read description file: %w", err)
 		}

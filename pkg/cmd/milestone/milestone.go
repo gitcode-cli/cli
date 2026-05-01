@@ -5,11 +5,12 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/delete"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/edit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/view"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone/delete"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdMilestone creates the milestone command
@@ -32,9 +33,10 @@ func NewCmdMilestone(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
+	cmd.AddCommand(delete.NewCmdDelete(f, nil))
+	cmd.AddCommand(edit.NewCmdEdit(f, nil))
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(view.NewCmdView(f, nil))
-	cmd.AddCommand(delete.NewCmdDelete(f, nil))
 
 	return cmd
 }

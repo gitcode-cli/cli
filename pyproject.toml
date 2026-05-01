@@ -33,6 +33,7 @@ requires-python = ">=3.8"
 
 [project.scripts]
 gc = "gc_cli.wrapper:main"
+gitcode = "gc_cli.wrapper:main"
 
 [project.urls]
 Homepage = "https://gitcode.com/gitcode-cli/cli"

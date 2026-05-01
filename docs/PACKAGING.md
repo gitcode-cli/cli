@@ -155,6 +155,12 @@ Windows 用户激活虚拟环境：
 
     .venv\Scripts\activate
 
+Windows PowerShell 用户建议运行：
+
+    gitcode version
+
+说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+
 ### DEB (Debian/Ubuntu)
 
     wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_0.3.11_amd64.deb
@@ -274,6 +280,12 @@ Windows 用户激活虚拟环境：
 
     .venv\Scripts\activate
 
+Windows PowerShell 用户建议运行：
+
+    gitcode version
+
+说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+
 ### DEB (Debian/Ubuntu)
 
     wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_0.3.11_amd64.deb
@@ -348,7 +360,12 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gitcode_cli-0.3.11-py3-none-any.whl
+
+# Windows PowerShell 中推荐使用 gitcode
+gitcode version
 ```
+
+说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
 
 ### DEB (Debian/Ubuntu)
 

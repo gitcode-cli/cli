@@ -157,9 +157,13 @@ func commentsRun(opts *CommentsOptions) error {
 			fmt.Fprintln(opts.IO.Out)
 		}
 
-		// Print file location if available
+		// Print file location if available (inline comment)
 		if comment.DiffFile != "" {
-			fmt.Fprintf(opts.IO.Out, "   File: %s\n", cs.Magenta(comment.DiffFile))
+			positionStr := ""
+			if comment.DiffPosition != nil {
+				positionStr = fmt.Sprintf(" (position %v)", comment.DiffPosition)
+			}
+			fmt.Fprintf(opts.IO.Out, "   File: %s%s\n", cs.Magenta(comment.DiffFile), positionStr)
 		}
 
 		// Print body

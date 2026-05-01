@@ -733,6 +733,26 @@ gc pr comments 1 -R infra-test/gctest1 --json
 评论列表会显示 `Discussion ID`，可直接用于 `gc pr reply --discussion`。
 `--json` 输出评论对象数组；无评论时输出 `[]`，不会混入文本提示。
 当前 GitCode 公开 API 不支持通过 CLI 将 PR 评论标记为已解决或未解决；resolved 状态需要在 Web UI 中手动处理。
+inline comment 会显示文件路径和 diff position 信息。
+
+### pr comment - 添加 PR 评论
+
+```bash
+# 添加普通评论
+gc pr comment 123 --body "This looks good" -R owner/repo
+
+# 从文件读取评论内容
+gc pr comment 123 --body-file comment.txt -R owner/repo
+
+# 从 stdin 读取评论内容
+echo "Comment from stdin" | gc pr comment 123 --body-file - -R owner/repo
+
+# 添加行内评论（inline comment）
+gc pr comment 123 --body "Consider renaming this" --path api/auth.go --position 42 -R owner/repo
+```
+
+添加评论到 PR。支持普通评论和行内评论（inline comment）。
+行内评论需要同时提供 `--path`（文件路径）和 `--position`（diff 行号）。
 
 ### pr reply - 回复 PR 评论
 

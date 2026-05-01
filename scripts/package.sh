@@ -71,6 +71,11 @@ fi
 VERSION=${1#v}
 TARGET=${2:-all}
 
+# Validate version format
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    error "Invalid version format: $VERSION (expected X.Y.Z)"
+fi
+
 # Validate target
 case "$TARGET" in
     all|deb|rpm|linux|pypi|release) ;;

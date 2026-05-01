@@ -1176,15 +1176,20 @@ gc milestone create "v1.0" -R infra-test/gctest1 --description "First release"
 ### milestone view - 查看里程碑
 
 ```bash
-# 查看里程碑详情
+# 查看里程碑详情（包含关联 issues）
 gc milestone view 1 -R infra-test/gctest1
 
-# JSON 输出
+# JSON 输出（包含 issues 数组和计数）
 gc milestone view 1 -R infra-test/gctest1 --json
+
+# 只查看里程碑元数据，不显示 issues
+gc milestone view 1 -R infra-test/gctest1 --issues=false
 ```
 
 说明：
-- `milestone view --json` 输出里程碑对象。
+- `milestone view` 默认显示里程碑关联的 issues，按状态分组（Closed/Open）。
+- `--json` 输出包含 `issues` 数组、`total_issues`、`closed_issues`、`open_issues` 字段。
+- `--issues=false` 只显示里程碑元数据，不获取和显示关联 issues。
 - `--json` 不能与 `--web` 同时使用。
 
 ### milestone edit - 编辑里程碑

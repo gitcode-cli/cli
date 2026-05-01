@@ -284,3 +284,59 @@ func TestReopenIssueVerifiesEmptyUpdateState(t *testing.T) {
 		t.Fatalf("ReopenIssue() state = %q, want open", issue.State)
 	}
 }
+
+func TestListRepoIssuesAllHandlesNilOpts(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		// Verify per_page=100 and page=1 are set even when opts is nil
+		if !strings.Contains(req.URL.RawQuery, "per_page=100") {
+			t.Fatalf("expected per_page=100 in query, got %s", req.URL.RawQuery)
+		}
+		if !strings.Contains(req.URL.RawQuery, "page=1") {
+			t.Fatalf("expected page=1 in query, got %s", req.URL.RawQuery)
+		}
+		return authTestResponse(http.StatusOK, `[{"number":"1","title":"Issue","state":"open"}]`), nil
+	})
+
+	// Call with nil opts - should not panic and should work correctly
+	issues, err := ListRepoIssuesAll(client, "owner", "repo", nil)
+	if err != nil {
+		t.Fatalf("ListRepoIssuesAll(nil opts) error = %v", err)
+	}
+	if len(issues) != 1 {
+		t.Fatalf("expected 1 issue, got %d", len(issues))
+	}
+}
+
+func TestListRepoIssuesAllDoesNotMutateOpts(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `[{"number":"1","title":"Issue","state":"open"}]`), nil
+	})
+
+	// Create opts with specific values
+	opts := &IssueListOptions{
+		State:     "open",
+		PerPage:   50, // Different from the 100 that ListRepoIssuesAll uses
+		Page:      5,  // Different from the 1 that ListRepoIssuesAll starts with
+		Milestone: "test",
+	}
+
+	// Call ListRepoIssuesAll
+	_, err := ListRepoIssuesAll(client, "owner", "repo", opts)
+	if err != nil {
+		t.Fatalf("ListRepoIssuesAll() error = %v", err)
+	}
+
+	// Verify opts was NOT mutated
+	if opts.PerPage != 50 {
+		t.Fatalf("opts.PerPage was mutated: got %d, want 50", opts.PerPage)
+	}
+	if opts.Page != 5 {
+		t.Fatalf("opts.Page was mutated: got %d, want 5", opts.Page)
+	}
+	if opts.State != "open" {
+		t.Fatalf("opts.State was mutated: got %s, want open", opts.State)
+	}
+	if opts.Milestone != "test" {
+		t.Fatalf("opts.Milestone was mutated: got %s, want test", opts.Milestone)
+	}
+}

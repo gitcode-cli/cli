@@ -17,6 +17,7 @@ import (
 type EditOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	TagName string
@@ -29,6 +30,7 @@ type EditOptions struct {
 	Draft      string
 	Prerelease string
 	Target     string
+	JSON       bool
 }
 
 // NewCmdEdit creates the edit command
@@ -36,6 +38,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	opts := &EditOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -75,6 +78,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.Draft, "draft", "", "Mark as draft (true/false)")
 	cmd.Flags().StringVar(&opts.Prerelease, "prerelease", "", "Mark as prerelease (true/false)")
 	cmd.Flags().StringVarP(&opts.Target, "target", "T", "", "Target branch or commit SHA")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -95,7 +99,11 @@ func editRun(opts *EditOptions) error {
 	client.SetToken(token, "active")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -139,6 +147,13 @@ func editRun(opts *EditOptions) error {
 		updateOpts.TargetCommitish = opts.Target
 	}
 
+	// Check if there's anything to update
+	if updateOpts.Name == "" && updateOpts.Body == "" && opts.NotesFile == "" &&
+		updateOpts.Draft == nil && updateOpts.Prerelease == nil &&
+		updateOpts.TargetCommitish == "" {
+		return fmt.Errorf("no changes specified. Use flags to specify what to edit")
+	}
+
 	// Update release
 	release, err := api.UpdateReleaseByTag(client, owner, repo, opts.TagName, updateOpts)
 	if err != nil {
@@ -146,6 +161,10 @@ func editRun(opts *EditOptions) error {
 			return fmt.Errorf("failed to update release: %w; GitCode currently omits release IDs in release lookup responses", err)
 		}
 		return fmt.Errorf("failed to update release: %w", err)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, release)
 	}
 
 	title := release.TagName

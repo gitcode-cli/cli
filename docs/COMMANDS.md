@@ -51,10 +51,12 @@ git@gitcode.com:owner/repo.git
 - `issue create`
 - `issue edit`
 - `pr create`
+- `pr edit`
 - `pr merge`
 - `repo create`
 - `repo fork`
 - `release create`
+- `release edit`
 - `release upload`
 - `milestone edit`
 
@@ -865,6 +867,9 @@ gc pr edit 1 --labels bug,enhancement -R infra-test/gctest1
 
 # 设置里程碑
 gc pr edit 1 --milestone 5 -R infra-test/gctest1
+
+# JSON 输出
+gc pr edit 1 --title "新标题" -R infra-test/gctest1 --json
 ```
 
 ### pr test - 触发 PR 测试
@@ -1011,6 +1016,9 @@ gc release edit v1.0.0 --title "New title" -R infra-test/gctest1
 
 # 修改说明
 gc release edit v1.0.0 --notes "New release notes" -R infra-test/gctest1
+
+# JSON 输出
+gc release edit v1.0.0 --title "New title" -R infra-test/gctest1 --json
 ```
 
 说明：

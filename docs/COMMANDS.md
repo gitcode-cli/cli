@@ -56,6 +56,7 @@ git@gitcode.com:owner/repo.git
 - `repo fork`
 - `release create`
 - `release upload`
+- `milestone edit`
 
 其中 `issue list` 额外支持：
 
@@ -1185,6 +1186,41 @@ gc milestone view 1 -R infra-test/gctest1 --json
 说明：
 - `milestone view --json` 输出里程碑对象。
 - `--json` 不能与 `--web` 同时使用。
+
+### milestone edit - 编辑里程碑
+
+```bash
+# 编辑里程碑标题
+gc milestone edit 1 --title "New Title" -R infra-test/gctest1
+
+# 编辑里程碑描述
+gc milestone edit 1 --description "Updated description" -R infra-test/gctest1
+
+# 从文件读取描述
+gc milestone edit 1 --description-file milestone-desc.md -R infra-test/gctest1
+
+# 关闭里程碑
+gc milestone edit 1 --state closed -R infra-test/gctest1
+
+# 重新打开里程碑
+gc milestone edit 1 --state open -R infra-test/gctest1
+
+# 编辑截止日期
+gc milestone edit 1 --due-date "2024-12-31" -R infra-test/gctest1
+
+# JSON 输出
+gc milestone edit 1 --title "New Title" --json -R infra-test/gctest1
+
+# 同时编辑多个字段
+gc milestone edit 1 --title "v2.0" --description "Next release" --due-date "2025-01-31" -R infra-test/gctest1
+```
+
+说明：
+- `milestone edit` 支持编辑标题、描述、状态和截止日期。
+- `--state` 支持 `open` 和 `closed` 两个值。
+- `--description-file` 从文件读取描述内容，支持多行文本。
+- `--json` 输出更新后的里程碑对象。
+- 至少需要提供一个编辑选项（`--title`, `--description`, `--description-file`, `--state`, `--due-date`）。
 
 ### milestone delete - 删除里程碑
 

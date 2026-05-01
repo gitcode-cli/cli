@@ -53,6 +53,10 @@ Claude 在本仓库中必须遵守：
 - 命令行为以 [docs/COMMANDS.md](./docs/COMMANDS.md) 为准
 - 项目阶段说明可参考 [issues-plan/PROGRESS.md](./issues-plan/PROGRESS.md)，但该文档可能滞后，不作为单个 issue / PR 实时状态真相源
 - 流程推进以 `spec/workflows/*` 定义的状态机为准，不能只把 checklist 当完成标准
+- **状态标签必须随流程推进实时更新**（参见 [status-label-checklist.md](./spec/workflows/status-label-checklist.md)）：
+  - Issue: `status/triage` → `status/verified` → `status/in-progress` → `status/merged`
+  - PR: `status/draft` → `status/self-checked` → `status/ready-for-review` → `status/approved` → `status/merged`
+  - 每个 PR 开发步骤完成后立即更新状态标签，不得在合入后一次性处理
 - 判断"某个 issue / 功能是否已合入主干"时，必须以 merged PR 和 `origin/main` 为准，不能只依据 issue 状态、issue comment、release 文案或功能分支存在与否
 - 如果 issue 已关闭但没有 merged PR 或 `origin/main` 不包含对应代码，必须明确判定为"未完成主干合入"
 - 外部项目使用 AI 操作 GitCode 的说明以 `docs/AI-GUIDE.md` 为准，但该文档不定义本仓库内部开发流程

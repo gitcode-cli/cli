@@ -32,6 +32,7 @@ type ListOptions struct {
 	Page      int
 	JSON      bool
 	Format    string
+	Milestone string
 }
 
 // NewCmdList creates the list command
@@ -78,6 +79,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of PRs to list")
 	cmd.Flags().StringVarP(&opts.Head, "head", "H", "", "Filter by head branch")
 	cmd.Flags().StringVarP(&opts.Base, "base", "B", "", "Filter by base branch")
+	cmd.Flags().StringVarP(&opts.Milestone, "milestone", "m", "", "Filter by milestone title")
 	cmd.Flags().StringVar(&opts.Sort, "sort", "", "Sort by created/updated/popularity/long-running")
 	cmdutil.SetFlagEnum(cmd, "sort", "created", "updated", "popularity", "long-running")
 	cmd.Flags().StringVar(&opts.Direction, "direction", "", "Sort direction (asc/desc)")
@@ -119,6 +121,7 @@ func listRun(opts *ListOptions) error {
 		Direction: opts.Direction,
 		PerPage:   opts.Limit,
 		Page:      opts.Page,
+		Milestone: opts.Milestone,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list PRs: %w", err)

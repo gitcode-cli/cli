@@ -282,6 +282,9 @@ func renderPRDetails(out io.Writer, cs *iostreams.ColorScheme, pr *api.PullReque
 	if len(pr.Labels) > 0 {
 		fmt.Fprintf(out, "  Labels: %s\n", joinLabels(pr.Labels))
 	}
+	if pr.Milestone != nil && pr.Milestone.Title != "" {
+		fmt.Fprintf(out, "  Milestone: %s\n", pr.Milestone.Title)
+	}
 	fmt.Fprintf(out, "\n")
 	if pr.Body != "" {
 		fmt.Fprintf(out, "%s\n", pr.Body)

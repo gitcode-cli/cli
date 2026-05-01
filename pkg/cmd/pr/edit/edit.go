@@ -164,9 +164,9 @@ func editRun(opts *EditOptions) error {
 
 	// Check if there's anything to update
 	if updateOpts.Title == "" && updateOpts.Body == "" && opts.BodyFile == "" &&
-		updateOpts.Base == "" && opts.Draft == "" &&
+		updateOpts.Base == "" && updateOpts.Draft == nil &&
 		len(updateOpts.Labels) == 0 && updateOpts.MilestoneNumber == 0 &&
-		opts.CloseRelatedIssue == "" {
+		updateOpts.CloseRelatedIssue == nil {
 		return fmt.Errorf("no changes specified. Use flags to specify what to edit")
 	}
 

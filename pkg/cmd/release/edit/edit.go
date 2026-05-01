@@ -147,6 +147,13 @@ func editRun(opts *EditOptions) error {
 		updateOpts.TargetCommitish = opts.Target
 	}
 
+	// Check if there's anything to update
+	if updateOpts.Name == "" && updateOpts.Body == "" && opts.NotesFile == "" &&
+		updateOpts.Draft == nil && updateOpts.Prerelease == nil &&
+		updateOpts.TargetCommitish == "" {
+		return fmt.Errorf("no changes specified. Use flags to specify what to edit")
+	}
+
 	// Update release
 	release, err := api.UpdateReleaseByTag(client, owner, repo, opts.TagName, updateOpts)
 	if err != nil {

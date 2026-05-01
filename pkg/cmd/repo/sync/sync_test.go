@@ -67,8 +67,17 @@ func TestResolveSourceDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveSourceDir() error = %v", err)
 	}
-	if resolved != source {
-		t.Fatalf("resolveSourceDir() resolved = %q, want %q", resolved, source)
+	// Normalize paths to handle macOS /var -> /private/var symlink
+	evalResolved, err := filepath.EvalSymlinks(resolved)
+	if err != nil {
+		evalResolved = resolved
+	}
+	evalSource, err := filepath.EvalSymlinks(source)
+	if err != nil {
+		evalSource = source
+	}
+	if evalResolved != evalSource {
+		t.Fatalf("resolveSourceDir() resolved = %q, want %q", evalResolved, evalSource)
 	}
 	if display != "docs" {
 		t.Fatalf("resolveSourceDir() display = %q, want %q", display, "docs")

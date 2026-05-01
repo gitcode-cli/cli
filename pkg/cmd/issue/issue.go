@@ -40,7 +40,8 @@ func NewCmdIssue(f *cmdutil.Factory) *cobra.Command {
 			$ gc issue view 123
 		`),
 		Annotations: map[string]string{
-			"IsCore": "true",
+			"IsCore":                "true",
+			cmdutil.TopicAnnotation: "issues",
 		},
 	}
 

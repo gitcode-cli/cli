@@ -6,6 +6,7 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth"
 	commitcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/commit"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/help"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone"
@@ -55,6 +56,9 @@ If "gc" is intercepted by PowerShell, use "gitcode", "gc.exe", or
 	cmd.AddCommand(milestone.NewCmdMilestone(f))
 	cmd.AddCommand(release.NewCmdRelease(f))
 	cmd.AddCommand(schema.NewCmdSchema(cmd))
+
+	// Set custom help command with search and discovery features
+	cmd.SetHelpCommand(help.NewCmdHelp(cmd))
 
 	return cmd
 }

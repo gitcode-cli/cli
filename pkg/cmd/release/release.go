@@ -40,7 +40,8 @@ func NewCmdRelease(f *cmdutil.Factory) *cobra.Command {
 			$ gc release delete v1.0.0 -R owner/repo
 		`),
 		Annotations: map[string]string{
-			"IsCore": "true",
+			"IsCore":                "true",
+			cmdutil.TopicAnnotation: "releases",
 		},
 	}
 

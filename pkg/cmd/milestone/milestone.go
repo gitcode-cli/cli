@@ -30,6 +30,9 @@ func NewCmdMilestone(f *cmdutil.Factory) *cobra.Command {
 			# View a milestone
 			$ gc milestone view 1
 		`),
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "milestones",
+		},
 	}
 
 	cmd.AddCommand(create.NewCmdCreate(f, nil))

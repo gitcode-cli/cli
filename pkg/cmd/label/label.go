@@ -5,10 +5,10 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/create"
-	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/delete"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/list"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdLabel creates the label command
@@ -31,6 +31,9 @@ func NewCmdLabel(f *cmdutil.Factory) *cobra.Command {
 			# Delete a label
 			$ gc label delete "old-label"
 		`),
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "labels",
+		},
 	}
 
 	cmd.AddCommand(create.NewCmdCreate(f, nil))

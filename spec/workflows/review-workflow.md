@@ -56,7 +56,7 @@ Issue 进度记录
 
 高风险改动可以在多角色 AI 评审后继续升级到人工最终确认。
 
-只有多角色独立执行主体评审才能把 PR 推进到 `status/approved` 或 `status/changes-requested`。
+只有多角色独立执行主体评审才能把 PR 推进到 `status/ready-for-review`、`status/approved` 或 `status/changes-requested`。
 
 ## 2. 多角色评审要求
 
@@ -71,7 +71,7 @@ Issue 进度记录
 | **测试审查** | 检查测试覆盖 | 测试场景覆盖、测试质量、Mock 使用正确性 |
 | **文档审查** | 检查文档同步 | COMMANDS.md 更新、示例正确、与代码一致性 |
 
-**触发条件**：所有 PR 提交前必须执行第一轮评审。
+**触发条件**：PR 创建后、进入 ready-for-review 前必须执行第一轮评审。
 
 ### 2.2 第二轮评审（深度角色，发现问题时执行）
 

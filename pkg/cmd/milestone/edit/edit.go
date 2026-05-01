@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -116,6 +117,19 @@ func editRun(opts *EditOptions) error {
 	// Validate at least one edit option is provided
 	if opts.Title == "" && description == "" && opts.State == "" && opts.DueDate == "" {
 		return fmt.Errorf("at least one edit option is required (e.g., --title, --description, --description-file, --state, --due-date)")
+	}
+
+	// Validate state value
+	if opts.State != "" && opts.State != "open" && opts.State != "closed" {
+		return cmdutil.NewCLIError(cmdutil.ExitUsage, fmt.Sprintf("invalid state value '%s': must be 'open' or 'closed'", opts.State), nil)
+	}
+
+	// Validate due-date format
+	if opts.DueDate != "" {
+		_, err := time.Parse("2006-01-02", opts.DueDate)
+		if err != nil {
+			return cmdutil.NewCLIError(cmdutil.ExitUsage, fmt.Sprintf("invalid due date format '%s': use YYYY-MM-DD", opts.DueDate), err)
+		}
 	}
 
 	httpClient, err := opts.HttpClient()

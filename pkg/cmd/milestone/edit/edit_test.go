@@ -126,6 +126,44 @@ func TestEditRunJSONWritesUpdatedMilestone(t *testing.T) {
 	}
 }
 
+func TestEditRun_InvalidStateValue(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &EditOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Number:     5,
+		Repository: "owner/repo",
+		State:      "pending",
+	}
+
+	err := editRun(opts)
+	if err == nil {
+		t.Error("Expected error for invalid state value")
+	}
+	if !strings.Contains(err.Error(), "invalid state value") {
+		t.Errorf("Unexpected error message: %v", err)
+	}
+}
+
+func TestEditRun_InvalidDueDateFormat(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &EditOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Number:     5,
+		Repository: "owner/repo",
+		DueDate:    "not-a-date",
+	}
+
+	err := editRun(opts)
+	if err == nil {
+		t.Error("Expected error for invalid due date format")
+	}
+	if !strings.Contains(err.Error(), "invalid due date format") {
+		t.Errorf("Unexpected error message: %v", err)
+	}
+}
+
 func TestEditRun_NoEditOptions(t *testing.T) {
 	f := cmdutil.TestFactory()
 	opts := &EditOptions{

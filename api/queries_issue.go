@@ -618,7 +618,7 @@ type IssuePR struct {
 	UpdatedAt     FlexibleTime  `json:"updated_at"`
 	MergedAt      *FlexibleTime `json:"merged_at"`
 	ClosedAt      *FlexibleTime `json:"closed_at"`
-	CanMergeCheck bool          `json:"can_merge_check"`
+	CanMergeCheck *bool         `json:"can_merge_check"`
 }
 
 // ListRepoMilestones lists milestones for a repository

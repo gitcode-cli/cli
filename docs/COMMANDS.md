@@ -599,6 +599,7 @@ gc issue prs 123 -R infra-test/gctest1 --json
 说明：
 - `issue create/list/view/close/reopen/comment/comments/edit/label/prs` 在当前 Git 仓库中可缺省 `-R`，CLI 会优先解析 `origin` remote；若没有 `origin`，则回退到第一个 remote。
 - 若当前目录不是 Git 仓库，或仓库没有可用 remote，会返回明确错误并提示改用 `-R owner/repo`。
+- `--mode 1` 显示 Mergeable 状态：绿色 `can merge` 表示可合并，红色 `cannot merge` 表示不可合并，黄色 `unknown` 表示未计算或未知。
 
 ### issue relations - 查看仓库内 Issue / PR 关联表
 

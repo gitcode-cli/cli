@@ -154,11 +154,13 @@ func prsRun(opts *PrsOptions) error {
 		}
 		// Show mergeable status in enhanced mode
 		if opts.Mode == 1 {
-			mergeable := "unknown"
-			if pr.CanMergeCheck {
-				mergeable = cs.Green("can merge")
-			} else {
-				mergeable = cs.Yellow("cannot merge")
+			mergeable := cs.Yellow("unknown")
+			if pr.CanMergeCheck != nil {
+				if *pr.CanMergeCheck {
+					mergeable = cs.Green("can merge")
+				} else {
+					mergeable = cs.Red("cannot merge")
+				}
 			}
 			fmt.Fprintf(opts.IO.Out, "  Mergeable: %s\n", mergeable)
 		}

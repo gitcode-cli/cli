@@ -404,7 +404,7 @@ gc version
 确保包含 `--notes` 参数：
 
 ```bash
-gc release create v1.0.0 -R gitcode-cli/cli --title "v1.0.0" --notes "Release notes"
+gc release create vX.Y.Z -R gitcode-cli/cli --title "vX.Y.Z" --notes "Release notes"
 ```
 
 ### Q: nfpm 找不到命令

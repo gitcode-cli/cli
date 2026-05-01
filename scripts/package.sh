@@ -71,6 +71,11 @@ fi
 VERSION=${1#v}
 TARGET=${2:-all}
 
+# Validate version format
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    error "Invalid version format: $VERSION (expected X.Y.Z)"
+fi
+
 # Validate target
 case "$TARGET" in
     all|deb|rpm|linux|pypi|release) ;;
@@ -140,6 +145,9 @@ sed -i "s/gc_[0-9]\+\.[0-9]\+\.[0-9]\+/gc_${VERSION}/g" docs/PACKAGING.md
 sed -i "s/gc-[0-9]\+\.[0-9]\+\.[0-9]\+-1/gc-${VERSION}-1/g" docs/PACKAGING.md
 sed -i "s/gitcode_cli-[0-9]\+\.[0-9]\+\.[0-9]\+-py3/gitcode_cli-${VERSION}-py3/g" docs/PACKAGING.md
 sed -i "s/gitcode_cli-[0-9]\+\.[0-9]\+\.[0-9]\+\.tar/gitcode_cli-${VERSION}.tar/g" docs/PACKAGING.md
+# Update gc release create/upload commands in PACKAGING.md
+sed -i "s/gc release create v[0-9]\+\.[0-9]\+\.[0-9]\+/gc release create v${VERSION}/g" docs/PACKAGING.md
+sed -i "s/gc release upload v[0-9]\+\.[0-9]\+\.[0-9]\+/gc release upload v${VERSION}/g" docs/PACKAGING.md
 success "Updated docs/PACKAGING.md"
 
 # ============================================

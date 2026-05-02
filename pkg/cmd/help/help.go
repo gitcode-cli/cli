@@ -85,7 +85,25 @@ func NewCmdHelp(root *cobra.Command) *cobra.Command {
 
 func standardHelp(cmd *cobra.Command) error {
 	cmd.Help()
+
+	// Only append discovery hints for root command
+	if cmd.Parent() == nil {
+		fmt.Fprintf(cmd.OutOrStdout(), "\n%s", discoveryHints())
+	}
+
 	return nil
+}
+
+func discoveryHints() string {
+	return `Additional discovery features:
+  gc help --search <keyword>  Search commands by keyword
+  gc help --topics            List all available topics
+  gc help --topic <topic>     Filter commands by topic
+  gc schema                   Print machine-readable command metadata
+
+For AI agents: Use "gc schema" for structured command discovery.
+Use "--json" flag on commands for machine-readable output.
+`
 }
 
 func searchCommands(root *cobra.Command, keyword string, out io.Writer) error {

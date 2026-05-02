@@ -2,6 +2,7 @@ package help
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -405,5 +406,90 @@ func TestFilterByTopicOutput(t *testing.T) {
 				t.Errorf("output should contain '%s', got:\n%s", tt.contains, buf.String())
 			}
 		})
+	}
+}
+
+func TestStandardHelpWithDiscoveryHints(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	childCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+	}
+	root.AddCommand(childCmd)
+
+	buf := &bytes.Buffer{}
+	root.SetOut(buf)
+
+	err := standardHelp(root)
+	if err != nil {
+		t.Errorf("standardHelp returned error: %v", err)
+	}
+
+	output := buf.String()
+
+	// Verify discovery hints are present for root
+	if !strings.Contains(output, "Additional discovery features:") {
+		t.Error("root help should contain discovery hints section")
+	}
+	if !strings.Contains(output, "--search") {
+		t.Error("root help should mention --search flag")
+	}
+	if !strings.Contains(output, "gc schema") {
+		t.Error("root help should mention gc schema command")
+	}
+	if !strings.Contains(output, "For AI agents:") {
+		t.Error("root help should contain AI agent guidance")
+	}
+}
+
+func TestStandardHelpNoHintsForSubcommand(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	childCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+	}
+	root.AddCommand(childCmd)
+
+	buf := &bytes.Buffer{}
+	childCmd.SetOut(buf)
+
+	err := standardHelp(childCmd)
+	if err != nil {
+		t.Errorf("standardHelp returned error: %v", err)
+	}
+
+	output := buf.String()
+
+	// Verify no discovery hints for subcommand
+	if strings.Contains(output, "Additional discovery features:") {
+		t.Error("subcommand help should NOT contain discovery hints")
+	}
+}
+
+func TestDiscoveryHintsFormat(t *testing.T) {
+	hints := discoveryHints()
+
+	// Verify all required elements are present
+	requiredStrings := []string{
+		"Additional discovery features:",
+		"--search",
+		"--topics",
+		"--topic",
+		"gc schema",
+		"For AI agents:",
+		"--json",
+		"machine-readable",
+	}
+
+	for _, s := range requiredStrings {
+		if !strings.Contains(hints, s) {
+			t.Errorf("discoveryHints should contain '%s'", s)
+		}
 	}
 }

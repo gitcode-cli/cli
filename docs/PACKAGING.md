@@ -80,14 +80,14 @@
 
 ```bash
 dist/
-├── gc_0.3.11_amd64.deb              # DEB amd64
-├── gc_0.3.11_arm64.deb              # DEB arm64
-├── gc-0.3.11-1.x86_64.rpm           # RPM x86_64
-├── gc-0.3.11-1.aarch64.rpm          # RPM aarch64
+├── gc_0.4.0_amd64.deb              # DEB amd64
+├── gc_0.4.0_arm64.deb              # DEB arm64
+├── gc-0.4.0-1.x86_64.rpm           # RPM x86_64
+├── gc-0.4.0-1.aarch64.rpm          # RPM aarch64
 ├── gc_linux_amd64                  # Linux 二进制 amd64
 ├── gc_linux_arm64                  # Linux 二进制 arm64
-├── gitcode_cli-0.3.11-py3-none-any.whl  # PyPI wheel
-└── gitcode_cli-0.3.11.tar.gz        # PyPI sdist
+├── gitcode_cli-0.4.0-py3-none-any.whl  # PyPI wheel
+└── gitcode_cli-0.4.0.tar.gz        # PyPI sdist
 ```
 
 ---
@@ -127,7 +127,7 @@ export GC_TOKEN="your_gitcode_token"
 ./scripts/package.sh v0.3.11 release
 
 # 2. 创建 Release
-gc release create v0.3.11 -R gitcode-cli/cli \
+gc release create v0.4.0 -R gitcode-cli/cli \
   --title "GitCode CLI v0.3.11" \
   --notes "$(cat <<'EOF'
 ## 更新内容
@@ -149,7 +149,7 @@ gc release create v0.3.11 -R gitcode-cli/cli \
 
     python3 -m venv .venv
     source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gitcode_cli-0.3.11-py3-none-any.whl
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gitcode_cli-0.4.0-py3-none-any.whl
 
 Windows 用户激活虚拟环境：
 
@@ -163,35 +163,35 @@ Windows PowerShell 用户建议运行：
 
 ### DEB (Debian/Ubuntu)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_0.3.11_amd64.deb
-    sudo dpkg -i gc_0.3.11_amd64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_0.4.0_amd64.deb
+    sudo dpkg -i gc_0.4.0_amd64.deb
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_0.3.11_arm64.deb
-    sudo dpkg -i gc_0.3.11_arm64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_0.4.0_arm64.deb
+    sudo dpkg -i gc_0.4.0_arm64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc-0.3.11-1.x86_64.rpm
-    sudo rpm -i gc-0.3.11-1.x86_64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc-0.4.0-1.x86_64.rpm
+    sudo rpm -i gc-0.4.0-1.x86_64.rpm
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc-0.3.11-1.aarch64.rpm
-    sudo rpm -i gc-0.3.11-1.aarch64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc-0.4.0-1.aarch64.rpm
+    sudo rpm -i gc-0.4.0-1.aarch64.rpm
 
 ### Linux 二进制
 
 AMD64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_linux_amd64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_linux_amd64
     chmod +x gc_linux_amd64
     sudo mv gc_linux_amd64 /usr/local/bin/gc
 
 ARM64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_linux_arm64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_linux_arm64
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
@@ -202,15 +202,15 @@ EOF
 )"
 
 # 3. 上传所有包
-gc release upload v0.3.11 \
+gc release upload v0.4.0 \
   dist/gc_linux_amd64 \
   dist/gc_linux_arm64 \
-  dist/gc_0.3.11_amd64.deb \
-  dist/gc_0.3.11_arm64.deb \
-  dist/gc-0.3.11-1.x86_64.rpm \
-  dist/gc-0.3.11-1.aarch64.rpm \
-  dist/gitcode_cli-0.3.11-py3-none-any.whl \
-  dist/gitcode_cli-0.3.11.tar.gz \
+  dist/gc_0.4.0_amd64.deb \
+  dist/gc_0.4.0_arm64.deb \
+  dist/gc-0.4.0-1.x86_64.rpm \
+  dist/gc-0.4.0-1.aarch64.rpm \
+  dist/gitcode_cli-0.4.0-py3-none-any.whl \
+  dist/gitcode_cli-0.4.0.tar.gz \
   -R gitcode-cli/cli
 ```
 
@@ -274,7 +274,7 @@ GitCode 会错误渲染代码块内的 `#` 开头行为标题！
 
     python3 -m venv .venv
     source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gitcode_cli-0.3.11-py3-none-any.whl
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gitcode_cli-0.4.0-py3-none-any.whl
 
 Windows 用户激活虚拟环境：
 
@@ -288,35 +288,35 @@ Windows PowerShell 用户建议运行：
 
 ### DEB (Debian/Ubuntu)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_0.3.11_amd64.deb
-    sudo dpkg -i gc_0.3.11_amd64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_0.4.0_amd64.deb
+    sudo dpkg -i gc_0.4.0_amd64.deb
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_0.3.11_arm64.deb
-    sudo dpkg -i gc_0.3.11_arm64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_0.4.0_arm64.deb
+    sudo dpkg -i gc_0.4.0_arm64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc-0.3.11-1.x86_64.rpm
-    sudo rpm -i gc-0.3.11-1.x86_64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc-0.4.0-1.x86_64.rpm
+    sudo rpm -i gc-0.4.0-1.x86_64.rpm
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc-0.3.11-1.aarch64.rpm
-    sudo rpm -i gc-0.3.11-1.aarch64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc-0.4.0-1.aarch64.rpm
+    sudo rpm -i gc-0.4.0-1.aarch64.rpm
 
 ### Linux 二进制
 
 AMD64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_linux_amd64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_linux_amd64
     chmod +x gc_linux_amd64
     sudo mv gc_linux_amd64 /usr/local/bin/gc
 
 ARM64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_linux_arm64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_linux_arm64
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
@@ -359,7 +359,7 @@ gc release download v0.3.11 -R gitcode-cli/cli
 python3 -m venv .venv
 source .venv/bin/activate
 
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gitcode_cli-0.3.11-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gitcode_cli-0.4.0-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode
 gitcode version
@@ -370,21 +370,21 @@ gitcode version
 ### DEB (Debian/Ubuntu)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_0.3.11_amd64.deb
-sudo dpkg -i gc_0.3.11_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_0.4.0_amd64.deb
+sudo dpkg -i gc_0.4.0_amd64.deb
 ```
 
 ### RPM (RHEL/CentOS/Fedora)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc-0.3.11-1.x86_64.rpm
-sudo rpm -i gc-0.3.11-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc-0.4.0-1.x86_64.rpm
+sudo rpm -i gc-0.4.0-1.x86_64.rpm
 ```
 
 ### Linux 二进制
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.3.11/gc_linux_amd64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.4.0/gc_linux_amd64
 chmod +x gc_linux_amd64
 sudo mv gc_linux_amd64 /usr/local/bin/gc
 ```

@@ -66,7 +66,10 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 			$ echo "Comment from stdin" | gc pr comment 123 --body-file - -R owner/repo
 
 			# Add inline comment on specific file and line
-			$ gc pr comment 123 --body "Consider renaming this" --path api/auth.go --position 42 -R owner/repo
+			# First, check the diff to get the correct file path:
+			$ gc pr diff 123 -R owner/repo
+			# Then add inline comment with the actual file path:
+			$ gc pr comment 123 --body "Consider renaming this" --path api/auth.go --position 1 -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -756,12 +756,19 @@ gc pr comment 123 --body-file comment.txt -R owner/repo
 # 从 stdin 读取评论内容
 echo "Comment from stdin" | gc pr comment 123 --body-file - -R owner/repo
 
-# 添加行内评论（inline comment）
-gc pr comment 123 --body "Consider renaming this" --path api/auth.go --position 42 -R owner/repo
+# 添加行内评论 - 先获取文件路径
+gc pr diff 123 -R owner/repo                        # 查看变更文件获取文件路径
+gc pr comment 123 --body "代码逻辑正确" --path api/auth.go --position 1 -R owner/repo
 ```
 
 添加评论到 PR。支持普通评论和行内评论（inline comment）。
-行内评论需要同时提供 `--path`（文件路径）和 `--position`（diff 行号）。
+
+**行内评论注意事项**：
+- 需要同时提供 `--path`（文件路径）和 `--position`（diff 行号）
+- 文件路径必须是 diff 中显示的实际文件名（如 `test-cross-pr.txt`）
+- diff 行号：新文件从 1 开始计数
+- 可通过 `gc pr diff <number>` 查看变更文件列表来获取文件路径
+- 如果文件名错误，会返回错误：`diff failed to be generated due to invalid params under position param`
 
 ### pr reply - 回复 PR 评论
 

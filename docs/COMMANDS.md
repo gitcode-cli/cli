@@ -313,6 +313,12 @@ gc repo stats --branch main -R infra-test/gctest1 --json
 gc issue create -R infra-test/gctest1 --title "Bug: Something wrong" --body "Description here"
 gc issue create --title "Bug: Something wrong" --body "Description here"
 
+# 从文件读取 body
+gc issue create -R infra-test/gctest1 --title "Bug report" --body-file description.md
+
+# 从 stdin 读取 body
+echo "Description from stdin" | gc issue create -R infra-test/gctest1 --title "Bug report" --body-file -
+
 # 创建 Issue 并添加标签
 gc issue create -R infra-test/gctest1 --title "Feature request" --body "Description" --label enhancement
 
@@ -476,6 +482,9 @@ gc issue edit 1 --title "New title"
 
 # 修改描述
 gc issue edit 1 --body "New description" -R infra-test/gctest1
+
+# 从文件读取新描述
+gc issue edit 1 --body-file new-description.md -R infra-test/gctest1
 
 # 修改状态（close/reopen）
 gc issue edit 1 --state close -R infra-test/gctest1

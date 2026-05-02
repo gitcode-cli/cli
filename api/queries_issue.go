@@ -250,6 +250,12 @@ func shouldUseOwnerIssueCreate(opts *CreateIssueOptions) bool {
 		return false
 	}
 
+	// Auto-switch to JSON path for long body (> 8000 bytes)
+	// form-urlencoded may have size limits
+	if len(opts.Body) > 8000 {
+		return true
+	}
+
 	return opts.SecurityHole != "" ||
 		opts.TemplatePath != "" ||
 		opts.IssueType != "" ||

@@ -880,6 +880,12 @@ gc pr review 1 --approve --force -R infra-test/gctest1
 - `--comment` 与 `--comment-file` 互斥，不能同时使用。
 - GitCode 当前公开 API 不支持”request changes”动作，`--request` 会明确报错并提示改用 `--comment` 留下审查意见。
 
+> **权限说明**: `--approve` 需要 GitCode 平台的”审批权限”，与 `gc pr merge` 的”合并权限”是两套独立权限体系。
+> - 有合并权限的用户不一定有审批权限
+> - PR 作者或不在审批人范围内的用户可能收到 403 Forbidden
+> - 如遇权限错误，请使用 `--comment` 留下评审记录，或联系仓库管理员授予审批权限
+> - `--force` 仅限管理员使用，用于强制通过审批门禁
+
 ### pr edit - 编辑 PR
 
 ```bash

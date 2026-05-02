@@ -53,6 +53,12 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 
 		You can approve or comment on a PR. GitCode's current API does not
 		support "request changes", so --request returns a clear error.
+
+		Note: --approve requires GitCode's "approval permission", which is
+		separate from the "merge permission" used by 'gc pr merge'. Users
+		with merge permission cannot approve PRs without explicit approval
+		permission granted by the repository administrators. If you receive
+		a 403 Forbidden error, use --comment to leave review feedback instead.
 		`),
 		Example: heredoc.Doc(`
 				# Approve a PR

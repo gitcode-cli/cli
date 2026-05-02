@@ -2,8 +2,10 @@
 package create
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -28,6 +30,7 @@ type CreateOptions struct {
 	// Flags
 	Title     string
 	Body      string
+	BodyFile  string
 	Labels    []string
 	Assignees []string
 	Milestone int
@@ -83,6 +86,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Title, "title", "t", "", "Title for the issue")
 	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "Body for the issue")
+	cmd.Flags().StringVarP(&opts.BodyFile, "body-file", "F", "", "Read body from file (use - for stdin)")
 	cmd.Flags().StringSliceVarP(&opts.Labels, "label", "l", []string{}, "Labels to add")
 	cmd.Flags().StringSliceVarP(&opts.Assignees, "assignee", "a", []string{}, "Assignees")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Milestone number")
@@ -117,6 +121,12 @@ func createRun(opts *CreateOptions) error {
 		return cmdutil.NewUsageError("title is required. Use --title flag")
 	}
 
+	// Get body from file or flag
+	body, err := getBody(opts)
+	if err != nil {
+		return err
+	}
+
 	customFields, err := getCustomFields(opts)
 	if err != nil {
 		return err
@@ -128,7 +138,7 @@ func createRun(opts *CreateOptions) error {
 				"dry_run":        true,
 				"repository":     fmt.Sprintf("%s/%s", owner, repo),
 				"title":          opts.Title,
-				"body":           opts.Body,
+				"body":           body,
 				"labels":         opts.Labels,
 				"assignees":      opts.Assignees,
 				"milestone":      opts.Milestone,
@@ -172,7 +182,7 @@ func createRun(opts *CreateOptions) error {
 
 	createOpts := &api.CreateIssueOptions{
 		Title:         opts.Title,
-		Body:          opts.Body,
+		Body:          body,
 		Assignees:     opts.Assignees,
 		Labels:        opts.Labels,
 		Milestone:     opts.Milestone,
@@ -302,4 +312,42 @@ func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
 		}
 	}
 	return true
+}
+
+func getBody(opts *CreateOptions) (string, error) {
+	if opts.Body != "" && opts.BodyFile != "" {
+		return "", fmt.Errorf("cannot use both --body and --body-file")
+	}
+
+	if opts.Body != "" {
+		return opts.Body, nil
+	}
+
+	if opts.BodyFile != "" {
+		if opts.BodyFile == "-" {
+			// Read from stdin
+			reader := bufio.NewReader(opts.IO.In)
+			var sb strings.Builder
+			for {
+				line, err := reader.ReadString('\n')
+				if err != nil && err != io.EOF {
+					return "", fmt.Errorf("failed to read from stdin: %w", err)
+				}
+				sb.WriteString(line)
+				if err == io.EOF {
+					break
+				}
+			}
+			return strings.TrimSpace(sb.String()), nil
+		}
+
+		// Read from file
+		content, err := os.ReadFile(opts.BodyFile)
+		if err != nil {
+			return "", fmt.Errorf("failed to read file %s: %w", opts.BodyFile, err)
+		}
+		return strings.TrimSpace(string(content)), nil
+	}
+
+	return "", nil
 }

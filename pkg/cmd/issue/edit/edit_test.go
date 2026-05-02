@@ -148,7 +148,7 @@ func TestEditRun_NoEditOptions(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error when no edit options provided")
 	}
-	if err.Error() != "at least one edit option is required (e.g., --title, --body, --state, --assignee, --label, --milestone, --security-hole)" {
+	if err.Error() != "at least one edit option is required (e.g., --title, --body, --body-file, --state, --assignee, --label, --milestone, --security-hole)" {
 		t.Errorf("Unexpected error message: %v", err)
 	}
 }

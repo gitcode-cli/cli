@@ -4,7 +4,9 @@ package edit
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -25,6 +27,7 @@ type EditOptions struct {
 	// Flags
 	Title        string
 	Body         string
+	BodyFile     string
 	State        string
 	Assignees    []string
 	Labels       []string
@@ -95,6 +98,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Title, "title", "t", "", "New title")
 	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "New body/description")
+	cmd.Flags().StringVarP(&opts.BodyFile, "body-file", "F", "", "Read body from file (use - for stdin)")
 	cmd.Flags().StringVarP(&opts.State, "state", "s", "", "State: open, closed, reopen, close")
 	cmdutil.SetFlagEnum(cmd, "state", "open", "closed", "reopen", "close")
 	cmd.Flags().StringSliceVarP(&opts.Assignees, "assignee", "a", []string{}, "Assignees (comma-separated)")
@@ -109,11 +113,17 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 func editRun(opts *EditOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	// Get body from file or flag
+	body, err := getBody(opts)
+	if err != nil {
+		return err
+	}
+
 	// Validate at least one edit option is provided
-	if opts.Title == "" && opts.Body == "" && opts.State == "" &&
+	if opts.Title == "" && body == "" && opts.State == "" &&
 		len(opts.Assignees) == 0 && len(opts.Labels) == 0 &&
 		opts.Milestone == 0 && !opts.SecurityHole {
-		return fmt.Errorf("at least one edit option is required (e.g., --title, --body, --state, --assignee, --label, --milestone, --security-hole)")
+		return fmt.Errorf("at least one edit option is required (e.g., --title, --body, --body-file, --state, --assignee, --label, --milestone, --security-hole)")
 	}
 
 	httpClient, err := opts.HttpClient()
@@ -152,7 +162,7 @@ func editRun(opts *EditOptions) error {
 	// Build update options
 	updateOpts := &api.UpdateIssueOptions{
 		Title:       opts.Title,
-		Body:        opts.Body,
+		Body:        body,
 		State:       state,
 		AssigneeIDs: assigneeIDs,
 		Labels:      opts.Labels,
@@ -222,4 +232,30 @@ func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
 		}
 	}
 	return true
+}
+
+func getBody(opts *EditOptions) (string, error) {
+	if opts.Body != "" && opts.BodyFile != "" {
+		return "", fmt.Errorf("cannot use both --body and --body-file")
+	}
+
+	if opts.Body != "" {
+		return opts.Body, nil
+	}
+
+	if opts.BodyFile != "" {
+		if opts.BodyFile == "-" {
+			// Read from stdin (simplified - not typical for edit)
+			return "", fmt.Errorf("stdin input (--body-file -) is not supported for issue edit")
+		}
+
+		// Read from file
+		content, err := os.ReadFile(opts.BodyFile)
+		if err != nil {
+			return "", fmt.Errorf("failed to read file %s: %w", opts.BodyFile, err)
+		}
+		return strings.TrimSpace(string(content)), nil
+	}
+
+	return "", nil
 }

@@ -61,10 +61,10 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 		`),
 		Example: heredoc.Doc(`
 			# Create an issue with title and body
-			$ gc issue create --title "Bug" --body "Description"
+			$ gc issue create -R owner/repo --title "Bug" --body "Description"
 
 			# Create an issue with labels
-			$ gc issue create --title "Feature" --label bug,enhancement
+			$ gc issue create -R owner/repo --title "Feature" --label bug,enhancement
 
 			# Create an issue in a specific repository
 			$ gc issue create -R owner/repo --title "Bug"

@@ -59,8 +59,8 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 			# Create a prerelease
 			$ gc release create v1.0.0-beta -R owner/repo --prerelease
 
-			# Create a release in a specific repository
-			$ gc release create v1.0.0 -R owner/repo
+			# Create a release with JSON output
+			$ gc release create v1.0.0 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

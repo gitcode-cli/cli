@@ -22,11 +22,11 @@ type CommandInfo struct {
 // BuildIndex traverses the command tree and builds a searchable index.
 func BuildIndex(root *cobra.Command) []CommandInfo {
 	var index []CommandInfo
-	buildIndexRecursive(root, "", &index)
+	buildIndexRecursive(root, "", "", &index)
 	return index
 }
 
-func buildIndexRecursive(cmd *cobra.Command, parentPath string, index *[]CommandInfo) {
+func buildIndexRecursive(cmd *cobra.Command, parentPath string, parentTopic string, index *[]CommandInfo) {
 	// Skip the help command itself
 	if cmd.Name() == "help" {
 		return
@@ -39,10 +39,14 @@ func buildIndexRecursive(cmd *cobra.Command, parentPath string, index *[]Command
 	}
 	path += cmd.Name()
 
-	// Get topic from annotation
+	// Get topic from annotation, inherit from parent if not set
 	topic := ""
 	if cmd.Annotations != nil {
 		topic = cmd.Annotations[cmdutil.TopicAnnotation]
+	}
+	// Inherit parent's topic if command has no topic annotation
+	if topic == "" && parentTopic != "" {
+		topic = parentTopic
 	}
 
 	// Get aliases from the Aliases field
@@ -60,9 +64,9 @@ func buildIndexRecursive(cmd *cobra.Command, parentPath string, index *[]Command
 		})
 	}
 
-	// Recursively process subcommands
+	// Recursively process subcommands, passing current topic as parent
 	for _, child := range cmd.Commands() {
-		buildIndexRecursive(child, path, index)
+		buildIndexRecursive(child, path, topic, index)
 	}
 }
 

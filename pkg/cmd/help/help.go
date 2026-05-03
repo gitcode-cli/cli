@@ -2,6 +2,7 @@
 package help
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -17,6 +18,7 @@ type HelpOptions struct {
 	Search string
 	Topics bool
 	Topic  string
+	JSON   bool
 }
 
 // NewCmdHelp creates the help command with search and discovery features.
@@ -34,6 +36,7 @@ func NewCmdHelp(root *cobra.Command) *cobra.Command {
 			--search: Search commands by keyword
 			--topics: List all available topics
 			--topic:  Filter commands by topic
+			--json:   Output in JSON format (for discovery features only)
 		`),
 		Example: heredoc.Doc(`
 			# Show help for a command
@@ -43,16 +46,28 @@ func NewCmdHelp(root *cobra.Command) *cobra.Command {
 			# Search for commands containing "issue"
 			$ gc help --search issue
 
+			# Search with JSON output
+			$ gc help --search issue --json
+
 			# List all available topics
 			$ gc help --topics
 
+			# List topics with JSON output
+			$ gc help --topics --json
+
 			# Show commands related to pull-requests topic
 			$ gc help --topic pull-requests
+
+			# List all commands in JSON format
+			$ gc help --json
 		`),
 		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
-				// Standard help for specific command
+				// Standard help for specific command - JSON not supported for specific command help
+				if opts.JSON {
+					return cmdutil.NewUsageError("--json is only supported for discovery features (--search, --topics, --topic, or no args)")
+				}
 				target, _, err := root.Find(args)
 				if err != nil {
 					return cmdutil.NewUsageError(err.Error())
@@ -60,18 +75,30 @@ func NewCmdHelp(root *cobra.Command) *cobra.Command {
 				return standardHelp(target)
 			}
 
-			// Discovery features
+			// Discovery features with optional JSON output
 			if opts.Search != "" {
+				if opts.JSON {
+					return searchCommandsJSON(root, opts.Search, cmd.OutOrStdout())
+				}
 				return searchCommands(root, opts.Search, cmd.OutOrStdout())
 			}
 			if opts.Topics {
+				if opts.JSON {
+					return listTopicsJSON(root, cmd.OutOrStdout())
+				}
 				return listTopics(root, cmd.OutOrStdout())
 			}
 			if opts.Topic != "" {
+				if opts.JSON {
+					return filterByTopicJSON(root, opts.Topic, cmd.OutOrStdout())
+				}
 				return filterByTopic(root, opts.Topic, cmd.OutOrStdout())
 			}
 
-			// Default: show root help
+			// Default: show root help (JSON output for command list)
+			if opts.JSON {
+				return listCommandsJSON(root, cmd.OutOrStdout())
+			}
 			return standardHelp(root)
 		},
 	}
@@ -79,6 +106,7 @@ func NewCmdHelp(root *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&opts.Search, "search", "", "Search commands by keyword")
 	cmd.Flags().BoolVar(&opts.Topics, "topics", false, "List all available topics")
 	cmd.Flags().StringVar(&opts.Topic, "topic", "", "Filter commands by topic")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output in JSON format")
 
 	return cmd
 }
@@ -99,6 +127,7 @@ func discoveryHints() string {
   gc help --search <keyword>  Search commands by keyword
   gc help --topics            List all available topics
   gc help --topic <topic>     Filter commands by topic
+  gc help --json              Output in JSON format
   gc schema                   Print machine-readable command metadata
 
 For AI agents: Use "gc schema" for structured command discovery.
@@ -160,4 +189,89 @@ func filterByTopic(root *cobra.Command, topic string, out io.Writer) error {
 	}
 	fmt.Fprintf(out, "\n")
 	return nil
+}
+
+// JSON output types
+type commandJSON struct {
+	Path    string   `json:"path"`
+	Name    string   `json:"name"`
+	Short   string   `json:"short"`
+	Topic   string   `json:"topic,omitempty"`
+	Aliases []string `json:"aliases,omitempty"`
+}
+
+type commandsListJSON struct {
+	Commands []commandJSON `json:"commands"`
+}
+
+type searchResultsJSON struct {
+	Query   string        `json:"query"`
+	Results []commandJSON `json:"results"`
+}
+
+type topicsListJSON struct {
+	Topics []string `json:"topics"`
+}
+
+type topicCommandsJSON struct {
+	Topic    string        `json:"topic"`
+	Commands []commandJSON `json:"commands"`
+}
+
+func listCommandsJSON(root *cobra.Command, out io.Writer) error {
+	index := BuildIndex(root)
+	commands := make([]commandJSON, 0, len(index))
+	for _, cmd := range index {
+		commands = append(commands, commandJSON{
+			Path:    cmd.Path,
+			Name:    cmd.Name,
+			Short:   cmd.Short,
+			Topic:   cmd.Topic,
+			Aliases: cmd.Aliases,
+		})
+	}
+	return json.NewEncoder(out).Encode(commandsListJSON{Commands: commands})
+}
+
+func searchCommandsJSON(root *cobra.Command, keyword string, out io.Writer) error {
+	index := BuildIndex(root)
+	results := Search(index, keyword)
+	commands := make([]commandJSON, 0, len(results))
+	for _, cmd := range results {
+		commands = append(commands, commandJSON{
+			Path:    cmd.Path,
+			Name:    cmd.Name,
+			Short:   cmd.Short,
+			Topic:   cmd.Topic,
+			Aliases: cmd.Aliases,
+		})
+	}
+	return json.NewEncoder(out).Encode(searchResultsJSON{
+		Query:   keyword,
+		Results: commands,
+	})
+}
+
+func listTopicsJSON(root *cobra.Command, out io.Writer) error {
+	topics := CollectTopics(root)
+	return json.NewEncoder(out).Encode(topicsListJSON{Topics: topics})
+}
+
+func filterByTopicJSON(root *cobra.Command, topic string, out io.Writer) error {
+	index := BuildIndex(root)
+	results := FilterByTopic(index, topic)
+	commands := make([]commandJSON, 0, len(results))
+	for _, cmd := range results {
+		commands = append(commands, commandJSON{
+			Path:    cmd.Path,
+			Name:    cmd.Name,
+			Short:   cmd.Short,
+			Topic:   cmd.Topic,
+			Aliases: cmd.Aliases,
+		})
+	}
+	return json.NewEncoder(out).Encode(topicCommandsJSON{
+		Topic:    topic,
+		Commands: commands,
+	})
 }

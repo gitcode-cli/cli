@@ -40,6 +40,8 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 			Delete a release from a repository.
 
 			This will delete the release but not the associated git tag.
+
+			Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Delete a release

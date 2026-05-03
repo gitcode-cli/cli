@@ -49,6 +49,8 @@ func NewCmdMerge(f *cmdutil.Factory, runF func(*MergeOptions) error) *cobra.Comm
 		Short: "Merge a pull request",
 		Long: heredoc.Doc(`
 			Merge a pull request in a GitCode repository.
+
+				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Merge a PR
@@ -59,6 +61,9 @@ func NewCmdMerge(f *cmdutil.Factory, runF func(*MergeOptions) error) *cobra.Comm
 
 			# Merge and delete branch
 			$ gc pr merge 123 -R owner/repo --delete-branch
+
+			# Merge without confirmation (non-interactive)
+			$ gc pr merge 123 -R owner/repo --yes
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

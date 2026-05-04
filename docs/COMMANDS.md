@@ -217,6 +217,12 @@ gc repo list --visibility public
 # 输出 JSON
 gc repo list --json
 
+# 结构化输出（与 --json 等价）
+gc repo list --format json
+
+# 简洁输出
+gc repo list --format simple
+
 # 表格输出
 gc repo list --format table
 ```
@@ -496,6 +502,7 @@ gc issue close 1 -R infra-test/gctest1 --yes
 ```
 
 说明：
+- `-R` 在当前 Git 仓库目录执行时可省略，命令会自动推断目标仓库。
 - `issue close` 属于写操作，默认需要确认；非交互场景中显式传 `--yes`。
 - 命令会在关闭请求后验证 Issue 状态，避免服务端未实际关闭时误报成功。
 
@@ -553,6 +560,7 @@ gc issue reopen 1 -R infra-test/gctest1 --yes
 ```
 
 说明：
+- `-R` 在当前 Git 仓库目录执行时可省略，命令会自动推断目标仓库。
 - `issue reopen` 属于写操作，默认需要确认；非交互场景中显式传 `--yes`。
 - 命令会在重开请求后验证 Issue 状态。
 
@@ -1463,4 +1471,4 @@ gc issue --help
 
 ---
 
-**最后更新**: 2026-03-25
+**最后更新**: 2026-05-04

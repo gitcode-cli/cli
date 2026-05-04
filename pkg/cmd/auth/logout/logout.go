@@ -21,6 +21,7 @@ type LogoutOptions struct {
 	// Flags
 	Hostname string
 	Username string
+	Yes      bool
 }
 
 // NewCmdLogout creates the logout command
@@ -38,13 +39,20 @@ func NewCmdLogout(f *cmdutil.Factory, runF func(*LogoutOptions) error) *cobra.Co
 			Log out of a GitCode account.
 
 			This removes the stored authentication token.
+
+				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
+			# Interactive logout with confirmation
 			$ gc auth logout
 			? Confirm logout of gitcode.com? Yes
 			✓ Logged out of gitcode.com
 
+			# Logout from a specific hostname
 			$ gc auth logout --hostname gitcode.com
+
+			# Skip confirmation prompt
+			$ gc auth logout --yes
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -56,6 +64,7 @@ func NewCmdLogout(f *cmdutil.Factory, runF func(*LogoutOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "The hostname of the GitCode instance to log out of")
 	cmd.Flags().StringVarP(&opts.Username, "username", "u", "", "The username to log out of")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
 
 	return cmd
 }
@@ -72,7 +81,20 @@ func logoutRun(opts *LogoutOptions) error {
 	}
 
 	cs := opts.IO.ColorScheme()
+
+	// Check if there's an active token before prompting
 	_, source := authCfg.ActiveToken(opts.Hostname)
+
+	// Require confirmation before logout
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: opts.Hostname,
+		Prompt:   fmt.Sprintf("! This will log out of %s\nType the hostname to confirm: ", opts.Hostname),
+	}); err != nil {
+		return err
+	}
+
 	if err := authCfg.Logout(opts.Hostname, opts.Username); err != nil {
 		return fmt.Errorf("failed to clear stored authentication: %w", err)
 	}

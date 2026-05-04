@@ -2,7 +2,6 @@
 package help
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -230,7 +229,7 @@ func listCommandsJSON(root *cobra.Command, out io.Writer) error {
 			Aliases: cmd.Aliases,
 		})
 	}
-	return json.NewEncoder(out).Encode(commandsListJSON{Commands: commands})
+	return cmdutil.WriteJSON(out, commandsListJSON{Commands: commands})
 }
 
 func searchCommandsJSON(root *cobra.Command, keyword string, out io.Writer) error {
@@ -246,7 +245,7 @@ func searchCommandsJSON(root *cobra.Command, keyword string, out io.Writer) erro
 			Aliases: cmd.Aliases,
 		})
 	}
-	return json.NewEncoder(out).Encode(searchResultsJSON{
+	return cmdutil.WriteJSON(out, searchResultsJSON{
 		Query:   keyword,
 		Results: commands,
 	})
@@ -254,7 +253,7 @@ func searchCommandsJSON(root *cobra.Command, keyword string, out io.Writer) erro
 
 func listTopicsJSON(root *cobra.Command, out io.Writer) error {
 	topics := CollectTopics(root)
-	return json.NewEncoder(out).Encode(topicsListJSON{Topics: topics})
+	return cmdutil.WriteJSON(out, topicsListJSON{Topics: topics})
 }
 
 func filterByTopicJSON(root *cobra.Command, topic string, out io.Writer) error {
@@ -270,7 +269,7 @@ func filterByTopicJSON(root *cobra.Command, topic string, out io.Writer) error {
 			Aliases: cmd.Aliases,
 		})
 	}
-	return json.NewEncoder(out).Encode(topicCommandsJSON{
+	return cmdutil.WriteJSON(out, topicCommandsJSON{
 		Topic:    topic,
 		Commands: commands,
 	})

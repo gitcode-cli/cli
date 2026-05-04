@@ -22,7 +22,9 @@ type ListOptions struct {
 	Repository string
 
 	// Flags
-	JSON bool
+	Limit int
+	Page  int
+	JSON  bool
 }
 
 // NewCmdList creates the list command
@@ -43,6 +45,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			# List milestones
 			$ gc milestone list -R owner/repo
 
+			# List milestones with pagination
+			$ gc milestone list -R owner/repo --limit 50 --page 2
+
 			# List milestones as JSON
 			$ gc milestone list -R owner/repo --json
 		`),
@@ -55,6 +60,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
+	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of milestones to list")
+	cmd.Flags().IntVar(&opts.Page, "page", 1, "Page number")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
@@ -79,7 +86,10 @@ func listRun(opts *ListOptions) error {
 	}
 
 	// List milestones
-	milestones, err := api.ListRepoMilestones(client, owner, repo)
+	milestones, err := api.ListRepoMilestones(client, owner, repo, &api.MilestoneListOptions{
+		PerPage: opts.Limit,
+		Page:    opts.Page,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to list milestones: %w", err)
 	}

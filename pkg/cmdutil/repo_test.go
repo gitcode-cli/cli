@@ -29,7 +29,7 @@ func TestResolveRepo(t *testing.T) {
 		{
 			name:     "missing repo and git context",
 			baseRepo: func() (string, error) { return "", errors.New("not in a git repository") },
-			wantErr:  "could not determine current repository",
+			wantErr:  "not in a git repository",
 		},
 		{
 			name:    "missing repo and resolver",

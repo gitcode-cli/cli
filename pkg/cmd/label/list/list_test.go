@@ -38,11 +38,11 @@ func TestNewCmdListJSONFlag(t *testing.T) {
 	}
 }
 
-func TestNewCmdListDoesNotExposeDeadLimitFlag(t *testing.T) {
+func TestNewCmdListLimitFlagExists(t *testing.T) {
 	f := cmdutil.TestFactory()
 	cmd := NewCmdList(f, nil)
 
-	if flag := cmd.Flags().Lookup("limit"); flag != nil {
-		t.Fatalf("unexpected dead limit flag: %#v", flag)
+	if flag := cmd.Flags().Lookup("limit"); flag == nil {
+		t.Fatal("expected limit flag to exist")
 	}
 }

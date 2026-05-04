@@ -40,13 +40,13 @@ func TestNewCmdList(t *testing.T) {
 	}
 }
 
-func TestNewCmdListDoesNotExposeDeadFlags(t *testing.T) {
+func TestNewCmdListFlagsExist(t *testing.T) {
 	f := cmdutil.TestFactory()
 	cmd := NewCmdList(f, nil)
 
-	for _, name := range []string{"state", "limit"} {
-		if flag := cmd.Flags().Lookup(name); flag != nil {
-			t.Fatalf("unexpected dead flag %q", name)
+	for _, name := range []string{"limit", "page"} {
+		if flag := cmd.Flags().Lookup(name); flag == nil {
+			t.Fatalf("expected flag %q to exist", name)
 		}
 	}
 }

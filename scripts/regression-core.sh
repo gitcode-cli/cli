@@ -112,7 +112,7 @@ if [[ -z "${token_out//[$'\n\r\t ']}" ]]; then
 fi
 
 log "Auth Logout"
-run_capture logout_out "$GC_BIN" auth logout
+run_capture logout_out "$GC_BIN" auth logout --yes
 assert_contains "$logout_out" "Cleared stored authentication"
 
 log "Auth Status After Logout"

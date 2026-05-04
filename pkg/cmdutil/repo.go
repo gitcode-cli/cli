@@ -2,6 +2,7 @@ package cmdutil
 
 import (
 	"fmt"
+	"strings"
 
 	gitpkg "gitcode.com/gitcode-cli/cli/git"
 )
@@ -18,6 +19,10 @@ func ResolveRepo(repo string, baseRepo func() (string, error)) (string, error) {
 
 	detectedRepo, err := baseRepo()
 	if err != nil {
+		// Preserve clear agent-friendly errors like "not in a git repository"
+		if strings.Contains(err.Error(), "not in a git repository") {
+			return "", NewUsageError(err.Error())
+		}
 		return "", NewUsageError("no repository specified and could not determine current repository")
 	}
 	if detectedRepo == "" {

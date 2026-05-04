@@ -119,6 +119,7 @@ func viewRun(opts *ViewOptions) error {
 		fmt.Fprintf(opts.IO.Out, "  %s\n", repo.Description)
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")
+	fmt.Fprintf(opts.IO.Out, "  ID: %s\n", cmdutil.FormatAPIID(repo.ID))
 	fmt.Fprintf(opts.IO.Out, "  Language: %s\n", repo.Language)
 	fmt.Fprintf(opts.IO.Out, "  Stars: %d  Forks: %d  Issues: %d\n", repo.StargazersCount, repo.ForksCount, repo.OpenIssuesCount)
 	fmt.Fprintf(opts.IO.Out, "  Default branch: %s\n", repo.DefaultBranch)

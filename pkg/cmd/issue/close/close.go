@@ -27,6 +27,17 @@ type CloseOptions struct {
 	// Flags
 	Comment string
 	Yes     bool
+	JSON    bool
+}
+
+// CloseResult represents the JSON output for issue close
+type CloseResult struct {
+	Number  int    `json:"number"`
+	State   string `json:"state"`
+	Owner   string `json:"owner"`
+	Repo    string `json:"repo"`
+	URL     string `json:"url"`
+	Comment string `json:"comment,omitempty"`
 }
 
 // NewCmdClose creates the close command
@@ -51,6 +62,9 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 
 			# Close with a comment
 			$ gc issue close 123 --comment "Fixed in PR #456"
+
+			# Output as JSON
+			$ gc issue close 123 --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -70,6 +84,7 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Add a comment before closing")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -123,6 +138,21 @@ func closeRun(opts *CloseOptions) error {
 	issue, err := api.CloseIssue(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to close issue: %w", err)
+	}
+
+	result := CloseResult{
+		Number: opts.Number,
+		State:  issue.State,
+		Owner:  owner,
+		Repo:   repo,
+		URL:    issue.HTMLURL,
+	}
+	if opts.Comment != "" {
+		result.Comment = opts.Comment
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Closed issue #%s in %s/%s\n", cs.Red("✗"), issue.Number, owner, repo)

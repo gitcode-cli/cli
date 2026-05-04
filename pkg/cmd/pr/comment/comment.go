@@ -32,6 +32,18 @@ type CommentOptions struct {
 	BodyFile string
 	Path     string // File path for inline comment
 	Position int    // Diff position for inline comment
+	JSON     bool
+}
+
+// CommentResult represents the JSON output for pr comment
+type CommentResult struct {
+	ID        string `json:"id"`
+	URL       string `json:"url"`
+	Author    string `json:"author,omitempty"`
+	CreatedAt string `json:"created_at,omitempty"`
+	Path      string `json:"path,omitempty"`
+	Position  int    `json:"position,omitempty"`
+	Body      string `json:"body"`
 }
 
 // NewCmdComment creates the comment command
@@ -70,6 +82,9 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 			$ gc pr diff 123 -R owner/repo
 			# Then add inline comment with the actual file path:
 			$ gc pr comment 123 --body "Consider renaming this" --path api/auth.go --position 1 -R owner/repo
+
+			# Output as JSON
+			$ gc pr comment 123 --body "This looks good" --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -91,6 +106,7 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 	cmd.Flags().StringVarP(&opts.BodyFile, "body-file", "F", "", "Read comment body from file (use - for stdin)")
 	cmd.Flags().StringVar(&opts.Path, "path", "", "File path for inline comment")
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Diff position for inline comment")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -149,25 +165,48 @@ func commentRun(opts *CommentOptions) error {
 		return fmt.Errorf("failed to create comment: %w", err)
 	}
 
-	// Output
-	fmt.Fprintf(opts.IO.Out, "%s Added comment to pull request #%d\n", cs.Green("✓"), opts.Number)
-	fmt.Fprintf(opts.IO.Out, "  ID: %s\n", cmdutil.FormatAPIID(comment.ID))
+	result := CommentResult{
+		ID:   cmdutil.FormatAPIID(comment.ID),
+		URL:  fmt.Sprintf("https://gitcode.com/%s/%s/pulls/%d#comment_%s", owner, repo, opts.Number, cmdutil.FormatAPIID(comment.ID)),
+		Body: body,
+	}
 	if comment.User != nil {
-		fmt.Fprintf(opts.IO.Out, "  Author: %s\n", comment.User.Login)
+		result.Author = comment.User.Login
 	}
 	if !comment.CreatedAt.IsZero() {
-		fmt.Fprintf(opts.IO.Out, "  Created: %s\n", comment.CreatedAt.Format("2006-01-02 15:04"))
+		result.CreatedAt = comment.CreatedAt.Format("2006-01-02 15:04:05")
 	}
 	if comment.DiffFile != "" {
-		fmt.Fprintf(opts.IO.Out, "  File: %s (position %v)\n", comment.DiffFile, comment.DiffPosition)
-	}
-	if body != "" {
-		preview := body
-		if len(preview) > 100 {
-			preview = preview[:100] + "..."
+		result.Path = comment.DiffFile
+		// Handle DiffPosition as interface{} - convert to int if possible
+		if pos, ok := comment.DiffPosition.(int); ok {
+			result.Position = pos
+		} else if pos, ok := comment.DiffPosition.(float64); ok {
+			result.Position = int(pos)
 		}
-		fmt.Fprintf(opts.IO.Out, "  Body: %s\n", preview)
 	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, result)
+	}
+
+	// Output
+	fmt.Fprintf(opts.IO.Out, "%s Added comment to pull request #%d\n", cs.Green("✓"), opts.Number)
+	fmt.Fprintf(opts.IO.Out, "  ID: %s\n", result.ID)
+	if result.Author != "" {
+		fmt.Fprintf(opts.IO.Out, "  Author: %s\n", result.Author)
+	}
+	if result.CreatedAt != "" {
+		fmt.Fprintf(opts.IO.Out, "  Created: %s\n", result.CreatedAt)
+	}
+	if result.Path != "" {
+		fmt.Fprintf(opts.IO.Out, "  File: %s (position %d)\n", result.Path, result.Position)
+	}
+	preview := body
+	if len(preview) > 100 {
+		preview = preview[:100] + "..."
+	}
+	fmt.Fprintf(opts.IO.Out, "  Body: %s\n", preview)
 	return nil
 }
 

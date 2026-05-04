@@ -31,6 +31,16 @@ type CommentOptions struct {
 	// Flags
 	Body     string
 	BodyFile string
+	JSON     bool
+}
+
+// CommentResult represents the JSON output for issue comment
+type CommentResult struct {
+	ID        string `json:"id"`
+	URL       string `json:"url"`
+	Author    string `json:"author,omitempty"`
+	CreatedAt string `json:"created_at,omitempty"`
+	Body      string `json:"body"`
 }
 
 // NewCmdComment creates the comment command
@@ -59,6 +69,9 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 
 			# Add comment from stdin
 			$ echo "Comment from stdin" | gc issue comment 123 --body-file - -R owner/repo
+
+			# Output as JSON
+			$ gc issue comment 123 --body "This is a comment" --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -78,6 +91,7 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "Comment body")
 	cmd.Flags().StringVarP(&opts.BodyFile, "body-file", "F", "", "Read comment body from file (use - for stdin)")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 	cmd.AddCommand(edit.NewCmdEdit(f, nil))
 
 	return cmd
@@ -126,22 +140,36 @@ func commentRun(opts *CommentOptions) error {
 		return fmt.Errorf("failed to create comment: %w", err)
 	}
 
-	// Output
-	fmt.Fprintf(opts.IO.Out, "%s Added comment to issue #%d\n", cs.Green("✓"), opts.Number)
-	fmt.Fprintf(opts.IO.Out, "  ID: %s\n", cmdutil.FormatAPIID(comment.ID))
+	result := CommentResult{
+		ID:   cmdutil.FormatAPIID(comment.ID),
+		URL:  fmt.Sprintf("https://gitcode.com/%s/%s/issues/%d#comment_%s", owner, repo, opts.Number, cmdutil.FormatAPIID(comment.ID)),
+		Body: body,
+	}
 	if comment.User != nil {
-		fmt.Fprintf(opts.IO.Out, "  Author: %s\n", comment.User.Login)
+		result.Author = comment.User.Login
 	}
 	if !comment.CreatedAt.IsZero() {
-		fmt.Fprintf(opts.IO.Out, "  Created: %s\n", comment.CreatedAt.Format("2006-01-02 15:04"))
+		result.CreatedAt = comment.CreatedAt.Format("2006-01-02 15:04:05")
 	}
-	if body != "" {
-		preview := body
-		if len(preview) > 100 {
-			preview = preview[:100] + "..."
-		}
-		fmt.Fprintf(opts.IO.Out, "  Body: %s\n", preview)
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
+
+	// Output
+	fmt.Fprintf(opts.IO.Out, "%s Added comment to issue #%d\n", cs.Green("✓"), opts.Number)
+	fmt.Fprintf(opts.IO.Out, "  ID: %s\n", result.ID)
+	if result.Author != "" {
+		fmt.Fprintf(opts.IO.Out, "  Author: %s\n", result.Author)
+	}
+	if result.CreatedAt != "" {
+		fmt.Fprintf(opts.IO.Out, "  Created: %s\n", result.CreatedAt)
+	}
+	preview := body
+	if len(preview) > 100 {
+		preview = preview[:100] + "..."
+	}
+	fmt.Fprintf(opts.IO.Out, "  Body: %s\n", preview)
 	return nil
 }
 

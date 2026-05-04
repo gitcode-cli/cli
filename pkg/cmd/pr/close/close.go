@@ -18,6 +18,7 @@ import (
 type CloseOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -26,6 +27,17 @@ type CloseOptions struct {
 	// Flags
 	Comment string
 	Yes     bool
+	JSON    bool
+}
+
+// CloseResult represents the JSON output for pr close
+type CloseResult struct {
+	Number  int    `json:"number"`
+	State   string `json:"state"`
+	Owner   string `json:"owner"`
+	Repo    string `json:"repo"`
+	URL     string `json:"url"`
+	Comment string `json:"comment,omitempty"`
 }
 
 // NewCmdClose creates the close command
@@ -33,6 +45,7 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 	opts := &CloseOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -49,6 +62,9 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 
 			# Close with a comment
 			$ gc pr close 123 -R owner/repo --comment "Not needed anymore" --yes
+
+			# Output as JSON
+			$ gc pr close 123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -68,6 +84,7 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Add a comment before closing")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -88,7 +105,11 @@ func closeRun(opts *CloseOptions) error {
 	client.SetToken(token, "environment")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -113,9 +134,24 @@ func closeRun(opts *CloseOptions) error {
 	}
 
 	// Close PR
-	_, err = api.ClosePullRequest(client, owner, repo, opts.Number)
+	pr, err := api.ClosePullRequest(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to close PR: %w", err)
+	}
+
+	result := CloseResult{
+		Number: opts.Number,
+		State:  pr.State,
+		Owner:  owner,
+		Repo:   repo,
+		URL:    pr.HTMLURL,
+	}
+	if opts.Comment != "" {
+		result.Comment = opts.Comment
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Closed PR #%d in %s/%s\n", cs.Red("✗"), opts.Number, owner, repo)

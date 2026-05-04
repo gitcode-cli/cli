@@ -18,6 +18,7 @@ import (
 type ReadyOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -27,6 +28,16 @@ type ReadyOptions struct {
 	WIP   bool
 	Ready bool
 	Yes   bool
+	JSON  bool
+}
+
+// ReadyResult represents the JSON output for pr ready
+type ReadyResult struct {
+	Number int    `json:"number"`
+	Draft  bool   `json:"draft"`
+	Owner  string `json:"owner"`
+	Repo   string `json:"repo"`
+	URL    string `json:"url"`
 }
 
 // NewCmdReady creates the ready command
@@ -34,6 +45,7 @@ func NewCmdReady(f *cmdutil.Factory, runF func(*ReadyOptions) error) *cobra.Comm
 	opts := &ReadyOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -50,6 +62,9 @@ func NewCmdReady(f *cmdutil.Factory, runF func(*ReadyOptions) error) *cobra.Comm
 
 			# Mark PR as work-in-progress
 			$ gc pr ready 123 -R owner/repo --wip
+
+			# Output as JSON
+			$ gc pr ready 123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -70,6 +85,7 @@ func NewCmdReady(f *cmdutil.Factory, runF func(*ReadyOptions) error) *cobra.Comm
 	cmd.Flags().BoolVarP(&opts.WIP, "wip", "w", false, "Mark as work-in-progress")
 	cmd.Flags().BoolVarP(&opts.Ready, "ready", "r", false, "Mark as ready for review")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -90,7 +106,11 @@ func readyRun(opts *ReadyOptions) error {
 	client.SetToken(token, "environment")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -127,6 +147,18 @@ func readyRun(opts *ReadyOptions) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update PR: %w", err)
+	}
+
+	result := ReadyResult{
+		Number: opts.Number,
+		Draft:  pr.Draft,
+		Owner:  owner,
+		Repo:   repo,
+		URL:    pr.HTMLURL,
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
 
 	// Output

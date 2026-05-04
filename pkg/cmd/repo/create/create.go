@@ -87,6 +87,11 @@ func createRun(opts *CreateOptions) error {
 	}
 	client.SetToken(token, "environment")
 
+	// Validate mutually exclusive flags
+	if opts.Public && opts.Private {
+		return cmdutil.NewUsageError("cannot use both --public and --private")
+	}
+
 	// Create repo
 	private := opts.Private
 	if opts.Public {

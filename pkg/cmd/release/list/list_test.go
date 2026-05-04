@@ -74,6 +74,7 @@ func TestListRunMarksOnlyFirstPublishedReleaseAsLatest(t *testing.T) {
 			}, nil
 		},
 		Repository: "owner/repo",
+		Limit:      30,
 	})
 	if err != nil {
 		t.Fatalf("listRun() error = %v", err)
@@ -114,6 +115,7 @@ func TestListRunUsesBaseRepoWhenRepoOmitted(t *testing.T) {
 		BaseRepo: func() (string, error) {
 			return "owner/repo", nil
 		},
+		Limit: 30,
 	})
 	if err != nil {
 		t.Fatalf("listRun() error = %v", err)

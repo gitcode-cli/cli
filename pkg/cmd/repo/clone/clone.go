@@ -86,6 +86,11 @@ func NewCmdClone(f *cmdutil.Factory, runF func(*CloneOptions) error) *cobra.Comm
 func cloneRun(opts *CloneOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	// Validate depth
+	if opts.Depth < 0 {
+		return cmdutil.NewUsageError("--depth must be greater than 0")
+	}
+
 	// Parse repository
 	repoURL, err := parseRepoURL(opts.Repository, opts.GitProtocol)
 	if err != nil {

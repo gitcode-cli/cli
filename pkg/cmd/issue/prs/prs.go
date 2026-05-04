@@ -104,6 +104,11 @@ func prsRun(opts *PrsOptions) error {
 		return err
 	}
 
+	// Validate mode
+	if opts.Mode != 0 && opts.Mode != 1 {
+		return cmdutil.NewUsageError("mode must be 0 or 1")
+	}
+
 	// Get issue PRs
 	prs, err := api.GetIssuePullRequests(client, owner, repo, opts.Number, opts.Mode)
 	if err != nil {

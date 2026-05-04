@@ -21,6 +21,7 @@ import (
 type ReviewOptions struct {
 	IO              *iostreams.IOStreams
 	HttpClient      func() (*http.Client, error)
+	BaseRepo        func() (string, error)
 	ReviewPR        func(*api.Client, string, string, int, *api.ReviewPROptions) error
 	CreatePRComment func(*api.Client, string, string, int, *api.CreatePRCommentOptions) (*api.PRComment, error)
 
@@ -34,6 +35,17 @@ type ReviewOptions struct {
 	Comment     string
 	CommentFile string
 	Force       bool // Force approval (admin only)
+	JSON        bool
+}
+
+// ReviewResult represents the JSON output for pr review
+type ReviewResult struct {
+	Number  int    `json:"number"`
+	Action  string `json:"action"`
+	Owner   string `json:"owner"`
+	Repo    string `json:"repo"`
+	URL     string `json:"url"`
+	Comment string `json:"comment,omitempty"`
 }
 
 // NewCmdReview creates the review command
@@ -41,6 +53,7 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 	opts := &ReviewOptions{
 		IO:              f.IOStreams,
 		HttpClient:      f.HttpClient,
+		BaseRepo:        f.BaseRepo,
 		ReviewPR:        api.ReviewPR,
 		CreatePRComment: api.CreatePRComment,
 	}
@@ -49,39 +62,42 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 		Use:   "review <number>",
 		Short: "Review a pull request",
 		Long: heredoc.Doc(`
-		Review a pull request in a GitCode repository.
+			Review a pull request in a GitCode repository.
 
-		You can approve or comment on a PR. GitCode's current API does not
-		support "request changes", so --request returns a clear error.
+			You can approve or comment on a PR. GitCode's current API does not
+			support "request changes", so --request returns a clear error.
 
-		Note: --approve requires GitCode's "approval permission", which is
-		separate from the "merge permission" used by 'gc pr merge'. Users
-		with merge permission cannot approve PRs without explicit approval
-		permission granted by the repository administrators. If you receive
-		a 403 Forbidden error, use --comment to leave review feedback instead.
+			Note: --approve requires GitCode's "approval permission", which is
+			separate from the "merge permission" used by 'gc pr merge'. Users
+			with merge permission cannot approve PRs without explicit approval
+			permission granted by the repository administrators. If you receive
+			a 403 Forbidden error, use --comment to leave review feedback instead.
 		`),
 		Example: heredoc.Doc(`
-				# Approve a PR
-				$ gc pr review 123 -R owner/repo --approve
+			# Approve a PR
+			$ gc pr review 123 -R owner/repo --approve
 
-				# Comment on a PR
-				$ gc pr review 123 -R owner/repo --comment "Looks good to me"
+			# Comment on a PR
+			$ gc pr review 123 -R owner/repo --comment "Looks good to me"
 
-				# Comment from a file
-				$ gc pr review 123 -R owner/repo --comment-file review-notes.md
+			# Comment from a file
+			$ gc pr review 123 -R owner/repo --comment-file review-notes.md
 
-				# Comment from stdin
-				$ gc pr review 123 -R owner/repo --comment-file -
+			# Comment from stdin
+			$ gc pr review 123 -R owner/repo --comment-file -
 
-				# Approve a PR and leave a comment
-				$ gc pr review 123 -R owner/repo --approve --comment "LGTM"
+			# Approve a PR and leave a comment
+			$ gc pr review 123 -R owner/repo --approve --comment "LGTM"
 
-				# Approve a PR with comment from file
-				$ gc pr review 123 -R owner/repo --approve --comment-file self-check.md
+			# Approve a PR with comment from file
+			$ gc pr review 123 -R owner/repo --approve --comment-file self-check.md
 
-				# Force approve a PR (admin only)
-				$ gc pr review 123 -R owner/repo --approve --force
-			`),
+			# Force approve a PR (admin only)
+			$ gc pr review 123 -R owner/repo --approve --force
+
+			# Output as JSON
+			$ gc pr review 123 -R owner/repo --approve --json
+		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
@@ -103,6 +119,7 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Comment body")
 	cmd.Flags().StringVarP(&opts.CommentFile, "comment-file", "F", "", "Read comment from file (use - for stdin)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Force approval (admin only)")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -152,10 +169,16 @@ func reviewRun(opts *ReviewOptions) error {
 	}
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
 	if err != nil {
 		return err
 	}
+	owner, repo, err := parseRepo(repository)
+	if err != nil {
+		return err
+	}
+
+	prURL := fmt.Sprintf("https://gitcode.com/%s/%s/pulls/%d", owner, repo, opts.Number)
 
 	// Handle force approval (admin only)
 	if opts.Force {
@@ -168,6 +191,18 @@ func reviewRun(opts *ReviewOptions) error {
 		if err != nil {
 			return fmt.Errorf("failed to force approve PR: %w", err)
 		}
+
+		result := ReviewResult{
+			Number: opts.Number,
+			Action: "force_approved",
+			Owner:  owner,
+			Repo:   repo,
+			URL:    prURL,
+		}
+
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, result)
+		}
 		fmt.Fprintf(opts.IO.Out, "%s %s PR #%d\n", cs.Green("✓"), cs.Green("force approved"), opts.Number)
 		return nil
 	}
@@ -179,6 +214,19 @@ func reviewRun(opts *ReviewOptions) error {
 		})
 		if err != nil {
 			return fmt.Errorf("failed to comment on PR: %w", err)
+		}
+
+		result := ReviewResult{
+			Number:  opts.Number,
+			Action:  "commented",
+			Owner:   owner,
+			Repo:    repo,
+			URL:     fmt.Sprintf("%s#comment_%s", prURL, cmdutil.FormatAPIID(comment.ID)),
+			Comment: opts.Comment,
+		}
+
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, result)
 		}
 		fmt.Fprintf(opts.IO.Out, "%s Commented on PR #%d\n", cs.Green("✓"), opts.Number)
 		if comment.Body != "" {
@@ -202,6 +250,19 @@ func reviewRun(opts *ReviewOptions) error {
 
 		if err := opts.ReviewPR(client, owner, repo, opts.Number, &api.ReviewPROptions{}); err != nil {
 			return fmt.Errorf("failed to approve PR: %w", err)
+		}
+
+		result := ReviewResult{
+			Number:  opts.Number,
+			Action:  "approved",
+			Owner:   owner,
+			Repo:    repo,
+			URL:     prURL,
+			Comment: opts.Comment,
+		}
+
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, result)
 		}
 
 		fmt.Fprintf(opts.IO.Out, "%s %s PR #%d\n", cs.Green("✓"), cs.Green("approved"), opts.Number)

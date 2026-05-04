@@ -25,6 +25,7 @@ type CreateOptions struct {
 	// Flags
 	Color       string
 	Description string
+	JSON        bool
 }
 
 // NewCmdCreate creates the create command
@@ -46,6 +47,9 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 			# Create with description
 			$ gc label create enhancement --color "#00ff00" --description "New features"
+
+			# Output as JSON
+			$ gc label create bug --color "#ff0000" --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -61,6 +65,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Color, "color", "c", "#ededed", "Color in hex format")
 	cmd.Flags().StringVarP(&opts.Description, "description", "d", "", "Description")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -94,6 +99,10 @@ func createRun(opts *CreateOptions) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create label: %w", err)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, label)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Created label %s in %s/%s\n", cs.Green("✓"), cs.Bold(label.Name), owner, repo)

@@ -26,6 +26,7 @@ type CreateOptions struct {
 	// Flags
 	Description string
 	DueDate     string
+	JSON        bool
 }
 
 // NewCmdCreate creates the create command
@@ -50,6 +51,9 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 			# Create with description
 			$ gc milestone create "v2.0" --description "Next release" --due-date "2025-01-31" -R owner/repo
+
+			# Output as JSON
+			$ gc milestone create "v1.0" -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -65,6 +69,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Description, "description", "d", "", "Description")
 	cmd.Flags().StringVarP(&opts.DueDate, "due-date", "D", "", "Due date (YYYY-MM-DD)")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -111,6 +116,10 @@ func createRun(opts *CreateOptions) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create milestone: %w", err)
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, ms)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Created milestone #%d %s in %s/%s\n", cs.Green("✓"), ms.Number, cs.Bold(ms.Title), owner, repo)

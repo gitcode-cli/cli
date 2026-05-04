@@ -23,6 +23,18 @@ type StatusOptions struct {
 	Hostname    string
 	HostnameSet bool
 	ShowToken   bool
+	JSON        bool
+}
+
+// AuthStatus represents the JSON output structure for auth status
+type AuthStatus struct {
+	Hostname    string `json:"hostname"`
+	LoggedIn    bool   `json:"logged_in"`
+	Username    string `json:"username,omitempty"`
+	TokenSource string `json:"token_source,omitempty"`
+	TokenValid  bool   `json:"token_valid,omitempty"`
+	GitProtocol string `json:"git_protocol,omitempty"`
+	Token       string `json:"token,omitempty"`
 }
 
 // NewCmdStatus creates the status command
@@ -37,18 +49,22 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 		Use:   "status",
 		Short: "View authentication status",
 		Long: heredoc.Doc(`
-				View information about your authentication status.
+			View information about your authentication status.
 
-				When no hostname is specified, checks for token from:
-				1. GC_TOKEN environment variable
-				2. GITCODE_TOKEN environment variable
-				3. Stored credentials from local config (~/.config/gc/auth.json)
-			`),
+			When no hostname is specified, checks for token from:
+			1. GC_TOKEN environment variable
+			2. GITCODE_TOKEN environment variable
+			3. Stored credentials from local config (~/.config/gc/auth.json)
+		`),
 		Example: heredoc.Doc(`
+			# Check authentication status
 			$ gc auth status
 			gitcode.com
 			  ✓ Logged in as username (GC_TOKEN)
 			  ✓ Git operations protocol: https
+
+			# Output as JSON
+			$ gc auth status --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.HostnameSet = cmd.Flags().Changed("hostname")
@@ -61,6 +77,7 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "Check a specific hostname")
 	cmd.Flags().BoolVar(&opts.ShowToken, "show-token", false, "Display the full auth token")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -87,14 +104,27 @@ func statusRun(opts *StatusOptions) error {
 		token, tokenSource = authCfg.StoredToken(opts.Hostname)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s\n", opts.Hostname)
+	// Build status for JSON output
+	status := AuthStatus{
+		Hostname: opts.Hostname,
+	}
 
 	if token == "" {
+		status.LoggedIn = false
+
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, status)
+		}
+
+		fmt.Fprintf(opts.IO.Out, "%s\n", opts.Hostname)
 		fmt.Fprintf(opts.IO.Out, "  %s Not logged in\n", cs.Red("✗"))
 		fmt.Fprintf(opts.IO.Out, "\n")
 		fmt.Fprintf(opts.IO.Out, "To authenticate, run: gc auth login\n")
 		return nil
 	}
+
+	status.LoggedIn = true
+	status.TokenSource = tokenSource
 
 	// Verify token
 	httpClient, err := opts.HttpClient()
@@ -104,13 +134,33 @@ func statusRun(opts *StatusOptions) error {
 
 	user, err := api.VerifyToken(httpClient, opts.Hostname, token)
 	if err != nil {
+		status.TokenValid = false
+
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, status)
+		}
+
+		fmt.Fprintf(opts.IO.Out, "%s\n", opts.Hostname)
 		fmt.Fprintf(opts.IO.Out, "  %s Token is invalid or expired\n", cs.Red("✗"))
 		fmt.Fprintf(opts.IO.Out, "\n")
 		fmt.Fprintf(opts.IO.Out, "To re-authenticate, run: gc auth login\n")
 		return nil
 	}
 
+	status.TokenValid = true
+	status.Username = user.Login
+	status.GitProtocol = cfg.GitProtocol(opts.Hostname).Value
+
+	if opts.ShowToken {
+		status.Token = token
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, status)
+	}
+
 	// Display logged in status
+	fmt.Fprintf(opts.IO.Out, "%s\n", opts.Hostname)
 	fmt.Fprintf(opts.IO.Out, "  %s Logged in as %s (%s)\n", cs.Green("✓"), user.Login, tokenSource)
 	fmt.Fprintf(opts.IO.Out, "  %s Git operations protocol: %s\n", cs.Green("✓"), cfg.GitProtocol(opts.Hostname).Value)
 

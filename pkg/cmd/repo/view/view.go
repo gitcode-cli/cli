@@ -50,6 +50,9 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 			# Open in browser
 			$ gc repo view owner/repo --web
+
+			# Output as JSON
+			$ gc repo view owner/repo --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {

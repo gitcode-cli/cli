@@ -48,6 +48,9 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 			# View in browser
 			$ gc release view v1.0.0 -R owner/repo --web
+
+			# Output as JSON
+			$ gc release view v1.0.0 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

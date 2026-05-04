@@ -48,6 +48,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# Limit the number of results
 			$ gc release list -R owner/repo --limit 10
+
+			# Output as JSON
+			$ gc release list -R owner/repo --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {

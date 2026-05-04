@@ -63,6 +63,9 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 			# Reopen with a comment
 			$ gc issue reopen 123 --comment "Still reproduces on latest version"
 
+			# Reopen in a specific repository
+			$ gc issue reopen 123 -R owner/repo --yes
+
 			# Output as JSON
 			$ gc issue reopen 123 --json
 		`),

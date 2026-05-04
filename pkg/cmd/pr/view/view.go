@@ -58,6 +58,9 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 			# View PR with relative time display
 			$ gc pr view 123 -R owner/repo --time-format relative
+
+			# Output as JSON
+			$ gc pr view 123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

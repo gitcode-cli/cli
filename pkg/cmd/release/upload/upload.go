@@ -66,6 +66,9 @@ func NewCmdUpload(f *cmdutil.Factory, runF func(*UploadOptions) error) *cobra.Co
 
 			# Label is currently unsupported by the GitCode API
 			$ gc release upload v1.0.0 app.zip -R owner/repo --label "linux-amd64"
+
+			# Output as JSON
+			$ gc release upload v1.0.0 app.zip -R owner/repo --json
 		`),
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

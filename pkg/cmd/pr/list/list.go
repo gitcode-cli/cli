@@ -64,6 +64,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# Render as a table
 			$ gc pr list -R owner/repo --format table
+
+			# Output as JSON
+			$ gc pr list -R owner/repo --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {

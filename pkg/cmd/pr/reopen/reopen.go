@@ -63,6 +63,9 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 			# Reopen with a comment
 			$ gc pr reopen 123 -R owner/repo --comment "Reopening for further changes"
 
+			# Non-interactive mode
+			$ gc pr reopen 123 -R owner/repo --yes
+
 			# Output as JSON
 			$ gc pr reopen 123 -R owner/repo --json
 		`),

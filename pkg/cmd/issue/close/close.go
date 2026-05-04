@@ -63,6 +63,9 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 			# Close with a comment
 			$ gc issue close 123 --comment "Fixed in PR #456"
 
+			# Close in a specific repository
+			$ gc issue close 123 -R owner/repo --yes
+
 			# Output as JSON
 			$ gc issue close 123 --json
 		`),

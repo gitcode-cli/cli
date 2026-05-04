@@ -74,6 +74,9 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 			# Create an issue with advanced custom fields
 			$ gc issue create -R owner/repo --title "Feature" --custom-fields-json '[{"id":"field","value":"demo"}]'
+
+			# Output as JSON
+			$ gc issue create -R owner/repo --title "Bug" --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {

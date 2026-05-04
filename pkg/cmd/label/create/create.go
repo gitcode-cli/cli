@@ -43,13 +43,13 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 		`),
 		Example: heredoc.Doc(`
 			# Create a bug label
-			$ gc label create bug --color "#ff0000"
+			$ gc label create bug --color "#ff0000" -R owner/repo
 
 			# Create with description
-			$ gc label create enhancement --color "#00ff00" --description "New features"
+			$ gc label create enhancement --color "#00ff00" --description "New features" -R owner/repo
 
 			# Output as JSON
-			$ gc label create bug --color "#ff0000" --json
+			$ gc label create bug --color "#ff0000" --json -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

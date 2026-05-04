@@ -108,7 +108,7 @@ func labelRun(opts *LabelOptions) error {
 	if opts.List {
 		issue, err := api.GetIssue(client, owner, repo, opts.Number)
 		if err != nil {
-			return fmt.Errorf("failed to get issue: %w", err)
+			return cmdutil.WrapNotFound(err, "issue #%d not found in %s/%s", opts.Number, owner, repo)
 		}
 
 		if len(issue.Labels) == 0 {

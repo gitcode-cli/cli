@@ -68,6 +68,22 @@ func NewNotFoundError(message string, cause error) error {
 	return NewCLIError(ExitNotFound, message, cause)
 }
 
+// WrapNotFound wraps an error as NotFoundError if it's a 404 API error.
+// Returns the original error if it's not a 404.
+// Usage: return cmdutil.WrapNotFound(err, "issue #%d not found in %s/%s", number, owner, repo)
+func WrapNotFound(err error, format string, args ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	var apiErr *api.APIError
+	if errors.As(err, &apiErr) && (apiErr.ErrorCode == 404 || apiErr.StatusCode == 404) {
+		return NewNotFoundError(fmt.Sprintf(format, args...), err)
+	}
+
+	return err
+}
+
 // FormatAPIID normalizes API IDs that may arrive as strings or JSON numbers.
 func FormatAPIID(id interface{}) string {
 	switch v := id.(type) {

@@ -96,7 +96,7 @@ func viewRun(opts *ViewOptions) error {
 
 	repo, err := api.GetRepo(client, owner, name)
 	if err != nil {
-		return fmt.Errorf("failed to get repository: %w", err)
+		return cmdutil.WrapNotFound(err, "repository %s/%s not found", owner, name)
 	}
 
 	// Open in browser if --web flag is set

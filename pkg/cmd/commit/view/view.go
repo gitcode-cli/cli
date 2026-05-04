@@ -98,7 +98,7 @@ func viewRun(opts *ViewOptions) error {
 	// Get commit
 	commit, err := api.GetCommit(client, owner, repo, opts.SHA, opts.ShowDiff)
 	if err != nil {
-		return fmt.Errorf("failed to get commit: %w", err)
+		return cmdutil.WrapNotFound(err, "commit %s not found in %s/%s", opts.SHA, owner, repo)
 	}
 
 	// Open in browser if --web flag is set

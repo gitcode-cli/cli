@@ -83,7 +83,7 @@ func diffRun(opts *DiffOptions) error {
 	// Get PR info
 	pr, err := api.GetPullRequest(client, owner, repo, opts.Number)
 	if err != nil {
-		return fmt.Errorf("failed to get PR: %w", err)
+		return cmdutil.WrapNotFound(err, "PR #%d not found in %s/%s", opts.Number, owner, repo)
 	}
 
 	// Get PR files and diffs

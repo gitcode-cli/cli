@@ -24,6 +24,15 @@ type DeleteOptions struct {
 	// Flags
 	Yes    bool
 	DryRun bool
+	JSON   bool
+}
+
+// DeleteResult represents the JSON output for label delete
+type DeleteResult struct {
+	Name   string `json:"name"`
+	Owner  string `json:"owner"`
+	Repo   string `json:"repo"`
+	Action string `json:"action"`
 }
 
 // NewCmdDelete creates the delete command
@@ -47,6 +56,9 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 
 			# Skip confirmation
 			$ gc label delete old-label --yes
+
+			# Output as JSON
+			$ gc label delete old-label --yes --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -62,6 +74,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview the deletion without deleting the label")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -77,6 +90,15 @@ func deleteRun(opts *DeleteOptions) error {
 
 	// Confirm deletion
 	if opts.DryRun {
+		result := DeleteResult{
+			Name:   opts.Name,
+			Owner:  owner,
+			Repo:   repo,
+			Action: "dry_run",
+		}
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, result)
+		}
 		fmt.Fprintf(opts.IO.Out, "Dry run: would delete label %s from %s/%s\n", opts.Name, owner, repo)
 		return nil
 	}
@@ -106,6 +128,17 @@ func deleteRun(opts *DeleteOptions) error {
 	err = api.DeleteLabel(client, owner, repo, opts.Name)
 	if err != nil {
 		return fmt.Errorf("failed to delete label: %w", err)
+	}
+
+	result := DeleteResult{
+		Name:   opts.Name,
+		Owner:  owner,
+		Repo:   repo,
+		Action: "deleted",
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Deleted label %s from %s/%s\n", cs.Red("✗"), opts.Name, owner, repo)

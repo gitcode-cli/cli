@@ -81,6 +81,8 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 			The source PR can be specified as:
 			- owner/repo#number (e.g., gitcode-cli/cli#123)
 			- Full URL (e.g., https://gitcode.com/gitcode-cli/cli/merge_requests/123)
+
+			Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Sync PR #123 from source repo to target repo

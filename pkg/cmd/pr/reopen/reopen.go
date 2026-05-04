@@ -40,6 +40,8 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 		Short: "Reopen a closed pull request",
 		Long: heredoc.Doc(`
 			Reopen a closed pull request in a GitCode repository.
+
+			Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Reopen a PR

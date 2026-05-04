@@ -75,6 +75,7 @@ func NewCmdClone(f *cmdutil.Factory, runF func(*CloneOptions) error) *cobra.Comm
 	}
 
 	cmd.Flags().StringVarP(&opts.GitProtocol, "git-protocol", "p", "https", "Git protocol to use (https/ssh)")
+	cmdutil.SetFlagEnum(cmd, "git-protocol", "https", "ssh")
 	cmd.Flags().IntVarP(&opts.Depth, "depth", "d", 0, "Create a shallow clone")
 	cmd.Flags().StringVarP(&opts.Branch, "branch", "b", "", "Branch to checkout")
 	cmd.Flags().BoolVarP(&opts.Recursive, "recursive", "r", false, "Clone submodules")

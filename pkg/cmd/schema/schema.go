@@ -21,16 +21,26 @@ type schemaFlag struct {
 	Enum      []string `json:"enum,omitempty"`
 }
 
+type schemaArgument struct {
+	Name     string `json:"name"`
+	Type     string `json:"type,omitempty"`
+	Required bool   `json:"required"`
+	Variadic bool   `json:"variadic,omitempty"`
+}
+
 type schemaCommand struct {
-	Name        string          `json:"name"`
-	Path        string          `json:"path"`
-	Use         string          `json:"use"`
-	Short       string          `json:"short,omitempty"`
-	Long        string          `json:"long,omitempty"`
-	Example     string          `json:"example,omitempty"`
-	Hidden      bool            `json:"hidden"`
-	Flags       []schemaFlag    `json:"flags,omitempty"`
-	Subcommands []schemaCommand `json:"subcommands,omitempty"`
+	Name        string           `json:"name"`
+	Path        string           `json:"path"`
+	Use         string           `json:"use"`
+	Short       string           `json:"short,omitempty"`
+	Long        string           `json:"long,omitempty"`
+	Example     string           `json:"example,omitempty"`
+	Hidden      bool             `json:"hidden"`
+	Topic       string           `json:"topic,omitempty"`
+	Aliases     []string         `json:"aliases,omitempty"`
+	Arguments   []schemaArgument `json:"arguments,omitempty"`
+	Flags       []schemaFlag     `json:"flags,omitempty"`
+	Subcommands []schemaCommand  `json:"subcommands,omitempty"`
 }
 
 type Options struct {
@@ -77,25 +87,61 @@ func NewCmdSchema(root *cobra.Command) *cobra.Command {
 }
 
 func buildSchema(cmd *cobra.Command) schemaCommand {
+	topic := ""
+	if cmd.Annotations != nil {
+		topic = cmd.Annotations[cmdutil.TopicAnnotation]
+	}
+
 	entry := schemaCommand{
-		Name:    cmd.Name(),
-		Path:    cmd.CommandPath(),
-		Use:     cmd.Use,
-		Short:   cmd.Short,
-		Long:    cmd.Long,
-		Example: cmd.Example,
-		Hidden:  cmd.Hidden,
-		Flags:   buildFlags(cmd),
+		Name:      cmd.Name(),
+		Path:      cmd.CommandPath(),
+		Use:       cmd.Use,
+		Short:     cmd.Short,
+		Long:      cmd.Long,
+		Example:   cmd.Example,
+		Hidden:    cmd.Hidden,
+		Topic:     topic,
+		Aliases:   cmd.Aliases,
+		Arguments: buildArguments(cmd),
+		Flags:     buildFlags(cmd),
 	}
 
 	for _, child := range cmd.Commands() {
-		if child.Name() == "help" {
+		// Exclude help and completion commands
+		if child.Name() == "help" || child.Name() == "completion" {
 			continue
 		}
 		entry.Subcommands = append(entry.Subcommands, buildSchema(child))
 	}
 
 	return entry
+}
+
+func buildArguments(cmd *cobra.Command) []schemaArgument {
+	var args []schemaArgument
+
+	// Parse argument information from cobra
+	// Args can be: NoArgs, OnlyValidArgs, ArbitraryArgs, MinimumNArgs, MaximumNArgs, ExactArgs, RangeArgs
+	// We extract positional argument info from the command's Use field
+	useParts := strings.Fields(cmd.Use)
+	// Skip the command name (first part)
+	for i, part := range useParts {
+		if i == 0 {
+			continue // Skip command name
+		}
+		arg := schemaArgument{
+			Name:     part,
+			Required: !strings.Contains(part, "...") && !strings.HasPrefix(part, "["),
+			Variadic: strings.Contains(part, "..."),
+		}
+		// Clean up the name
+		arg.Name = strings.TrimPrefix(arg.Name, "[")
+		arg.Name = strings.TrimSuffix(arg.Name, "]")
+		arg.Name = strings.TrimSuffix(arg.Name, "...")
+		args = append(args, arg)
+	}
+
+	return args
 }
 
 func buildFlags(cmd *cobra.Command) []schemaFlag {

@@ -75,6 +75,7 @@ func NewCmdComments(f *cmdutil.Factory, runF func(*CommentsOptions) error) *cobr
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 0, "Maximum number of comments to list (0 = all)")
 	cmd.Flags().StringVar(&opts.Order, "order", "asc", "Sort order (asc/desc)")
+	cmdutil.SetFlagEnum(cmd, "order", "asc", "desc")
 	cmd.Flags().StringVar(&opts.Since, "since", "", "Filter comments updated after this time (ISO 8601 format)")
 	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 

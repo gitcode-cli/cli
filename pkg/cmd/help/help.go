@@ -105,6 +105,7 @@ func NewCmdHelp(root *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&opts.Search, "search", "", "Search commands by keyword")
 	cmd.Flags().BoolVar(&opts.Topics, "topics", false, "List all available topics")
 	cmd.Flags().StringVar(&opts.Topic, "topic", "", "Filter commands by topic")
+	RegisterTopicEnum(cmd, "topic")
 	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output in JSON format")
 
 	return cmd

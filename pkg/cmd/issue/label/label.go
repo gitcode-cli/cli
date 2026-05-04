@@ -29,6 +29,17 @@ type LabelOptions struct {
 	Add    []string
 	Remove string
 	List   bool
+	JSON   bool
+}
+
+// LabelResult represents the JSON output for issue label operations
+type LabelResult struct {
+	Number int      `json:"number"`
+	Owner  string   `json:"owner"`
+	Repo   string   `json:"repo"`
+	Action string   `json:"action"`
+	Labels []string `json:"labels,omitempty"`
+	Label  string   `json:"label,omitempty"` // For remove action
 }
 
 // NewCmdLabel creates the label command
@@ -74,6 +85,7 @@ func NewCmdLabel(f *cmdutil.Factory, runF func(*LabelOptions) error) *cobra.Comm
 	cmd.Flags().StringSliceVarP(&opts.Add, "add", "a", nil, "Add labels (comma-separated)")
 	cmd.Flags().StringVarP(&opts.Remove, "remove", "r", "", "Remove a label")
 	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List labels")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -111,6 +123,22 @@ func labelRun(opts *LabelOptions) error {
 			return cmdutil.WrapNotFound(err, "issue #%d not found in %s/%s", opts.Number, owner, repo)
 		}
 
+		var labelNames []string
+		for _, label := range issue.Labels {
+			labelNames = append(labelNames, label.Name)
+		}
+
+		if opts.JSON {
+			result := LabelResult{
+				Number: opts.Number,
+				Owner:  owner,
+				Repo:   repo,
+				Action: "list",
+				Labels: labelNames,
+			}
+			return cmdutil.WriteJSON(opts.IO.Out, result)
+		}
+
 		if len(issue.Labels) == 0 {
 			fmt.Fprintf(opts.IO.Out, "No labels on issue #%s\n", issue.Number)
 			return nil
@@ -136,6 +164,22 @@ func labelRun(opts *LabelOptions) error {
 			return fmt.Errorf("failed to add labels: %w", err)
 		}
 
+		var addedNames []string
+		for _, l := range added {
+			addedNames = append(addedNames, l.Name)
+		}
+
+		if opts.JSON {
+			result := LabelResult{
+				Number: opts.Number,
+				Owner:  owner,
+				Repo:   repo,
+				Action: "add",
+				Labels: addedNames,
+			}
+			return cmdutil.WriteJSON(opts.IO.Out, result)
+		}
+
 		fmt.Fprintf(opts.IO.Out, "%s Added labels to issue #%d: %s\n", cs.Green("✓"), opts.Number, formatLabels(added))
 		return nil
 	}
@@ -145,6 +189,17 @@ func labelRun(opts *LabelOptions) error {
 		err := api.RemoveIssueLabel(client, owner, repo, opts.Number, opts.Remove)
 		if err != nil {
 			return fmt.Errorf("failed to remove label: %w", err)
+		}
+
+		if opts.JSON {
+			result := LabelResult{
+				Number: opts.Number,
+				Owner:  owner,
+				Repo:   repo,
+				Action: "remove",
+				Label:  opts.Remove,
+			}
+			return cmdutil.WriteJSON(opts.IO.Out, result)
 		}
 
 		fmt.Fprintf(opts.IO.Out, "%s Removed label '%s' from issue #%d\n", cs.Red("✗"), opts.Remove, opts.Number)

@@ -18,10 +18,37 @@ import (
 type DiffOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
 	Number     int
+
+	// Flags
+	JSON bool
+}
+
+// DiffFile represents a file in the diff
+type DiffFile struct {
+	Path    string `json:"path"`
+	OldPath string `json:"old_path,omitempty"`
+	Added   int    `json:"added"`
+	Removed int    `json:"removed"`
+	NewFile bool   `json:"new_file,omitempty"`
+	Deleted bool   `json:"deleted,omitempty"`
+	Renamed bool   `json:"renamed,omitempty"`
+}
+
+// DiffResult represents the JSON output for pr diff
+type DiffResult struct {
+	Number       int        `json:"number"`
+	Title        string     `json:"title"`
+	HeadBranch   string     `json:"head_branch"`
+	BaseBranch   string     `json:"base_branch"`
+	AddedLines   int        `json:"added_lines"`
+	RemovedLines int        `json:"removed_lines"`
+	FileCount    int        `json:"file_count"`
+	Files        []DiffFile `json:"files"`
 }
 
 // NewCmdDiff creates the diff command
@@ -29,6 +56,7 @@ func NewCmdDiff(f *cmdutil.Factory, runF func(*DiffOptions) error) *cobra.Comman
 	opts := &DiffOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -40,6 +68,9 @@ func NewCmdDiff(f *cmdutil.Factory, runF func(*DiffOptions) error) *cobra.Comman
 		Example: heredoc.Doc(`
 			# View PR diff
 			$ gc pr diff 123 -R owner/repo
+
+			# JSON output
+			$ gc pr diff 123 --json -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -57,6 +88,7 @@ func NewCmdDiff(f *cmdutil.Factory, runF func(*DiffOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -75,7 +107,12 @@ func diffRun(opts *DiffOptions) error {
 	client.SetToken(token, "environment")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -90,6 +127,40 @@ func diffRun(opts *DiffOptions) error {
 	files, err := api.GetPRFiles(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to get PR diff: %w", err)
+	}
+
+	if opts.JSON {
+		var diffFiles []DiffFile
+		for _, diff := range files.Diffs {
+			df := DiffFile{
+				Path:    diff.NewPath,
+				OldPath: diff.OldPath,
+			}
+			if diff.Statistic != nil {
+				df.Added = diff.Statistic.Additions
+				df.Removed = diff.Statistic.Deletions
+			}
+			if diff.OldPath == "" && diff.NewPath != "" {
+				df.NewFile = true
+			} else if diff.OldPath != "" && diff.NewPath == "" {
+				df.Deleted = true
+			} else if diff.OldPath != diff.NewPath {
+				df.Renamed = true
+			}
+			diffFiles = append(diffFiles, df)
+		}
+
+		result := DiffResult{
+			Number:       pr.Number,
+			Title:        pr.Title,
+			HeadBranch:   pr.Head.Ref,
+			BaseBranch:   pr.Base.Ref,
+			AddedLines:   files.AddedLines,
+			RemovedLines: files.RemoveLines,
+			FileCount:    files.Count,
+			Files:        diffFiles,
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
 
 	// Output PR info

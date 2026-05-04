@@ -13,6 +13,13 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
+// TokenInfo represents the JSON output for auth token command
+type TokenInfo struct {
+	Hostname string `json:"hostname"`
+	Token    string `json:"token"`
+	Source   string `json:"source,omitempty"`
+}
+
 type TokenOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
@@ -21,6 +28,7 @@ type TokenOptions struct {
 	// Flags
 	Hostname    string
 	HostnameSet bool
+	JSON        bool
 }
 
 // NewCmdToken creates the token command
@@ -60,6 +68,7 @@ func NewCmdToken(f *cmdutil.Factory, runF func(*TokenOptions) error) *cobra.Comm
 	}
 
 	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "The hostname to get the token for")
+	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }
@@ -79,13 +88,22 @@ func tokenRun(opts *TokenOptions) error {
 		return err
 	}
 
-	token, _ := authCfg.ActiveToken(opts.Hostname)
+	token, source := authCfg.ActiveToken(opts.Hostname)
 	if opts.HostnameSet || opts.Hostname != "gitcode.com" {
-		token, _ = authCfg.StoredToken(opts.Hostname)
+		token, source = authCfg.StoredToken(opts.Hostname)
 	}
 
 	if token == "" {
 		return cmdutil.NewAuthError("no authentication token found")
+	}
+
+	if opts.JSON {
+		info := TokenInfo{
+			Hostname: opts.Hostname,
+			Token:    token,
+			Source:   source,
+		}
+		return cmdutil.WriteJSON(opts.IO.Out, info)
 	}
 
 	// Print token to stdout (for piping)

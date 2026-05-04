@@ -61,6 +61,9 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 			# View issue in browser
 			$ gc issue view 123 --web
+
+			# Output as JSON
+			$ gc issue view 123 --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

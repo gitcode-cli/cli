@@ -63,6 +63,9 @@ func NewCmdReady(f *cmdutil.Factory, runF func(*ReadyOptions) error) *cobra.Comm
 			# Mark PR as work-in-progress
 			$ gc pr ready 123 -R owner/repo --wip
 
+			# Non-interactive mode
+			$ gc pr ready 123 -R owner/repo --yes
+
 			# Output as JSON
 			$ gc pr ready 123 -R owner/repo --json
 		`),

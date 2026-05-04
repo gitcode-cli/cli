@@ -59,6 +59,9 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 
 			# Read notes from a file
 			$ gc release edit v1.0.0 -R owner/repo --notes-file RELEASE_NOTES.md
+
+			# Output as JSON
+			$ gc release edit v1.0.0 -R owner/repo --title "New Title" --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -73,6 +73,9 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 
 			# Set milestone
 			$ gc pr edit 123 -R owner/repo --milestone 5
+
+			# Output as JSON
+			$ gc pr edit 123 -R owner/repo --title "New title" --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

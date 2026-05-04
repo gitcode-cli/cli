@@ -49,6 +49,9 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 			# Create with description
 			$ gc repo create my-repo --description "My project"
+
+			# Output as JSON
+			$ gc repo create my-repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

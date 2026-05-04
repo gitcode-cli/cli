@@ -47,7 +47,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 			$ gc milestone delete 1 -R owner/repo
 
 			# Skip confirmation
-			$ gc milestone delete 1 --yes
+			$ gc milestone delete 1 --yes -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

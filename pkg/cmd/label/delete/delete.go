@@ -52,13 +52,13 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 		`),
 		Example: heredoc.Doc(`
 			# Delete a label
-			$ gc label delete old-label
+			$ gc label delete old-label -R owner/repo
 
 			# Skip confirmation
-			$ gc label delete old-label --yes
+			$ gc label delete old-label --yes -R owner/repo
 
 			# Output as JSON
-			$ gc label delete old-label --yes --json
+			$ gc label delete old-label --yes --json -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

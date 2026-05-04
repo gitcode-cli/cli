@@ -68,6 +68,9 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 			# Create a cross-repo PR (from fork to upstream)
 			$ gc pr create -R upstream/repo --fork myfork/repo --head feature-branch --title "Feature"
+
+			# Output as JSON
+			$ gc pr create -R owner/repo --title "Feature" --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {

@@ -100,6 +100,9 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 			  --target-dir mirror/contracts \
 			  --base main \
 			  --title "sync: update contracts"
+
+			# Output as JSON
+			$ gc repo sync --target-repo owner/repo --source-dir src --target-dir dst --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {

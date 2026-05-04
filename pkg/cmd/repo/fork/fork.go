@@ -54,6 +54,9 @@ func NewCmdFork(f *cmdutil.Factory, runF func(*ForkOptions) error) *cobra.Comman
 
 			# Fork and clone
 			$ gc repo fork owner/repo --clone
+
+			# Output as JSON
+			$ gc repo fork owner/repo --json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {

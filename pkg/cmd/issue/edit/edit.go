@@ -80,6 +80,9 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 
 			# Combine multiple edits
 			$ gc issue edit 123 --title "Bug fix" --assignee user1 --label bug --milestone 1 -R owner/repo
+
+			# Output as JSON
+			$ gc issue edit 123 --title "New title" --json -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

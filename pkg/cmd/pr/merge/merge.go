@@ -64,6 +64,9 @@ func NewCmdMerge(f *cmdutil.Factory, runF func(*MergeOptions) error) *cobra.Comm
 
 			# Merge without confirmation (non-interactive)
 			$ gc pr merge 123 -R owner/repo --yes
+
+			# Output as JSON
+			$ gc pr merge 123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

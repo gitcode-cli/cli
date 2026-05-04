@@ -27,6 +27,17 @@ type ReopenOptions struct {
 	// Flags
 	Comment string
 	Yes     bool
+	JSON    bool
+}
+
+// ReopenResult represents the JSON output for issue reopen
+type ReopenResult struct {
+	Number  int    `json:"number"`
+	State   string `json:"state"`
+	Owner   string `json:"owner"`
+	Repo    string `json:"repo"`
+	URL     string `json:"url"`
+	Comment string `json:"comment,omitempty"`
 }
 
 // NewCmdReopen creates the reopen command
@@ -51,6 +62,9 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 
 			# Reopen with a comment
 			$ gc issue reopen 123 --comment "Still reproduces on latest version"
+
+			# Output as JSON
+			$ gc issue reopen 123 --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -70,6 +84,7 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Add a comment before reopening")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -123,6 +138,21 @@ func reopenRun(opts *ReopenOptions) error {
 	issue, err := api.ReopenIssue(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to reopen issue: %w", err)
+	}
+
+	result := ReopenResult{
+		Number: opts.Number,
+		State:  issue.State,
+		Owner:  owner,
+		Repo:   repo,
+		URL:    issue.HTMLURL,
+	}
+	if opts.Comment != "" {
+		result.Comment = opts.Comment
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Reopened issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)

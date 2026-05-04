@@ -18,6 +18,7 @@ import (
 type ReopenOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -26,6 +27,17 @@ type ReopenOptions struct {
 	// Flags
 	Comment string
 	Yes     bool
+	JSON    bool
+}
+
+// ReopenResult represents the JSON output for pr reopen
+type ReopenResult struct {
+	Number  int    `json:"number"`
+	State   string `json:"state"`
+	Owner   string `json:"owner"`
+	Repo    string `json:"repo"`
+	URL     string `json:"url"`
+	Comment string `json:"comment,omitempty"`
 }
 
 // NewCmdReopen creates the reopen command
@@ -33,6 +45,7 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 	opts := &ReopenOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -49,6 +62,9 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 
 			# Reopen with a comment
 			$ gc pr reopen 123 -R owner/repo --comment "Reopening for further changes"
+
+			# Output as JSON
+			$ gc pr reopen 123 -R owner/repo --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -68,6 +84,7 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Add a comment before reopening")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
 }
@@ -88,7 +105,11 @@ func reopenRun(opts *ReopenOptions) error {
 	client.SetToken(token, "environment")
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -113,9 +134,24 @@ func reopenRun(opts *ReopenOptions) error {
 	}
 
 	// Reopen PR
-	_, err = api.ReopenPullRequest(client, owner, repo, opts.Number)
+	pr, err := api.ReopenPullRequest(client, owner, repo, opts.Number)
 	if err != nil {
 		return fmt.Errorf("failed to reopen PR: %w", err)
+	}
+
+	result := ReopenResult{
+		Number: opts.Number,
+		State:  pr.State,
+		Owner:  owner,
+		Repo:   repo,
+		URL:    pr.HTMLURL,
+	}
+	if opts.Comment != "" {
+		result.Comment = opts.Comment
+	}
+
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Reopened PR #%d in %s/%s\n", cs.Green("✓"), opts.Number, owner, repo)

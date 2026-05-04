@@ -340,3 +340,49 @@ func TestListRepoIssuesAllDoesNotMutateOpts(t *testing.T) {
 		t.Fatalf("opts.Milestone was mutated: got %s, want test", opts.Milestone)
 	}
 }
+
+// TestIssue_SecurityHoleField tests SecurityHole and Private field parsing
+func TestIssue_SecurityHoleField(t *testing.T) {
+	jsonResp := `{
+		"number": "123",
+		"title": "Security Issue",
+		"state": "open",
+		"security_hole": "true",
+		"private": "true"
+	}`
+
+	var issue Issue
+	err := json.Unmarshal([]byte(jsonResp), &issue)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal Issue: %v", err)
+	}
+
+	if issue.SecurityHole != "true" {
+		t.Errorf("Expected SecurityHole 'true', got '%s'", issue.SecurityHole)
+	}
+	if issue.Private != "true" {
+		t.Errorf("Expected Private 'true', got '%s'", issue.Private)
+	}
+}
+
+// TestIssue_SecurityHoleFieldEmpty tests empty security_hole field
+func TestIssue_SecurityHoleFieldEmpty(t *testing.T) {
+	jsonResp := `{
+		"number": "124",
+		"title": "Public Issue",
+		"state": "open"
+	}`
+
+	var issue Issue
+	err := json.Unmarshal([]byte(jsonResp), &issue)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal Issue: %v", err)
+	}
+
+	if issue.SecurityHole != "" {
+		t.Errorf("Expected SecurityHole empty, got '%s'", issue.SecurityHole)
+	}
+	if issue.Private != "" {
+		t.Errorf("Expected Private empty, got '%s'", issue.Private)
+	}
+}

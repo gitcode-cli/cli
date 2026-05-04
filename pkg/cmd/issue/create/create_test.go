@@ -343,6 +343,9 @@ func TestCreateRunDryRunWithJSONWritesPreview(t *testing.T) {
 	if got["dry_run"] != true || got["repository"] != "owner/repo" || got["title"] != "Feature request" {
 		t.Fatalf("JSON output = %#v", got)
 	}
+	if got["security_hole"] != "true" {
+		t.Fatalf("JSON output security_hole = %#v, want string 'true'", got["security_hole"])
+	}
 	if strings.Contains(string(out), "Dry run:") {
 		t.Fatalf("JSON output contains text banner: %q", string(out))
 	}

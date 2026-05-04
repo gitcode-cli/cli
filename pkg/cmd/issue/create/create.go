@@ -143,7 +143,7 @@ func createRun(opts *CreateOptions) error {
 				"assignees":      opts.Assignees,
 				"milestone":      opts.Milestone,
 				"template_path":  opts.TemplatePath,
-				"security_hole":  opts.SecurityHole,
+				"security_hole":  boolString(opts.SecurityHole),
 				"issue_type":     opts.IssueType,
 				"issue_severity": opts.IssueSeverity,
 				"custom_fields":  customFields,

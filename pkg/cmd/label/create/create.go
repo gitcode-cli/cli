@@ -105,7 +105,7 @@ func createRun(opts *CreateOptions) error {
 		return cmdutil.WriteJSON(opts.IO.Out, label)
 	}
 
-	fmt.Fprintf(opts.IO.Out, "%s Created label %s in %s/%s\n", cs.Green("✓"), cs.Bold(label.Name), owner, repo)
+	fmt.Fprintf(opts.IO.Out, "%s Created label %s (ID: %s) in %s/%s\n", cs.Green("✓"), cs.Bold(label.Name), cmdutil.FormatAPIID(label.ID), owner, repo)
 	return nil
 }
 

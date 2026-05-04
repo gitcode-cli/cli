@@ -387,13 +387,15 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
+	var msg string
 	if e.Message != "" {
-		return e.Message
+		msg = e.Message
+	} else if e.ErrorMessage != "" {
+		msg = e.ErrorMessage
+	} else {
+		msg = "unknown error"
 	}
-	if e.ErrorMessage != "" {
-		return e.ErrorMessage
-	}
-	return fmt.Sprintf("API error (%d)", e.StatusCode)
+	return fmt.Sprintf("HTTP %d: %s", e.StatusCode, msg)
 }
 
 // DefaultHTTPClient returns the default HTTP client

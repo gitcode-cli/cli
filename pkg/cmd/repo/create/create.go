@@ -4,7 +4,6 @@ package create
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -81,7 +80,7 @@ func createRun(opts *CreateOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
 		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
@@ -134,14 +133,4 @@ func createRun(opts *CreateOptions) error {
 	fmt.Fprintf(opts.IO.Out, "  %s\n", repo.HTMLURL)
 
 	return nil
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	if token := os.Getenv("GITCODE_TOKEN"); token != "" {
-		return token
-	}
-	return cmdutil.EnvToken()
 }

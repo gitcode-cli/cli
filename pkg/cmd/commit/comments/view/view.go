@@ -4,7 +4,6 @@ package view
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -69,7 +68,7 @@ func viewRun(opts *ViewOptions) error {
 	}
 
 	client := api.NewClientFromHTTP(httpClient)
-	token := getEnvToken()
+	token := cmdutil.EnvToken()
 	if token == "" {
 		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
@@ -102,14 +101,4 @@ func viewRun(opts *ViewOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
-}
-
-func getEnvToken() string {
-	if token := os.Getenv("GC_TOKEN"); token != "" {
-		return token
-	}
-	if token := os.Getenv("GITCODE_TOKEN"); token != "" {
-		return token
-	}
-	return cmdutil.EnvToken()
 }

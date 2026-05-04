@@ -146,6 +146,9 @@ gc auth status --hostname gitcode.com
 
 # 显示完整 token（谨慎使用）
 gc auth status --show-token
+
+# 输出 JSON
+gc auth status --json
 ```
 
 输出示例：
@@ -172,11 +175,15 @@ gc auth token --hostname gitcode.com
 
 ```bash
 gc auth logout
+
+# 非交互执行
+gc auth logout --yes
 ```
 
 说明：
 - `auth logout` 会清理本地持久化认证信息。
 - 若当前认证来自 `GC_TOKEN` 或 `GITCODE_TOKEN`，命令会提示你手动 `unset` 环境变量。
+- 非交互场景中显式传 `--yes`。
 
 ---
 
@@ -499,6 +506,9 @@ gc issue close 1
 
 # 非交互执行
 gc issue close 1 -R infra-test/gctest1 --yes
+
+# 输出 JSON
+gc issue close 1 -R infra-test/gctest1 --json
 ```
 
 说明：
@@ -557,6 +567,9 @@ gc issue reopen 1
 
 # 非交互执行
 gc issue reopen 1 -R infra-test/gctest1 --yes
+
+# 输出 JSON
+gc issue reopen 1 -R infra-test/gctest1 --json
 ```
 
 说明：
@@ -576,6 +589,9 @@ gc issue comment 1 -R infra-test/gctest1 --body-file comment.txt
 
 # 从 stdin 读取评论内容
 echo "Comment from stdin" | gc issue comment 1 -R infra-test/gctest1 --body-file -
+
+# 输出 JSON
+gc issue comment 1 -R infra-test/gctest1 --body "This is a comment" --json
 ```
 
 ### issue comment edit - 编辑 Issue 评论
@@ -793,6 +809,9 @@ echo "Comment from stdin" | gc pr comment 123 --body-file - -R owner/repo
 # 添加行内评论 - 先获取文件路径
 gc pr diff 123 -R owner/repo                        # 查看变更文件获取文件路径
 gc pr comment 123 --body "代码逻辑正确" --path api/auth.go --position 1 -R owner/repo
+
+# 输出 JSON
+gc pr comment 123 --body "This looks good" --json
 ```
 
 添加评论到 PR。支持普通评论和行内评论（inline comment）。
@@ -864,6 +883,9 @@ gc pr close 1 -R infra-test/gctest1
 
 # 非交互执行
 gc pr close 1 -R infra-test/gctest1 --yes
+
+# 输出 JSON
+gc pr close 1 -R infra-test/gctest1 --json
 ```
 
 说明：
@@ -877,6 +899,9 @@ gc pr reopen 1 -R infra-test/gctest1
 
 # 非交互执行
 gc pr reopen 1 -R infra-test/gctest1 --yes
+
+# 输出 JSON
+gc pr reopen 1 -R infra-test/gctest1 --json
 ```
 
 说明：
@@ -893,6 +918,9 @@ gc pr ready 1 -R infra-test/gctest1 --wip
 
 # 非交互执行
 gc pr ready 1 -R infra-test/gctest1 --ready --yes
+
+# 输出 JSON
+gc pr ready 1 -R infra-test/gctest1 --json
 ```
 
 说明：

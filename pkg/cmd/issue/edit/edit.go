@@ -34,6 +34,7 @@ type EditOptions struct {
 	Milestone    int
 	SecurityHole bool
 	JSON         bool
+	Yes          bool // Skip confirmation for state changes
 }
 
 // NewCmdEdit creates the edit command
@@ -105,6 +106,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringSliceVarP(&opts.Labels, "label", "l", []string{}, "Labels (comma-separated)")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Milestone number")
 	cmd.Flags().BoolVar(&opts.SecurityHole, "security-hole", false, "Mark as private issue")
+	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation for state changes")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
@@ -157,6 +159,22 @@ func editRun(opts *EditOptions) error {
 	state := opts.State
 	if state == "closed" {
 		state = "close"
+	}
+
+	// Confirm state changes (close/reopen)
+	if state == "close" || state == "reopen" {
+		action := "close"
+		if state == "reopen" {
+			action = "reopen"
+		}
+		if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+			IO:       opts.IO,
+			Yes:      opts.Yes,
+			Expected: action,
+			Prompt:   fmt.Sprintf("This will %s issue #%d. Type '%s' to confirm: ", action, opts.Number, action),
+		}); err != nil {
+			return err
+		}
 	}
 
 	// Build update options

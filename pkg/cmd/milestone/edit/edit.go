@@ -31,6 +31,7 @@ type EditOptions struct {
 	State           string
 	DueDate         string
 	JSON            bool
+	Yes             bool // Skip confirmation for state changes
 }
 
 // NewCmdEdit creates the edit command
@@ -96,6 +97,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.State, "state", "s", "", "Milestone state (open/closed)")
 	cmdutil.SetFlagEnum(cmd, "state", "open", "closed")
 	cmd.Flags().StringVarP(&opts.DueDate, "due-date", "D", "", "Due date (YYYY-MM-DD)")
+	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation for state changes")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
@@ -129,6 +131,18 @@ func editRun(opts *EditOptions) error {
 		_, err := time.Parse("2006-01-02", opts.DueDate)
 		if err != nil {
 			return cmdutil.NewUsageError(fmt.Sprintf("invalid due date format '%s': use YYYY-MM-DD", opts.DueDate))
+		}
+	}
+
+	// Confirm state changes (close)
+	if opts.State == "closed" {
+		if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+			IO:       opts.IO,
+			Yes:      opts.Yes,
+			Expected: "closed",
+			Prompt:   fmt.Sprintf("This will close milestone #%d. Type 'closed' to confirm: ", opts.Number),
+		}); err != nil {
+			return err
 		}
 	}
 

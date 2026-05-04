@@ -4,6 +4,7 @@ package cmdutil
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"gitcode.com/gitcode-cli/cli/api"
 	gitpkg "gitcode.com/gitcode-cli/cli/git"
@@ -25,7 +26,15 @@ func NewFactory() *Factory {
 	return &Factory{
 		IOStreams: iostreams.System(),
 		HttpClient: func() (*http.Client, error) {
-			return api.DefaultHTTPClient(), nil
+			cfg := api.DefaultRetryConfig()
+			if api.IsDebugEnabled() {
+				return api.NewHTTPClientWithRetryAndLogger(
+					api.ParseTimeoutFromEnv(),
+					cfg,
+					func(msg string) { fmt.Fprintf(os.Stderr, "[api] %s\n", msg) },
+				), nil
+			}
+			return api.NewHTTPClientWithRetry(api.ParseTimeoutFromEnv(), cfg), nil
 		},
 		Config: func() (config.Config, error) {
 			return config.New(), nil

@@ -1441,6 +1441,9 @@ gc schema "issue view"
 | `GC_TOKEN` | 认证 Token |
 | `GITCODE_TOKEN` | 备用 Token |
 | `GC_HOST` | 默认 GitCode 主机（默认：gitcode.com）；必须是受信 hostname-only 值；已接入共享 host-aware 认证入口的业务命令会映射到对应 API 主机，且非默认 host 只使用该 host 的本地登录 token |
+| `GC_TIMEOUT` | API 请求超时时间（默认：30s）；支持 Duration 格式如 `60s`、`2m`，或纯秒数如 `120` |
+| `GC_DEBUG` | 启用 API 调试日志，输出重试、Rate Limit 等信息到 stderr |
+| `GC_API_DEBUG` | 同 `GC_DEBUG`，启用 API 调试日志 |
 | `NO_COLOR` | 禁用颜色输出 |
 
 ---

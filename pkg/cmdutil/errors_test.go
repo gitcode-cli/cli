@@ -20,6 +20,18 @@ func TestExitCode(t *testing.T) {
 		}
 	})
 
+	t.Run("cli auth error", func(t *testing.T) {
+		if got := ExitCode(NewAuthError("not authenticated")); got != ExitAuth {
+			t.Fatalf("ExitCode() = %d, want %d", got, ExitAuth)
+		}
+	})
+
+	t.Run("cli not found error", func(t *testing.T) {
+		if got := ExitCode(NewNotFoundError("resource not found", nil)); got != ExitNotFound {
+			t.Fatalf("ExitCode() = %d, want %d", got, ExitNotFound)
+		}
+	})
+
 	t.Run("cli conflict error", func(t *testing.T) {
 		if got := ExitCode(NewConflictError("conflict")); got != ExitConflict {
 			t.Fatalf("ExitCode() = %d, want %d", got, ExitConflict)

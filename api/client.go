@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 const (
@@ -402,13 +401,6 @@ func (e *APIError) Error() string {
 	}
 
 	return fmt.Sprintf("HTTP %d: %s", e.StatusCode, msg)
-}
-
-// DefaultHTTPClient returns the default HTTP client
-func DefaultHTTPClient() *http.Client {
-	return &http.Client{
-		Timeout: 30 * time.Second,
-	}
 }
 
 // BuildURL builds a URL with path parameters

@@ -69,6 +69,32 @@ git@gitcode.com:owner/repo.git
 
 `issue list` 的 `--format` 非法值应直接报用法错误，不应静默回退到默认格式。
 
+### 退出码
+
+`gc` 命令使用稳定的退出码语义，方便脚本和 AI 代理判断执行结果：
+
+| 退出码 | 常量名 | 含义 | 典型场景 |
+|--------|--------|------|----------|
+| 0 | ExitSuccess | 命令执行成功 | 正常完成 |
+| 1 | ExitError | 通用错误 | API 错误、网络错误 |
+| 2 | ExitUsage | 参数用法错误 | 缺少必选参数、参数格式错误 |
+| 3 | ExitNotFound | 资源不存在 | issue/pr/repo 不存在 |
+| 4 | ExitAuth | 认证错误 | 未登录或 token 无效 |
+| 5 | ExitConflict | 资源冲突 | PR merge 冲突 |
+
+示例：
+```bash
+# 检查退出码
+gc issue view abc  # 无效 issue 号
+echo $?            # 输出 2 (ExitUsage)
+
+gc issue view 999999  # 不存在的 issue
+echo $?               # 输出 3 (ExitNotFound)
+
+gc auth status  # 未认证时
+echo $?         # 输出 4 (ExitAuth)
+```
+
 ### 认证
 
 ```bash

@@ -60,6 +60,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().IntVarP(&opts.Page, "page", "p", 1, "Page number")
 	cmd.Flags().IntVarP(&opts.PerPage, "per-page", "P", 20, "Results per page (max 100)")
 	cmd.Flags().StringVar(&opts.Order, "order", "", "Sort order: asc or desc")
+	cmdutil.SetFlagEnum(cmd, "order", "asc", "desc")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd

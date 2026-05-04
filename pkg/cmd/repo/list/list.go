@@ -63,6 +63,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of repos to list")
 	cmd.Flags().StringVarP(&opts.Visibility, "visibility", "v", "", "Filter by visibility (public/private)")
+	cmdutil.SetFlagEnum(cmd, "visibility", "public", "private")
 	cmd.Flags().StringVarP(&opts.Owner, "owner", "o", "", "List repos for an organization")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmdutil.AddFormatFlag(cmd, &opts.Format)

@@ -95,9 +95,11 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.BodyFile, "body-file", "F", "", "Read body from file")
 	cmd.Flags().StringVar(&opts.Base, "base", "", "New base branch")
 	cmd.Flags().StringVar(&opts.Draft, "draft", "", "Mark as draft (true/false)")
+	cmdutil.SetFlagEnum(cmd, "draft", "true", "false")
 	cmd.Flags().StringSliceVarP(&opts.Labels, "labels", "l", nil, "Add labels (comma-separated)")
 	cmd.Flags().IntVarP(&opts.Milestone, "milestone", "m", 0, "Set milestone by number")
 	cmd.Flags().StringVar(&opts.CloseRelatedIssue, "close-related-issue", "", "Close related issues when merged (true/false)")
+	cmdutil.SetFlagEnum(cmd, "close-related-issue", "true", "false")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd

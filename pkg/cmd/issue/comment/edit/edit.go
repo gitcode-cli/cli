@@ -79,7 +79,7 @@ func editRun(opts *EditOptions) error {
 	cs := opts.IO.ColorScheme()
 
 	if opts.ID == "" {
-		return fmt.Errorf("comment ID is required. Use an argument or --id flag")
+		return cmdutil.NewUsageError("comment ID is required. Use an argument or --id flag")
 	}
 
 	body, err := getBody(opts)
@@ -87,7 +87,7 @@ func editRun(opts *EditOptions) error {
 		return err
 	}
 	if body == "" {
-		return fmt.Errorf("comment body is required. Use --body or --body-file flag")
+		return cmdutil.NewUsageError("comment body is required. Use --body or --body-file flag")
 	}
 
 	httpClient, err := opts.HttpClient()

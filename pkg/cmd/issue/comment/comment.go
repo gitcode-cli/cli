@@ -64,7 +64,7 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid issue number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid issue number: %s", args[0]))
 			}
 			opts.Number = number
 
@@ -92,7 +92,7 @@ func commentRun(opts *CommentOptions) error {
 		return err
 	}
 	if body == "" {
-		return fmt.Errorf("comment body is required. Use --body or --body-file flag")
+		return cmdutil.NewUsageError("comment body is required. Use --body or --body-file flag")
 	}
 
 	httpClient, err := opts.HttpClient()

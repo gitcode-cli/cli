@@ -53,7 +53,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid milestone number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid milestone number: %s", args[0]))
 			}
 			opts.Number = number
 

@@ -77,7 +77,7 @@ func forkRun(opts *ForkOptions) error {
 	cs := opts.IO.ColorScheme()
 
 	if opts.Repository == "" {
-		return fmt.Errorf("repository is required. Usage: gc repo fork owner/repo")
+		return cmdutil.NewUsageError("repository is required. Usage: gc repo fork owner/repo")
 	}
 	if opts.JSON && opts.Clone {
 		return cmdutil.NewUsageError("cannot use --json with --clone")
@@ -85,7 +85,7 @@ func forkRun(opts *ForkOptions) error {
 
 	sourceRepo, err := opts.ParseRepo(opts.Repository)
 	if err != nil {
-		return fmt.Errorf("invalid repository: %w", err)
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid repository: %v", err))
 	}
 
 	httpClient, err := opts.HttpClient()
@@ -96,7 +96,7 @@ func forkRun(opts *ForkOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := cmdutil.EnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 

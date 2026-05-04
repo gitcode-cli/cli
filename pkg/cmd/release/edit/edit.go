@@ -130,7 +130,7 @@ func editRun(opts *EditOptions) error {
 	if opts.Draft != "" {
 		draft, err := parseBool(opts.Draft)
 		if err != nil {
-			return fmt.Errorf("invalid draft value: %s", opts.Draft)
+			return cmdutil.NewUsageError(fmt.Sprintf("invalid draft value: %s", opts.Draft))
 		}
 		updateOpts.Draft = &draft
 	}
@@ -138,7 +138,7 @@ func editRun(opts *EditOptions) error {
 	if opts.Prerelease != "" {
 		prerelease, err := parseBool(opts.Prerelease)
 		if err != nil {
-			return fmt.Errorf("invalid prerelease value: %s", opts.Prerelease)
+			return cmdutil.NewUsageError(fmt.Sprintf("invalid prerelease value: %s", opts.Prerelease))
 		}
 		updateOpts.Prerelease = &prerelease
 	}
@@ -151,7 +151,7 @@ func editRun(opts *EditOptions) error {
 	if updateOpts.Name == "" && updateOpts.Body == "" && opts.NotesFile == "" &&
 		updateOpts.Draft == nil && updateOpts.Prerelease == nil &&
 		updateOpts.TargetCommitish == "" {
-		return fmt.Errorf("no changes specified. Use flags to specify what to edit")
+		return cmdutil.NewUsageError("no changes specified. Use flags to specify what to edit")
 	}
 
 	// Update release
@@ -190,6 +190,6 @@ func parseBool(s string) (bool, error) {
 	case "false", "no", "0":
 		return false, nil
 	default:
-		return false, fmt.Errorf("invalid boolean value: %s", s)
+		return false, cmdutil.NewUsageError(fmt.Sprintf("invalid boolean value: %s", s))
 	}
 }

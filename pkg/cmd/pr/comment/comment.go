@@ -75,7 +75,7 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid pull request number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid pull request number: %s", args[0]))
 			}
 			opts.Number = number
 
@@ -104,12 +104,12 @@ func commentRun(opts *CommentOptions) error {
 		return err
 	}
 	if body == "" {
-		return fmt.Errorf("comment body is required. Use --body or --body-file flag")
+		return cmdutil.NewUsageError("comment body is required. Use --body or --body-file flag")
 	}
 
 	// Validate inline comment flags
 	if opts.Path != "" && opts.Position == 0 {
-		return fmt.Errorf("--position is required when --path is specified for inline comments")
+		return cmdutil.NewUsageError("--position is required when --path is specified for inline comments")
 	}
 
 	httpClient, err := opts.HttpClient()

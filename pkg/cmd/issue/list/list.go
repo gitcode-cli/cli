@@ -284,19 +284,19 @@ func normalizeDateFilters(opts *ListOptions) error {
 
 	var err error
 	if opts.Since, err = normalizeIssueListTime(opts.Since, false); err != nil {
-		return fmt.Errorf("invalid --since: %w", err)
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid --since: %v", err))
 	}
 	if opts.CreatedAfter, err = normalizeIssueListTime(opts.CreatedAfter, false); err != nil {
-		return fmt.Errorf("invalid --created-after: %w", err)
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid --created-after: %v", err))
 	}
 	if opts.CreatedBefore, err = normalizeIssueListTime(opts.CreatedBefore, true); err != nil {
-		return fmt.Errorf("invalid --created-before: %w", err)
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid --created-before: %v", err))
 	}
 	if opts.UpdatedAfter, err = normalizeIssueListTime(opts.UpdatedAfter, false); err != nil {
-		return fmt.Errorf("invalid --updated-after: %w", err)
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid --updated-after: %v", err))
 	}
 	if opts.UpdatedBefore, err = normalizeIssueListTime(opts.UpdatedBefore, true); err != nil {
-		return fmt.Errorf("invalid --updated-before: %w", err)
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid --updated-before: %v", err))
 	}
 	return nil
 }

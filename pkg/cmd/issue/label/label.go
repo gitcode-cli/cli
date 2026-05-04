@@ -59,7 +59,7 @@ func NewCmdLabel(f *cmdutil.Factory, runF func(*LabelOptions) error) *cobra.Comm
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid issue number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid issue number: %s", args[0]))
 			}
 			opts.Number = number
 
@@ -89,7 +89,7 @@ func labelRun(opts *LabelOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -151,7 +151,7 @@ func labelRun(opts *LabelOptions) error {
 		return nil
 	}
 
-	return fmt.Errorf("specify --add, --remove, or --list")
+	return cmdutil.NewUsageError("specify --add, --remove, or --list")
 }
 
 func parseRepo(repo string) (string, string, error) {

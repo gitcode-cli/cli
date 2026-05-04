@@ -78,7 +78,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid milestone number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid milestone number: %s", args[0]))
 			}
 			opts.Number = number
 
@@ -116,7 +116,7 @@ func editRun(opts *EditOptions) error {
 
 	// Validate at least one edit option is provided
 	if opts.Title == "" && description == "" && opts.State == "" && opts.DueDate == "" {
-		return fmt.Errorf("at least one edit option is required (e.g., --title, --description, --description-file, --state, --due-date)")
+		return cmdutil.NewUsageError("at least one edit option is required (e.g., --title, --description, --description-file, --state, --due-date)")
 	}
 
 	// Validate state value

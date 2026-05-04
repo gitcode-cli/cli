@@ -142,7 +142,7 @@ type PRRef struct {
 func ParsePRRef(ref string) (*PRRef, error) {
 	ref = strings.TrimSpace(ref)
 	if ref == "" {
-		return nil, fmt.Errorf("source PR is required")
+		return nil, cmdutil.NewUsageError("source PR is required")
 	}
 
 	// Try URL format: https://gitcode.com/owner/repo/merge_requests/123
@@ -150,7 +150,7 @@ func ParsePRRef(ref string) (*PRRef, error) {
 	if matches := urlPattern.FindStringSubmatch(ref); matches != nil {
 		number, err := strconv.Atoi(matches[3])
 		if err != nil {
-			return nil, fmt.Errorf("invalid PR number in URL: %s", matches[3])
+			return nil, cmdutil.NewUsageError(fmt.Sprintf("invalid PR number in URL: %s", matches[3]))
 		}
 		return &PRRef{Owner: matches[1], Repo: matches[2], Number: number}, nil
 	}
@@ -160,12 +160,12 @@ func ParsePRRef(ref string) (*PRRef, error) {
 	if matches := shortPattern.FindStringSubmatch(ref); matches != nil {
 		number, err := strconv.Atoi(matches[3])
 		if err != nil {
-			return nil, fmt.Errorf("invalid PR number: %s", matches[3])
+			return nil, cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %s", matches[3]))
 		}
 		return &PRRef{Owner: matches[1], Repo: strings.TrimSuffix(matches[2], ".git"), Number: number}, nil
 	}
 
-	return nil, fmt.Errorf("invalid PR reference format. Use owner/repo#number or https://gitcode.com/owner/repo/merge_requests/number")
+	return nil, cmdutil.NewUsageError("invalid PR reference format. Use owner/repo#number or https://gitcode.com/owner/repo/merge_requests/number")
 }
 
 func syncRun(opts *SyncOptions) error {

@@ -84,7 +84,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid issue number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid issue number: %s", args[0]))
 			}
 			opts.Number = number
 
@@ -123,7 +123,7 @@ func editRun(opts *EditOptions) error {
 	if opts.Title == "" && body == "" && opts.State == "" &&
 		len(opts.Assignees) == 0 && len(opts.Labels) == 0 &&
 		opts.Milestone == 0 && !opts.SecurityHole {
-		return fmt.Errorf("at least one edit option is required (e.g., --title, --body, --body-file, --state, --assignee, --label, --milestone, --security-hole)")
+		return cmdutil.NewUsageError("at least one edit option is required (e.g., --title, --body, --body-file, --state, --assignee, --label, --milestone, --security-hole)")
 	}
 
 	httpClient, err := opts.HttpClient()

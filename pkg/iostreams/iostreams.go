@@ -18,6 +18,7 @@ type IOStreams struct {
 	colorEnabled bool
 	isTerminal   func(io.Writer) bool
 	pager        string
+	pagerCmd     *exec.Cmd
 }
 
 // System returns IOStreams connected to standard input, output, and error
@@ -78,6 +79,7 @@ func (s *IOStreams) StartPager() error {
 		return err
 	}
 
+	s.pagerCmd = pagerCmd
 	s.Out = stdin
 	return nil
 }
@@ -134,7 +136,12 @@ func splitCommandLine(raw string) ([]string, error) {
 // StopPager stops the pager
 func (s *IOStreams) StopPager() error {
 	if closer, ok := s.Out.(io.Closer); ok {
-		return closer.Close()
+		if err := closer.Close(); err != nil {
+			return err
+		}
+	}
+	if s.pagerCmd != nil {
+		return s.pagerCmd.Wait()
 	}
 	return nil
 }
@@ -215,6 +222,8 @@ func CaptureOutput(f func() error) (stdout, stderr string, err error) {
 	var bufOut, bufErr bytes.Buffer
 	io.Copy(&bufOut, rOut)
 	io.Copy(&bufErr, rErr)
+	rOut.Close()
+	rErr.Close()
 
 	return bufOut.String(), bufErr.String(), err
 }

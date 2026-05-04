@@ -115,6 +115,14 @@ func listRun(opts *ListOptions) error {
 		return err
 	}
 
+	// Validate pagination parameters
+	if opts.Limit <= 0 {
+		return cmdutil.NewUsageError("--limit must be greater than 0")
+	}
+	if opts.Page < 0 {
+		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
+	}
+
 	// List PRs
 	prs, err := api.ListPullRequests(client, owner, repo, &api.PRListOptions{
 		State:     opts.State,

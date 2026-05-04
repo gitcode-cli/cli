@@ -4,6 +4,7 @@ package stats
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -95,6 +96,15 @@ func statsRun(opts *StatsOptions) error {
 	owner, repo, err := parseRepo(opts.Repository)
 	if err != nil {
 		return err
+	}
+
+	// Validate date format
+	datePattern := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+	if opts.Since != "" && !datePattern.MatchString(opts.Since) {
+		return cmdutil.NewUsageError("--since must be in YYYY-MM-DD format")
+	}
+	if opts.Until != "" && !datePattern.MatchString(opts.Until) {
+		return cmdutil.NewUsageError("--until must be in YYYY-MM-DD format")
 	}
 
 	statsOpts := &api.CommitStatsOptions{

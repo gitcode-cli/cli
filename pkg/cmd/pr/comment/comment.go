@@ -127,6 +127,9 @@ func commentRun(opts *CommentOptions) error {
 	if opts.Path != "" && opts.Position == 0 {
 		return cmdutil.NewUsageError("--position is required when --path is specified for inline comments")
 	}
+	if opts.Path != "" && opts.Position < 1 {
+		return cmdutil.NewUsageError("--position must be greater than 0")
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {

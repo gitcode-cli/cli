@@ -118,6 +118,11 @@ func readyRun(opts *ReadyOptions) error {
 		return err
 	}
 
+	// Validate mutually exclusive flags
+	if opts.WIP && opts.Ready {
+		return cmdutil.NewUsageError("cannot use both --wip and --ready")
+	}
+
 	// Get current PR to preserve title
 	pr, err := api.GetPullRequest(client, owner, repo, opts.Number)
 	if err != nil {

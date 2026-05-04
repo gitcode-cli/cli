@@ -252,16 +252,19 @@ func TestListRunAllowsTemplateOutputForEmptyResults(t *testing.T) {
 
 	ioStreams, _, stdout, _ := iostreams.Test()
 	opts := &ListOptions{
-		IO:         ioStreams,
-		HttpClient: func() (*http.Client, error) { return &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Status:     http.StatusText(http.StatusOK),
-				Header:     make(http.Header),
-				Body:       io.NopCloser(strings.NewReader(`[]`)),
-			}, nil
-		})}, nil },
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Status:     http.StatusText(http.StatusOK),
+					Header:     make(http.Header),
+					Body:       io.NopCloser(strings.NewReader(`[]`)),
+				}, nil
+			})}, nil
+		},
 		Repository: "owner/repo",
+		Limit:      30,
 		Template:   "{{len .}} issues",
 	}
 

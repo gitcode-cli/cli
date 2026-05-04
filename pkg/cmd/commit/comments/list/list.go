@@ -86,6 +86,17 @@ func listRun(opts *ListOptions) error {
 		return err
 	}
 
+	// Validate pagination parameters
+	if opts.Page <= 0 {
+		return cmdutil.NewUsageError("--page must be greater than 0")
+	}
+	if opts.PerPage <= 0 {
+		return cmdutil.NewUsageError("--per-page must be greater than 0")
+	}
+	if opts.PerPage > 100 {
+		return cmdutil.NewUsageError("--per-page must not exceed 100")
+	}
+
 	listOpts := &api.ListOptions{
 		Page:    opts.Page,
 		PerPage: opts.PerPage,

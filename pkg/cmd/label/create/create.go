@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -89,6 +90,12 @@ func createRun(opts *CreateOptions) error {
 	owner, repo, err := parseRepo(opts.Repository)
 	if err != nil {
 		return err
+	}
+
+	// Validate color format
+	colorPattern := regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+	if !colorPattern.MatchString(opts.Color) {
+		return cmdutil.NewUsageError("--color must be in hex format (e.g., #ff0000)")
 	}
 
 	// Create label

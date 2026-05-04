@@ -38,6 +38,8 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 		Short: "Delete a label",
 		Long: heredoc.Doc(`
 			Delete a label from a GitCode repository.
+
+				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Delete a label

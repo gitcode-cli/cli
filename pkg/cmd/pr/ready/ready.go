@@ -41,6 +41,8 @@ func NewCmdReady(f *cmdutil.Factory, runF func(*ReadyOptions) error) *cobra.Comm
 		Short: "Toggle PR ready/wip status",
 		Long: heredoc.Doc(`
 			Toggle a pull request between ready and work-in-progress (draft) status.
+
+				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Mark PR as ready for review

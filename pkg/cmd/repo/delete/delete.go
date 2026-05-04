@@ -39,6 +39,8 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 			Delete a GitCode repository.
 
 			WARNING: This action is irreversible. Use with caution.
+
+				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Delete a repository (with confirmation)

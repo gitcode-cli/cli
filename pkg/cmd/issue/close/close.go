@@ -42,6 +42,8 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 		Short: "Close an issue",
 		Long: heredoc.Doc(`
 			Close an issue in a GitCode repository.
+
+				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Close an issue

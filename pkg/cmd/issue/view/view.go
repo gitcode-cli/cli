@@ -124,7 +124,7 @@ func viewRun(opts *ViewOptions) error {
 	// Get issue
 	issue, err := api.GetIssue(client, owner, repo, opts.Number)
 	if err != nil {
-		return fmt.Errorf("failed to get issue: %w", err)
+		return cmdutil.WrapNotFound(err, "issue #%d not found in %s/%s", opts.Number, owner, repo)
 	}
 
 	// Open in browser if --web flag is set

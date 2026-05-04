@@ -82,7 +82,7 @@ func viewRun(opts *ViewOptions) error {
 
 	comment, err := api.GetCommitComment(client, owner, repo, opts.ID)
 	if err != nil {
-		return fmt.Errorf("failed to get comment: %w", err)
+		return cmdutil.WrapNotFound(err, "commit comment %s not found in %s/%s", opts.ID, owner, repo)
 	}
 
 	if opts.JSON {

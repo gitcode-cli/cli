@@ -114,7 +114,7 @@ func viewRun(opts *ViewOptions) error {
 	// Get milestone
 	ms, err := api.GetMilestone(client, owner, repo, opts.Number)
 	if err != nil {
-		return fmt.Errorf("failed to get milestone: %w", err)
+		return cmdutil.WrapNotFound(err, "milestone #%d not found in %s/%s", opts.Number, owner, repo)
 	}
 
 	milestoneURL := fmt.Sprintf("https://gitcode.com/%s/%s/milestones/%d", owner, repo, ms.Number)

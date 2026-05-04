@@ -100,7 +100,7 @@ func deleteRun(opts *DeleteOptions) error {
 	// Get milestone for confirmation
 	ms, err := api.GetMilestone(client, owner, repo, opts.Number)
 	if err != nil {
-		return fmt.Errorf("failed to get milestone: %w", err)
+		return cmdutil.WrapNotFound(err, "milestone #%d not found in %s/%s", opts.Number, owner, repo)
 	}
 
 	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{

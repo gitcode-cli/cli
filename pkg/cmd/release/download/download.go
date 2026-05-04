@@ -113,12 +113,12 @@ func downloadRun(opts *DownloadOptions) error {
 	if opts.TagName == "" {
 		release, err = api.GetLatestRelease(client, owner, repo)
 		if err != nil {
-			return fmt.Errorf("failed to get latest release: %w", err)
+			return cmdutil.WrapNotFound(err, "no releases found in %s/%s", owner, repo)
 		}
 	} else {
 		release, err = api.GetRelease(client, owner, repo, opts.TagName)
 		if err != nil {
-			return fmt.Errorf("failed to get release: %w", err)
+			return cmdutil.WrapNotFound(err, "release %s not found in %s/%s", opts.TagName, owner, repo)
 		}
 	}
 

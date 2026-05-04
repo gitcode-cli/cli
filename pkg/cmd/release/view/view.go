@@ -88,7 +88,7 @@ func viewRun(opts *ViewOptions) error {
 	// Get release
 	release, err := api.GetRelease(client, owner, repo, opts.TagName)
 	if err != nil {
-		return fmt.Errorf("failed to get release: %w", err)
+		return cmdutil.WrapNotFound(err, "release %s not found in %s/%s", opts.TagName, owner, repo)
 	}
 
 	// Open in browser if requested

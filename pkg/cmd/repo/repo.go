@@ -20,16 +20,7 @@ func NewCmdRepo(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "repo <command>",
 		Short: "Manage GitCode repositories",
-		Long: `Work with GitCode repositories.
-
-Available commands:
-  clone    Clone a repository locally
-  create   Create a new repository
-  fork     Fork a repository
-  view     View a repository
-  list     List repositories
-  sync     Sync a local directory into another repository and create a PR
-  delete   Delete a repository`,
+		Long:  "Work with GitCode repositories.",
 		Annotations: map[string]string{
 			cmdutil.TopicAnnotation: "repo",
 		},

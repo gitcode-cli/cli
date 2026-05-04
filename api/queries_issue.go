@@ -496,10 +496,29 @@ func DeleteIssueComment(client *Client, owner, repo string, commentID int64) err
 	return client.Delete("/repos/" + owner + "/" + repo + "/issues/comments/" + itoa(int(commentID)))
 }
 
+// LabelListOptions represents options for listing repository labels
+type LabelListOptions struct {
+	PerPage int `url:"per_page,omitempty"`
+	Page    int `url:"page,omitempty"`
+}
+
 // ListRepoLabels lists labels for a repository
-func ListRepoLabels(client *Client, owner, repo string) ([]Label, error) {
+func ListRepoLabels(client *Client, owner, repo string, opts *LabelListOptions) ([]Label, error) {
+	path := "/repos/" + owner + "/" + repo + "/labels"
+	if opts != nil {
+		values := url.Values{}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			path += "?" + values.Encode()
+		}
+	}
 	var labels []Label
-	err := client.Get("/repos/"+owner+"/"+repo+"/labels", &labels)
+	err := client.Get(path, &labels)
 	if err != nil {
 		return nil, err
 	}
@@ -629,10 +648,29 @@ type IssuePR struct {
 	CanMergeCheck *bool         `json:"can_merge_check"`
 }
 
+// MilestoneListOptions represents options for listing repository milestones
+type MilestoneListOptions struct {
+	PerPage int `url:"per_page,omitempty"`
+	Page    int `url:"page,omitempty"`
+}
+
 // ListRepoMilestones lists milestones for a repository
-func ListRepoMilestones(client *Client, owner, repo string) ([]Milestone, error) {
+func ListRepoMilestones(client *Client, owner, repo string, opts *MilestoneListOptions) ([]Milestone, error) {
+	path := "/repos/" + owner + "/" + repo + "/milestones"
+	if opts != nil {
+		values := url.Values{}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			path += "?" + values.Encode()
+		}
+	}
 	var milestones []Milestone
-	err := client.Get("/repos/"+owner+"/"+repo+"/milestones", &milestones)
+	err := client.Get(path, &milestones)
 	if err != nil {
 		return nil, err
 	}

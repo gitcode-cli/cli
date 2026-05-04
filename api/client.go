@@ -395,6 +395,12 @@ func (e *APIError) Error() string {
 	} else {
 		msg = "unknown error"
 	}
+
+	// Add actionable guidance for permission errors
+	if e.StatusCode == 403 {
+		return fmt.Sprintf("HTTP %d: %s\n\nYou don't have permission for this action. Possible reasons:\n- You are not the owner or a project maintainer\n- The project requires specific permissions\n\nFor permission details, check the project settings or contact a maintainer.", e.StatusCode, msg)
+	}
+
 	return fmt.Sprintf("HTTP %d: %s", e.StatusCode, msg)
 }
 

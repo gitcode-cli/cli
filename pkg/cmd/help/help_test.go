@@ -2,6 +2,7 @@ package help
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -491,5 +492,210 @@ func TestDiscoveryHintsFormat(t *testing.T) {
 		if !strings.Contains(hints, s) {
 			t.Errorf("discoveryHints should contain '%s'", s)
 		}
+	}
+}
+
+// JSON output tests
+func TestListCommandsJSON(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "issues",
+		},
+	}
+	prCmd := &cobra.Command{
+		Use:   "pr",
+		Short: "Manage pull requests",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "pull-requests",
+		},
+	}
+	root.AddCommand(issueCmd, prCmd)
+
+	buf := &bytes.Buffer{}
+	err := listCommandsJSON(root, buf)
+	if err != nil {
+		t.Errorf("listCommandsJSON returned error: %v", err)
+	}
+
+	// Verify JSON is valid and has expected structure
+	var result commandsListJSON
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Errorf("JSON output is invalid: %v, output:\n%s", err, buf.String())
+	}
+
+	// Should have 3 commands (root, issue, pr)
+	if len(result.Commands) < 3 {
+		t.Errorf("expected at least 3 commands, got %d", len(result.Commands))
+	}
+
+	// Verify each command has required fields
+	for _, cmd := range result.Commands {
+		if cmd.Path == "" {
+			t.Error("command should have 'path' field")
+		}
+		if cmd.Name == "" {
+			t.Error("command should have 'name' field")
+		}
+		if cmd.Short == "" {
+			t.Error("command should have 'short' field")
+		}
+	}
+}
+
+func TestSearchCommandsJSON(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+	}
+	prCmd := &cobra.Command{
+		Use:   "pr",
+		Short: "Manage pull requests",
+	}
+	root.AddCommand(issueCmd, prCmd)
+
+	buf := &bytes.Buffer{}
+	err := searchCommandsJSON(root, "issue", buf)
+	if err != nil {
+		t.Errorf("searchCommandsJSON returned error: %v", err)
+	}
+
+	var result searchResultsJSON
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Errorf("JSON output is invalid: %v, output:\n%s", err, buf.String())
+	}
+
+	// Verify query field
+	if result.Query != "issue" {
+		t.Errorf("expected query 'issue', got '%s'", result.Query)
+	}
+
+	// Should match at least 1 command (issue)
+	if len(result.Results) < 1 {
+		t.Errorf("expected at least 1 result for 'issue', got %d", len(result.Results))
+	}
+}
+
+func TestListTopicsJSON(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "issues",
+		},
+	}
+	authCmd := &cobra.Command{
+		Use:   "auth",
+		Short: "Authentication",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "auth",
+		},
+	}
+	root.AddCommand(issueCmd, authCmd)
+
+	buf := &bytes.Buffer{}
+	err := listTopicsJSON(root, buf)
+	if err != nil {
+		t.Errorf("listTopicsJSON returned error: %v", err)
+	}
+
+	var result topicsListJSON
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Errorf("JSON output is invalid: %v, output:\n%s", err, buf.String())
+	}
+
+	// Should have 2 topics (auth, issues)
+	if len(result.Topics) != 2 {
+		t.Errorf("expected 2 topics, got %d", len(result.Topics))
+	}
+
+	// Verify topics are sorted
+	expectedTopics := []string{"auth", "issues"}
+	for i, topic := range result.Topics {
+		if topic != expectedTopics[i] {
+			t.Errorf("topics[%d] = '%s', expected '%s'", i, topic, expectedTopics[i])
+		}
+	}
+}
+
+func TestFilterByTopicJSON(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "issues",
+		},
+	}
+	authCmd := &cobra.Command{
+		Use:   "auth",
+		Short: "Authentication",
+		Annotations: map[string]string{
+			cmdutil.TopicAnnotation: "auth",
+		},
+	}
+	root.AddCommand(issueCmd, authCmd)
+
+	buf := &bytes.Buffer{}
+	err := filterByTopicJSON(root, "issues", buf)
+	if err != nil {
+		t.Errorf("filterByTopicJSON returned error: %v", err)
+	}
+
+	var result topicCommandsJSON
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Errorf("JSON output is invalid: %v, output:\n%s", err, buf.String())
+	}
+
+	// Verify topic field
+	if result.Topic != "issues" {
+		t.Errorf("expected topic 'issues', got '%s'", result.Topic)
+	}
+
+	// Should have at least 1 command (issue)
+	if len(result.Commands) < 1 {
+		t.Errorf("expected at least 1 command for 'issues' topic, got %d", len(result.Commands))
+	}
+}
+
+func TestJSONFlagWithSpecificCommand(t *testing.T) {
+	root := &cobra.Command{
+		Use:   "gc",
+		Short: "GitCode CLI",
+	}
+	issueCmd := &cobra.Command{
+		Use:   "issue",
+		Short: "Manage issues",
+	}
+	root.AddCommand(issueCmd)
+
+	testHelpCmd := NewCmdHelp(root)
+	buf := &bytes.Buffer{}
+	testHelpCmd.SetOut(buf)
+	testHelpCmd.SetArgs([]string{"issue", "--json"})
+
+	err := testHelpCmd.Execute()
+	if err == nil {
+		t.Error("expected error when using --json with specific command")
+	}
+	// Should be a usage error
+	if !strings.Contains(err.Error(), "--json is only supported for discovery features") {
+		t.Errorf("expected usage error message, got: %v", err)
 	}
 }

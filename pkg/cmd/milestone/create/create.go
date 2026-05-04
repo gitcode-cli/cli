@@ -100,7 +100,7 @@ func createRun(opts *CreateOptions) error {
 	if opts.DueDate != "" {
 		_, err := time.Parse("2006-01-02", opts.DueDate)
 		if err != nil {
-			return cmdutil.NewCLIError(cmdutil.ExitUsage, "invalid due date format, use YYYY-MM-DD", err)
+			return cmdutil.NewUsageError("invalid due date format, use YYYY-MM-DD")
 		}
 		dueOn = opts.DueDate
 	} else {

@@ -121,14 +121,14 @@ func editRun(opts *EditOptions) error {
 
 	// Validate state value
 	if opts.State != "" && opts.State != "open" && opts.State != "closed" {
-		return cmdutil.NewCLIError(cmdutil.ExitUsage, fmt.Sprintf("invalid state value '%s': must be 'open' or 'closed'", opts.State), nil)
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid state value '%s': must be 'open' or 'closed'", opts.State))
 	}
 
 	// Validate due-date format
 	if opts.DueDate != "" {
 		_, err := time.Parse("2006-01-02", opts.DueDate)
 		if err != nil {
-			return cmdutil.NewCLIError(cmdutil.ExitUsage, fmt.Sprintf("invalid due date format '%s': use YYYY-MM-DD", opts.DueDate), err)
+			return cmdutil.NewUsageError(fmt.Sprintf("invalid due date format '%s': use YYYY-MM-DD", opts.DueDate))
 		}
 	}
 

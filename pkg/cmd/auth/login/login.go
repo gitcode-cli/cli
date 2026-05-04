@@ -108,7 +108,7 @@ func loginWithToken(opts *LoginOptions) error {
 	token = strings.TrimSpace(token)
 
 	if token == "" {
-		return fmt.Errorf("no token provided on stdin")
+		return cmdutil.NewUsageError("no token provided on stdin")
 	}
 
 	opts.Token = token
@@ -117,7 +117,7 @@ func loginWithToken(opts *LoginOptions) error {
 
 func loginWithTokenFlag(opts *LoginOptions) error {
 	if opts.Token == "" {
-		return fmt.Errorf("no token provided")
+		return cmdutil.NewUsageError("no token provided")
 	}
 
 	// Set default hostname
@@ -197,7 +197,7 @@ func loginInteractive(opts *LoginOptions) error {
 	token = strings.TrimSpace(token)
 
 	if token == "" {
-		return fmt.Errorf("no token provided")
+		return cmdutil.NewUsageError("no token provided")
 	}
 
 	opts.Token = token

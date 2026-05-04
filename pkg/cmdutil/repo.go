@@ -18,7 +18,7 @@ func ResolveRepo(repo string, baseRepo func() (string, error)) (string, error) {
 
 	detectedRepo, err := baseRepo()
 	if err != nil {
-		return "", NewCLIError(ExitUsage, "no repository specified and could not determine current repository", err)
+		return "", NewUsageError("no repository specified and could not determine current repository")
 	}
 	if detectedRepo == "" {
 		return "", NewUsageError("no repository specified and could not determine current repository")
@@ -36,7 +36,7 @@ func ParseRepo(repo string) (string, string, error) {
 
 	parsedRepo, err := gitpkg.ParseRepo(repo)
 	if err != nil {
-		return "", "", NewCLIError(ExitUsage, fmt.Sprintf("invalid repository format: %s", repo), err)
+		return "", "", NewUsageError(fmt.Sprintf("invalid repository format: %s", repo))
 	}
 
 	return parsedRepo.Owner, parsedRepo.Name, nil

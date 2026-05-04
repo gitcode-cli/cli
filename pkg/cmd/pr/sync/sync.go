@@ -322,7 +322,7 @@ echo "password=%s"
 	}
 
 	if conflictError != "" {
-		return writeSyncResult(opts, result, cmdutil.NewCLIError(cmdutil.ExitConflict, fmt.Sprintf("%s. Manual resolution required.", conflictError), nil))
+		return writeSyncResult(opts, result, cmdutil.NewConflictError(fmt.Sprintf("%s. Manual resolution required.", conflictError)))
 	}
 
 	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{

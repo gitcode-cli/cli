@@ -85,7 +85,7 @@ func tokenRun(opts *TokenOptions) error {
 	}
 
 	if token == "" {
-		return fmt.Errorf("no authentication token found")
+		return cmdutil.NewAuthError("no authentication token found")
 	}
 
 	// Print token to stdout (for piping)

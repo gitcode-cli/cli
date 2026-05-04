@@ -408,10 +408,15 @@ func copyFile(sourcePath, targetPath string) error {
 	if err != nil {
 		return err
 	}
-	defer dst.Close()
 
 	_, err = io.Copy(dst, src)
-	return err
+	if err != nil {
+		dst.Close()
+		os.Remove(targetPath)
+		return err
+	}
+	dst.Close()
+	return nil
 }
 
 func buildSyncBranch(sourceRepo, currentBranch, sourceDir string) string {

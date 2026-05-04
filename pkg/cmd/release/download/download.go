@@ -191,6 +191,9 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 	// Copy content
 	written, err := io.Copy(file, resp.Body)
 	if err != nil {
+		// Clean up incomplete file on failure
+		file.Close()
+		os.Remove(outputPath)
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 

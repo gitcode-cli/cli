@@ -84,7 +84,7 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 			source directory contents into the requested target directory, commits the change,
 			pushes a sync branch, and creates a pull request.
 
-			Non-interactive mode: Requires --yes to skip confirmation.
+				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Sync local docs/api into another repo's sync/api directory

@@ -43,7 +43,7 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 		Long: heredoc.Doc(`
 			Reopen a closed issue in a GitCode repository.
 
-			Non-interactive mode: Requires --yes to skip confirmation.
+				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
 			# Reopen an issue

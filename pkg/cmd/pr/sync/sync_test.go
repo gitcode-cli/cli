@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"net/http"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -183,15 +182,17 @@ func TestSyncCommitsPreservesCommitBoundaries(t *testing.T) {
 	}
 
 	var calls [][]string
-	runGitInDir := func(dir string, args ...string) (string, error) {
+	originalGitRunInDirWithEnv := gitRunInDirWithEnv
+	gitRunInDirWithEnv = func(dir string, env map[string]string, args ...string) (string, error) {
 		if dir != "/tmp/workdir" {
-			t.Fatalf("runGitInDir dir = %q, want /tmp/workdir", dir)
+			t.Fatalf("gitRunInDirWithEnv dir = %q, want /tmp/workdir", dir)
 		}
 		calls = append(calls, append([]string(nil), args...))
 		return "", nil
 	}
+	t.Cleanup(func() { gitRunInDirWithEnv = originalGitRunInDirWithEnv })
 
-	commitsSynced, conflictError := syncCommits(runGitInDir, "/tmp/workdir", commits)
+	commitsSynced, conflictError := syncCommits("/tmp/workdir", commits, nil)
 	if conflictError != "" {
 		t.Fatalf("syncCommits() unexpected conflict error = %q", conflictError)
 	}
@@ -215,15 +216,17 @@ func TestSyncCommitsReportsActualCountOnConflict(t *testing.T) {
 	}
 
 	var calls [][]string
-	runGitInDir := func(dir string, args ...string) (string, error) {
+	originalGitRunInDirWithEnv := gitRunInDirWithEnv
+	gitRunInDirWithEnv = func(dir string, env map[string]string, args ...string) (string, error) {
 		calls = append(calls, append([]string(nil), args...))
 		if len(args) == 3 && args[0] == "cherry-pick" && args[2] == commits[1].SHA {
 			return "", errors.New("conflict")
 		}
 		return "", nil
 	}
+	t.Cleanup(func() { gitRunInDirWithEnv = originalGitRunInDirWithEnv })
 
-	commitsSynced, conflictError := syncCommits(runGitInDir, "/tmp/workdir", commits)
+	commitsSynced, conflictError := syncCommits("/tmp/workdir", commits, nil)
 	if commitsSynced != 1 {
 		t.Fatalf("syncCommits() commitsSynced = %d, want 1", commitsSynced)
 	}
@@ -271,8 +274,6 @@ func TestSyncRunRequiresConfirmationBeforePush(t *testing.T) {
 
 	f := cmdutil.TestFactory()
 	workDir := t.TempDir()
-	credDir := t.TempDir()
-	mkdirCalls := 0
 	pushCalled := false
 	createPRCalled := false
 
@@ -292,25 +293,25 @@ func TestSyncRunRequiresConfirmationBeforePush(t *testing.T) {
 			createPRCalled = true
 			return &api.PullRequest{Number: 1}, nil
 		},
-		MkdirTemp: func(dir, pattern string) (string, error) {
-			mkdirCalls++
-			if mkdirCalls == 1 {
-				return workDir, nil
-			}
-			return credDir, nil
-		},
-		RemoveAll: func(string) error { return nil },
-		WriteFile: os.WriteFile,
-		RunGit:    func(string, ...string) (string, error) { return "", nil },
-		RunGitInDir: func(dir string, credHelperPath string, args ...string) (string, error) {
-			if len(args) > 0 && args[0] == "push" {
-				pushCalled = true
-			}
-			return "", nil
-		},
+		MkdirTemp:  func(dir, pattern string) (string, error) { return workDir, nil },
+		RemoveAll:  func(string) error { return nil },
 		SourcePR:   "owner/source#1",
 		TargetRepo: "infra-test/target",
 	}
+
+	originalGitRunWithEnv := gitRunWithEnv
+	originalGitRunInDirWithEnv := gitRunInDirWithEnv
+	gitRunWithEnv = func(env map[string]string, args ...string) (string, error) { return "", nil }
+	gitRunInDirWithEnv = func(dir string, env map[string]string, args ...string) (string, error) {
+		if len(args) > 0 && args[0] == "push" {
+			pushCalled = true
+		}
+		return "", nil
+	}
+	t.Cleanup(func() {
+		gitRunWithEnv = originalGitRunWithEnv
+		gitRunInDirWithEnv = originalGitRunInDirWithEnv
+	})
 
 	err := syncRun(opts)
 	if err == nil || !strings.Contains(err.Error(), "confirmation required") {

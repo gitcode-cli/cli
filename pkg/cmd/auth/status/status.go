@@ -165,6 +165,7 @@ func statusRun(opts *StatusOptions) error {
 	fmt.Fprintf(opts.IO.Out, "  %s Git operations protocol: %s\n", cs.Green("✓"), cfg.GitProtocol(opts.Hostname).Value)
 
 	if opts.ShowToken {
+		fmt.Fprintf(opts.IO.ErrOut, "%s Warning: displaying authentication token. Do not share this output.\n", cs.Yellow("!"))
 		fmt.Fprintf(opts.IO.Out, "  %s Token: %s\n", cs.Green("✓"), token)
 	}
 

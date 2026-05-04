@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,6 +18,10 @@ import (
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
+
+// Package-level variables for testing
+var gitRunWithEnv = gitpkg.RunWithEnv
+var gitRunInDirWithEnv = gitpkg.RunInDirWithEnv
 
 type SyncResult struct {
 	SourcePR      string `json:"source_pr"`
@@ -41,9 +44,6 @@ type SyncOptions struct {
 	CreatePR      func(*api.Client, string, string, *api.CreatePROptions) (*api.PullRequest, error)
 	MkdirTemp     func(string, string) (string, error)
 	RemoveAll     func(string) error
-	WriteFile     func(string, []byte, os.FileMode) error
-	RunGitInDir   func(string, string, ...string) (string, error)
-	RunGit        func(string, ...string) (string, error)
 
 	SourcePR   string
 	TargetRepo string
@@ -66,7 +66,6 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 		CreatePR:      api.CreatePullRequest,
 		MkdirTemp:     os.MkdirTemp,
 		RemoveAll:     os.RemoveAll,
-		WriteFile:     os.WriteFile,
 	}
 
 	cmd := &cobra.Command{
@@ -246,70 +245,27 @@ func syncRun(opts *SyncOptions) error {
 	}
 	defer opts.RemoveAll(workDir)
 
-	// Create temporary credential helper script for secure authentication
-	// This avoids embedding token in URL or process arguments
-	// Note: credential helper is created outside workDir to avoid clone conflict
-	credHelperDir, err := opts.MkdirTemp("", "gc-cred-*")
-	if err != nil {
-		return fmt.Errorf("failed to create credential helper directory: %w", err)
-	}
-	defer opts.RemoveAll(credHelperDir)
-
-	credHelperPath := filepath.Join(credHelperDir, "git-credential-gc")
-	credHelperScript := fmt.Sprintf(`#!/bin/bash
-echo "protocol=https"
-echo "host=gitcode.com"
-echo "username=oauth2"
-echo "password=%s"
-`, token)
-	if err := opts.WriteFile(credHelperPath, []byte(credHelperScript), 0700); err != nil {
-		return fmt.Errorf("failed to create credential helper: %w", err)
-	}
-
-	// Git commands with credential helper
-	gitCmd := opts.RunGit
-	if gitCmd == nil {
-		gitCmd = func(credHelperPath string, args ...string) (string, error) {
-			fullArgs := append([]string{"-c", "credential.helper=" + credHelperPath}, args...)
-			return gitpkg.Run(fullArgs...)
-		}
-	}
-
-	gitCmdInDir := opts.RunGitInDir
-	if gitCmdInDir == nil {
-		gitCmdInDir = func(dir string, credHelperPath string, args ...string) (string, error) {
-			fullArgs := append([]string{"-C", dir, "-c", "credential.helper=" + credHelperPath}, args...)
-			return gitpkg.Run(fullArgs...)
-		}
-	}
-
-	runGit := func(args ...string) (string, error) {
-		return gitCmd(credHelperPath, args...)
-	}
-
-	runGitInDir := func(dir string, args ...string) (string, error) {
-		return gitCmdInDir(dir, credHelperPath, args...)
-	}
+	authEnv := authenticatedGitEnv(token)
 
 	// Clone target repository
-	if _, err := runGit("clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
+	if _, err := gitRunWithEnv(authEnv, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
 		return fmt.Errorf("failed to clone target repository: %w", err)
 	}
 
 	// Fetch source repository to get commits
-	if _, err := runGitInDir(workDir, "remote", "add", "source", repositoryGitURL(sourcePR.Owner, sourcePR.Repo)); err != nil {
+	if _, err := gitRunInDirWithEnv(workDir, nil, "remote", "add", "source", repositoryGitURL(sourcePR.Owner, sourcePR.Repo)); err != nil {
 		return fmt.Errorf("failed to add source remote: %w", err)
 	}
-	if _, err := runGitInDir(workDir, "fetch", "source"); err != nil {
+	if _, err := gitRunInDirWithEnv(workDir, authEnv, "fetch", "source"); err != nil {
 		return fmt.Errorf("failed to fetch source repository: %w", err)
 	}
 
 	// Create sync branch based on target base branch
-	if _, err := runGitInDir(workDir, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
+	if _, err := gitRunInDirWithEnv(workDir, nil, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
 		return fmt.Errorf("failed to create sync branch: %w", err)
 	}
 
-	commitsSynced, conflictError := syncCommits(runGitInDir, workDir, commits)
+	commitsSynced, conflictError := syncCommits(workDir, commits, authEnv)
 
 	result := SyncResult{
 		SourcePR:      fmt.Sprintf("%s/%s#%d", sourcePR.Owner, sourcePR.Repo, sourcePR.Number),
@@ -339,7 +295,7 @@ echo "password=%s"
 	}
 
 	// Push sync branch
-	if _, err := runGitInDir(workDir, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
+	if _, err := gitRunInDirWithEnv(workDir, authEnv, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
 		return fmt.Errorf("failed to push sync branch: %w", err)
 	}
 
@@ -409,11 +365,11 @@ func buildSyncBody(pr *api.PullRequest, sourcePR *PRRef, targetRepo string) stri
 	return body
 }
 
-func syncCommits(runGitInDir func(string, ...string) (string, error), workDir string, commits []api.Commit) (int, string) {
+func syncCommits(workDir string, commits []api.Commit, authEnv map[string]string) (int, string) {
 	commitsSynced := 0
 	for _, commit := range commits {
-		if _, err := runGitInDir(workDir, "cherry-pick", "-x", commit.SHA); err != nil {
-			_, _ = runGitInDir(workDir, "cherry-pick", "--abort")
+		if _, err := gitRunInDirWithEnv(workDir, nil, "cherry-pick", "-x", commit.SHA); err != nil {
+			_, _ = gitRunInDirWithEnv(workDir, nil, "cherry-pick", "--abort")
 			return commitsSynced, fmt.Sprintf("cherry-pick conflict on commit %s: %s", shortSHA(commit.SHA), commit.Message)
 		}
 		commitsSynced++
@@ -435,4 +391,13 @@ func pullRequestWebURL(owner, repo string, number int) string {
 // repositoryGitURL returns a Git URL without embedded credentials
 func repositoryGitURL(owner, repo string) string {
 	return fmt.Sprintf("https://gitcode.com/%s/%s.git", owner, repo)
+}
+
+// authenticatedGitEnv returns environment variables for Git authentication
+func authenticatedGitEnv(token string) map[string]string {
+	return map[string]string{
+		"GIT_CONFIG_COUNT":   "1",
+		"GIT_CONFIG_KEY_0":   "http.extraHeader",
+		"GIT_CONFIG_VALUE_0": fmt.Sprintf("Authorization: Bearer %s", token),
+	}
 }

@@ -8,9 +8,21 @@ import (
 )
 
 func TestExitCode(t *testing.T) {
+	t.Run("success returns ExitSuccess", func(t *testing.T) {
+		if got := ExitCode(nil); got != ExitSuccess {
+			t.Fatalf("ExitCode(nil) = %d, want %d", got, ExitSuccess)
+		}
+	})
+
 	t.Run("cli usage error", func(t *testing.T) {
 		if got := ExitCode(NewUsageError("bad args")); got != ExitUsage {
 			t.Fatalf("ExitCode() = %d, want %d", got, ExitUsage)
+		}
+	})
+
+	t.Run("cli conflict error", func(t *testing.T) {
+		if got := ExitCode(NewConflictError("conflict")); got != ExitConflict {
+			t.Fatalf("ExitCode() = %d, want %d", got, ExitConflict)
 		}
 	})
 

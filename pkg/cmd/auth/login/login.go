@@ -55,8 +55,8 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 				from standard input.
 			`),
 		Example: heredoc.Doc(`
-				# Start interactive login
-				$ gc auth login
+			# Start interactive login
+			$ gc auth login
 
 			# Login with a token from stdin
 			$ echo "your-token" | gc auth login --with-token

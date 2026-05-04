@@ -55,16 +55,16 @@ func NewCmdReply(f *cmdutil.Factory, runF func(*ReplyOptions) error) *cobra.Comm
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid PR number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %s", args[0]))
 			}
 			opts.PRNumber = number
 
 			if opts.DiscussionID == "" {
-				return fmt.Errorf("discussion ID is required. Use --discussion flag")
+				return cmdutil.NewUsageError("discussion ID is required. Use --discussion flag")
 			}
 
 			if opts.Body == "" {
-				return fmt.Errorf("body is required. Use --body flag")
+				return cmdutil.NewUsageError("body is required. Use --body flag")
 			}
 
 			if runF != nil {
@@ -95,7 +95,7 @@ func replyRun(opts *ReplyOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 

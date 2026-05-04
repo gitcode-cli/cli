@@ -62,7 +62,7 @@ func NewCmdComments(f *cmdutil.Factory, runF func(*CommentsOptions) error) *cobr
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid issue number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid issue number: %s", args[0]))
 			}
 			opts.Number = number
 
@@ -93,7 +93,7 @@ func commentsRun(opts *CommentsOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 
@@ -108,7 +108,7 @@ func commentsRun(opts *CommentsOptions) error {
 	}
 
 	if opts.Order != "" && opts.Order != "asc" && opts.Order != "desc" {
-		return fmt.Errorf("invalid order %q: must be asc or desc", opts.Order)
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid order %q: must be asc or desc", opts.Order))
 	}
 
 	comments, err := api.ListIssueComments(client, owner, repo, opts.Number, &api.IssueCommentListOptions{

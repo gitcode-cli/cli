@@ -76,7 +76,7 @@ func listRun(opts *ListOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 

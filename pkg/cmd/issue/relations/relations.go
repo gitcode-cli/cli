@@ -205,12 +205,12 @@ func issueNumberToInt(number string) (int, error) {
 	var value int
 	for _, c := range number {
 		if c < '0' || c > '9' {
-			return 0, fmt.Errorf("invalid issue number %q", number)
+			return 0, cmdutil.NewUsageError(fmt.Sprintf("invalid issue number %q", number))
 		}
 		value = value*10 + int(c-'0')
 	}
 	if value <= 0 {
-		return 0, fmt.Errorf("invalid issue number %q", number)
+		return 0, cmdutil.NewUsageError(fmt.Sprintf("invalid issue number %q", number))
 	}
 	return value, nil
 }

@@ -304,7 +304,7 @@ func writeSyncResult(opts *SyncOptions, result SyncResult) error {
 
 func resolveSourceDir(rootDir, sourceDir string) (string, string, error) {
 	if strings.TrimSpace(sourceDir) == "" {
-		return "", "", fmt.Errorf("source directory is required")
+		return "", "", cmdutil.NewUsageError("source directory is required")
 	}
 
 	rootPath, err := canonicalDir(rootDir)
@@ -326,7 +326,7 @@ func resolveSourceDir(rootDir, sourceDir string) (string, string, error) {
 		return "", "", fmt.Errorf("failed to resolve source directory: %w", err)
 	}
 	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return "", "", fmt.Errorf("source directory must stay inside the current repository")
+		return "", "", cmdutil.NewUsageError("source directory must stay inside the current repository")
 	}
 
 	info, err := os.Stat(sourcePath)
@@ -334,7 +334,7 @@ func resolveSourceDir(rootDir, sourceDir string) (string, string, error) {
 		return "", "", fmt.Errorf("failed to access source directory: %w", err)
 	}
 	if !info.IsDir() {
-		return "", "", fmt.Errorf("source path must be a directory: %s", sourceDir)
+		return "", "", cmdutil.NewUsageError(fmt.Sprintf("source path must be a directory: %s", sourceDir))
 	}
 	if rel == "." {
 		rel = "."
@@ -345,7 +345,7 @@ func resolveSourceDir(rootDir, sourceDir string) (string, string, error) {
 func validateTargetDir(targetDir string) (string, error) {
 	cleaned := cleanPath(targetDir)
 	if cleaned == "" || cleaned == "." {
-		return "", fmt.Errorf("target directory must be a non-root directory")
+		return "", cmdutil.NewUsageError("target directory must be a non-root directory")
 	}
 	if strings.HasPrefix(cleaned, "../") || cleaned == ".." {
 		return "", fmt.Errorf("target directory must stay inside the target repository")

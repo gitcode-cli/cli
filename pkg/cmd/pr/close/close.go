@@ -54,7 +54,7 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return fmt.Errorf("invalid PR number: %s", args[0])
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %s", args[0]))
 			}
 			opts.Number = number
 
@@ -83,7 +83,7 @@ func closeRun(opts *CloseOptions) error {
 	client := api.NewClientFromHTTP(httpClient)
 	token := getEnvToken()
 	if token == "" {
-		return fmt.Errorf("not authenticated. Run: gc auth login")
+		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
 	}
 	client.SetToken(token, "environment")
 

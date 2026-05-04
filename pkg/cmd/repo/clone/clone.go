@@ -130,7 +130,7 @@ func parseRepoURL(repo, protocol string) (string, error) {
 	// OWNER/REPO format
 	parts := strings.Split(repo, "/")
 	if len(parts) != 2 {
-		return "", fmt.Errorf("invalid repository format: %s", repo)
+		return "", cmdutil.NewUsageError(fmt.Sprintf("invalid repository format: %s", repo))
 	}
 
 	owner, name := parts[0], parts[1]

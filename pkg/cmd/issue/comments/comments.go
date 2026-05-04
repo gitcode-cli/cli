@@ -2,7 +2,6 @@
 package comments
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -121,12 +120,7 @@ func commentsRun(opts *CommentsOptions) error {
 	}
 
 	if opts.JSON {
-		data, err := json.MarshalIndent(comments, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to marshal comments: %w", err)
-		}
-		fmt.Fprintf(opts.IO.Out, "%s\n", data)
-		return nil
+		return cmdutil.WriteJSON(opts.IO.Out, comments)
 	}
 
 	if len(comments) == 0 {

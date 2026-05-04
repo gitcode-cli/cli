@@ -2,7 +2,6 @@
 package view
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -109,12 +108,7 @@ func viewRun(opts *ViewOptions) error {
 
 	// Output as JSON
 	if opts.JSON {
-		data, err := json.MarshalIndent(commit, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to marshal commit: %w", err)
-		}
-		fmt.Fprintf(opts.IO.Out, "%s\n", data)
-		return nil
+		return cmdutil.WriteJSON(opts.IO.Out, commit)
 	}
 
 	// Output

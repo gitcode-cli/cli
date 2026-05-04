@@ -68,6 +68,10 @@ func NewNotFoundError(message string, cause error) error {
 	return NewCLIError(ExitNotFound, message, cause)
 }
 
+func NewConflictError(message string) error {
+	return NewCLIError(ExitConflict, message, nil)
+}
+
 // WrapNotFound wraps an error as NotFoundError if it's a 404 API error.
 // Returns the original error if it's not a 404.
 // Usage: return cmdutil.WrapNotFound(err, "issue #%d not found in %s/%s", number, owner, repo)

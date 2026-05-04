@@ -135,7 +135,7 @@ func createRun(opts *CreateOptions) error {
 		}
 		output, err := opts.Branch()
 		if err != nil {
-			return cmdutil.NewCLIError(cmdutil.ExitUsage, "could not determine current branch. Use --head flag", err)
+			return cmdutil.NewUsageError("could not determine current branch. Use --head flag")
 		}
 		head = strings.TrimSpace(output)
 		if head == "" || head == "HEAD" {

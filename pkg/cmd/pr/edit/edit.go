@@ -167,7 +167,7 @@ func editRun(opts *EditOptions) error {
 		updateOpts.Base == "" && updateOpts.Draft == nil &&
 		len(updateOpts.Labels) == 0 && updateOpts.MilestoneNumber == 0 &&
 		updateOpts.CloseRelatedIssue == nil {
-		return fmt.Errorf("no changes specified. Use flags to specify what to edit")
+		return cmdutil.NewUsageError("no changes specified. Use flags to specify what to edit")
 	}
 
 	// Edit PR

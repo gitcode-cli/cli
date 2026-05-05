@@ -67,6 +67,15 @@ type UpdateReleaseOptions struct {
 	Prerelease      *bool  `json:"prerelease,omitempty"`
 }
 
+// GitCodeUpdateReleaseOptions represents options for GitCode's tag-based update API
+// Required fields: name, body
+// Optional: release_status (pre/latest)
+type GitCodeUpdateReleaseOptions struct {
+	Name          string `json:"name"`                     // Required
+	Body          string `json:"body"`                     // Required
+	ReleaseStatus string `json:"release_status,omitempty"` // Optional: "pre" or "latest"
+}
+
 // ListReleases lists releases for a repository
 func ListReleases(client *Client, owner, repo string, opts *ReleaseListOptions) ([]Release, error) {
 	path := buildPath("/repos/"+owner+"/"+repo+"/releases", opts)
@@ -143,6 +152,21 @@ func UpdateReleaseByTag(client *Client, owner, repo, tag string, opts *UpdateRel
 	}
 
 	return UpdateRelease(client, owner, repo, id, opts)
+}
+
+// UpdateReleaseByTagDirect updates a release using GitCode's tag-based PATCH endpoint
+// This bypasses the need for release ID which GitCode API doesn't return
+func UpdateReleaseByTagDirect(client *Client, owner, repo, tag string, opts *GitCodeUpdateReleaseOptions) (*Release, error) {
+	// URL escape the tag for path safety (e.g., "release/v1.0.0" -> "release%2Fv1.0.0")
+	escapedTag := url.PathEscape(tag)
+	path := "/repos/" + owner + "/" + repo + "/releases/" + escapedTag
+
+	var release Release
+	err := client.Patch(path, opts, &release)
+	if err != nil {
+		return nil, err
+	}
+	return &release, nil
 }
 
 // DeleteRelease deletes a release by ID

@@ -111,17 +111,40 @@ func editRun(opts *EditOptions) error {
 		return err
 	}
 
-	// Build update options
-	updateOpts := &api.UpdateReleaseOptions{}
+	// Check unsupported flags and output warnings
+	if opts.Draft != "" {
+		fmt.Fprintf(opts.IO.ErrOut, "%s warning: --draft is not supported by GitCode release edit API, ignoring\n", cs.Yellow("⚠"))
+	}
+	if opts.Target != "" {
+		fmt.Fprintf(opts.IO.ErrOut, "%s warning: --target is not supported by GitCode release edit API, ignoring\n", cs.Yellow("⚠"))
+	}
 
+	// Check if there's anything to update (only check supported flags)
+	// This check is done before API calls to avoid unnecessary requests
+	if opts.Title == "" && opts.Notes == "" && opts.NotesFile == "" && opts.Prerelease == "" {
+		return cmdutil.NewUsageError("no changes specified. Use --title, --notes, --notes-file, or --prerelease to specify what to edit")
+	}
+
+	// Build update options - name and body are required by GitCode API
+	// First get existing release to populate required fields
+	existingRelease, err := api.GetRelease(client, owner, repo, opts.TagName)
+	if err != nil {
+		return cmdutil.WrapNotFound(err, "release %s not found in %s/%s", opts.TagName, owner, repo)
+	}
+
+	// Build GitCodeUpdateReleaseOptions with required fields
+	updateOpts := &api.GitCodeUpdateReleaseOptions{
+		Name: existingRelease.Name, // Default to existing
+		Body: existingRelease.Body, // Default to existing
+	}
+
+	// Override with user-provided values
 	if opts.Title != "" {
 		updateOpts.Name = opts.Title
 	}
-
 	if opts.Notes != "" {
 		updateOpts.Body = opts.Notes
 	}
-
 	if opts.NotesFile != "" {
 		content, err := os.ReadFile(opts.NotesFile)
 		if err != nil {
@@ -130,39 +153,22 @@ func editRun(opts *EditOptions) error {
 		updateOpts.Body = string(content)
 	}
 
-	if opts.Draft != "" {
-		draft, err := parseBool(opts.Draft)
-		if err != nil {
-			return cmdutil.NewUsageError(fmt.Sprintf("invalid draft value: %s", opts.Draft))
-		}
-		updateOpts.Draft = &draft
-	}
-
+	// Map prerelease to release_status
 	if opts.Prerelease != "" {
 		prerelease, err := parseBool(opts.Prerelease)
 		if err != nil {
 			return cmdutil.NewUsageError(fmt.Sprintf("invalid prerelease value: %s", opts.Prerelease))
 		}
-		updateOpts.Prerelease = &prerelease
-	}
-
-	if opts.Target != "" {
-		updateOpts.TargetCommitish = opts.Target
-	}
-
-	// Check if there's anything to update
-	if updateOpts.Name == "" && updateOpts.Body == "" && opts.NotesFile == "" &&
-		updateOpts.Draft == nil && updateOpts.Prerelease == nil &&
-		updateOpts.TargetCommitish == "" {
-		return cmdutil.NewUsageError("no changes specified. Use flags to specify what to edit")
-	}
-
-	// Update release
-	release, err := api.UpdateReleaseByTag(client, owner, repo, opts.TagName, updateOpts)
-	if err != nil {
-		if err == api.ErrNoReleaseID {
-			return fmt.Errorf("failed to update release: %w; GitCode currently omits release IDs in release lookup responses", err)
+		if prerelease {
+			updateOpts.ReleaseStatus = "pre"
+		} else {
+			updateOpts.ReleaseStatus = "latest"
 		}
+	}
+
+	// Update release using direct PATCH by tag
+	release, err := api.UpdateReleaseByTagDirect(client, owner, repo, opts.TagName, updateOpts)
+	if err != nil {
 		return fmt.Errorf("failed to update release: %w", err)
 	}
 

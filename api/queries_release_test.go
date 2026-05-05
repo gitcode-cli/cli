@@ -201,3 +201,47 @@ func TestUpdateReleaseByTagDirect_Error(t *testing.T) {
 		t.Fatal("Expected error for nonexistent release")
 	}
 }
+
+// TestGetRelease_TagEscaping tests that GetRelease properly escapes tags with slashes
+func TestGetRelease_TagEscaping(t *testing.T) {
+	var gotURL string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotURL = req.URL.String()
+		return authTestResponse(http.StatusOK, `{"tag_name":"release/v1.0.0","name":"Test Release","body":"Notes"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := GetRelease(client, "owner", "repo", "release/v1.0.0")
+	if err != nil {
+		t.Fatalf("GetRelease() error = %v", err)
+	}
+
+	// Verify the slash in the tag is escaped to %2F in the full URL
+	expectedEscaped := "release%2Fv1.0.0"
+	if !strings.Contains(gotURL, expectedEscaped) {
+		t.Errorf("Expected escaped tag '%s' in URL, got %s", expectedEscaped, gotURL)
+	}
+}
+
+// TestGetReleaseUploadURL_TagEscaping tests that GetReleaseUploadURL properly escapes tags with slashes
+func TestGetReleaseUploadURL_TagEscaping(t *testing.T) {
+	var gotURL string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotURL = req.URL.String()
+		return authTestResponse(http.StatusOK, `{"url":"https://uploads.example.test/file","headers":{}}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := GetReleaseUploadURL(client, "owner", "repo", "release/v1.0.0", "test.txt")
+	if err != nil {
+		t.Fatalf("GetReleaseUploadURL() error = %v", err)
+	}
+
+	// Verify the slash in the tag is escaped to %2F in the full URL
+	expectedEscaped := "release%2Fv1.0.0"
+	if !strings.Contains(gotURL, expectedEscaped) {
+		t.Errorf("Expected escaped tag '%s' in URL, got %s", expectedEscaped, gotURL)
+	}
+}

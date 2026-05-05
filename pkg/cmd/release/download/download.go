@@ -207,7 +207,7 @@ func assetDownloadURL(asset api.ReleaseAsset, apiHost, owner, repo, tag string) 
 	}
 
 	return fmt.Sprintf("https://%s/api/v5/repos/%s/%s/releases/%s/attach_files/%s/download",
-		apiHost, owner, repo, tag, url.PathEscape(asset.Name))
+		apiHost, owner, repo, url.PathEscape(tag), url.PathEscape(asset.Name))
 }
 
 func isSourceArchiveAsset(asset api.ReleaseAsset) bool {

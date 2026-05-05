@@ -23,6 +23,10 @@ type DownloadOptions struct {
 	HttpClient func() (*http.Client, error)
 	BaseRepo   func() (string, error)
 
+	// DownloadHttpClient uses longer timeout for file downloads
+	// If nil, defaults to HttpClient
+	DownloadHttpClient func() (*http.Client, error)
+
 	// Arguments
 	TagName string
 	Assets  []string
@@ -39,6 +43,9 @@ func NewCmdDownload(f *cmdutil.Factory, runF func(*DownloadOptions) error) *cobr
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
 		BaseRepo:   f.BaseRepo,
+		DownloadHttpClient: func() (*http.Client, error) {
+			return api.NewDownloadHTTPClientWithEnvTimeout(), nil
+		},
 	}
 
 	cmd := &cobra.Command{
@@ -89,13 +96,26 @@ func NewCmdDownload(f *cmdutil.Factory, runF func(*DownloadOptions) error) *cobr
 func downloadRun(opts *DownloadOptions) error {
 	cs := opts.IO.ColorScheme()
 
-	httpClient, err := opts.HttpClient()
+	// API client for release metadata (uses default timeout)
+	apiClient, err := opts.HttpClient()
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
-	client, err := cmdutil.AuthenticatedClient(httpClient)
+	client, err := cmdutil.AuthenticatedClient(apiClient)
 	if err != nil {
 		return err
+	}
+
+	// Download client for asset downloads (uses 10m timeout or GC_TIMEOUT)
+	var downloadClient *http.Client
+	if opts.DownloadHttpClient != nil {
+		downloadClient, err = opts.DownloadHttpClient()
+		if err != nil {
+			return fmt.Errorf("failed to create download HTTP client: %w", err)
+		}
+	} else {
+		// Fallback to regular HttpClient if DownloadHttpClient not set
+		downloadClient = apiClient
 	}
 
 	// Get repository
@@ -145,7 +165,7 @@ func downloadRun(opts *DownloadOptions) error {
 
 	// Download each asset
 	for _, asset := range assets {
-		err := downloadAsset(asset, opts.Output, httpClient, cs, opts.IO.Out, client, owner, repo, release.TagName)
+		err := downloadAsset(asset, opts.Output, downloadClient, cs, opts.IO.Out, client, owner, repo, release.TagName)
 		if err != nil {
 			return err
 		}

@@ -58,6 +58,30 @@ func NewDownloadHTTPClient() *http.Client {
 	return NewHTTPClientWithRetry(DownloadTimeout, DefaultRetryConfig())
 }
 
+// NewDownloadHTTPClientWithEnvTimeout returns an HTTP client for file downloads.
+// If GC_TIMEOUT environment variable is set, uses that value as timeout.
+// Otherwise uses the default DownloadTimeout (10 minutes).
+func NewDownloadHTTPClientWithEnvTimeout() *http.Client {
+	timeout := parseTimeoutFromEnvWithDefault(DownloadTimeout)
+	return NewHTTPClientWithRetry(timeout, DefaultRetryConfig())
+}
+
+// parseTimeoutFromEnvWithDefault parses timeout from GC_TIMEOUT environment variable.
+// Returns the provided default timeout if GC_TIMEOUT is not set or has invalid value.
+func parseTimeoutFromEnvWithDefault(defaultTimeout time.Duration) time.Duration {
+	if v := os.Getenv("GC_TIMEOUT"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err == nil && d > 0 {
+			return d
+		}
+		seconds, err := strconv.Atoi(v)
+		if err == nil && seconds > 0 {
+			return time.Duration(seconds) * time.Second
+		}
+	}
+	return defaultTimeout
+}
+
 // newDefaultTransport returns the default HTTP transport
 func newDefaultTransport() http.RoundTripper {
 	return &http.Transport{
@@ -76,18 +100,7 @@ func newDefaultTransport() http.RoundTripper {
 
 // ParseTimeoutFromEnv parses timeout from GC_TIMEOUT environment variable
 func ParseTimeoutFromEnv() time.Duration {
-	if v := os.Getenv("GC_TIMEOUT"); v != "" {
-		d, err := time.ParseDuration(v)
-		if err == nil && d > 0 {
-			return d
-		}
-		// Try parsing as seconds if no unit specified
-		seconds, err := strconv.Atoi(v)
-		if err == nil && seconds > 0 {
-			return time.Duration(seconds) * time.Second
-		}
-	}
-	return DefaultTimeout
+	return parseTimeoutFromEnvWithDefault(DefaultTimeout)
 }
 
 // IsDebugEnabled returns true if GC_DEBUG is set

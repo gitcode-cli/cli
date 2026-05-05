@@ -117,6 +117,51 @@ func TestGetLabel_NormalLabel(t *testing.T) {
 	}
 }
 
+// TestUpdateLabel_NormalLabel tests that UpdateLabel works with normal labels
+func TestUpdateLabel_NormalLabel(t *testing.T) {
+	var gotPath string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		return authTestResponse(http.StatusOK, `{"name":"bug","color":"blue"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	opts := &UpdateLabelOptions{Color: "blue"}
+	_, err := UpdateLabel(client, "owner", "repo", "bug", opts)
+	if err != nil {
+		t.Fatalf("UpdateLabel() error = %v", err)
+	}
+
+	// Verify normal label is in the path
+	expectedPath := "/api/v5/repos/owner/repo/labels/bug"
+	if gotPath != expectedPath {
+		t.Errorf("Expected path '%s', got %s", expectedPath, gotPath)
+	}
+}
+
+// TestRemoveLabelFromIssue_NormalLabel tests that RemoveLabelFromIssue works with normal labels
+func TestRemoveLabelFromIssue_NormalLabel(t *testing.T) {
+	var gotPath string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		return authTestResponse(http.StatusNoContent, ""), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := RemoveLabelFromIssue(client, "owner", "repo", 123, "bug")
+	if err != nil {
+		t.Fatalf("RemoveLabelFromIssue() error = %v", err)
+	}
+
+	// Verify normal label is in the path
+	expectedPath := "/api/v5/repos/owner/repo/issues/123/labels/bug"
+	if gotPath != expectedPath {
+		t.Errorf("Expected path '%s', got %s", expectedPath, gotPath)
+	}
+}
+
 // TestDeleteLabel_NormalLabel tests that DeleteLabel works with normal labels
 func TestDeleteLabel_NormalLabel(t *testing.T) {
 	var gotPath string
@@ -136,5 +181,29 @@ func TestDeleteLabel_NormalLabel(t *testing.T) {
 	expectedPath := "/api/v5/repos/owner/repo/labels/feature"
 	if gotPath != expectedPath {
 		t.Errorf("Expected path '%s', got %s", expectedPath, gotPath)
+	}
+}
+
+// TestCreateLabel_SlashLabel tests that CreateLabel works with slash labels using QueryEscape
+func TestCreateLabel_SlashLabel(t *testing.T) {
+	var gotURL string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotURL = req.URL.String()
+		return authTestResponse(http.StatusOK, `{"name":"risk/high","color":"red"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	opts := &CreateLabelOptions{Name: "risk/high", Color: "red"}
+	_, err := CreateLabel(client, "owner", "repo", opts)
+	if err != nil {
+		t.Fatalf("CreateLabel() error = %v", err)
+	}
+
+	// CreateLabel uses QueryEscape for query parameters, not PathEscape
+	// Verify the slash in the label name is escaped in query parameter
+	expectedEscaped := "name=risk%2Fhigh"
+	if !strings.Contains(gotURL, expectedEscaped) {
+		t.Errorf("Expected escaped query param '%s' in URL, got %s", expectedEscaped, gotURL)
 	}
 }

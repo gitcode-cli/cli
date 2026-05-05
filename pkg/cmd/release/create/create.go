@@ -4,6 +4,7 @@ package create
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -24,6 +25,7 @@ type CreateOptions struct {
 	Repository string
 	Title      string
 	Notes      string
+	NotesFile  string
 	Draft      bool
 	Prerelease bool
 	Target     string
@@ -53,6 +55,9 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 			# Create a release with title and notes
 			$ gc release create v1.0.0 -R owner/repo --title "Version 1.0" --notes "Release notes"
 
+			# Create a release with notes from file
+			$ gc release create v1.0.0 -R owner/repo --notes-file CHANGELOG.md
+
 			# Create a draft release
 			$ gc release create v1.0.0 -R owner/repo --draft
 
@@ -76,6 +81,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Title, "title", "t", "", "Release title")
 	cmd.Flags().StringVarP(&opts.Notes, "notes", "n", "", "Release notes")
+	cmd.Flags().StringVarP(&opts.NotesFile, "notes-file", "F", "", "Read release notes from file")
 	cmd.Flags().BoolVarP(&opts.Draft, "draft", "d", false, "Mark as draft")
 	cmd.Flags().BoolVarP(&opts.Prerelease, "prerelease", "p", false, "Mark as prerelease")
 	cmd.Flags().StringVarP(&opts.Target, "target", "", "", "Target commitish")
@@ -86,6 +92,21 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 func createRun(opts *CreateOptions) error {
 	cs := opts.IO.ColorScheme()
+
+	// Validate mutual exclusion of --notes and --notes-file
+	if opts.Notes != "" && opts.NotesFile != "" {
+		return cmdutil.NewUsageError("cannot use both --notes and --notes-file")
+	}
+
+	// Get release body from notes or file
+	body := opts.Notes
+	if opts.NotesFile != "" {
+		content, err := os.ReadFile(opts.NotesFile)
+		if err != nil {
+			return fmt.Errorf("failed to read notes file: %w", err)
+		}
+		body = string(content)
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {
@@ -109,7 +130,7 @@ func createRun(opts *CreateOptions) error {
 	release, err := api.CreateRelease(client, owner, repo, &api.CreateReleaseOptions{
 		TagName:         opts.TagName,
 		Name:            opts.Title,
-		Body:            opts.Notes,
+		Body:            body,
 		Draft:           opts.Draft,
 		Prerelease:      opts.Prerelease,
 		TargetCommitish: opts.Target,

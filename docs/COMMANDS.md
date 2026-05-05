@@ -1046,6 +1046,9 @@ gc pr sync --source-pr owner/source-repo#123 \
 # 创建 Release（建议包含 --notes 参数）
 gc release create v1.0.0 -R infra-test/gctest1 --title "Version 1.0.0" --notes "Release notes"
 
+# 从文件读取 Release Notes
+gc release create v1.0.0 -R infra-test/gctest1 --title "Version 1.0.0" --notes-file CHANGELOG.md
+
 # 创建预发布 Release
 gc release create v1.0.0-beta -R infra-test/gctest1 --title "v1.0.0 Beta" --notes "Beta release" --prerelease
 
@@ -1059,7 +1062,7 @@ gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Release
 gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Release" --json
 ```
 
-> **注意**: `--notes` 参数是必需的，不带此参数可能返回 400 错误。
+> **注意**: `--notes` 和 `--notes-file` 参数不能同时使用。
 > `--json` 只在成功创建后输出 release 对象；不会混入文本提示。
 
 ### release list - 列出 Releases

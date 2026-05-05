@@ -90,8 +90,9 @@ func ListReleases(client *Client, owner, repo string, opts *ReleaseListOptions) 
 
 // GetRelease fetches a release by tag name
 func GetRelease(client *Client, owner, repo, tag string) (*Release, error) {
+	escapedTag := url.PathEscape(tag)
 	var release Release
-	err := client.Get("/repos/"+owner+"/"+repo+"/releases/tags/"+tag, &release)
+	err := client.Get("/repos/"+owner+"/"+repo+"/releases/tags/"+escapedTag, &release)
 	if err != nil {
 		return nil, err
 	}
@@ -246,9 +247,10 @@ func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error
 
 // GetReleaseUploadURL fetches the upload URL for a release asset
 func GetReleaseUploadURL(client *Client, owner, repo, tag, filename string) (*AssetUploadURL, error) {
+	escapedTag := url.PathEscape(tag)
 	values := url.Values{}
 	values.Set("file_name", filename)
-	path := "/repos/" + owner + "/" + repo + "/releases/" + tag + "/upload_url?" + values.Encode()
+	path := "/repos/" + owner + "/" + repo + "/releases/" + escapedTag + "/upload_url?" + values.Encode()
 
 	var result AssetUploadURL
 	err := client.Get(path, &result)

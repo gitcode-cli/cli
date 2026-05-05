@@ -348,3 +348,189 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return fn(req)
 }
+
+// Security tests for path traversal prevention
+
+func TestSanitizeAssetName(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    string
+		wantErr bool
+		errMsg  string
+	}{
+		{"valid simple name", "app.tar.gz", "app.tar.gz", false, ""},
+		{"valid with spaces trimmed", "  app.zip  ", "app.zip", false, ""},
+		{"valid with dots in filename", "file.name.txt", "file.name.txt", false, ""},
+		{"empty name rejected", "", "", true, "asset name cannot be empty"},
+		{"whitespace-only rejected", "   ", "", true, "asset name cannot be empty"},
+		{"absolute path Unix rejected", "/tmp/outside.txt", "", true, "asset name cannot be an absolute path"},
+		{"absolute path Windows rejected", "C:\\Windows\\outside.txt", "", true, "asset name cannot contain path separators"},
+		{"path traversal parent rejected", "../outside.txt", "", true, "asset name cannot contain path separators"},
+		{"nested traversal rejected", "nested/../outside.txt", "", true, "asset name cannot contain path separators"},
+		{"path separator slash rejected", "nested/file.txt", "", true, "asset name cannot contain path separators"},
+		{"path separator backslash rejected", "nested\\file.txt", "", true, "asset name cannot contain path separators"},
+		{"single dot rejected", ".", "", true, "invalid asset name"},
+		{"double dot rejected", "..", "", true, "invalid asset name"},
+		{"deep traversal rejected", "../../outside.txt", "", true, "asset name cannot contain path separators"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := sanitizeAssetName(tt.input)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("sanitizeAssetName(%q) expected error, got nil", tt.input)
+				} else if tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("sanitizeAssetName(%q) error = %v, want containing %q", tt.input, err, tt.errMsg)
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("sanitizeAssetName(%q) unexpected error: %v", tt.input, err)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("sanitizeAssetName(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSafeOutputPath(t *testing.T) {
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name        string
+		outputDir   string
+		assetName   string
+		wantErr     bool
+		errContains string
+	}{
+		{"valid simple name", tempDir, "app.tar.gz", false, ""},
+		{"valid with dots", tempDir, "file.name.txt", false, ""},
+		{"traversal outside dir", tempDir, "../outside.txt", true, "path separators"},
+		{"absolute path", tempDir, "/tmp/outside.txt", true, "absolute path"},
+		{"nested traversal", tempDir, "nested/../outside.txt", true, "path separators"},
+		{"deep traversal", tempDir, "../../outside.txt", true, "path separators"},
+		{"path separator", tempDir, "nested/file.txt", true, "path separators"},
+		{"empty name", tempDir, "", true, "cannot be empty"},
+		{"single dot", tempDir, ".", true, "invalid asset name"},
+		{"double dot", tempDir, "..", true, "invalid asset name"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := safeOutputPath(tt.outputDir, tt.assetName)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("safeOutputPath() expected error, got path %q", got)
+				}
+				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
+					t.Errorf("safeOutputPath() error = %v, want containing %q", err, tt.errContains)
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("safeOutputPath() unexpected error: %v", err)
+				return
+			}
+			// Verify path is inside outputDir
+			rel, err := filepath.Rel(tempDir, got)
+			if err != nil {
+				t.Errorf("filepath.Rel() error: %v", err)
+				return
+			}
+			if rel == ".." || strings.HasPrefix(rel, "../") {
+				t.Errorf("safeOutputPath() returned path outside output dir: %q", got)
+			}
+		})
+	}
+}
+
+func TestDownloadAssetRejectsPathTraversal(t *testing.T) {
+	tempDir := t.TempDir()
+	ioStreams, _, _, _ := iostreams.Test()
+	cs := ioStreams.ColorScheme()
+
+	httpClient := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("malicious-content")),
+			}, nil
+		}),
+	}
+
+	client := api.NewClientFromHTTP(httpClient)
+
+	err := downloadAsset(api.ReleaseAsset{Name: "../outside.txt"}, tempDir, httpClient, cs, io.Discard, client, "owner", "repo", "v1.0.0")
+	if err == nil {
+		t.Fatal("downloadAsset() expected error for path traversal, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid asset name") {
+		t.Errorf("downloadAsset() error = %v, want containing 'invalid asset name'", err)
+	}
+
+	// Verify no file was created outside tempDir
+	outsidePath := filepath.Join(filepath.Dir(tempDir), "outside.txt")
+	if _, err := os.Stat(outsidePath); !os.IsNotExist(err) {
+		t.Fatalf("file was created outside output directory: %s", outsidePath)
+	}
+}
+
+func TestDownloadAssetRejectsAbsolutePath(t *testing.T) {
+	tempDir := t.TempDir()
+	ioStreams, _, _, _ := iostreams.Test()
+	cs := ioStreams.ColorScheme()
+
+	httpClient := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("malicious-content")),
+			}, nil
+		}),
+	}
+
+	client := api.NewClientFromHTTP(httpClient)
+
+	err := downloadAsset(api.ReleaseAsset{Name: "/tmp/malicious.txt"}, tempDir, httpClient, cs, io.Discard, client, "owner", "repo", "v1.0.0")
+	if err == nil {
+		t.Fatal("downloadAsset() expected error for absolute path, got nil")
+	}
+	if !strings.Contains(err.Error(), "absolute path") {
+		t.Errorf("downloadAsset() error = %v, want containing 'absolute path'", err)
+	}
+}
+
+func TestDownloadAssetRejectsPathSeparator(t *testing.T) {
+	tempDir := t.TempDir()
+	ioStreams, _, _, _ := iostreams.Test()
+	cs := ioStreams.ColorScheme()
+
+	httpClient := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("malicious-content")),
+			}, nil
+		}),
+	}
+
+	client := api.NewClientFromHTTP(httpClient)
+
+	err := downloadAsset(api.ReleaseAsset{Name: "nested/file.txt"}, tempDir, httpClient, cs, io.Discard, client, "owner", "repo", "v1.0.0")
+	if err == nil {
+		t.Fatal("downloadAsset() expected error for path separator, got nil")
+	}
+	if !strings.Contains(err.Error(), "path separators") {
+		t.Errorf("downloadAsset() error = %v, want containing 'path separators'", err)
+	}
+
+	// Verify no nested directory was created
+	nestedPath := filepath.Join(tempDir, "nested")
+	if _, err := os.Stat(nestedPath); !os.IsNotExist(err) {
+		t.Fatalf("nested directory was created inside output directory: %s", nestedPath)
+	}
+}

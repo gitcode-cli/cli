@@ -155,8 +155,11 @@ func downloadRun(opts *DownloadOptions) error {
 }
 
 func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Client, cs *iostreams.ColorScheme, out io.Writer, client *api.Client, owner, repo, tag string) error {
-	// Create output file
-	outputPath := filepath.Join(outputDir, asset.Name)
+	// Validate and construct safe output path
+	outputPath, err := safeOutputPath(outputDir, asset.Name)
+	if err != nil {
+		return fmt.Errorf("invalid asset name '%s': %w", asset.Name, err)
+	}
 	fmt.Fprintf(out, "%s Downloading %s...\n", cs.Blue("⬇"), asset.Name)
 
 	downloadURL := assetDownloadURL(asset, client.Host(), owner, repo, tag)
@@ -264,4 +267,83 @@ func formatSize(bytes int) string {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+// canonicalDir resolves a path to its absolute canonical form,
+// resolving any symbolic links.
+func canonicalDir(path string) (string, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	if resolved, err := filepath.EvalSymlinks(absPath); err == nil {
+		absPath = resolved
+	}
+	return absPath, nil
+}
+
+// sanitizeAssetName validates an asset name for safe filesystem operations.
+// It rejects empty names, absolute paths, path separators, and path traversal sequences.
+func sanitizeAssetName(name string) (string, error) {
+	// 1. Reject empty or whitespace-only names
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "", fmt.Errorf("asset name cannot be empty")
+	}
+
+	// 2. Reject absolute paths (Unix / or Windows drive letter)
+	if filepath.IsAbs(name) {
+		return "", fmt.Errorf("asset name cannot be an absolute path")
+	}
+
+	// 3. Reject names containing path separators
+	// This prevents creation of nested directories and path traversal attacks
+	if strings.ContainsAny(name, "/\\") {
+		return "", fmt.Errorf("asset name cannot contain path separators")
+	}
+
+	// 4. Clean the name and check for invalid values
+	cleaned := filepath.Clean(name)
+
+	// 5. Reject if cleaned to "." or ".."
+	if cleaned == "." || cleaned == ".." {
+		return "", fmt.Errorf("invalid asset name")
+	}
+
+	return cleaned, nil
+}
+
+// safeOutputPath validates and constructs a safe output path within outputDir.
+// It ensures the final path cannot escape the output directory.
+func safeOutputPath(outputDir, assetName string) (string, error) {
+	// 1. Resolve outputDir to canonical absolute path
+	outputDirAbs, err := canonicalDir(outputDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve output directory: %w", err)
+	}
+
+	// 2. Sanitize the asset name
+	safeName, err := sanitizeAssetName(assetName)
+	if err != nil {
+		return "", err
+	}
+
+	// 3. Construct the target path
+	targetPath := filepath.Join(outputDirAbs, safeName)
+
+	// 4. Clean and validate the final path
+	targetAbs := filepath.Clean(targetPath)
+
+	// 5. Verify the target is inside outputDir using filepath.Rel
+	rel, err := filepath.Rel(outputDirAbs, targetAbs)
+	if err != nil {
+		return "", fmt.Errorf("failed to validate output path: %w", err)
+	}
+
+	// 6. Reject if relative path starts with ".." (traversal detected)
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("asset name would write outside output directory")
+	}
+
+	return targetAbs, nil
 }

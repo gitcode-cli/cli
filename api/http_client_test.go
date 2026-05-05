@@ -138,3 +138,73 @@ func TestNewDownloadHTTPClient(t *testing.T) {
 		t.Errorf("client.Timeout = %v, want %v", client.Timeout, DownloadTimeout)
 	}
 }
+
+func TestNewDownloadHTTPClientWithEnvTimeout_Default(t *testing.T) {
+	os.Unsetenv("GC_TIMEOUT")
+	defer os.Unsetenv("GC_TIMEOUT")
+
+	client := NewDownloadHTTPClientWithEnvTimeout()
+
+	if client.Timeout != DownloadTimeout {
+		t.Errorf("client.Timeout = %v, want %v (DownloadTimeout)", client.Timeout, DownloadTimeout)
+	}
+}
+
+func TestNewDownloadHTTPClientWithEnvTimeout_WithEnv(t *testing.T) {
+	os.Setenv("GC_TIMEOUT", "5m")
+	defer os.Unsetenv("GC_TIMEOUT")
+
+	client := NewDownloadHTTPClientWithEnvTimeout()
+
+	if client.Timeout != 5*time.Minute {
+		t.Errorf("client.Timeout = %v, want 5m", client.Timeout)
+	}
+}
+
+func TestNewDownloadHTTPClientWithEnvTimeout_WithSeconds(t *testing.T) {
+	os.Setenv("GC_TIMEOUT", "300")
+	defer os.Unsetenv("GC_TIMEOUT")
+
+	client := NewDownloadHTTPClientWithEnvTimeout()
+
+	// Should parse as seconds when no unit specified
+	if client.Timeout != 300*time.Second {
+		t.Errorf("client.Timeout = %v, want 300s", client.Timeout)
+	}
+}
+
+func TestNewDownloadHTTPClientWithEnvTimeout_InvalidValue(t *testing.T) {
+	os.Setenv("GC_TIMEOUT", "invalid")
+	defer os.Unsetenv("GC_TIMEOUT")
+
+	client := NewDownloadHTTPClientWithEnvTimeout()
+
+	// Should use DownloadTimeout on invalid value
+	if client.Timeout != DownloadTimeout {
+		t.Errorf("client.Timeout = %v, want %v (DownloadTimeout)", client.Timeout, DownloadTimeout)
+	}
+}
+
+func TestNewDownloadHTTPClientWithEnvTimeout_NegativeValue(t *testing.T) {
+	os.Setenv("GC_TIMEOUT", "-10s")
+	defer os.Unsetenv("GC_TIMEOUT")
+
+	client := NewDownloadHTTPClientWithEnvTimeout()
+
+	// Should use DownloadTimeout on negative value
+	if client.Timeout != DownloadTimeout {
+		t.Errorf("client.Timeout = %v, want %v (DownloadTimeout)", client.Timeout, DownloadTimeout)
+	}
+}
+
+func TestNewDownloadHTTPClientWithEnvTimeout_ZeroValue(t *testing.T) {
+	os.Setenv("GC_TIMEOUT", "0")
+	defer os.Unsetenv("GC_TIMEOUT")
+
+	client := NewDownloadHTTPClientWithEnvTimeout()
+
+	// Should use DownloadTimeout on zero value
+	if client.Timeout != DownloadTimeout {
+		t.Errorf("client.Timeout = %v, want %v (DownloadTimeout)", client.Timeout, DownloadTimeout)
+	}
+}

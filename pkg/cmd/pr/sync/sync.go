@@ -168,11 +168,6 @@ func ParsePRRef(ref string) (*PRRef, error) {
 }
 
 func syncRun(opts *SyncOptions) error {
-	token := cmdutil.EnvToken()
-	if token == "" {
-		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
-	}
-
 	// Parse source PR reference
 	sourcePR, err := ParsePRRef(opts.SourcePR)
 	if err != nil {
@@ -190,8 +185,11 @@ func syncRun(opts *SyncOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
-	client := api.NewClientFromHTTP(httpClient)
-	client.SetToken(token, "environment")
+	client, err := cmdutil.AuthenticatedClient(httpClient)
+	if err != nil {
+		return err
+	}
+	token := client.Token()
 
 	// Get source PR details
 	pr, err := opts.GetPR(client, sourcePR.Owner, sourcePR.Repo, sourcePR.Number)

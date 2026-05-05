@@ -84,16 +84,10 @@ func listRun(opts *ListOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
-
-	// Create API client (token from env)
-	client := api.NewClientFromHTTP(httpClient)
-
-	// Get token from environment
-	token := cmdutil.EnvToken()
-	if token == "" {
-		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
+	client, err := cmdutil.AuthenticatedClient(httpClient)
+	if err != nil {
+		return err
 	}
-	client.SetToken(token, "environment")
 
 	// List repos
 	repoOpts := &api.RepoListOptions{

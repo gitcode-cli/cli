@@ -113,13 +113,10 @@ func commentRun(opts *CommentOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
-
-	client := api.NewClientFromHTTP(httpClient)
-	token := cmdutil.EnvToken()
-	if token == "" {
-		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
+	client, err := cmdutil.AuthenticatedClient(httpClient)
+	if err != nil {
+		return err
 	}
-	client.SetToken(token, "active")
 
 	// Get repository
 	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)

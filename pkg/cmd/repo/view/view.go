@@ -79,11 +79,9 @@ func viewRun(opts *ViewOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
-
-	client := api.NewClientFromHTTP(httpClient)
-	token := cmdutil.EnvToken()
-	if token != "" {
-		client.SetToken(token, "environment")
+	client, err := cmdutil.AuthenticatedClient(httpClient)
+	if err != nil {
+		return err
 	}
 
 	// Parse repository

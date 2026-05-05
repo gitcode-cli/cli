@@ -131,11 +131,6 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 }
 
 func syncRun(opts *SyncOptions) error {
-	token := cmdutil.EnvToken()
-	if token == "" {
-		return cmdutil.NewAuthError("not authenticated. Run: gc auth login")
-	}
-
 	rootDir, err := opts.RootDir()
 	if err != nil {
 		return fmt.Errorf("repo sync must be run inside a git repository: %w", err)
@@ -165,8 +160,11 @@ func syncRun(opts *SyncOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
-	client := api.NewClientFromHTTP(httpClient)
-	client.SetToken(token, "environment")
+	client, err := cmdutil.AuthenticatedClient(httpClient)
+	if err != nil {
+		return err
+	}
+	token := client.Token()
 
 	targetOwner, targetRepo, err := cmdutil.ParseRepo(opts.TargetRepo)
 	if err != nil {

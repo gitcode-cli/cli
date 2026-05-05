@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"gitcode.com/gitcode-cli/cli/api"
 )
@@ -129,6 +130,11 @@ func ExitCode(err error) int {
 		}
 	}
 
+	// Check for Cobra usage errors (argument/flag validation failures)
+	if isCobraUsageError(err) {
+		return ExitUsage
+	}
+
 	var apiErr *api.APIError
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode {
@@ -152,4 +158,38 @@ func ExitCode(err error) int {
 	}
 
 	return ExitError
+}
+
+// isCobraUsageError detects Cobra's argument and flag validation errors.
+// These errors should return ExitUsage (2) per agent-friendly spec.
+func isCobraUsageError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errMsg := err.Error()
+
+	// Cobra argument validation errors:
+	// - "accepts %d arg(s), received %d" (ExactArgs, MaximumNArgs, RangeArgs)
+	// - "requires at least %d arg(s), only received %d" (MinimumNArgs)
+	if (strings.HasPrefix(errMsg, "accepts") || strings.HasPrefix(errMsg, "requires")) &&
+		strings.Contains(errMsg, "arg(s)") {
+		return true
+	}
+
+	// Cobra required flag errors:
+	// - "required flag(s) \"%s\" not set"
+	if strings.Contains(errMsg, "required flag") {
+		return true
+	}
+
+	// Cobra unknown command/flag errors:
+	// - "unknown command %q for %q"
+	// - "unknown flag: %s"
+	// - "unknown shorthand flag: %s"
+	if strings.Contains(errMsg, "unknown command") || strings.Contains(errMsg, "unknown flag") || strings.Contains(errMsg, "unknown shorthand") {
+		return true
+	}
+
+	return false
 }

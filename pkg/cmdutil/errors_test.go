@@ -57,6 +57,63 @@ func TestExitCode(t *testing.T) {
 			t.Fatalf("ExitCode() = %d, want %d", got, ExitError)
 		}
 	})
+
+	// Cobra usage errors should return ExitUsage (2)
+	t.Run("cobra missing args error", func(t *testing.T) {
+		err := errors.New("accepts 1 arg(s), received 0")
+		if got := ExitCode(err); got != ExitUsage {
+			t.Fatalf("ExitCode(cobra missing args) = %d, want %d", got, ExitUsage)
+		}
+	})
+
+	t.Run("cobra too many args error", func(t *testing.T) {
+		err := errors.New("accepts at most 1 arg(s), received 2")
+		if got := ExitCode(err); got != ExitUsage {
+			t.Fatalf("ExitCode(cobra too many args) = %d, want %d", got, ExitUsage)
+		}
+	})
+
+	t.Run("cobra minimum args error", func(t *testing.T) {
+		err := errors.New("requires at least 2 arg(s), only received 1")
+		if got := ExitCode(err); got != ExitUsage {
+			t.Fatalf("ExitCode(cobra minimum args) = %d, want %d", got, ExitUsage)
+		}
+	})
+
+	t.Run("cobra required flag error", func(t *testing.T) {
+		err := errors.New("required flag(s) \"target-repo\" not set")
+		if got := ExitCode(err); got != ExitUsage {
+			t.Fatalf("ExitCode(cobra required flag) = %d, want %d", got, ExitUsage)
+		}
+	})
+
+	t.Run("cobra unknown command error", func(t *testing.T) {
+		err := errors.New("unknown command \"foo\" for \"gc\"")
+		if got := ExitCode(err); got != ExitUsage {
+			t.Fatalf("ExitCode(cobra unknown command) = %d, want %d", got, ExitUsage)
+		}
+	})
+
+	t.Run("cobra unknown flag error", func(t *testing.T) {
+		err := errors.New("unknown flag: --unknown-flag")
+		if got := ExitCode(err); got != ExitUsage {
+			t.Fatalf("ExitCode(cobra unknown flag) = %d, want %d", got, ExitUsage)
+		}
+	})
+
+	t.Run("cobra unknown shorthand flag error", func(t *testing.T) {
+		err := errors.New("unknown shorthand flag: -f in `-f'")
+		if got := ExitCode(err); got != ExitUsage {
+			t.Fatalf("ExitCode(cobra unknown shorthand flag) = %d, want %d", got, ExitUsage)
+		}
+	})
+
+	t.Run("cobra range args error", func(t *testing.T) {
+		err := errors.New("accepts between 1 and 3 arg(s), received 4")
+		if got := ExitCode(err); got != ExitUsage {
+			t.Fatalf("ExitCode(cobra range args) = %d, want %d", got, ExitUsage)
+		}
+	})
 }
 
 func TestFormatAPIID(t *testing.T) {

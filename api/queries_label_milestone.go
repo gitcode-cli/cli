@@ -54,8 +54,9 @@ func CreateLabel(client *Client, owner, repo string, opts *CreateLabelOptions) (
 
 // GetLabel fetches a label by name
 func GetLabel(client *Client, owner, repo, name string) (*Label, error) {
+	escapedName := url.PathEscape(name)
 	var label Label
-	err := client.Get("/repos/"+owner+"/"+repo+"/labels/"+name, &label)
+	err := client.Get("/repos/"+owner+"/"+repo+"/labels/"+escapedName, &label)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +65,9 @@ func GetLabel(client *Client, owner, repo, name string) (*Label, error) {
 
 // UpdateLabel updates an existing label
 func UpdateLabel(client *Client, owner, repo, name string, opts *UpdateLabelOptions) (*Label, error) {
+	escapedName := url.PathEscape(name)
 	var label Label
-	err := client.Patch("/repos/"+owner+"/"+repo+"/labels/"+name, opts, &label)
+	err := client.Patch("/repos/"+owner+"/"+repo+"/labels/"+escapedName, opts, &label)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +76,8 @@ func UpdateLabel(client *Client, owner, repo, name string, opts *UpdateLabelOpti
 
 // DeleteLabel deletes a label
 func DeleteLabel(client *Client, owner, repo, name string) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/labels/" + name)
+	escapedName := url.PathEscape(name)
+	return client.Delete("/repos/" + owner + "/" + repo + "/labels/" + escapedName)
 }
 
 // AddLabelsToIssue adds labels to an issue
@@ -91,7 +94,8 @@ func AddLabelsToIssue(client *Client, owner, repo string, number int, labels []s
 
 // RemoveLabelFromIssue removes a label from an issue
 func RemoveLabelFromIssue(client *Client, owner, repo string, number int, label string) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/labels/" + label)
+	escapedLabel := url.PathEscape(label)
+	return client.Delete("/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/labels/" + escapedLabel)
 }
 
 // SetIssueLabels sets (replaces) labels on an issue

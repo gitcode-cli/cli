@@ -1137,12 +1137,25 @@ gc release edit v1.0.0 --title "New title" -R infra-test/gctest1
 # 修改说明
 gc release edit v1.0.0 --notes "New release notes" -R infra-test/gctest1
 
+# 从文件读取说明
+gc release edit v1.0.0 --notes-file RELEASE_NOTES.md -R infra-test/gctest1
+
+# 标记为预发布
+gc release edit v1.0.0 --prerelease true -R infra-test/gctest1
+
+# 标记为正式发布
+gc release edit v1.0.0 --prerelease false -R infra-test/gctest1
+
 # JSON 输出
 gc release edit v1.0.0 --title "New title" -R infra-test/gctest1 --json
 ```
 
 说明：
-- 若 GitCode 当前 release 查询响应未返回 release ID，`release edit` 会明确报错提示上游 API 限制，而不是给出模糊失败信息。
+- `--draft` 和 `--target` 参数当前不受 GitCode release edit API 支持，使用时会输出警告但继续执行其他修改。
+- `--prerelease true` 将 release 标记为预发布状态（release_status=pre）。
+- `--prerelease false` 将 release 标记为正式发布状态（release_status=latest）。
+- 若只修改标题或只修改说明，API 会保留未修改字段的原始值。
+- 支持包含斜杠的 tag 名称（如 `release/v1.0.0`）。
 
 ### release delete - 删除 Release
 
@@ -1459,7 +1472,7 @@ gc schema "issue view"
 |------|----------|
 | `repo fork` | 仓库路径已按用户输入解析，但 GitCode API 在部分仓库上仍可能返回 `400 Bad Request` |
 | `milestone create/view` | 返回 400 错误，API 可能不支持 |
-| `release edit/delete` | GitCode API 不返回 release ID |
+| `release delete` | GitCode API 不返回 release ID，且不支持按 tag 删除（#241） |
 
 ---
 

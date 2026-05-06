@@ -158,7 +158,7 @@ func readyRun(opts *ReadyOptions) error {
 		Draft:  pr.Draft,
 		Owner:  owner,
 		Repo:   repo,
-		URL:    pr.HTMLURL,
+		URL:    cmdutil.ResolvePRURL(pr.HTMLURL, owner, repo, opts.Number),
 	}
 
 	if opts.JSON {

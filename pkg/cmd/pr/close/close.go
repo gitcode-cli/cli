@@ -140,7 +140,7 @@ func closeRun(opts *CloseOptions) error {
 		State:  pr.State,
 		Owner:  owner,
 		Repo:   repo,
-		URL:    pr.HTMLURL,
+		URL:    cmdutil.ResolvePRURL(pr.HTMLURL, owner, repo, opts.Number),
 	}
 	if opts.Comment != "" {
 		result.Comment = opts.Comment

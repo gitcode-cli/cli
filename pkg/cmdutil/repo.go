@@ -46,3 +46,15 @@ func ParseRepo(repo string) (string, string, error) {
 
 	return parsedRepo.Owner, parsedRepo.Name, nil
 }
+
+// ResolvePRURL returns the PR URL with fallback logic.
+// If the API-provided URL is empty, it constructs one from owner/repo/number.
+func ResolvePRURL(htmlURL, owner, repo string, number int) string {
+	if strings.TrimSpace(htmlURL) != "" {
+		return htmlURL
+	}
+	if number > 0 && owner != "" && repo != "" {
+		return fmt.Sprintf("https://gitcode.com/%s/%s/merge_requests/%d", owner, repo, number)
+	}
+	return ""
+}

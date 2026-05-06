@@ -142,3 +142,64 @@ func TestParseRepoOutsideGitRepoRequiresExplicitRepo(t *testing.T) {
 		t.Fatalf("ExitCode() = %d, want %d", got, ExitUsage)
 	}
 }
+
+func TestResolvePRURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		htmlURL string
+		owner   string
+		repo    string
+		number  int
+		want    string
+	}{
+		{
+			name:    "API URL provided",
+			htmlURL: "https://gitcode.com/owner/repo/merge_requests/123",
+			owner:   "owner",
+			repo:    "repo",
+			number:  123,
+			want:    "https://gitcode.com/owner/repo/merge_requests/123",
+		},
+		{
+			name:    "Empty URL fallback",
+			htmlURL: "",
+			owner:   "owner",
+			repo:    "repo",
+			number:  123,
+			want:    "https://gitcode.com/owner/repo/merge_requests/123",
+		},
+		{
+			name:    "Whitespace URL fallback",
+			htmlURL: "   ",
+			owner:   "owner",
+			repo:    "repo",
+			number:  123,
+			want:    "https://gitcode.com/owner/repo/merge_requests/123",
+		},
+		{
+			name:    "Zero number returns empty",
+			htmlURL: "",
+			owner:   "owner",
+			repo:    "repo",
+			number:  0,
+			want:    "",
+		},
+		{
+			name:    "Empty owner returns empty",
+			htmlURL: "",
+			owner:   "",
+			repo:    "repo",
+			number:  123,
+			want:    "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ResolvePRURL(tt.htmlURL, tt.owner, tt.repo, tt.number)
+			if got != tt.want {
+				t.Errorf("ResolvePRURL(%q, %q, %q, %d) = %q, want %q",
+					tt.htmlURL, tt.owner, tt.repo, tt.number, got, tt.want)
+			}
+		})
+	}
+}

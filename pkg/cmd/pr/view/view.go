@@ -92,6 +92,11 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 func viewRun(opts *ViewOptions) error {
 	cs := opts.IO.ColorScheme()
+
+	if opts.JSON && opts.Web {
+		return cmdutil.NewUsageError("cannot use --json with --web")
+	}
+
 	timeFormat, err := parseTimeFormat(opts.TimeFormat)
 	if err != nil {
 		return err

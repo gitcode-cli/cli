@@ -2,6 +2,7 @@ package view
 
 import (
 	"bytes"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 	"gitcode.com/gitcode-cli/cli/pkg/output"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdViewTimeFormatEnumAnnotation(t *testing.T) {
@@ -178,5 +180,22 @@ func TestRenderIssueView(t *testing.T) {
 		if !strings.Contains(output, want) {
 			t.Fatalf("renderIssueView() output missing %q: %s", want, output)
 		}
+	}
+}
+
+func TestViewRunRejectsJSONWithWebBeforeAuth(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	err := viewRun(&ViewOptions{
+		IO:     io,
+		Web:    true,
+		JSON:   true,
+		Number: 1,
+		HttpClient: func() (*http.Client, error) {
+			t.Fatal("HttpClient should not be called when --json and --web conflict")
+			return nil, nil
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "cannot use --json with --web") {
+		t.Fatalf("viewRun() error = %v, want json/web usage error", err)
 	}
 }

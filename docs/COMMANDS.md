@@ -476,7 +476,7 @@ gc issue list -R infra-test/gctest1 --template '{{range .}}#{{.Number}} {{.Title
 gc issue view 1 -R infra-test/gctest1
 gc issue view 1
 
-# 查看评论
+# 查看所有评论（自动翻页获取全部）
 gc issue view 1 -R infra-test/gctest1 --comments
 
 # 在浏览器中打开
@@ -613,6 +613,10 @@ gc issue comment edit 166061383 -R infra-test/gctest1 --body-file comment.md
 # 列出评论
 gc issue comments 1 -R infra-test/gctest1
 gc issue comments 1
+
+# 查看所有评论（--limit 0 或不指定 --limit，自动翻页获取全部）
+gc issue comments 1 -R infra-test/gctest1
+gc issue comments 1 -R infra-test/gctest1 --limit 0
 
 # 限制返回数量
 gc issue comments 1 -R infra-test/gctest1 --limit 10

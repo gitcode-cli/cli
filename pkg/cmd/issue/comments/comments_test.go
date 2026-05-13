@@ -61,7 +61,7 @@ func TestCommentsRunFormatsTextOutput(t *testing.T) {
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-					if got := req.URL.RawQuery; got != "order=desc&per_page=2&since=2024-01-01T00%3A00%3A00%2B08%3A00" {
+					if got := req.URL.RawQuery; got != "order=desc&page=1&per_page=100&since=2024-01-01T00%3A00%3A00%2B08%3A00" {
 						t.Fatalf("RawQuery = %q", got)
 					}
 					return jsonResponse(`[{"id":166027129,"body":"first line\nsecond line","user":{"login":"aflyingto"},"created_at":"2026-03-22T19:05:07+08:00","updated_at":"2026-03-22T19:08:02+08:00"}]`), nil

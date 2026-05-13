@@ -107,13 +107,16 @@ func commentsRun(opts *CommentsOptions) error {
 		return cmdutil.NewUsageError(fmt.Sprintf("invalid order %q: must be asc or desc", opts.Order))
 	}
 
-	comments, err := api.ListIssueComments(client, owner, repo, opts.Number, &api.IssueCommentListOptions{
-		PerPage: opts.Limit,
-		Order:   opts.Order,
-		Since:   opts.Since,
+	allComments, err := api.ListIssueCommentsAll(client, owner, repo, opts.Number, &api.IssueCommentListOptions{
+		Order: opts.Order,
+		Since: opts.Since,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list comments: %w", err)
+	}
+	comments := allComments
+	if opts.Limit > 0 && len(comments) > opts.Limit {
+		comments = comments[:opts.Limit]
 	}
 
 	if opts.JSON {

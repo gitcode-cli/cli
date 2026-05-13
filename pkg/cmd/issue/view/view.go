@@ -140,7 +140,7 @@ func viewRun(opts *ViewOptions) error {
 
 	if opts.JSON {
 		if opts.Comments && issue.Comments > 0 {
-			comments, err := api.ListIssueComments(client, owner, repo, opts.Number, nil)
+			comments, err := api.ListIssueCommentsAll(client, owner, repo, opts.Number, nil)
 			if err != nil {
 				return fmt.Errorf("failed to get comments: %w", err)
 			}
@@ -157,7 +157,7 @@ func viewRun(opts *ViewOptions) error {
 	}
 
 	if opts.Comments && issue.Comments > 0 {
-		comments, err := api.ListIssueComments(client, owner, repo, opts.Number, nil)
+		comments, err := api.ListIssueCommentsAll(client, owner, repo, opts.Number, nil)
 		if err != nil {
 			return fmt.Errorf("failed to get comments: %w", err)
 		}

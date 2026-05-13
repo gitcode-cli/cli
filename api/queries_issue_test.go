@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -384,5 +385,112 @@ func TestIssue_SecurityHoleFieldEmpty(t *testing.T) {
 	}
 	if issue.Private != "" {
 		t.Errorf("Expected Private empty, got '%s'", issue.Private)
+	}
+}
+
+func TestListIssueCommentsAllHandlesNilOpts(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		if !strings.Contains(req.URL.RawQuery, "per_page=100") {
+			t.Fatalf("expected per_page=100 in query, got %s", req.URL.RawQuery)
+		}
+		if !strings.Contains(req.URL.RawQuery, "page=1") {
+			t.Fatalf("expected page=1 in query, got %s", req.URL.RawQuery)
+		}
+		return authTestResponse(http.StatusOK, `[{"id":1,"body":"test","user":{"login":"a"}}]`), nil
+	})
+
+	comments, err := ListIssueCommentsAll(client, "owner", "repo", 1, nil)
+	if err != nil {
+		t.Fatalf("ListIssueCommentsAll(nil opts) error = %v", err)
+	}
+	if len(comments) != 1 {
+		t.Fatalf("expected 1 comment, got %d", len(comments))
+	}
+}
+
+func TestListIssueCommentsAllDoesNotMutateOpts(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `[{"id":1,"body":"test","user":{"login":"a"}}]`), nil
+	})
+
+	opts := &IssueCommentListOptions{
+		Page:    5,
+		PerPage: 50,
+		Order:   "desc",
+		Since:   "2024-01-01",
+	}
+
+	_, err := ListIssueCommentsAll(client, "owner", "repo", 1, opts)
+	if err != nil {
+		t.Fatalf("ListIssueCommentsAll() error = %v", err)
+	}
+
+	if opts.PerPage != 50 {
+		t.Fatalf("opts.PerPage was mutated: got %d, want 50", opts.PerPage)
+	}
+	if opts.Page != 5 {
+		t.Fatalf("opts.Page was mutated: got %d, want 5", opts.Page)
+	}
+	if opts.Order != "desc" {
+		t.Fatalf("opts.Order was mutated: got %s, want desc", opts.Order)
+	}
+	if opts.Since != "2024-01-01" {
+		t.Fatalf("opts.Since was mutated: got %s, want 2024-01-01", opts.Since)
+	}
+}
+
+func TestListIssueCommentsAllPagination(t *testing.T) {
+	var requestCount int
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requestCount++
+		comments := `[`
+		count := 100
+		if requestCount == 3 {
+			count = 50
+		}
+		for i := 0; i < count; i++ {
+			if i > 0 {
+				comments += ","
+			}
+			comments += `{"id":1,"body":"t","user":{"login":"a"}}`
+		}
+		comments += `]`
+		return authTestResponse(http.StatusOK, comments), nil
+	})
+
+	comments, err := ListIssueCommentsAll(client, "owner", "repo", 1, nil)
+	if err != nil {
+		t.Fatalf("ListIssueCommentsAll() error = %v", err)
+	}
+	if len(comments) != 250 {
+		t.Fatalf("expected 250 comments, got %d", len(comments))
+	}
+	if requestCount != 3 {
+		t.Fatalf("expected 3 requests, got %d", requestCount)
+	}
+}
+
+func TestListIssueCommentsAllErrorPropagation(t *testing.T) {
+	var requestCount int
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requestCount++
+		if requestCount == 1 {
+			// Return exactly 100 comments so the loop requests page 2
+			comments := `[`
+			for i := 0; i < 100; i++ {
+				if i > 0 {
+					comments += ","
+				}
+				comments += `{"id":1,"body":"t","user":{"login":"a"}}`
+			}
+			comments += `]`
+			return authTestResponse(http.StatusOK, comments), nil
+		}
+		return nil, fmt.Errorf("network error")
+	})
+
+	_, err := ListIssueCommentsAll(client, "owner", "repo", 1, nil)
+	if err == nil {
+		t.Fatal("expected error from page 2, got nil")
 	}
 }

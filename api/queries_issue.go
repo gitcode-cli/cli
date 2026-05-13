@@ -471,6 +471,32 @@ func ListIssueComments(client *Client, owner, repo string, number int, opts *Iss
 	return comments, nil
 }
 
+// ListIssueCommentsAll lists all comments on an issue with automatic pagination
+func ListIssueCommentsAll(client *Client, owner, repo string, number int, opts *IssueCommentListOptions) ([]IssueComment, error) {
+	const perPage = 100
+
+	// Create a copy of opts to avoid mutating caller's object
+	localOpts := &IssueCommentListOptions{}
+	if opts != nil {
+		*localOpts = *opts
+	}
+	localOpts.PerPage = perPage
+
+	var allComments []IssueComment
+	for page := 1; ; page++ {
+		localOpts.Page = page
+		comments, err := ListIssueComments(client, owner, repo, number, localOpts)
+		if err != nil {
+			return nil, err
+		}
+		allComments = append(allComments, comments...)
+		if len(comments) < perPage {
+			break
+		}
+	}
+	return allComments, nil
+}
+
 // CreateIssueComment creates a comment on an issue
 func CreateIssueComment(client *Client, owner, repo string, number int, opts *CreateCommentOptions) (*IssueComment, error) {
 	var comment IssueComment

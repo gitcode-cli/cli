@@ -23,43 +23,44 @@ type HelpOptions struct {
 // NewCmdHelp creates the help command with search and discovery features.
 func NewCmdHelp(root *cobra.Command) *cobra.Command {
 	opts := &HelpOptions{Root: root}
+	commandName := root.Name()
 
 	cmd := &cobra.Command{
 		Use:   "help [command]",
 		Short: "Help about any command",
-		Long: heredoc.Doc(`
+		Long: heredoc.Docf(`
 			Help provides help for any command in the application.
-			Just type gc help [path to command] for full details.
+			Just type %[1]s help [path to command] for full details.
 
 			Additional discovery features:
 			--search: Search commands by keyword
 			--topics: List all available topics
 			--topic:  Filter commands by topic
 			--json:   Output in JSON format (for discovery features only)
-		`),
-		Example: heredoc.Doc(`
+		`, commandName),
+		Example: heredoc.Docf(`
 			# Show help for a command
-			$ gc help issue
-			$ gc help pr view
+			$ %[1]s help issue
+			$ %[1]s help pr view
 
 			# Search for commands containing "issue"
-			$ gc help --search issue
+			$ %[1]s help --search issue
 
 			# Search with JSON output
-			$ gc help --search issue --json
+			$ %[1]s help --search issue --json
 
 			# List all available topics
-			$ gc help --topics
+			$ %[1]s help --topics
 
 			# List topics with JSON output
-			$ gc help --topics --json
+			$ %[1]s help --topics --json
 
 			# Show commands related to pull-requests topic
-			$ gc help --topic pull-requests
+			$ %[1]s help --topic pull-requests
 
 			# List all commands in JSON format
-			$ gc help --json
-		`),
+			$ %[1]s help --json
+		`, commandName),
 		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
@@ -116,23 +117,27 @@ func standardHelp(cmd *cobra.Command) error {
 
 	// Only append discovery hints for root command
 	if cmd.Parent() == nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "\n%s", discoveryHints())
+		fmt.Fprintf(cmd.OutOrStdout(), "\n%s", discoveryHints(cmd.Name()))
 	}
 
 	return nil
 }
 
-func discoveryHints() string {
-	return `Additional discovery features:
-  gc help --search <keyword>  Search commands by keyword
-  gc help --topics            List all available topics
-  gc help --topic <topic>     Filter commands by topic
-  gc help --json              Output in JSON format
-  gc schema                   Print machine-readable command metadata
+func discoveryHints(commandName ...string) string {
+	name := "gc"
+	if len(commandName) > 0 && commandName[0] != "" {
+		name = commandName[0]
+	}
+	return fmt.Sprintf(`Additional discovery features:
+  %[1]s help --search <keyword>  Search commands by keyword
+  %[1]s help --topics            List all available topics
+  %[1]s help --topic <topic>     Filter commands by topic
+  %[1]s help --json              Output in JSON format
+  %[1]s schema                   Print machine-readable command metadata
 
-For AI agents: Use "gc schema" for structured command discovery.
+For AI agents: Use "%[1]s schema" for structured command discovery.
 Use "--json" flag on commands for machine-readable output.
-`
+`, name)
 }
 
 func searchCommands(root *cobra.Command, keyword string, out io.Writer) error {
@@ -167,7 +172,7 @@ func listTopics(root *cobra.Command, out io.Writer) error {
 	for _, topic := range topics {
 		fmt.Fprintf(out, "  %s\n", topic)
 	}
-	fmt.Fprintf(out, "\nUse 'gc help --topic <topic>' to see commands in that topic.\n")
+	fmt.Fprintf(out, "\nUse '%s help --topic <topic>' to see commands in that topic.\n", root.Name())
 	return nil
 }
 

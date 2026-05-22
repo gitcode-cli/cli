@@ -68,3 +68,37 @@ func TestSchemaCommandIncludesEnumMetadata(t *testing.T) {
 		}
 	}
 }
+
+func TestSchemaCommandRewritesExamplesForGitcodeRoot(t *testing.T) {
+	root := &cobra.Command{Use: "gitcode", Short: "root"}
+	issue := &cobra.Command{
+		Use:     "issue",
+		Short:   "issue root",
+		Example: "# View an issue\n$ gc issue view 1 -R owner/repo\n$ echo body | gc issue comment 1 --body-file -",
+	}
+	root.AddCommand(issue)
+
+	cmd := NewCmdSchema(root)
+	buf := &bytes.Buffer{}
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+	cmd.SetArgs([]string{"issue"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, `$ gitcode issue view 1 -R owner/repo`) {
+		t.Fatalf("schema output missing rewritten gitcode example: %s", output)
+	}
+	if !strings.Contains(output, `| gitcode issue comment 1 --body-file -`) {
+		t.Fatalf("schema output missing rewritten piped gitcode example: %s", output)
+	}
+	if strings.Contains(output, `$ gc issue view`) {
+		t.Fatalf("schema output should not expose gc example when root is gitcode: %s", output)
+	}
+	if strings.Contains(output, `| gc issue comment`) {
+		t.Fatalf("schema output should not expose piped gc example when root is gitcode: %s", output)
+	}
+}

@@ -161,6 +161,10 @@ Windows PowerShell 用户建议运行：
 
 说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
 
+Windows command-name behavior: when the wheel entrypoint is launched as
+`gitcode` or with `python -m gc_cli`, help, schema, version, and completion
+metadata display `gitcode`. The `gc` script keeps displaying `gc`.
+
 ### DEB (Debian/Ubuntu)
 
     wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.0/gc_0.5.0_amd64.deb

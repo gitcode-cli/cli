@@ -51,6 +51,7 @@ type Options struct {
 // NewCmdSchema creates the schema command.
 func NewCmdSchema(root *cobra.Command) *cobra.Command {
 	opts := &Options{Root: root}
+	commandName := root.Name()
 
 	cmd := &cobra.Command{
 		Use:   "schema [command-path]",
@@ -58,13 +59,13 @@ func NewCmdSchema(root *cobra.Command) *cobra.Command {
 		Long: heredoc.Doc(`
 			Print machine-readable metadata for the command tree or a specific command.
 		`),
-		Example: heredoc.Doc(`
+		Example: heredoc.Docf(`
 			# Print the entire command tree
-			$ gc schema
+			$ %[1]s schema
 
 			# Print schema for a specific command
-			$ gc schema "issue view"
-		`),
+			$ %[1]s schema "issue view"
+		`, commandName),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				opts.Path = strings.Join(args, " ")
@@ -98,7 +99,7 @@ func buildSchema(cmd *cobra.Command) schemaCommand {
 		Use:       cmd.Use,
 		Short:     cmd.Short,
 		Long:      cmd.Long,
-		Example:   cmd.Example,
+		Example:   commandExample(cmd),
 		Hidden:    cmd.Hidden,
 		Topic:     topic,
 		Aliases:   cmd.Aliases,
@@ -115,6 +116,32 @@ func buildSchema(cmd *cobra.Command) schemaCommand {
 	}
 
 	return entry
+}
+
+func commandExample(cmd *cobra.Command) string {
+	example := cmd.Example
+	if example == "" {
+		return ""
+	}
+
+	rootName := cmd.Root().Name()
+	if rootName == "" || rootName == "gc" {
+		return example
+	}
+
+	return rewriteCommandExample(example, rootName)
+}
+
+func rewriteCommandExample(example, rootName string) string {
+	if example == "" || rootName == "" || rootName == "gc" {
+		return example
+	}
+
+	replacer := strings.NewReplacer(
+		"$ gc ", "$ "+rootName+" ",
+		"| gc ", "| "+rootName+" ",
+	)
+	return replacer.Replace(example)
 }
 
 func buildArguments(cmd *cobra.Command) []schemaArgument {

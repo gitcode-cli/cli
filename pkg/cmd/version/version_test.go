@@ -106,3 +106,21 @@ func TestVersionOutput(t *testing.T) {
 		})
 	}
 }
+
+func TestVersionOutputUsesCommandName(t *testing.T) {
+	cmd := NewCmdVersion("dev", "none", "unknown", "gitcode")
+
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("cmd.Execute() error = %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "gitcode version dev") {
+		t.Fatalf("output missing gitcode version prefix: %s", output)
+	}
+	if cmd.Short != "Print gitcode version" {
+		t.Fatalf("NewCmdVersion().Short = %q, want %q", cmd.Short, "Print gitcode version")
+	}
+}

@@ -44,7 +44,20 @@ class WrapperTests(unittest.TestCase):
                             self.assertEqual(wrapper.main(), 7)
 
             ensure_executable.assert_called_once_with(binary)
-            run.assert_called_once_with([str(binary), "version"], cwd=os.getcwd())
+            args, kwargs = run.call_args
+            self.assertEqual(args[0], [str(binary), "version"])
+            self.assertEqual(kwargs["cwd"], os.getcwd())
+            self.assertEqual(kwargs["env"][wrapper.COMMAND_NAME_ENV], "gitcode")
+
+    def test_command_name_defaults_to_gitcode_for_python_module_on_windows(self):
+        with mock.patch("platform.system", return_value="Windows"):
+            with mock.patch("sys.argv", ["python", "-m", "gc_cli", "version"]):
+                self.assertEqual(wrapper.get_command_name(), "gitcode")
+
+    def test_command_name_preserves_gc_script_name(self):
+        with mock.patch("platform.system", return_value="Windows"):
+            with mock.patch("sys.argv", ["gc", "version"]):
+                self.assertEqual(wrapper.get_command_name(), "gc")
 
     def test_module_entrypoint_delegates_to_wrapper_main(self):
         with mock.patch("gc_cli.wrapper.main", return_value=0) as main:

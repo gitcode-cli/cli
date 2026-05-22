@@ -9,8 +9,12 @@
     "architecture": {
         "64bit": {
             "url": "https://gitcode.com/gitcode-cli/cli/releases/download/v0.1.0/gc_0.1.0_windows_amd64.zip",
+            "pre_install": [
+                "Copy-Item \"$dir\\gc.exe\" \"$dir\\gitcode.exe\""
+            ],
             "bin": [
-                "gc.exe"
+                "gc.exe",
+                "gitcode.exe"
             ]
         }
     },

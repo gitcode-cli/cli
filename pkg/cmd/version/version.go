@@ -17,14 +17,18 @@ type VersionInfo struct {
 	URL     string `json:"url,omitempty"`
 }
 
-// NewCmdVersion creates the version command
-func NewCmdVersion(ver, commit, date string) *cobra.Command {
+// NewCmdVersion creates the version command.
+func NewCmdVersion(ver, commit, date string, commandName ...string) *cobra.Command {
 	var jsonOutput bool
+	displayName := "gc"
+	if len(commandName) > 0 && commandName[0] != "" {
+		displayName = commandName[0]
+	}
 
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "Print gc version",
-		Long:  "Print the version information of gc.",
+		Short: fmt.Sprintf("Print %s version", displayName),
+		Long:  fmt.Sprintf("Print the version information of %s.", displayName),
 		Run: func(cmd *cobra.Command, args []string) {
 			out := cmd.OutOrStdout()
 
@@ -39,7 +43,7 @@ func NewCmdVersion(ver, commit, date string) *cobra.Command {
 				return
 			}
 
-			fmt.Fprintf(out, "gc version %s\n", ver)
+			fmt.Fprintf(out, "%s version %s\n", displayName, ver)
 			fmt.Fprintf(out, "  commit: %s\n", commit)
 			fmt.Fprintf(out, "  built:  %s\n", date)
 			fmt.Fprintln(out, "https://gitcode.com/gitcode-cli/cli")

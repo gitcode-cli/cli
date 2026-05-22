@@ -11,6 +11,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+COMMAND_NAME_ENV = "GITCODE_CLI_COMMAND_NAME"
+
 
 def get_binary_name() -> str:
     """Get the binary name for the current platform."""
@@ -52,6 +54,16 @@ def get_binary_path() -> Path:
     return binary_path
 
 
+def get_command_name() -> str:
+    """Get the command name that should appear in CLI output."""
+    command = Path(sys.argv[0]).stem.lower()
+    if command in {"gc", "gitcode"}:
+        return command
+    if platform.system() == "Windows":
+        return "gitcode"
+    return "gc"
+
+
 def ensure_executable(binary_path: Path) -> None:
     """Ensure packaged binaries are executable on POSIX platforms."""
     if platform.system() == "Windows":
@@ -61,16 +73,19 @@ def ensure_executable(binary_path: Path) -> None:
 
 
 def main() -> int:
-    """Main entry point for the gc command."""
+    """Main entry point for the GitCode CLI command."""
     try:
         binary_path = get_binary_path()
 
         ensure_executable(binary_path)
+        env = os.environ.copy()
+        env.setdefault(COMMAND_NAME_ENV, get_command_name())
 
         # Run the binary with all arguments
         result = subprocess.run(
             [str(binary_path)] + sys.argv[1:],
             cwd=os.getcwd(),
+            env=env,
         )
 
         return result.returncode
@@ -79,7 +94,7 @@ def main() -> int:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     except Exception as e:
-        print(f"Error running gc: {e}", file=sys.stderr)
+        print(f"Error running GitCode CLI: {e}", file=sys.stderr)
         return 1
 
 

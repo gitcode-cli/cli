@@ -2,8 +2,11 @@
 package create
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -28,15 +31,16 @@ type CreateOptions struct {
 	Repository string
 
 	// Flags
-	Title string
-	Body  string
-	Head  string
-	Base  string
-	Draft bool
-	Fill  bool
-	Web   bool
-	JSON  bool
-	Fork  string // 跨仓库 PR：fork 项目路径【owner/repo】
+	Title    string
+	Body     string
+	BodyFile string
+	Head     string
+	Base     string
+	Draft    bool
+	Fill     bool
+	Web      bool
+	JSON     bool
+	Fork     string // 跨仓库 PR：fork 项目路径【owner/repo】
 }
 
 // NewCmdCreate creates the create command
@@ -59,6 +63,12 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 		Example: heredoc.Doc(`
 			# Create a PR with title and body (uses current branch as head)
 			$ gc pr create -R owner/repo --title "Feature" --body "Description"
+
+			# Create a PR with body from file
+			$ gc pr create -R owner/repo --title "Feature" --body-file description.md
+
+			# Create a PR with body from stdin
+			$ cat description.md | gc pr create -R owner/repo --title "Feature" --body-file -
 
 			# Create a PR with specific head and base branches
 			$ gc pr create -R owner/repo --head feature-branch --base main --title "Feature" --body "Description"
@@ -83,6 +93,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Title, "title", "t", "", "Title for the PR")
 	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "Body for the PR")
+	cmd.Flags().StringVar(&opts.BodyFile, "body-file", "", "Read body from file (use - for stdin)")
 	cmd.Flags().StringVarP(&opts.Head, "head", "H", "", "Head branch (default: current branch)")
 	cmd.Flags().StringVarP(&opts.Base, "base", "B", "main", "Base branch")
 	cmd.Flags().BoolVarP(&opts.Draft, "draft", "d", false, "Create as draft")
@@ -127,6 +138,11 @@ func createRun(opts *CreateOptions) error {
 		return cmdutil.NewUsageError("title is required. Use --title flag")
 	}
 
+	body, err := getBody(opts)
+	if err != nil {
+		return err
+	}
+
 	// Auto-detect head branch if not specified
 	head := opts.Head
 	if head == "" {
@@ -146,7 +162,7 @@ func createRun(opts *CreateOptions) error {
 	// Create PR
 	pr, err := opts.CreatePR(client, owner, repo, &api.CreatePROptions{
 		Title:    opts.Title,
-		Body:     opts.Body,
+		Body:     body,
 		Head:     head,
 		Base:     opts.Base,
 		Draft:    opts.Draft,
@@ -188,8 +204,47 @@ func fillFromLastCommit(opts *CreateOptions) error {
 	if opts.Body == "" {
 		opts.Body = body
 	}
+	if opts.BodyFile != "" {
+		opts.Body = ""
+	}
 
 	return nil
+}
+
+func getBody(opts *CreateOptions) (string, error) {
+	if opts.Body != "" && opts.BodyFile != "" {
+		return "", fmt.Errorf("cannot use both --body and --body-file")
+	}
+
+	if opts.Body != "" {
+		return opts.Body, nil
+	}
+
+	if opts.BodyFile != "" {
+		if opts.BodyFile == "-" {
+			reader := bufio.NewReader(opts.IO.In)
+			var sb strings.Builder
+			for {
+				line, err := reader.ReadString('\n')
+				if err != nil && err != io.EOF {
+					return "", fmt.Errorf("failed to read from stdin: %w", err)
+				}
+				sb.WriteString(line)
+				if err == io.EOF {
+					break
+				}
+			}
+			return strings.TrimSpace(sb.String()), nil
+		}
+
+		content, err := os.ReadFile(opts.BodyFile)
+		if err != nil {
+			return "", fmt.Errorf("failed to read file %s: %w", opts.BodyFile, err)
+		}
+		return strings.TrimSpace(string(content)), nil
+	}
+
+	return "", nil
 }
 
 func splitCommitMessage(message string) (string, string) {

@@ -4,7 +4,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v0.5.2-blue)](https://gitcode.com/gitcode-cli/cli/releases)
+[![Release](https://img.shields.io/badge/Release-v0.5.3-blue)](https://gitcode.com/gitcode-cli/cli/releases)
 
 GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
 
@@ -69,20 +69,20 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 # 从 Releases 下载 .deb 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.2/gc_0.5.2_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.3/gc_0.5.3_amd64.deb
 
 # 安装
-sudo dpkg -i gc_0.5.2_amd64.deb
+sudo dpkg -i gc_0.5.3_amd64.deb
 ```
 
 **RPM (RHEL/CentOS/Fedora):**
 
 ```bash
 # 从 Releases 下载 .rpm 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.2/gc-0.5.2-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.3/gc-0.5.3-1.x86_64.rpm
 
 # 安装
-sudo rpm -i gc-0.5.2-1.x86_64.rpm
+sudo rpm -i gc-0.5.3-1.x86_64.rpm
 ```
 
 ### Wheel 包（跨平台，推荐）
@@ -96,7 +96,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.2/gitcode_cli-0.5.2-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.3/gitcode_cli-0.5.3-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode，避免 gc 被内置 Get-Content 别名覆盖
 gitcode version

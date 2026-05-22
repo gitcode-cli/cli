@@ -692,6 +692,12 @@ gc issue relations -R infra-test/gctest1 --state open --limit 50
 # 创建 PR（自动检测当前分支作为 head）
 gc pr create -R infra-test/gctest1 --title "New feature" --body "Description"
 
+# 从文件读取 PR 内容
+gc pr create -R infra-test/gctest1 --title "New feature" --body-file description.md
+
+# 从 stdin 读取 PR 内容
+echo "Description from stdin" | gc pr create -R infra-test/gctest1 --title "New feature" --body-file -
+
 # 指定 head 分支
 gc pr create -R infra-test/gctest1 --head feature-branch --title "Feature" --body "Description"
 
@@ -715,7 +721,8 @@ gc pr create -R infra-test/gctest1 --head feature-branch --title "Feature" --bod
 ```
 
 > **说明**: `--head` 参数可选，未指定时自动检测当前 Git 分支。
-> `--fill` 会使用最近一次 Git commit 的标题和正文补全未显式提供的 `--title` / `--body`。
+> `--body-file` 支持从文件读取 PR 内容；使用 `-` 可从 stdin 读取。`--body` 与 `--body-file` 不能同时使用。
+> `--fill` 会使用最近一次 Git commit 的标题和正文补全未显式提供的 `--title` / `--body` / `--body-file`。
 > `--web` 会在 PR 创建成功后打开新建 PR 页面。
 > `--json` 只在成功创建后输出 PR 对象；不能与 `--web` 同时使用。
 > **跨仓库 PR**: 当使用 `--fork` 创建跨仓库 PR 时，`--head` 必须使用 `owner:branch` 格式（如 `myfork:feature-branch`），否则会报错。

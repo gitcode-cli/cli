@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -43,6 +45,11 @@ func TestNewCmdCreate(t *testing.T) {
 		{
 			name:    "create with json output",
 			args:    []string{"--title", "Feature", "--head", "feature", "--repo", "owner/repo", "--json"},
+			wantErr: false,
+		},
+		{
+			name:    "create with body file",
+			args:    []string{"--title", "Feature", "--head", "feature", "--repo", "owner/repo", "--body-file", "body.md"},
 			wantErr: false,
 		},
 		{
@@ -107,6 +114,109 @@ func TestCreateRunJSONWritesCreatedPR(t *testing.T) {
 	}
 	if strings.Contains(out, "Created PR") {
 		t.Fatalf("JSON output contains text banner: %q", out)
+	}
+}
+
+func TestCreateRunReadsBodyFile(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	dir := t.TempDir()
+	bodyPath := filepath.Join(dir, "body.md")
+	if err := os.WriteFile(bodyPath, []byte("file body\n"), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	f := cmdutil.TestFactory()
+	var createdOpts *api.CreatePROptions
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		BodyFile:   bodyPath,
+		Head:       "feature-branch",
+		Base:       "main",
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			createdOpts = createOpts
+			return &api.PullRequest{Number: 7, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if createdOpts == nil {
+		t.Fatalf("CreatePR() was not called")
+	}
+	if createdOpts.Body != "file body" {
+		t.Fatalf("CreatePR Body = %q", createdOpts.Body)
+	}
+}
+
+func TestCreateRunReadsBodyFileFromStdin(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	f.IOStreams.In = strings.NewReader("stdin body\n")
+
+	var createdOpts *api.CreatePROptions
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		BodyFile:   "-",
+		Head:       "feature-branch",
+		Base:       "main",
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			createdOpts = createOpts
+			return &api.PullRequest{Number: 7, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if createdOpts == nil {
+		t.Fatalf("CreatePR() was not called")
+	}
+	if createdOpts.Body != "stdin body" {
+		t.Fatalf("CreatePR Body = %q", createdOpts.Body)
+	}
+}
+
+func TestCreateRunBodyAndBodyFileMutualExclusion(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	called := false
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		Body:       "body",
+		BodyFile:   "body.md",
+		Head:       "feature-branch",
+		Base:       "main",
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			called = true
+			return nil, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	err := createRun(opts)
+	if err == nil {
+		t.Fatal("createRun() error = nil")
+	}
+	if !strings.Contains(err.Error(), "cannot use both --body and --body-file") {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if called {
+		t.Fatal("CreatePR should not be called when body inputs conflict")
 	}
 }
 
@@ -291,6 +401,50 @@ func TestCreateRunFillPreservesExplicitTitleAndBody(t *testing.T) {
 	}
 
 	if createdOpts.Title != "explicit title" || createdOpts.Body != "explicit body" {
+		t.Fatalf("explicit values were overwritten: %+v", createdOpts)
+	}
+}
+
+func TestCreateRunFillPreservesBodyFile(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	dir := t.TempDir()
+	bodyPath := filepath.Join(dir, "body.md")
+	if err := os.WriteFile(bodyPath, []byte("file body\n"), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	f := cmdutil.TestFactory()
+	var createdOpts *api.CreatePROptions
+
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "explicit title",
+		BodyFile:   bodyPath,
+		Head:       "feature-branch",
+		Fill:       true,
+		Branch: func() (string, error) {
+			return "ignored", nil
+		},
+		ExecGitCommand: func(name string, args ...string) (string, error) {
+			return "commit title\n\ncommit body", nil
+		},
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			createdOpts = createOpts
+			return &api.PullRequest{
+				Number:  1,
+				HTMLURL: "https://gitcode.com/owner/repo/merge_requests/1",
+			}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if createdOpts.Title != "explicit title" || createdOpts.Body != "file body" {
 		t.Fatalf("explicit values were overwritten: %+v", createdOpts)
 	}
 }

@@ -4,7 +4,6 @@ package edit
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -143,11 +142,11 @@ func editRun(opts *EditOptions) error {
 		updateOpts.Body = opts.Notes
 	}
 	if opts.NotesFile != "" {
-		content, err := os.ReadFile(opts.NotesFile)
+		content, err := cmdutil.ReadTextFile(opts.NotesFile)
 		if err != nil {
 			return fmt.Errorf("failed to read notes file: %w", err)
 		}
-		updateOpts.Body = string(content)
+		updateOpts.Body = content
 	}
 
 	// Map prerelease to release_status

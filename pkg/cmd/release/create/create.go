@@ -4,7 +4,6 @@ package create
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -101,11 +100,11 @@ func createRun(opts *CreateOptions) error {
 	// Get release body from notes or file
 	body := opts.Notes
 	if opts.NotesFile != "" {
-		content, err := os.ReadFile(opts.NotesFile)
+		content, err := cmdutil.ReadTextFile(opts.NotesFile)
 		if err != nil {
 			return fmt.Errorf("failed to read notes file: %w", err)
 		}
-		body = string(content)
+		body = content
 	}
 
 	httpClient, err := opts.HttpClient()

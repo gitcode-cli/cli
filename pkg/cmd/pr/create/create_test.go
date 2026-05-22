@@ -154,6 +154,43 @@ func TestCreateRunReadsBodyFile(t *testing.T) {
 	}
 }
 
+func TestCreateRunReadsBodyFileStripsUTF8BOM(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	dir := t.TempDir()
+	bodyPath := filepath.Join(dir, "body.md")
+	if err := os.WriteFile(bodyPath, []byte{0xef, 0xbb, 0xbf, 'f', 'i', 'l', 'e', ' ', 'b', 'o', 'd', 'y', '\n'}, 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	f := cmdutil.TestFactory()
+	var createdOpts *api.CreatePROptions
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		BodyFile:   bodyPath,
+		Head:       "feature-branch",
+		Base:       "main",
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			createdOpts = createOpts
+			return &api.PullRequest{Number: 7, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if createdOpts == nil {
+		t.Fatalf("CreatePR() was not called")
+	}
+	if createdOpts.Body != "file body" {
+		t.Fatalf("CreatePR Body = %q", createdOpts.Body)
+	}
+}
+
 func TestCreateRunReadsBodyFileFromStdin(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

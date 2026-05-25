@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -157,11 +156,11 @@ func reviewRun(opts *ReviewOptions) error {
 			}
 			opts.Comment = strings.TrimSpace(sb.String())
 		} else {
-			data, err := os.ReadFile(opts.CommentFile)
+			comment, err := cmdutil.ReadTextFile(opts.CommentFile)
 			if err != nil {
 				return fmt.Errorf("failed to read comment file: %w", err)
 			}
-			opts.Comment = strings.TrimSpace(string(data))
+			opts.Comment = strings.TrimSpace(comment)
 		}
 	}
 

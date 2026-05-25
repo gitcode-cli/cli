@@ -4,7 +4,6 @@ package edit
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -140,11 +139,11 @@ func editRun(opts *EditOptions) error {
 		updateOpts.Body = opts.Body
 	}
 	if opts.BodyFile != "" {
-		data, err := os.ReadFile(opts.BodyFile)
+		body, err := cmdutil.ReadTextFile(opts.BodyFile)
 		if err != nil {
 			return fmt.Errorf("failed to read body file: %w", err)
 		}
-		updateOpts.Body = string(data)
+		updateOpts.Body = body
 	}
 	if opts.Base != "" {
 		updateOpts.Base = opts.Base

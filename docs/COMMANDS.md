@@ -16,6 +16,12 @@ https://gitcode.com/owner/repo
 git@gitcode.com:owner/repo.git
 ```
 
+SSH default for code transfer:
+- Code download and sync paths use SSH by default.
+- `repo clone owner/repo` defaults to `git@gitcode.com:owner/repo.git` unless `--git-protocol https` or a saved config explicitly selects HTTPS.
+- SSH-based code transfer requires a local SSH key with access to `git@gitcode.com`.
+
+
 说明：
 - 未显式传 `-R` 的命令，仍按各自命令说明决定是否支持从当前 Git 仓库自动推断。
 - 传入 HTTPS 或 SSH 仓库地址时，CLI 会统一解析出目标仓库，不再要求手工改写成 `owner/repo`。
@@ -265,6 +271,7 @@ gc repo sync \
 - `--source-dir` 是当前仓库内要同步的目录
 - `--target-dir` 是目标仓库中的子目录，不能是仓库根目录
 - 命令会自动创建同步分支、提交、推送并创建目标 PR
+- `repo sync` clones and pushes the target repository over SSH; ensure an SSH key with access to `git@gitcode.com` is configured.
 - 推送同步分支并创建目标 PR 前默认需要确认；非交互场景中显式传 `--yes`
 - 如果目标目录内容与源目录一致，命令会直接返回“无变更”
 
@@ -1042,6 +1049,7 @@ gc pr sync --source-pr owner/source-repo#123 \
 说明：
 - `--source-pr` 支持两种格式：`owner/repo#number` 或完整 GitCode URL，例如 `https://gitcode.com/owner/repo/merge_requests/123`
 - 命令会按原顺序逐个 cherry-pick 源 PR 的所有 commits 到目标仓库，保留提交边界
+- `pr sync` clones, fetches, and pushes repositories over SSH; ensure an SSH key with access to `git@gitcode.com` is configured.
 - 推送同步分支并创建目标 PR 前默认需要确认；非交互场景中显式传 `--yes`
 - 新 PR 标题默认格式：`[sync] {源 PR 标题}`
 - 新 PR 内容默认继承源 PR 内容并追加同步来源信息

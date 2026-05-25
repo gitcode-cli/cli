@@ -4,7 +4,6 @@ package edit
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -109,11 +108,11 @@ func editRun(opts *EditOptions) error {
 	// Read description from file if specified
 	description := opts.Description
 	if opts.DescriptionFile != "" {
-		content, err := os.ReadFile(opts.DescriptionFile)
+		content, err := cmdutil.ReadTextFile(opts.DescriptionFile)
 		if err != nil {
 			return fmt.Errorf("failed to read description file: %w", err)
 		}
-		description = string(content)
+		description = content
 	}
 
 	// Validate at least one edit option is provided

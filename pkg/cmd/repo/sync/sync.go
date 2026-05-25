@@ -84,6 +84,8 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 			source directory contents into the requested target directory, commits the change,
 			pushes a sync branch, and creates a pull request.
 
+			Git repository transfer uses SSH. Ensure an SSH key with access to git@gitcode.com is configured.
+
 				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
@@ -164,7 +166,6 @@ func syncRun(opts *SyncOptions) error {
 	if err != nil {
 		return err
 	}
-	token := client.Token()
 
 	targetOwner, targetRepo, err := cmdutil.ParseRepo(opts.TargetRepo)
 	if err != nil {
@@ -210,9 +211,8 @@ func syncRun(opts *SyncOptions) error {
 	}
 	defer opts.RemoveAll(workDir)
 
-	authEnv := authenticatedGitEnv(token)
-	if _, err := gitRun(authEnv, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
-		return fmt.Errorf("failed to clone target repository: %w", err)
+	if _, err := gitRun(nil, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
+		return sshGitError("failed to clone target repository", err)
 	}
 
 	if _, err := opts.GitRun(workDir, nil, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
@@ -262,8 +262,8 @@ func syncRun(opts *SyncOptions) error {
 	}); err != nil {
 		return err
 	}
-	if _, err := opts.GitRun(workDir, authEnv, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
-		return fmt.Errorf("failed to push sync branch: %w", err)
+	if _, err := opts.GitRun(workDir, nil, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
+		return sshGitError("failed to push sync branch", err)
 	}
 
 	pr, err := opts.CreatePR(client, targetOwner, targetRepo, &api.CreatePROptions{
@@ -467,13 +467,9 @@ func canonicalDir(path string) (string, error) {
 }
 
 func repositoryGitURL(owner, repo string) string {
-	return fmt.Sprintf("https://gitcode.com/%s/%s.git", owner, repo)
+	return fmt.Sprintf("git@gitcode.com:%s/%s.git", owner, repo)
 }
 
-func authenticatedGitEnv(token string) map[string]string {
-	return map[string]string{
-		"GIT_CONFIG_COUNT":   "1",
-		"GIT_CONFIG_KEY_0":   "http.extraHeader",
-		"GIT_CONFIG_VALUE_0": fmt.Sprintf("Authorization: Bearer %s", token),
-	}
+func sshGitError(action string, err error) error {
+	return fmt.Errorf("%s via SSH: %w; ensure an SSH key with access to git@gitcode.com is configured", action, err)
 }

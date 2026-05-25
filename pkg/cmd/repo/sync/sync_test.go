@@ -207,21 +207,11 @@ func TestSyncRunNoChanges(t *testing.T) {
 	if len(cloneArgs) != 3 {
 		t.Fatalf("unexpected clone args: %#v", cloneArgs)
 	}
-	if cloneEnv["GIT_CONFIG_COUNT"] != "1" || cloneEnv["GIT_CONFIG_KEY_0"] != "http.extraHeader" || cloneEnv["GIT_CONFIG_VALUE_0"] != "Authorization: Bearer token" {
-		t.Fatalf("unexpected auth env: %#v", cloneEnv)
+	if len(cloneEnv) != 0 {
+		t.Fatalf("unexpected git env for SSH clone: %#v", cloneEnv)
 	}
-	if cloneArgs[1] != "https://gitcode.com/infra-test/target.git" {
+	if cloneArgs[1] != "git@gitcode.com:infra-test/target.git" {
 		t.Fatalf("unexpected clone URL: %#v", cloneArgs)
-	}
-}
-
-func TestAuthenticatedGitEnv(t *testing.T) {
-	env := authenticatedGitEnv("token")
-	if env["GIT_CONFIG_COUNT"] != "1" || env["GIT_CONFIG_KEY_0"] != "http.extraHeader" {
-		t.Fatalf("authenticatedGitEnv() = %#v", env)
-	}
-	if env["GIT_CONFIG_VALUE_0"] != "Authorization: Bearer token" {
-		t.Fatalf("authenticatedGitEnv() token = %q", env["GIT_CONFIG_VALUE_0"])
 	}
 }
 

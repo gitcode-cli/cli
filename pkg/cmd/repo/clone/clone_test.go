@@ -3,6 +3,7 @@ package clone
 import (
 	"testing"
 
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -52,11 +53,11 @@ func TestNewCmdClone(t *testing.T) {
 
 func TestParseRepoURL(t *testing.T) {
 	tests := []struct {
-		name      string
-		repo      string
-		protocol  string
-		wantURL   string
-		wantErr   bool
+		name     string
+		repo     string
+		protocol string
+		wantURL  string
+		wantErr  bool
 	}{
 		{
 			name:     "https URL",
@@ -107,3 +108,79 @@ func TestParseRepoURL(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveGitProtocolUsesConfig(t *testing.T) {
+	opts := &CloneOptions{
+		Config: func() (config.Config, error) {
+			return cloneConfig{protocol: "ssh"}, nil
+		},
+	}
+
+	got, err := resolveGitProtocol(opts)
+	if err != nil {
+		t.Fatalf("resolveGitProtocol() error = %v", err)
+	}
+	if got != "ssh" {
+		t.Fatalf("resolveGitProtocol() = %q, want ssh", got)
+	}
+}
+
+func TestResolveGitProtocolFlagOverridesConfig(t *testing.T) {
+	opts := &CloneOptions{
+		GitProtocol: "https",
+		Config: func() (config.Config, error) {
+			return cloneConfig{protocol: "ssh"}, nil
+		},
+	}
+
+	got, err := resolveGitProtocol(opts)
+	if err != nil {
+		t.Fatalf("resolveGitProtocol() error = %v", err)
+	}
+	if got != "https" {
+		t.Fatalf("resolveGitProtocol() = %q, want https", got)
+	}
+}
+
+func TestResolveGitProtocolDefaultsToSSHWithoutConfig(t *testing.T) {
+	opts := &CloneOptions{}
+
+	got, err := resolveGitProtocol(opts)
+	if err != nil {
+		t.Fatalf("resolveGitProtocol() error = %v", err)
+	}
+	if got != "ssh" {
+		t.Fatalf("resolveGitProtocol() = %q, want ssh", got)
+	}
+}
+
+func TestResolveGitProtocolDefaultsToSSHWhenConfigUnset(t *testing.T) {
+	opts := &CloneOptions{
+		Config: func() (config.Config, error) {
+			return cloneConfig{}, nil
+		},
+	}
+
+	got, err := resolveGitProtocol(opts)
+	if err != nil {
+		t.Fatalf("resolveGitProtocol() error = %v", err)
+	}
+	if got != "ssh" {
+		t.Fatalf("resolveGitProtocol() = %q, want ssh", got)
+	}
+}
+
+type cloneConfig struct {
+	protocol string
+}
+
+func (c cloneConfig) Get(host, key string) (string, error) { return "", nil }
+func (c cloneConfig) Set(host, key, value string) error    { return nil }
+func (c cloneConfig) GitProtocol(host string) config.ConfigEntry {
+	return config.ConfigEntry{Value: c.protocol, Source: "test"}
+}
+func (c cloneConfig) Editor(host string) config.ConfigEntry  { return config.ConfigEntry{} }
+func (c cloneConfig) Browser(host string) config.ConfigEntry { return config.ConfigEntry{} }
+func (c cloneConfig) Pager(host string) config.ConfigEntry   { return config.ConfigEntry{} }
+func (c cloneConfig) Authentication() config.AuthConfig      { return nil }
+func (c cloneConfig) Write() error                           { return nil }

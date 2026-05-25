@@ -84,7 +84,7 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
-	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Add a comment before reopening")
+	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Add a comment after reopening")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt")
 	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
@@ -122,7 +122,13 @@ func reopenRun(opts *ReopenOptions) error {
 		return err
 	}
 
-	// Add comment if provided
+	// Reopen PR
+	pr, err := api.ReopenPullRequest(client, owner, repo, opts.Number)
+	if err != nil {
+		return fmt.Errorf("failed to reopen PR: %w", err)
+	}
+
+	// Add comment after reopening so closed PRs can accept the comment.
 	if opts.Comment != "" {
 		_, err := api.CreatePRComment(client, owner, repo, opts.Number, &api.CreatePRCommentOptions{
 			Body: opts.Comment,
@@ -130,12 +136,6 @@ func reopenRun(opts *ReopenOptions) error {
 		if err != nil {
 			return fmt.Errorf("failed to add comment: %w", err)
 		}
-	}
-
-	// Reopen PR
-	pr, err := api.ReopenPullRequest(client, owner, repo, opts.Number)
-	if err != nil {
-		return fmt.Errorf("failed to reopen PR: %w", err)
 	}
 
 	result := ReopenResult{

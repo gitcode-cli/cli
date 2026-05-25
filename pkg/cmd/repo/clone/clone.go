@@ -11,6 +11,7 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -18,6 +19,7 @@ import (
 type CloneOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	Config     func() (config.Config, error)
 
 	// Arguments
 	Repository string
@@ -35,6 +37,7 @@ func NewCmdClone(f *cmdutil.Factory, runF func(*CloneOptions) error) *cobra.Comm
 	opts := &CloneOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		Config:     f.Config,
 	}
 
 	cmd := &cobra.Command{
@@ -74,7 +77,7 @@ func NewCmdClone(f *cmdutil.Factory, runF func(*CloneOptions) error) *cobra.Comm
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.GitProtocol, "git-protocol", "p", "https", "Git protocol to use (https/ssh)")
+	cmd.Flags().StringVarP(&opts.GitProtocol, "git-protocol", "p", "", "Git protocol to use (https/ssh, default: auth config)")
 	cmdutil.SetFlagEnum(cmd, "git-protocol", "https", "ssh")
 	cmd.Flags().IntVarP(&opts.Depth, "depth", "d", 0, "Create a shallow clone")
 	cmd.Flags().StringVarP(&opts.Branch, "branch", "b", "", "Branch to checkout")
@@ -92,7 +95,12 @@ func cloneRun(opts *CloneOptions) error {
 	}
 
 	// Parse repository
-	repoURL, err := parseRepoURL(opts.Repository, opts.GitProtocol)
+	protocol, err := resolveGitProtocol(opts)
+	if err != nil {
+		return err
+	}
+
+	repoURL, err := parseRepoURL(opts.Repository, protocol)
 	if err != nil {
 		return err
 	}
@@ -125,6 +133,24 @@ func cloneRun(opts *CloneOptions) error {
 
 	fmt.Fprintf(opts.IO.Out, "%s Cloned repository %s\n", cs.Green("✓"), opts.Repository)
 	return nil
+}
+
+func resolveGitProtocol(opts *CloneOptions) (string, error) {
+	if opts.GitProtocol != "" {
+		return opts.GitProtocol, nil
+	}
+	if opts.Config == nil {
+		return "ssh", nil
+	}
+	cfg, err := opts.Config()
+	if err != nil {
+		return "", fmt.Errorf("failed to read config: %w", err)
+	}
+	protocol := cfg.GitProtocol("gitcode.com").Value
+	if protocol == "" {
+		return "ssh", nil
+	}
+	return protocol, nil
 }
 
 func parseRepoURL(repo, protocol string) (string, error) {

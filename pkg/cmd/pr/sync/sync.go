@@ -81,6 +81,8 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 			- owner/repo#number (e.g., gitcode-cli/cli#123)
 			- Full URL (e.g., https://gitcode.com/gitcode-cli/cli/merge_requests/123)
 
+			Git repository transfer uses SSH. Ensure an SSH key with access to git@gitcode.com is configured.
+
 				Non-interactive mode: Requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
@@ -189,7 +191,6 @@ func syncRun(opts *SyncOptions) error {
 	if err != nil {
 		return err
 	}
-	token := client.Token()
 
 	// Get source PR details
 	pr, err := opts.GetPR(client, sourcePR.Owner, sourcePR.Repo, sourcePR.Number)
@@ -243,19 +244,17 @@ func syncRun(opts *SyncOptions) error {
 	}
 	defer opts.RemoveAll(workDir)
 
-	authEnv := authenticatedGitEnv(token)
-
 	// Clone target repository
-	if _, err := gitRunWithEnv(authEnv, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
-		return fmt.Errorf("failed to clone target repository: %w", err)
+	if _, err := gitRunWithEnv(nil, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
+		return sshGitError("failed to clone target repository", err)
 	}
 
 	// Fetch source repository to get commits
 	if _, err := gitRunInDirWithEnv(workDir, nil, "remote", "add", "source", repositoryGitURL(sourcePR.Owner, sourcePR.Repo)); err != nil {
 		return fmt.Errorf("failed to add source remote: %w", err)
 	}
-	if _, err := gitRunInDirWithEnv(workDir, authEnv, "fetch", "source"); err != nil {
-		return fmt.Errorf("failed to fetch source repository: %w", err)
+	if _, err := gitRunInDirWithEnv(workDir, nil, "fetch", "source"); err != nil {
+		return sshGitError("failed to fetch source repository", err)
 	}
 
 	// Create sync branch based on target base branch
@@ -263,7 +262,7 @@ func syncRun(opts *SyncOptions) error {
 		return fmt.Errorf("failed to create sync branch: %w", err)
 	}
 
-	commitsSynced, conflictError := syncCommits(workDir, commits, authEnv)
+	commitsSynced, conflictError := syncCommits(workDir, commits)
 
 	result := SyncResult{
 		SourcePR:      fmt.Sprintf("%s/%s#%d", sourcePR.Owner, sourcePR.Repo, sourcePR.Number),
@@ -293,8 +292,8 @@ func syncRun(opts *SyncOptions) error {
 	}
 
 	// Push sync branch
-	if _, err := gitRunInDirWithEnv(workDir, authEnv, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
-		return fmt.Errorf("failed to push sync branch: %w", err)
+	if _, err := gitRunInDirWithEnv(workDir, nil, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
+		return sshGitError("failed to push sync branch", err)
 	}
 
 	// Create pull request
@@ -363,7 +362,7 @@ func buildSyncBody(pr *api.PullRequest, sourcePR *PRRef, targetRepo string) stri
 	return body
 }
 
-func syncCommits(workDir string, commits []api.Commit, authEnv map[string]string) (int, string) {
+func syncCommits(workDir string, commits []api.Commit) (int, string) {
 	commitsSynced := 0
 	for _, commit := range commits {
 		if _, err := gitRunInDirWithEnv(workDir, nil, "cherry-pick", "-x", commit.SHA); err != nil {
@@ -388,14 +387,9 @@ func pullRequestWebURL(owner, repo string, number int) string {
 
 // repositoryGitURL returns a Git URL without embedded credentials
 func repositoryGitURL(owner, repo string) string {
-	return fmt.Sprintf("https://gitcode.com/%s/%s.git", owner, repo)
+	return fmt.Sprintf("git@gitcode.com:%s/%s.git", owner, repo)
 }
 
-// authenticatedGitEnv returns environment variables for Git authentication
-func authenticatedGitEnv(token string) map[string]string {
-	return map[string]string{
-		"GIT_CONFIG_COUNT":   "1",
-		"GIT_CONFIG_KEY_0":   "http.extraHeader",
-		"GIT_CONFIG_VALUE_0": fmt.Sprintf("Authorization: Bearer %s", token),
-	}
+func sshGitError(action string, err error) error {
+	return fmt.Errorf("%s via SSH: %w; ensure an SSH key with access to git@gitcode.com is configured", action, err)
 }

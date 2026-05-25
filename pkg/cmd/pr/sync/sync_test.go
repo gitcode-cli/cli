@@ -161,7 +161,7 @@ func TestNewCmdSync(t *testing.T) {
 
 func TestRepositoryGitURL(t *testing.T) {
 	url := repositoryGitURL("owner", "repo")
-	expected := "https://gitcode.com/owner/repo.git"
+	expected := "git@gitcode.com:owner/repo.git"
 	if url != expected {
 		t.Errorf("repositoryGitURL() = %q, want %q", url, expected)
 	}
@@ -192,7 +192,7 @@ func TestSyncCommitsPreservesCommitBoundaries(t *testing.T) {
 	}
 	t.Cleanup(func() { gitRunInDirWithEnv = originalGitRunInDirWithEnv })
 
-	commitsSynced, conflictError := syncCommits("/tmp/workdir", commits, nil)
+	commitsSynced, conflictError := syncCommits("/tmp/workdir", commits)
 	if conflictError != "" {
 		t.Fatalf("syncCommits() unexpected conflict error = %q", conflictError)
 	}
@@ -226,7 +226,7 @@ func TestSyncCommitsReportsActualCountOnConflict(t *testing.T) {
 	}
 	t.Cleanup(func() { gitRunInDirWithEnv = originalGitRunInDirWithEnv })
 
-	commitsSynced, conflictError := syncCommits("/tmp/workdir", commits, nil)
+	commitsSynced, conflictError := syncCommits("/tmp/workdir", commits)
 	if commitsSynced != 1 {
 		t.Fatalf("syncCommits() commitsSynced = %d, want 1", commitsSynced)
 	}

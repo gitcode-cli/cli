@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -150,11 +149,11 @@ func getBody(opts *EditOptions) (string, error) {
 			return strings.TrimSpace(sb.String()), nil
 		}
 
-		content, err := os.ReadFile(opts.BodyFile)
+		content, err := cmdutil.ReadTextFile(opts.BodyFile)
 		if err != nil {
 			return "", fmt.Errorf("failed to read file %s: %w", opts.BodyFile, err)
 		}
-		return strings.TrimSpace(string(content)), nil
+		return strings.TrimSpace(content), nil
 	}
 
 	return "", nil

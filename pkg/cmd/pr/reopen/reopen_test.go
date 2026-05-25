@@ -73,6 +73,38 @@ func TestReopenRunRequiresConfirmationBeforeWrite(t *testing.T) {
 	}
 }
 
+func TestReopenRunAddsCommentAfterReopen(t *testing.T) {
+	t.Setenv("GC_TOKEN", "token")
+
+	var requests []string
+	f := cmdutil.TestFactory()
+	err := reopenRun(&ReopenOptions{
+		IO:         f.IOStreams,
+		HttpClient: orderedReopenHTTPClient(&requests),
+		Repository: "owner/repo",
+		Number:     123,
+		Comment:    "Reopening",
+		Yes:        true,
+	})
+	if err != nil {
+		t.Fatalf("reopenRun() error = %v", err)
+	}
+
+	want := []string{
+		"GET /repos/owner/repo/pulls/123",
+		"PATCH /repos/owner/repo/pulls/123",
+		"POST /repos/owner/repo/pulls/123/comments",
+	}
+	if len(requests) != len(want) {
+		t.Fatalf("requests = %v, want %v", requests, want)
+	}
+	for i := range want {
+		if requests[i] != want[i] {
+			t.Fatalf("request[%d] = %q, want %q; all requests: %v", i, requests[i], want[i], requests)
+		}
+	}
+}
+
 func testHTTPClient(requests *int) func() (*http.Client, error) {
 	return func() (*http.Client, error) {
 		return &http.Client{Transport: prReopenRoundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -82,6 +114,29 @@ func testHTTPClient(requests *int) func() (*http.Client, error) {
 				Status:     http.StatusText(http.StatusOK),
 				Header:     make(http.Header),
 				Body:       io.NopCloser(strings.NewReader(`{}`)),
+			}, nil
+		})}, nil
+	}
+}
+
+func orderedReopenHTTPClient(requests *[]string) func() (*http.Client, error) {
+	return func() (*http.Client, error) {
+		return &http.Client{Transport: prReopenRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			path := req.URL.Path
+			if strings.HasPrefix(path, "/api/v5") {
+				path = strings.TrimPrefix(path, "/api/v5")
+			}
+			*requests = append(*requests, req.Method+" "+path)
+
+			body := `{"number":123,"title":"Test PR","state":"open","html_url":"https://gitcode.com/owner/repo/pulls/123"}`
+			if strings.HasSuffix(path, "/comments") {
+				body = `{"id":1,"body":"Reopening"}`
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     http.StatusText(http.StatusOK),
+				Header:     make(http.Header),
+				Body:       io.NopCloser(strings.NewReader(body)),
 			}, nil
 		})}, nil
 	}

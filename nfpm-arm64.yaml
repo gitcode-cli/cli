@@ -14,12 +14,23 @@ description: |
 vendor: "gitcode-cli"
 homepage: "https://gitcode.com/gitcode-cli/cli"
 license: "MIT"
+scripts:
+  postinstall: ./scripts/postinstall.sh
 contents:
   - src: ./dist/gc_linux_arm64
     dst: /usr/bin/gc
+  - src: /usr/bin/gc
+    dst: /usr/bin/gitcode
+    type: symlink
   - src: ./completions/gc.bash
     dst: /usr/share/bash-completion/completions/gc
+  - src: ./build/completions/gitcode.bash
+    dst: /usr/share/bash-completion/completions/gitcode
   - src: ./completions/gc.zsh
     dst: /usr/share/zsh/vendor-completions/_gc
+  - src: ./build/completions/gitcode.zsh
+    dst: /usr/share/zsh/vendor-completions/_gitcode
   - src: ./completions/gc.fish
     dst: /usr/share/fish/completions/gc.fish
+  - src: ./build/completions/gitcode.fish
+    dst: /usr/share/fish/completions/gitcode.fish

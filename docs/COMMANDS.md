@@ -1414,9 +1414,11 @@ gc milestone delete 1 -R infra-test/gctest1 --yes
 gc version
 ```
 
-Windows note:
-- When the CLI is launched as `gitcode.exe`, `gitcode`, or `python -m gc_cli` on Windows, `version`, `help`, `help --json`, `schema`, and shell completion output use `gitcode` as the command name.
+Command-name note:
+- When the CLI is launched as `gitcode` or `gitcode.exe`, `version`, `help`, `help --json`, `schema`, and shell completion output use `gitcode` as the command name.
+- When the CLI is launched as `python -m gc_cli`, output uses `gitcode` as the command name.
 - When the CLI is launched as `gc` or `gc.exe`, output continues to use `gc`.
+- DEB/RPM packages install `/usr/bin/gitcode` as an alias of `/usr/bin/gc`; on Linux both commands are equivalent.
 
 ### help - 帮助
 

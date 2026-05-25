@@ -22,6 +22,8 @@ wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.5/gc-0.5.5-1.x86
 sudo rpm -i gc-0.5.5-1.x86_64.rpm
 ```
 
+DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
+
 **Wheel 包（跨平台，推荐）:**
 
 从 Release 归档下载 wheel 包安装，**内置全平台二进制**（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64）：
@@ -41,6 +43,7 @@ gitcode version
 
 说明：
 - wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。
+- DEB/RPM 包也会同时安装 `gc` 和 `gitcode`；Linux 上二者功能相同。
 - Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
 
 **PyPI（备选）:**

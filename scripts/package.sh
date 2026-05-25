@@ -156,6 +156,38 @@ success "Updated docs/PACKAGING.md"
 mkdir -p dist
 
 # ============================================
+# Step 2.1: Prepare package-only completion aliases
+# ============================================
+prepare_package_completions() {
+    info "Preparing gitcode completion aliases..."
+    mkdir -p build/completions
+
+    sed \
+        -e 's/__start_gc/__start_gitcode/g' \
+        -e 's/__gc_/__gitcode_/g' \
+        -e 's/__start_gitcode gc/__start_gitcode gitcode/g' \
+        -e 's/ gc$/ gitcode/g' \
+        -e 's/ for gc / for gitcode /g' \
+        completions/gc.bash > build/completions/gitcode.bash
+
+    sed \
+        -e 's/#compdef gc/#compdef gitcode/' \
+        -e 's/compdef _gc gc/compdef _gitcode gitcode/' \
+        -e 's/_gc/_gitcode/g' \
+        -e 's/__gc_/__gitcode_/g' \
+        -e 's/ for gc / for gitcode /g' \
+        completions/gc.zsh > build/completions/gitcode.zsh
+
+    sed \
+        -e 's/__gc_/__gitcode_/g' \
+        -e 's/ for gc / for gitcode /g' \
+        -e 's/-c gc/-c gitcode/g' \
+        completions/gc.fish > build/completions/gitcode.fish
+
+    success "Prepared build/completions/gitcode.*"
+}
+
+# ============================================
 # Step 3: Build Linux binaries (for DEB/RPM)
 # ============================================
 build_linux_binaries() {
@@ -173,6 +205,7 @@ build_linux_binaries() {
 # ============================================
 build_deb() {
     info "Building DEB packages..."
+    prepare_package_completions
 
     "$NFPMPATH" pkg -f nfpm-amd64.yaml -p deb -t "dist/gc_${VERSION}_amd64.deb" 2>&1 | sed 's/^/  /'
     verify_build "dist/gc_${VERSION}_amd64.deb"
@@ -185,6 +218,7 @@ build_deb() {
 # ============================================
 build_rpm() {
     info "Building RPM packages..."
+    prepare_package_completions
 
     "$NFPMPATH" pkg -f nfpm-amd64.yaml -p rpm -t "dist/gc-${VERSION}-1.x86_64.rpm" 2>&1 | sed 's/^/  /'
     verify_build "dist/gc-${VERSION}-1.x86_64.rpm"

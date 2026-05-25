@@ -165,6 +165,9 @@ Windows command-name behavior: when the wheel entrypoint is launched as
 `gitcode` or with `python -m gc_cli`, help, schema, version, and completion
 metadata display `gitcode`. The `gc` script keeps displaying `gc`.
 
+DEB/RPM packages install `/usr/bin/gc` and `/usr/bin/gitcode`; on Linux they
+are equivalent command entry points.
+
 ### DEB (Debian/Ubuntu)
 
     wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.5/gc_0.5.5_amd64.deb
@@ -378,12 +381,16 @@ wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.5/gc_0.5.5_amd64
 sudo dpkg -i gc_0.5.5_amd64.deb
 ```
 
+DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
+
 ### RPM (RHEL/CentOS/Fedora)
 
 ```bash
 wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.5/gc-0.5.5-1.x86_64.rpm
 sudo rpm -i gc-0.5.5-1.x86_64.rpm
 ```
+
+DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 
 ### Linux 二进制
 
@@ -397,6 +404,7 @@ sudo mv gc_linux_amd64 /usr/local/bin/gc
 
 ```bash
 gc version
+gitcode version  # DEB/RPM packages
 ```
 
 ---
@@ -502,8 +510,13 @@ license: "MIT"
 contents:
   - src: ./dist/gc_linux_amd64
     dst: /usr/bin/gc
+  - src: /usr/bin/gc
+    dst: /usr/bin/gitcode
+    type: symlink
   - src: ./completions/gc.bash
     dst: /usr/share/bash-completion/completions/gc
+  - src: ./build/completions/gitcode.bash
+    dst: /usr/share/bash-completion/completions/gitcode
 ```
 
 ---

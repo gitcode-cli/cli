@@ -16,35 +16,15 @@ description: 使用 GitCode CLI 下载仓库并执行敏感信息、凭证和常
 ## 可直接执行的 Prompt
 
 ```text
-请对 <owner/repo> 做一次敏感信息与安全审查。
+请使用 gitcode-security-check skill，对 <owner/repo> 做一次敏感信息与安全审查。
 
-要求：
-1. 全程使用 `gitcode` 命令，不使用 `gc`。
-2. 优先使用 `gitcode-security-check` skill；如果未安装该 skill，请按同等流程执行。
-3. 如需下载代码，使用 SSH：
-   - ssh -T git@gitcode.com
-   - gitcode repo clone <owner/repo> --git-protocol ssh
-4. 审查范围：
-   - 分支或 PR：<branch-or-pr>
-   - 路径：<paths>
-5. 检查维度：
-   - 硬编码 token、password、secret、api key
-   - 私钥、证书、`.env`、credentials 文件
-   - 日志输出中的敏感信息
-   - 不安全 TLS/HTTP 配置
-   - shell/SQL/模板注入风险
-   - 权限绕过、认证跳过、debug 后门
-   - release 资产或文档中的敏感信息
-6. 不要在输出中打印完整 secret；只允许展示文件位置、变量名、前后 4 位或哈希摘要。
-7. 如果发现真实凭证，明确建议撤销和轮换。
+审查范围：
+- 分支或 PR：<branch-or-pr>
+- 路径：<paths>
 
-输出：
-- 审查范围
-- Findings，按 Critical / High / Medium / Low 分类
-- 确认的敏感信息
-- 疑似误报
-- 修复建议
-- 是否建议阻塞合并或发布
+请全程使用 `gitcode` 命令入口；如需下载代码，使用 SSH。不要输出完整 secret。如果发现真实凭证，请明确建议撤销和轮换。
+
+请给出按 Critical / High / Medium / Low 分类的审查报告，并说明是否建议阻塞合并或发布。
 ```
 
 ## 预期产出

@@ -507,6 +507,8 @@ maintainer: "gitcode-cli contributors"
 description: "GitCode CLI - Command line tool for GitCode"
 homepage: "https://gitcode.com/gitcode-cli/cli"
 license: "MIT"
+scripts:
+  postinstall: ./build/scripts/postinstall.sh
 contents:
   - src: ./dist/gc_linux_amd64
     dst: /usr/bin/gc

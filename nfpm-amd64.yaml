@@ -15,7 +15,7 @@ vendor: "gitcode-cli"
 homepage: "https://gitcode.com/gitcode-cli/cli"
 license: "MIT"
 scripts:
-  postinstall: ./scripts/postinstall.sh
+  postinstall: ./build/scripts/postinstall.sh
 contents:
   - src: ./dist/gc_linux_amd64
     dst: /usr/bin/gc

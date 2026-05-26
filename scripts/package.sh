@@ -156,9 +156,9 @@ success "Updated docs/PACKAGING.md"
 mkdir -p dist
 
 # ============================================
-# Step 2.1: Prepare package-only completion aliases
+# Step 2.1: Prepare package-only assets
 # ============================================
-prepare_package_completions() {
+prepare_package_assets() {
     info "Preparing gitcode completion aliases..."
     mkdir -p build/completions
 
@@ -185,6 +185,12 @@ prepare_package_completions() {
         completions/gc.fish > build/completions/gitcode.fish
 
     success "Prepared build/completions/gitcode.*"
+
+    info "Preparing package maintainer scripts..."
+    mkdir -p build/scripts
+    sed 's/\r$//' scripts/postinstall.sh > build/scripts/postinstall.sh
+    chmod 755 build/scripts/postinstall.sh
+    success "Prepared build/scripts/postinstall.sh"
 }
 
 # ============================================
@@ -205,7 +211,7 @@ build_linux_binaries() {
 # ============================================
 build_deb() {
     info "Building DEB packages..."
-    prepare_package_completions
+    prepare_package_assets
 
     "$NFPMPATH" pkg -f nfpm-amd64.yaml -p deb -t "dist/gc_${VERSION}_amd64.deb" 2>&1 | sed 's/^/  /'
     verify_build "dist/gc_${VERSION}_amd64.deb"
@@ -218,7 +224,7 @@ build_deb() {
 # ============================================
 build_rpm() {
     info "Building RPM packages..."
-    prepare_package_completions
+    prepare_package_assets
 
     "$NFPMPATH" pkg -f nfpm-amd64.yaml -p rpm -t "dist/gc-${VERSION}-1.x86_64.rpm" 2>&1 | sed 's/^/  /'
     verify_build "dist/gc-${VERSION}-1.x86_64.rpm"

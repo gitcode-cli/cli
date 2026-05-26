@@ -53,6 +53,7 @@ gitcode schema
 | [整理发布平台 Issue 队列](./cases/triage-issues.md) | 项目经理、维护者、技术负责人 | `gitcode-issue-triage` | 对当前 5 个 open issue 分类、补标签、识别重复和优先级。 |
 | [同步 GitCode CLI 案例到发布平台文档](./cases/sync-repo-directory.md) | 平台团队、文档团队、多仓维护者 | `gitcode-repo` | 将本仓库案例目录同步到发布平台文档目录并自动开 PR。 |
 | [对发布平台仓库做 CLI 冒烟验证](./cases/regression-after-install.md) | CLI 用户、发布负责人、测试人员 | `gitcode-regression` | 验证 `gitcode` 对私有 Java 仓库的认证、SSH、读命令和 dry-run 能力。 |
+| [定位引入问题的 PR](./cases/pr-impact-locator.md) | 开发、维护者、QA、AI 排查代理 | `gitcode-pr-impact-locator` | 以 Ascend/pytorch 测试用例减少 50% 为例，从数十个合入 PR 中快速定位根因 PR。 |
 
 ## GitHub Pages 静态部署说明
 

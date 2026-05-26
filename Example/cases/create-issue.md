@@ -53,7 +53,31 @@ openLiBing 发布平台涉及发布评审、Jenkins 任务、OBS 制品下载、
 
 ## 复用方式
 
-复用到其他仓库时，保留“背景、目标、期望、价值、验收”结构，将仓库名、已有关联 issue 和业务模块替换为目标项目即可。
+### 替换清单
+
+| 占位符 | 案例值 | 替换为 |
+|---|---|---|
+| 仓库 | `openLiBingNext/openlibing-platform-release` | 你的目标仓库 |
+| 关联 Issue | `#5` | 已有相关 issue 编号（没有则删除引用） |
+| 业务模块 | 发布结果追踪、Jenkins、OBS | 你的项目模块名 |
+| 技术栈 | Java 21 / Maven / Spring Boot | 你的项目技术栈 |
+
+### 适用场景
+
+- 把口头反馈、碎片化描述、用户报告转为结构化 Issue
+- 需要自动查重、关联已有 Issue、建议标签
+- 不适合：仓库未初始化、Issue 功能未开启
+
+### 跨平台提醒
+
+- **Windows**：中文正文用 `Set-Content -Encoding utf8` 生成临时文件再传 `--body-file`，避免 PowerShell stdin 乱码
+- **Linux/macOS**：stdin 重定向通常无编码问题，但仍建议创建后用 `gitcode issue view --json` 回读确认
+
+### 前置条件
+
+- `gitcode auth status` 确认已登录
+- 对目标仓库有 Issue 创建权限
+- （可选）安装 `gitcode-issue-create` skill
 
 ## 本次真实执行记录
 
@@ -69,3 +93,8 @@ openLiBing 发布平台涉及发布评审、Jenkins 任务、OBS 制品下载、
 执行中发现一个 Windows 真实问题：PowerShell 直接把中文 here-string 通过 stdin 传给 `--body-file -` 时，远端正文出现乱码。已用 UTF-8 临时文件修正 Issue #6 正文，并向 `gitcode-cli/cli` 提交上游问题 [#247](https://gitcode.com/gitcode-cli/cli/issues/247)。
 
 复用建议：在 Windows 自动化写入中文长正文时，优先使用 `Set-Content -Encoding utf8` 生成临时文件，再传给 `--body-file`；Linux/bash 场景可以继续使用 stdin，但仍建议在创建后用 `gitcode issue view --json` 回读确认。
+
+## 相关案例
+
+- 后续：[评审已有 Tag 发布能力 PR](./review-pr.md) — Issue 对应的 PR 创建后如何评审
+- 关联：[整理发布平台 Issue 队列](./triage-issues.md) — 批量管理 Issue 时参考

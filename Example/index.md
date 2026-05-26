@@ -42,18 +42,60 @@ gitcode schema
 
 ## 案例索引
 
-| 案例 | 适用对象 | 推荐 skill | 解决的问题 |
-| --- | --- | --- | --- |
-| [向发布平台提交高质量 Issue](./cases/create-issue.md) | 产品、测试、开发、开源用户 | `gitcode-issue-create` | 围绕发布结果追踪、附件管理、文件传输等真实问题创建可执行 Issue。 |
-| [从 Fork 分支创建发布平台 PR](./cases/create-pr-from-fork.md) | 外部贡献者、协作开发者 | `gitcode-pr-create` | 从 fork 仓库向发布平台主仓提交功能或修复。 |
-| [评审已有 Tag 发布能力 PR](./cases/review-pr.md) | Reviewer、维护者、AI 评审代理 | `gitcode-pr-review` | 以 PR #4 为例结构化审查发布流程变更风险。 |
-| [发布 openLiBing 发布平台版本](./cases/publish-release.md) | 维护者、发布负责人 | `gitcode-release-helper` | 汇总发布平台变更，创建 release 并上传构建产物。 |
-| [新成员上手发布平台仓库](./cases/repo-onboarding.md) | 新成员、外部贡献者、售前/交付团队 | `gitcode-repo-onboarding` | 快速了解 Java 21/Maven/Spring Boot 发布平台的构建、测试和贡献路径。 |
-| [发布平台敏感信息与安全审查](./cases/security-review.md) | 安全、研发、发布负责人 | `gitcode-security-check` | 检查配置、脚本、Jenkins/OBS 相关代码和 PR 中的安全风险。 |
-| [整理发布平台 Issue 队列](./cases/triage-issues.md) | 项目经理、维护者、技术负责人 | `gitcode-issue-triage` | 对当前 5 个 open issue 分类、补标签、识别重复和优先级。 |
-| [同步 GitCode CLI 案例到发布平台文档](./cases/sync-repo-directory.md) | 平台团队、文档团队、多仓维护者 | `gitcode-repo` | 将本仓库案例目录同步到发布平台文档目录并自动开 PR。 |
-| [对发布平台仓库做 CLI 冒烟验证](./cases/regression-after-install.md) | CLI 用户、发布负责人、测试人员 | `gitcode-regression` | 验证 `gitcode` 对私有 Java 仓库的认证、SSH、读命令和 dry-run 能力。 |
-| [定位引入问题的 PR](./cases/pr-impact-locator.md) | 开发、维护者、QA、AI 排查代理 | `gitcode-pr-impact-locator` | 以 Ascend/pytorch 测试用例减少 50% 为例，从数十个合入 PR 中快速定位根因 PR。 |
+| 案例 | 适用对象 | 推荐 skill | 解决的问题 | 前置条件 | 类型 |
+| --- | --- | --- | --- | --- | --- |
+| [向发布平台提交高质量 Issue](./cases/create-issue.md) | 产品、测试、开发、开源用户 | `gitcode-issue-create` | 围绕发布结果追踪、附件管理、文件传输等真实问题创建可执行 Issue | auth、仓库读权限 | 写 |
+| [从 Fork 分支创建发布平台 PR](./cases/create-pr-from-fork.md) | 外部贡献者、协作开发者 | `gitcode-pr-create` | 从 fork 仓库向发布平台主仓提交功能或修复 | fork 仓库、SSH | 写 |
+| [评审已有 Tag 发布能力 PR](./cases/review-pr.md) | Reviewer、维护者、AI 评审代理 | `gitcode-pr-review` | 以 PR #4 为例结构化审查发布流程变更风险 | auth、仓库读权限 | 读 |
+| [发布 openLiBing 发布平台版本](./cases/publish-release.md) | 维护者、发布负责人 | `gitcode-release-helper` | 汇总发布平台变更，创建 release 并上传构建产物 | 写权限、构建产物 | 写 |
+| [新成员上手发布平台仓库](./cases/repo-onboarding.md) | 新成员、外部贡献者、售前/交付团队 | `gitcode-repo-onboarding` | 快速了解发布平台的构建、测试和贡献路径 | auth、SSH | 读 |
+| [发布平台敏感信息与安全审查](./cases/security-review.md) | 安全、研发、发布负责人 | `gitcode-security-check` | 检查配置、脚本、Jenkins/OBS 相关代码和 PR 中的安全风险 | auth、仓库读权限 | 读 |
+| [整理发布平台 Issue 队列](./cases/triage-issues.md) | 项目经理、维护者、技术负责人 | `gitcode-issue-triage` | 对 open issue 分类、补标签、识别重复和优先级 | auth、仓库读权限 | 读写 |
+| [同步 GitCode CLI 案例到发布平台文档](./cases/sync-repo-directory.md) | 平台团队、文档团队、多仓维护者 | `gitcode-repo` | 将案例目录同步到发布平台文档目录并自动开 PR | 双仓读写权限、SSH | 写 |
+| [对发布平台仓库做 CLI 冒烟验证](./cases/regression-after-install.md) | CLI 用户、发布负责人、测试人员 | `gitcode-regression` | 验证 CLI 对私有 Java 仓库的认证、SSH、读命令和 dry-run 能力 | CLI 已安装、auth | 读 |
+| [定位引入问题的 PR](./cases/pr-impact-locator.md) | 开发、维护者、QA、AI 排查代理 | `gitcode-pr-impact-locator` | 以 Ascend/pytorch 测试用例减少 50% 为例，从数十个合入 PR 中快速定位根因 PR | auth、仓库读权限 | 读 |
+| [多环境 GitCode CLI 认证配置](./cases/auth-setup.md) | 开发者、DevOps、平台团队 | `gitcode-auth` | CI/本地/容器三种环境下的认证配置与排查 | CLI 已安装、有 token | 读写 |
+| [Issue 实现前评审](./cases/issue-pre-review.md) | 开发者、技术负责人、AI 代理 | `gitcode-issue-review` | 开发前确认需求清晰、验收可测、信息完备 | auth、仓库读权限 | 读 |
+| [标签体系与里程碑治理](./cases/label-milestone-governance.md) | 维护者、项目经理、社区经理 | `gitcode-label-milestone` | 建立 type/scope/priority 标签体系和版本里程碑 | 管理权限 | 写 |
+| [PR 合并策略与清理](./cases/pr-merge-strategy.md) | 维护者、发布负责人、DevOps | `gitcode-pr` | PR checkout 验证、merge 策略选择、过期 PR 清理 | 写权限 | 读写 |
+| [提交取证与变更追溯](./cases/commit-forensics.md) | 开发者、SRE、安全工程师 | `gitcode-commit` | 通过 commit diff/patch 追溯变更上下文 | auth、仓库读权限 | 读 |
+| [Issue 生命周期管理](./cases/issue-lifecycle.md) | 维护者、开发者、AI 代理 | `gitcode-issue` | Issue 从创建到关闭的完整生命周期操作 | 写权限 | 写 |
+| [Release 直接操作](./cases/release-direct-ops.md) | 维护者、测试人员、DevOps | `gitcode-release` | 直接操作 release 的查看、编辑、资产上传下载和删除 | 管理权限 | 读写 |
+| [批量代码审查评论](./cases/batch-review-comments.md) | Reviewer、维护者、自动化审查工具 | `gitcode-review` | 对多个 PR/commit 批量添加审查评论和行级注释 | 评论权限 | 写 |
+
+## 推荐阅读路径
+
+### 维护者路径 (Maintainer Path)
+
+适合：仓库维护者、技术负责人、发布负责人
+
+1. [新成员上手](./cases/repo-onboarding.md) — 确认环境可用
+2. [整理 Issue 队列](./cases/triage-issues.md) — 规划版本内容
+3. [评审 PR](./cases/review-pr.md) — 保障代码质量
+4. [安全审查](./cases/security-review.md) — 发布前检查
+5. [发布版本](./cases/publish-release.md) — 交付版本
+6. [冒烟验证](./cases/regression-after-install.md) — 验证 CLI 可用
+7. [标签体系与里程碑治理](./cases/label-milestone-governance.md)
+8. [定位引入问题的 PR](./cases/pr-impact-locator.md) — 排查回归问题
+
+### 贡献者路径 (Contributor Path)
+
+适合：外部贡献者、新成员、跨团队开发者
+
+1. [新成员上手](./cases/repo-onboarding.md) — 了解仓库
+2. [提交 Issue](./cases/create-issue.md) — 报告问题或提议功能
+3. [从 Fork 创建 PR](./cases/create-pr-from-fork.md) — 提交代码
+4. [PR 合并策略与清理](./cases/pr-merge-strategy.md)
+
+### 安全/运维路径 (Security/DevOps Path)
+
+适合：安全工程师、DevOps、平台团队
+
+1. [安全审查](./cases/security-review.md) — 扫描敏感信息
+2. [跨仓同步](./cases/sync-repo-directory.md) — 分发规范模板
+3. [冒烟验证](./cases/regression-after-install.md) — 环境自检
+4. [多环境认证配置](./cases/auth-setup.md)
+5. [Release 直接操作](./cases/release-direct-ops.md)
 
 ## GitHub Pages 静态部署说明
 

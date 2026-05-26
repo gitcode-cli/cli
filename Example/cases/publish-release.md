@@ -48,3 +48,20 @@ description: 使用 GitCode CLI 为 openLiBing 发布平台生成发布说明、
 ## 复用方式
 
 复用时替换版本号、目标分支、构建产物和本版本重点变化。若仓库已有 release，应将 `previous_tag` 改为上一个真实 tag。
+
+## 本次真实执行记录
+
+本案例已在 `openLiBingNext/openlibing-platform-release` 上创建演示 release，并上传案例索引资产：
+
+- Release tag：`v0.0.0-gitcode-cli-case-demo`
+- Target commit：`3886ca261fcd7bf2fd62d45b9f6a9caa558a0106`
+- Release name：`GitCode CLI case demo release`
+- 上传资产：`index.md`
+- 关联 Issue：[#6](https://gitcode.com/openLiBingNext/openlibing-platform-release/issues/6)
+- 关联 PR：[#5](https://gitcode.com/openLiBingNext/openlibing-platform-release/merge_requests/5)
+
+![GitCode CLI release evidence](assets/openlibing-release-evidence.svg)
+
+执行中发现一个 release 命令/API 差异：命令传入 `--draft --prerelease` 后执行成功，但 `release create/view/list --json` 返回 `draft=false`、`prerelease=false`，同时 `published_at=null`。这会影响脚本判断“草稿/预发布是否真的生效”。已向 `gitcode-cli/cli` 提交上游问题 [#248](https://gitcode.com/gitcode-cli/cli/issues/248)。
+
+复用建议：发布自动化不要只相信 create 命令的成功退出。创建后必须执行 `gitcode release view <tag> --json` 回读状态，并在 draft/prerelease 字段与预期不一致时停止公告或人工确认。

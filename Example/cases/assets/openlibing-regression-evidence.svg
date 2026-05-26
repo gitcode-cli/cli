@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="560" viewBox="0 0 1040 560" role="img" aria-labelledby="title desc">
+  <title id="title">GitCode CLI regression evidence</title>
+  <desc id="desc">Terminal-style evidence for GitCode CLI command regression on the openLiBing case repository.</desc>
+  <rect width="1040" height="560" fill="#f6f7f9"/>
+  <rect x="32" y="28" width="976" height="504" rx="8" fill="#101820"/>
+  <circle cx="62" cy="58" r="7" fill="#ef5b5b"/><circle cx="86" cy="58" r="7" fill="#f5c04d"/><circle cx="110" cy="58" r="7" fill="#4ec27a"/>
+  <text x="136" y="64" fill="#d7e0ea" font-family="Consolas, Menlo, monospace" font-size="18">GitCode CLI regression evidence</text>
+  <text x="56" y="112" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode version</text>
+  <text x="78" y="144" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">gitcode version 0.5.6   commit: 91676e4   built: 2026-05-25</text>
+  <text x="56" y="204" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode repo view openLiBingNext/openlibing-platform-release --json</text>
+  <text x="78" y="236" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">private: true   default_branch: master   language: Java</text>
+  <text x="78" y="264" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">ssh_url: git@gitcode.com:openLiBingNext/openlibing-platform-release.git</text>
+  <text x="56" y="324" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode issue create ... --dry-run --json</text>
+  <text x="78" y="356" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">dry_run: true   repository: openLiBingNext/openlibing-platform-release</text>
+  <text x="56" y="416" fill="#fef3c7" font-family="Consolas, Menlo, monospace" font-size="18">sensitive-info note</text>
+  <text x="78" y="448" fill="#fef3c7" font-family="Consolas, Menlo, monospace" font-size="17">CLI PR list may expose owner email in JSON; case docs keep it redacted.</text>
+</svg>

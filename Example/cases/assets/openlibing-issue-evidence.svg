@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="560" viewBox="0 0 1040 560" role="img" aria-labelledby="title desc">
+  <title id="title">GitCode CLI issue evidence</title>
+  <desc id="desc">Terminal-style evidence for issue creation and triage.</desc>
+  <rect width="1040" height="560" fill="#f6f7f9"/>
+  <rect x="32" y="28" width="976" height="504" rx="8" fill="#101820"/>
+  <circle cx="62" cy="58" r="7" fill="#ef5b5b"/><circle cx="86" cy="58" r="7" fill="#f5c04d"/><circle cx="110" cy="58" r="7" fill="#4ec27a"/>
+  <text x="136" y="64" fill="#d7e0ea" font-family="Consolas, Menlo, monospace" font-size="18">PowerShell - GitCode CLI evidence</text>
+  <text x="56" y="112" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode auth status</text>
+  <text x="78" y="142" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">✓ Logged in as aflyingto (config)</text>
+  <text x="78" y="170" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">✓ Git operations protocol: ssh</text>
+  <text x="56" y="218" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode issue create -R openLiBingNext/openlibing-platform-release ...</text>
+  <text x="78" y="248" fill="#fef3c7" font-family="Consolas, Menlo, monospace" font-size="17">created issue #6: docs: 补充 GitCode CLI 应用案例文档</text>
+  <text x="78" y="276" fill="#fef3c7" font-family="Consolas, Menlo, monospace" font-size="17">url: https://gitcode.com/openLiBingNext/openlibing-platform-release/issues/6</text>
+  <text x="56" y="324" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode issue edit 6 --label enhancement,type/docs,scope/docs</text>
+  <text x="78" y="354" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">labels: enhancement, scope/docs, type/docs</text>
+  <text x="56" y="402" fill="#fb7185" font-family="Consolas, Menlo, monospace" font-size="18">finding</text>
+  <text x="78" y="432" fill="#fecdd3" font-family="Consolas, Menlo, monospace" font-size="17">PowerShell stdin with Chinese text produced mojibake on first create.</text>
+  <text x="78" y="460" fill="#fecdd3" font-family="Consolas, Menlo, monospace" font-size="17">Workaround: write UTF-8 temp file, then pass --body-file &lt;file&gt;.</text>
+  <text x="78" y="488" fill="#fecdd3" font-family="Consolas, Menlo, monospace" font-size="17">Upstream issue filed: gitcode-cli/cli#247.</text>
+</svg>

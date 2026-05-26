@@ -54,3 +54,18 @@ openLiBing 发布平台涉及发布评审、Jenkins 任务、OBS 制品下载、
 ## 复用方式
 
 复用到其他仓库时，保留“背景、目标、期望、价值、验收”结构，将仓库名、已有关联 issue 和业务模块替换为目标项目即可。
+
+## 本次真实执行记录
+
+本案例已在 `openLiBingNext/openlibing-platform-release` 上执行远端写操作，形成可回溯对象：
+
+- 创建 Issue：[#6 docs: 补充 GitCode CLI 应用案例文档](https://gitcode.com/openLiBingNext/openlibing-platform-release/issues/6)
+- 创建时间：2026-05-26 12:48:14 +08:00
+- 标签：`enhancement`、`scope/docs`、`type/docs`
+- 关联 PR：[#5 docs: sync GitCode CLI example cases](https://gitcode.com/openLiBingNext/openlibing-platform-release/merge_requests/5)
+
+![GitCode CLI issue evidence](assets/openlibing-issue-evidence.svg)
+
+执行中发现一个 Windows 真实问题：PowerShell 直接把中文 here-string 通过 stdin 传给 `--body-file -` 时，远端正文出现乱码。已用 UTF-8 临时文件修正 Issue #6 正文，并向 `gitcode-cli/cli` 提交上游问题 [#247](https://gitcode.com/gitcode-cli/cli/issues/247)。
+
+复用建议：在 Windows 自动化写入中文长正文时，优先使用 `Set-Content -Encoding utf8` 生成临时文件，再传给 `--body-file`；Linux/bash 场景可以继续使用 stdin，但仍建议在创建后用 `gitcode issue view --json` 回读确认。

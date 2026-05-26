@@ -51,6 +51,24 @@ func TestGitCodeUpdateReleaseOptions_EmptyReleaseStatus(t *testing.T) {
 	}
 }
 
+func TestCreateReleaseOptionsReleaseStatusJSON(t *testing.T) {
+	opts := &CreateReleaseOptions{
+		TagName:       "v1.0.0-rc1",
+		Name:          "v1.0.0 RC1",
+		Prerelease:    true,
+		ReleaseStatus: "pre",
+	}
+
+	data, err := json.Marshal(opts)
+	if err != nil {
+		t.Fatalf("Failed to marshal CreateReleaseOptions: %v", err)
+	}
+
+	if !strings.Contains(string(data), `"release_status":"pre"`) {
+		t.Fatalf("Expected release_status field in JSON: %s", string(data))
+	}
+}
+
 // TestUpdateReleaseByTagDirect_PatchPath tests that UpdateReleaseByTagDirect uses correct PATCH path
 func TestUpdateReleaseByTagDirect_PatchPath(t *testing.T) {
 	var gotMethod string

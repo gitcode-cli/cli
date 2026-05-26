@@ -2,9 +2,7 @@
 package edit
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -134,19 +132,11 @@ func getBody(opts *EditOptions) (string, error) {
 
 	if opts.BodyFile != "" {
 		if opts.BodyFile == "-" {
-			reader := bufio.NewReader(opts.IO.In)
-			var sb strings.Builder
-			for {
-				line, err := reader.ReadString('\n')
-				if err != nil && err != io.EOF {
-					return "", fmt.Errorf("failed to read from stdin: %w", err)
-				}
-				sb.WriteString(line)
-				if err == io.EOF {
-					break
-				}
+			body, err := cmdutil.ReadText(opts.IO.In)
+			if err != nil {
+				return "", fmt.Errorf("failed to read from stdin: %w", err)
 			}
-			return strings.TrimSpace(sb.String()), nil
+			return strings.TrimSpace(body), nil
 		}
 
 		content, err := cmdutil.ReadTextFile(opts.BodyFile)

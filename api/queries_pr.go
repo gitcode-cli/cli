@@ -193,12 +193,42 @@ func GetPullRequest(client *Client, owner, repo string, number int) (*PullReques
 
 // CreatePullRequest creates a new PR
 func CreatePullRequest(client *Client, owner, repo string, opts *CreatePROptions) (*PullRequest, error) {
+	formValues := buildPRCreateFormValues(opts)
+
 	var pr PullRequest
-	err := client.Post("/repos/"+owner+"/"+repo+"/pulls", opts, &pr)
+	err := client.PostForm("/repos/"+owner+"/"+repo+"/pulls", formValues, &pr)
 	if err != nil {
 		return nil, err
 	}
 	return &pr, nil
+}
+
+func buildPRCreateFormValues(opts *CreatePROptions) url.Values {
+	formValues := url.Values{}
+
+	if opts == nil {
+		return formValues
+	}
+	if opts.Title != "" {
+		formValues.Set("title", opts.Title)
+	}
+	if opts.Body != "" {
+		formValues.Set("body", opts.Body)
+	}
+	if opts.Head != "" {
+		formValues.Set("head", opts.Head)
+	}
+	if opts.Base != "" {
+		formValues.Set("base", opts.Base)
+	}
+	if opts.Draft {
+		formValues.Set("draft", "true")
+	}
+	if opts.ForkPath != "" {
+		formValues.Set("fork_path", opts.ForkPath)
+	}
+
+	return formValues
 }
 
 // UpdatePullRequest updates an existing PR

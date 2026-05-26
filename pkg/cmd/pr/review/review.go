@@ -2,9 +2,7 @@
 package review
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -141,20 +139,11 @@ func reviewRun(opts *ReviewOptions) error {
 			return cmdutil.NewUsageError("--comment and --comment-file are mutually exclusive")
 		}
 		if opts.CommentFile == "-" {
-			// Read from stdin
-			reader := bufio.NewReader(opts.IO.In)
-			var sb strings.Builder
-			for {
-				line, err := reader.ReadString('\n')
-				if err != nil && err != io.EOF {
-					return fmt.Errorf("failed to read from stdin: %w", err)
-				}
-				sb.WriteString(line)
-				if err == io.EOF {
-					break
-				}
+			comment, err := cmdutil.ReadText(opts.IO.In)
+			if err != nil {
+				return fmt.Errorf("failed to read from stdin: %w", err)
 			}
-			opts.Comment = strings.TrimSpace(sb.String())
+			opts.Comment = strings.TrimSpace(comment)
 		} else {
 			comment, err := cmdutil.ReadTextFile(opts.CommentFile)
 			if err != nil {

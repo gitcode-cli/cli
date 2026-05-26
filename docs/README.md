@@ -32,6 +32,7 @@
 5. [AI-GUIDE.md](./AI-GUIDE.md)
 6. [AI-TEMPLATES.md](./AI-TEMPLATES.md)
 7. `docs/ai-templates/*.md`
+8. [应用案例库](../Example/index.md)
 
 说明：
 
@@ -50,3 +51,4 @@
 | [AI-GUIDE.md](./AI-GUIDE.md) | 外部项目使用 AI 操作 GitCode 的场景指南 |
 | [AI-TEMPLATES.md](./AI-TEMPLATES.md) | gitcode-cli 仓库内部协作的固定模板 |
 | `docs/ai-templates/*.md` | 可直接复用的 AI 评论与检查模板文件 |
+| [Example/](../Example/index.md) | GitCode CLI 在业务场景中的应用案例和可复制 prompt |

@@ -26,6 +26,7 @@ GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验
 - [回归说明](./docs/REGRESSION.md)
 - [打包说明](./docs/PACKAGING.md)
 - [AI 操作指南（外部项目）](./docs/AI-GUIDE.md)
+- [应用案例库](./Example/index.md)
 - [开发规范](./spec/README.md)
 - [真相源矩阵](./spec/governance/source-of-truth-matrix.md)
 - [AI 本地开发流程](./spec/workflows/ai-local-development-workflow.md)

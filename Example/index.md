@@ -1,11 +1,13 @@
 ---
 title: GitCode CLI 应用案例库
-description: GitCode CLI 在常见研发协作场景中的 AI 使用案例和可复用 prompt
+description: 以 openLiBing 发布平台为对象的 GitCode CLI 应用案例和可复用 prompt
 ---
 
 # GitCode CLI 应用案例库
 
 本目录用于沉淀 GitCode CLI 在各类业务场景中的应用案例，服务于推广宣传、用户使用指导和团队内部复用。
+
+当前案例统一以 `openLiBingNext/openlibing-platform-release` 为实例对象。该仓库是 openLiBing 发布平台代码仓，主要技术栈为 Java 21、Maven、Spring Boot，业务覆盖发布评审、Jenkins 集成、OBS 文件下载、附件管理、漏洞扫描和发布结果追踪等场景。
 
 案例库采用总分结构：
 
@@ -42,15 +44,15 @@ gitcode schema
 
 | 案例 | 适用对象 | 推荐 skill | 解决的问题 |
 | --- | --- | --- | --- |
-| [向指定仓库提交高质量 Issue](./cases/create-issue.md) | 产品、测试、开发、开源用户 | `gitcode-issue-create` | 把零散问题描述整理成可跟踪、可执行的 Issue。 |
-| [从 Fork 分支创建 Pull Request](./cases/create-pr-from-fork.md) | 外部贡献者、协作开发者 | `gitcode-pr-create` | 在无主仓写权限时，通过 fork 分支提交贡献。 |
-| [对 Pull Request 做工程评审](./cases/review-pr.md) | Reviewer、维护者、AI 评审代理 | `gitcode-pr-review` | 结构化发现风险、缺失测试和合并阻塞点。 |
-| [发布版本并上传 Release 资产](./cases/publish-release.md) | 维护者、发布负责人 | `gitcode-release-helper` | 生成 release notes、创建 release、上传产物并验证。 |
-| [新成员上手 GitCode 仓库](./cases/repo-onboarding.md) | 新成员、外部贡献者、售前/交付团队 | `gitcode-repo-onboarding` | 快速了解仓库、构建方式、测试方式和贡献路径。 |
-| [做一次敏感信息与安全审查](./cases/security-review.md) | 安全、研发、发布负责人 | `gitcode-security-check` | 检查仓库或 PR 中的凭证泄漏、危险配置和常见代码风险。 |
-| [批量整理 Issue 队列](./cases/triage-issues.md) | 项目经理、维护者、技术负责人 | `gitcode-issue-triage` | 对存量 Issue 分类、优先级排序、补标签和识别重复项。 |
-| [同步目录到另一个仓库并创建 PR](./cases/sync-repo-directory.md) | 平台团队、文档团队、多仓维护者 | `gitcode-repo` | 把本仓库的一段目录内容同步到目标仓库并自动开 PR。 |
-| [安装或升级后做全量冒烟验证](./cases/regression-after-install.md) | CLI 用户、发布负责人、测试人员 | `gitcode-regression` | 验证 `gitcode` 在 Windows/Linux 下的基础能力和关键命令。 |
+| [向发布平台提交高质量 Issue](./cases/create-issue.md) | 产品、测试、开发、开源用户 | `gitcode-issue-create` | 围绕发布结果追踪、附件管理、文件传输等真实问题创建可执行 Issue。 |
+| [从 Fork 分支创建发布平台 PR](./cases/create-pr-from-fork.md) | 外部贡献者、协作开发者 | `gitcode-pr-create` | 从 fork 仓库向发布平台主仓提交功能或修复。 |
+| [评审已有 Tag 发布能力 PR](./cases/review-pr.md) | Reviewer、维护者、AI 评审代理 | `gitcode-pr-review` | 以 PR #4 为例结构化审查发布流程变更风险。 |
+| [发布 openLiBing 发布平台版本](./cases/publish-release.md) | 维护者、发布负责人 | `gitcode-release-helper` | 汇总发布平台变更，创建 release 并上传构建产物。 |
+| [新成员上手发布平台仓库](./cases/repo-onboarding.md) | 新成员、外部贡献者、售前/交付团队 | `gitcode-repo-onboarding` | 快速了解 Java 21/Maven/Spring Boot 发布平台的构建、测试和贡献路径。 |
+| [发布平台敏感信息与安全审查](./cases/security-review.md) | 安全、研发、发布负责人 | `gitcode-security-check` | 检查配置、脚本、Jenkins/OBS 相关代码和 PR 中的安全风险。 |
+| [整理发布平台 Issue 队列](./cases/triage-issues.md) | 项目经理、维护者、技术负责人 | `gitcode-issue-triage` | 对当前 5 个 open issue 分类、补标签、识别重复和优先级。 |
+| [同步 GitCode CLI 案例到发布平台文档](./cases/sync-repo-directory.md) | 平台团队、文档团队、多仓维护者 | `gitcode-repo` | 将本仓库案例目录同步到发布平台文档目录并自动开 PR。 |
+| [对发布平台仓库做 CLI 冒烟验证](./cases/regression-after-install.md) | CLI 用户、发布负责人、测试人员 | `gitcode-regression` | 验证 `gitcode` 对私有 Java 仓库的认证、SSH、读命令和 dry-run 能力。 |
 
 ## GitHub Pages 静态部署说明
 
@@ -66,6 +68,7 @@ https://<github-org>.github.io/<github-repo>/Example/
 
 - 案例优先面向真实业务任务，而不是罗列命令参数。
 - Prompt 必须可复制、可执行、可替换占位符。
+- Prompt 中的仓库、PR、Issue、分支、模块名尽量使用真实案例；复用时再替换为目标项目。
 - 案例中涉及代码下载、同步、PR checkout 的路径默认使用 SSH。
-- 案例中不得包含真实 token、密码、私钥、内部敏感仓库名或不可公开数据。
+- 案例中不得包含真实 token、密码、私钥或不可公开数据；使用私有仓库作为案例对象前，应确认仓库名、Issue/PR 编号和业务上下文允许公开展示。
 - 如果 GitCode CLI 命令能力变化，应同步更新对应案例。

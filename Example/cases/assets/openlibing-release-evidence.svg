@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="560" viewBox="0 0 1040 560" role="img" aria-labelledby="title desc">
+  <title id="title">GitCode CLI release evidence</title>
+  <desc id="desc">Terminal-style evidence for creating and inspecting a GitCode release.</desc>
+  <rect width="1040" height="560" fill="#f6f7f9"/>
+  <rect x="32" y="28" width="976" height="504" rx="8" fill="#101820"/>
+  <circle cx="62" cy="58" r="7" fill="#ef5b5b"/><circle cx="86" cy="58" r="7" fill="#f5c04d"/><circle cx="110" cy="58" r="7" fill="#4ec27a"/>
+  <text x="136" y="64" fill="#d7e0ea" font-family="Consolas, Menlo, monospace" font-size="18">GitCode CLI release evidence</text>
+  <text x="56" y="112" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode release create v0.0.0-gitcode-cli-case-demo --draft --prerelease --json</text>
+  <text x="78" y="146" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">tag_name: v0.0.0-gitcode-cli-case-demo</text>
+  <text x="78" y="174" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">target_commitish: 3886ca261fcd7bf2fd62d45b9f6a9caa558a0106</text>
+  <text x="78" y="202" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">name: GitCode CLI case demo release</text>
+  <text x="78" y="230" fill="#fecdd3" font-family="Consolas, Menlo, monospace" font-size="17">draft: false   prerelease: false   published_at: null</text>
+  <text x="56" y="282" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode release upload v0.0.0-gitcode-cli-case-demo Example/index.md</text>
+  <text x="78" y="314" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">asset uploaded: index.md (4986 bytes)</text>
+  <text x="56" y="366" fill="#fb7185" font-family="Consolas, Menlo, monospace" font-size="18">finding</text>
+  <text x="78" y="398" fill="#fecdd3" font-family="Consolas, Menlo, monospace" font-size="17">CLI accepted --draft and --prerelease but returned false for both fields.</text>
+  <text x="78" y="426" fill="#fecdd3" font-family="Consolas, Menlo, monospace" font-size="17">Upstream issue filed: gitcode-cli/cli#248.</text>
+</svg>

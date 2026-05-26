@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="560" viewBox="0 0 1040 560" role="img" aria-labelledby="title desc">
+  <title id="title">GitCode CLI repo sync and PR evidence</title>
+  <desc id="desc">Terminal-style evidence for syncing examples into openLiBingNext/openlibing-platform-release.</desc>
+  <rect width="1040" height="560" fill="#f6f7f9"/>
+  <rect x="32" y="28" width="976" height="504" rx="8" fill="#101820"/>
+  <circle cx="62" cy="58" r="7" fill="#ef5b5b"/><circle cx="86" cy="58" r="7" fill="#f5c04d"/><circle cx="110" cy="58" r="7" fill="#4ec27a"/>
+  <text x="136" y="64" fill="#d7e0ea" font-family="Consolas, Menlo, monospace" font-size="18">GitCode CLI repo sync evidence</text>
+  <text x="56" y="112" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode repo sync --target-repo openLiBingNext/openlibing-platform-release ...</text>
+  <text x="78" y="146" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">source_repo: gitcode-cli/cli</text>
+  <text x="78" y="174" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">source_dir: Example/cases</text>
+  <text x="78" y="202" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">target_dir: docs/gitcode-cli-cases</text>
+  <text x="78" y="230" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">sync_branch: sync/gitcode-cli-cli/codex-add-example-case-library/example-cases</text>
+  <text x="78" y="258" fill="#fef3c7" font-family="Consolas, Menlo, monospace" font-size="17">pr_number: 5</text>
+  <text x="78" y="286" fill="#fef3c7" font-family="Consolas, Menlo, monospace" font-size="17">pr_url: https://gitcode.com/openLiBingNext/openlibing-platform-release/merge_requests/5</text>
+  <text x="56" y="338" fill="#7dd3fc" font-family="Consolas, Menlo, monospace" font-size="18">$ gitcode pr diff 5 --json</text>
+  <text x="78" y="370" fill="#d1fae5" font-family="Consolas, Menlo, monospace" font-size="17">added_lines: 449   removed_lines: 0   file_count: 9   mergeable: true</text>
+  <text x="78" y="426" fill="#fef3c7" font-family="Consolas, Menlo, monospace" font-size="17">review comment created on PR #5 with docs-only self-check.</text>
+</svg>

@@ -26,6 +26,8 @@ gc pr create -R infra-test/gctest1 --fill
 ```
 
 > **说明**: `--head` 参数可选，未指定时自动检测当前 Git 分支。
+> Windows PowerShell 中建议把 `gc` 写成 `gitcode` 或 `gc.exe`。中文/非 ASCII 正文优先写入 UTF-8 文件再传给 `--body-file` / `--comment-file`；直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。
+> `pr create --json` 若 warning 提示远端 body 未返回，不要把本地提交正文当作远端事实；使用 `gitcode pr view <number> -R owner/repo --json` 再核验。
 
 ## pr list - 列出 PRs
 

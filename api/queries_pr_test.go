@@ -106,6 +106,69 @@ func TestCreatePullRequestUsesFormEncoding(t *testing.T) {
 	}
 }
 
+func TestCreatePullRequestHydratesMissingBodyFromView(t *testing.T) {
+	var gotPaths []string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPaths = append(gotPaths, req.URL.Path)
+		switch {
+		case req.Method == http.MethodPost && req.URL.Path == "/api/v5/repos/owner/repo/pulls":
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"created"}`), nil
+		case req.Method == http.MethodGet && req.URL.Path == "/api/v5/repos/owner/repo/pulls/123":
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"created","body":"body text","html_url":"https://gitcode.com/owner/repo/merge_requests/123"}`), nil
+		default:
+			t.Fatalf("unexpected request %s %s", req.Method, req.URL.Path)
+			return nil, nil
+		}
+	})
+
+	pr, err := CreatePullRequest(client, "owner", "repo", &CreatePROptions{
+		Title: "created",
+		Body:  "body text",
+		Head:  "feature",
+		Base:  "main",
+	})
+	if err != nil {
+		t.Fatalf("CreatePullRequest() error = %v", err)
+	}
+	if pr.Body != "body text" {
+		t.Fatalf("response body = %q, want %q", pr.Body, "body text")
+	}
+	if pr.HTMLURL != "https://gitcode.com/owner/repo/merge_requests/123" {
+		t.Fatalf("HTMLURL = %q", pr.HTMLURL)
+	}
+	if strings.Join(gotPaths, ",") != "/api/v5/repos/owner/repo/pulls,/api/v5/repos/owner/repo/pulls/123" {
+		t.Fatalf("request paths = %v", gotPaths)
+	}
+}
+
+func TestCreatePullRequestLeavesMissingBodyWhenViewFails(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		switch {
+		case req.Method == http.MethodPost && req.URL.Path == "/api/v5/repos/owner/repo/pulls":
+			return authTestResponse(http.StatusOK, `{"number":123,"title":"created"}`), nil
+		case req.Method == http.MethodGet && req.URL.Path == "/api/v5/repos/owner/repo/pulls/123":
+			return authTestResponse(http.StatusInternalServerError, `{"message":"temporary"}`), nil
+		default:
+			t.Fatalf("unexpected request %s %s", req.Method, req.URL.Path)
+			return nil, nil
+		}
+	})
+
+	pr, err := CreatePullRequest(client, "owner", "repo", &CreatePROptions{
+		Title: "created",
+		Body:  "body text",
+		Head:  "feature",
+		Base:  "main",
+	})
+	if err != nil {
+		t.Fatalf("CreatePullRequest() error = %v", err)
+	}
+	if pr.Body != "" {
+		t.Fatalf("response body = %q, want empty because remote body could not be verified", pr.Body)
+	}
+}
+
 func TestUpdatePullRequestUsesFormEncoding(t *testing.T) {
 	draft := false
 	closeRelated := true

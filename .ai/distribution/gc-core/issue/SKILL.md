@@ -40,3 +40,4 @@ gc issue comment edit 166061383 -R owner/repo --body "Updated comment"
 - 未传 `-R` 时，是否支持从当前仓库自动推断，取决于具体命令和当前目录
 - 修改 issue 前，建议先查看当前内容，避免覆盖已有信息
 - 批量筛选和复杂查询时，优先先跑 `gc issue list` 验证过滤条件
+- Windows PowerShell 中可将示例里的 `gc` 改为 `gitcode`；从 stdin 传中文/非 ASCII 正文到 `--body-file -` 时，优先使用 UTF-8 文件，直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`

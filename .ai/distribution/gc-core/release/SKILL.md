@@ -34,3 +34,4 @@ gc release download v1.0.0 app.zip -R owner/repo -o ./downloads/
 - `release create` 应显式提供 `--notes`
 - 上传前应确认 release 已存在且 tag 正确
 - 下载或上传前应确认文件名和版本一致
+- Windows PowerShell 中可将示例里的 `gc` 改为 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖；多行中文 release notes 优先写入 UTF-8 文件再用 `--notes-file`

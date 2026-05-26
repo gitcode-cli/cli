@@ -128,6 +128,8 @@ gc issue comment 1 -R infra-test/gctest1 --body-file comment.txt
 echo "Comment from stdin" | gc issue comment 1 -R infra-test/gctest1 --body-file -
 ```
 
+> Windows PowerShell 中建议把 `gc` 写成 `gitcode` 或 `gc.exe`。中文/非 ASCII 正文优先写入 UTF-8 文件再传给 `--body-file`；直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。
+
 ## issue comment edit - 编辑 Issue 评论
 
 ```bash

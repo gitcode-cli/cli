@@ -44,8 +44,8 @@ export GC_TOKEN="your_gitcode_token"
 echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
 source ~/.bashrc
 
-# 或交互式登录
-gc auth login --token YOUR_TOKEN
+# 或从 stdin 读取 token 登录
+echo "YOUR_TOKEN" | gc auth login --with-token
 ```
 
 ---
@@ -113,4 +113,6 @@ gc auth login --token YOUR_TOKEN
 - 读取类命令优先使用 `--json`，需要探索命令结构时优先使用 `gc schema`。
 - 删除类命令在自动化场景中先用 `--dry-run`；真实执行时显式传 `--yes`。
 - `gc pr review --approve` 当前可用；`gc pr review --request` 会明确提示 GitCode API 暂不支持该动作。
+- Windows PowerShell 中优先使用 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖；从 stdin 传中文/非 ASCII 正文时，优先使用 UTF-8 文件，直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。
+- `pr create --json` 若 warning 提示远端 body 未返回，不得把本地提交的正文当作远端事实；应使用 `gitcode pr view <number> -R owner/repo --json` 再核验。
 - 优先使用 `./scripts/regression-core.sh` 做核心真实命令回归，再补充本次开发相关验证。

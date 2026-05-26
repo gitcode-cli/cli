@@ -81,7 +81,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Title, "title", "t", "", "Release title")
 	cmd.Flags().StringVarP(&opts.Notes, "notes", "n", "", "Release notes")
 	cmd.Flags().StringVarP(&opts.NotesFile, "notes-file", "F", "", "Read release notes from file")
-	cmd.Flags().BoolVarP(&opts.Draft, "draft", "d", false, "Mark as draft")
+	cmd.Flags().BoolVarP(&opts.Draft, "draft", "d", false, "Mark as draft (currently unsupported by GitCode release create API)")
 	cmd.Flags().BoolVarP(&opts.Prerelease, "prerelease", "p", false, "Mark as prerelease")
 	cmd.Flags().StringVarP(&opts.Target, "target", "", "", "Target commitish")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
@@ -95,6 +95,9 @@ func createRun(opts *CreateOptions) error {
 	// Validate mutual exclusion of --notes and --notes-file
 	if opts.Notes != "" && opts.NotesFile != "" {
 		return cmdutil.NewUsageError("cannot use both --notes and --notes-file")
+	}
+	if opts.Draft {
+		return cmdutil.NewUsageError("--draft is not supported by GitCode release create API; create the release without --draft or manage draft state in the web UI")
 	}
 
 	// Get release body from notes or file
@@ -122,6 +125,11 @@ func createRun(opts *CreateOptions) error {
 		return err
 	}
 
+	releaseStatus := ""
+	if opts.Prerelease {
+		releaseStatus = "pre"
+	}
+
 	// Create release
 	release, err := api.CreateRelease(client, owner, repo, &api.CreateReleaseOptions{
 		TagName:         opts.TagName,
@@ -129,10 +137,19 @@ func createRun(opts *CreateOptions) error {
 		Body:            body,
 		Draft:           opts.Draft,
 		Prerelease:      opts.Prerelease,
+		ReleaseStatus:   releaseStatus,
 		TargetCommitish: opts.Target,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create release: %w", err)
+	}
+	if opts.Prerelease {
+		if fetched, err := api.GetRelease(client, owner, repo, opts.TagName); err == nil {
+			release = fetched
+		}
+		if !release.Prerelease {
+			return fmt.Errorf("release %s was created, but GitCode API did not mark it as prerelease", opts.TagName)
+		}
 	}
 
 	if opts.JSON {

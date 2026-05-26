@@ -54,6 +54,7 @@ type CreateReleaseOptions struct {
 	Body            string `json:"body,omitempty"`
 	Draft           bool   `json:"draft,omitempty"`
 	Prerelease      bool   `json:"prerelease,omitempty"`
+	ReleaseStatus   string `json:"release_status,omitempty"`
 	TargetCommitish string `json:"target_commitish,omitempty"`
 }
 

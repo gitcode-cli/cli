@@ -262,8 +262,11 @@ func getBody(opts *EditOptions) (string, error) {
 
 	if opts.BodyFile != "" {
 		if opts.BodyFile == "-" {
-			// Read from stdin (simplified - not typical for edit)
-			return "", fmt.Errorf("stdin input (--body-file -) is not supported for issue edit")
+			body, err := cmdutil.ReadText(opts.IO.In)
+			if err != nil {
+				return "", fmt.Errorf("failed to read from stdin: %w", err)
+			}
+			return strings.TrimSpace(body), nil
 		}
 
 		// Read from file

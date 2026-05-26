@@ -406,6 +406,7 @@ gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --json
 - `--custom-fields-json` 与 `--custom-fields-file` 不能同时使用；两者都要求 JSON 顶层是 `object[]`。
 - 模板路径支持仓库下的 `.gitcode`、`.github`、`.gitee` 目录；组织模板可能来自 `owner/.gitcode`，第一阶段仅支持显式传路径，不保证自动发现。
 - 若 GitCode API 未实际应用 assignee，命令会成功完成创建并在 stderr 给出告警，避免自动化重试制造重复 issue。
+- Windows PowerShell 管道输入会经过 CLI 文本解码处理，支持 UTF-8、带 BOM 的 UTF-16 以及常见中文 Windows 代码页字节；跨 Windows/Linux 稳定写入中文长正文时，仍推荐使用 UTF-8 文件配合 `--body-file <path>`。
 
 ### issue list - 列出 Issues
 
@@ -1071,9 +1072,6 @@ gc release create v1.0.0 -R infra-test/gctest1 --title "Version 1.0.0" --notes-f
 # 创建预发布 Release
 gc release create v1.0.0-beta -R infra-test/gctest1 --title "v1.0.0 Beta" --notes "Beta release" --prerelease
 
-# 创建草稿 Release
-gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Draft" --draft
-
 # 指定目标分支
 gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Release" --target main
 
@@ -1082,6 +1080,8 @@ gc release create v1.0.0 -R infra-test/gctest1 --title "v1.0.0" --notes "Release
 ```
 
 > **注意**: `--notes` 和 `--notes-file` 参数不能同时使用。
+> `--draft` 当前不受 GitCode release create API 支持；CLI 会在发起远端创建前返回错误，避免创建出非草稿 Release。
+> `--prerelease` 会使用 GitCode 的 `release_status=pre` 创建预发布，并在创建后回读确认状态。
 > `--json` 只在成功创建后输出 release 对象；不会混入文本提示。
 
 ### release list - 列出 Releases

@@ -103,6 +103,90 @@ func TestNewCmdCreateNotesAndNotesFileMutualExclusion(t *testing.T) {
 	}
 }
 
+func TestCreateRunRejectsDraftBeforeRemoteWrite(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	called := false
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		Repository: "owner/repo",
+		TagName:    "v1.0.0",
+		Draft:      true,
+		HttpClient: func() (*http.Client, error) {
+			called = true
+			return &http.Client{}, nil
+		},
+	}
+
+	err := createRun(opts)
+	if err == nil {
+		t.Fatal("expected draft unsupported error")
+	}
+	if called {
+		t.Fatal("HttpClient should not be called when --draft is rejected")
+	}
+	if !strings.Contains(err.Error(), "--draft is not supported") {
+		t.Fatalf("error = %v, want unsupported draft message", err)
+	}
+}
+
+func TestCreateRunPrereleaseSendsReleaseStatusAndVerifies(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	var gotPostBody string
+	var sawGet bool
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		Repository: "owner/repo",
+		TagName:    "v1.0.0-rc1",
+		Title:      "v1.0.0 RC1",
+		Prerelease: true,
+		JSON:       true,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: releaseRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					switch {
+					case req.Method == http.MethodPost && req.URL.Path == "/api/v5/repos/owner/repo/releases":
+						body, err := io.ReadAll(req.Body)
+						if err != nil {
+							return nil, err
+						}
+						gotPostBody = string(body)
+						return releaseResponse(http.StatusOK, `{"id":1,"tag_name":"v1.0.0-rc1","name":"v1.0.0 RC1","prerelease":false}`), nil
+					case req.Method == http.MethodGet && req.URL.Path == "/api/v5/repos/owner/repo/releases/tags/v1.0.0-rc1":
+						sawGet = true
+						return releaseResponse(http.StatusOK, `{"id":1,"tag_name":"v1.0.0-rc1","name":"v1.0.0 RC1","prerelease":true}`), nil
+					default:
+						t.Fatalf("unexpected request: %s %s", req.Method, req.URL.Path)
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if !strings.Contains(gotPostBody, `"release_status":"pre"`) {
+		t.Fatalf("POST body = %s, want release_status pre", gotPostBody)
+	}
+	if !sawGet {
+		t.Fatal("expected createRun to verify prerelease state with GetRelease")
+	}
+
+	var got map[string]interface{}
+	out := f.IOStreams.Out.(*bytes.Buffer).Bytes()
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v\n%s", err, string(out))
+	}
+	if got["prerelease"] != true {
+		t.Fatalf("JSON output prerelease = %#v, want true", got["prerelease"])
+	}
+}
+
 func TestCreateRunNotesFileReadsContent(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

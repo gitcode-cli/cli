@@ -43,6 +43,69 @@ func TestListPullRequestsBuildsQuery(t *testing.T) {
 	})
 }
 
+func TestCreatePullRequestUsesFormEncoding(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	var gotContentType string
+	var gotBody string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		gotContentType = req.Header.Get("Content-Type")
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			t.Fatalf("failed to read request body: %v", err)
+		}
+		gotBody = string(body)
+		return authTestResponse(http.StatusOK, `{"number":123,"title":"created","body":"body text"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	pr, err := CreatePullRequest(client, "owner", "repo", &CreatePROptions{
+		Title:    "created",
+		Body:     "body text",
+		Head:     "feature",
+		Base:     "main",
+		Draft:    true,
+		ForkPath: "fork/repo",
+	})
+	if err != nil {
+		t.Fatalf("CreatePullRequest() error = %v", err)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	if gotPath != "/api/v5/repos/owner/repo/pulls" {
+		t.Fatalf("request path = %q, want %q", gotPath, "/api/v5/repos/owner/repo/pulls")
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization header = %q, want %q", gotAuth, "Bearer test-token")
+	}
+	if gotContentType != "application/x-www-form-urlencoded" {
+		t.Fatalf("Content-Type = %q, want %q", gotContentType, "application/x-www-form-urlencoded")
+	}
+
+	expectedPairs := []string{
+		"title=created",
+		"body=body+text",
+		"head=feature",
+		"base=main",
+		"draft=true",
+		"fork_path=fork%2Frepo",
+	}
+	for _, pair := range expectedPairs {
+		if !strings.Contains(gotBody, pair) {
+			t.Fatalf("request body %q does not contain %q", gotBody, pair)
+		}
+	}
+	if pr.Body != "body text" {
+		t.Fatalf("response body = %q, want %q", pr.Body, "body text")
+	}
+}
+
 func TestUpdatePullRequestUsesFormEncoding(t *testing.T) {
 	draft := false
 	closeRelated := true

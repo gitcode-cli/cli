@@ -209,4 +209,4 @@ PR !36631 (commit 581d77253)
 
 ## 关联 Skill
 
-本案例已沉淀为一个可复用的 **pipeline-bisect** skill，详见 [可选 Skill 仓库](#可选-skill-仓库)。
+本案例已沉淀为一个可复用的 **pipeline-bisect** skill，详见 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 仓库。

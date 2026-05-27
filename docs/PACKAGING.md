@@ -38,19 +38,19 @@
 
 ```bash
 # 发布用（构建 DEB + RPM + PyPI，推荐）
-./scripts/package.sh v0.5.8 release
+./scripts/package.sh v0.5.9 release
 
 # 构建所有包（DEB + RPM + PyPI）
-./scripts/package.sh v0.5.8
+./scripts/package.sh v0.5.9
 
 # 仅构建 Linux 包（DEB + RPM）
-./scripts/package.sh v0.5.8 linux
+./scripts/package.sh v0.5.9 linux
 
 # 仅构建 DEB 包
-./scripts/package.sh v0.5.8 deb
+./scripts/package.sh v0.5.9 deb
 
 # 仅构建 PyPI 包
-./scripts/package.sh v0.5.8 pypi
+./scripts/package.sh v0.5.9 pypi
 ```
 
 ### 构建目标
@@ -80,14 +80,14 @@
 
 ```bash
 dist/
-├── gc_0.5.8_amd64.deb              # DEB amd64
-├── gc_0.5.8_arm64.deb              # DEB arm64
-├── gc-0.5.8-1.x86_64.rpm           # RPM x86_64
-├── gc-0.5.8-1.aarch64.rpm          # RPM aarch64
+├── gc_0.5.9_amd64.deb              # DEB amd64
+├── gc_0.5.9_arm64.deb              # DEB arm64
+├── gc-0.5.9-1.x86_64.rpm           # RPM x86_64
+├── gc-0.5.9-1.aarch64.rpm          # RPM aarch64
 ├── gc_linux_amd64                  # Linux 二进制 amd64
 ├── gc_linux_arm64                  # Linux 二进制 arm64
-├── gitcode_cli-0.5.8-py3-none-any.whl  # PyPI wheel
-└── gitcode_cli-0.5.8.tar.gz        # PyPI sdist
+├── gitcode_cli-0.5.9-py3-none-any.whl  # PyPI wheel
+└── gitcode_cli-0.5.9.tar.gz        # PyPI sdist
 ```
 
 ---
@@ -124,11 +124,11 @@ export GC_TOKEN="your_gitcode_token"
 
 ```bash
 # 1. 构建所有包
-./scripts/package.sh v0.5.8 release
+./scripts/package.sh v0.5.9 release
 
 # 2. 创建 Release
-gc release create v0.5.8 -R gitcode-cli/cli \
-  --title "GitCode CLI v0.5.8" \
+gc release create v0.5.9 -R gitcode-cli/cli \
+  --title "GitCode CLI v0.5.9" \
   --notes "$(cat <<'EOF'
 ## 更新内容
 
@@ -149,7 +149,7 @@ gc release create v0.5.8 -R gitcode-cli/cli \
 
     python3 -m venv .venv
     source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gitcode_cli-0.5.8-py3-none-any.whl
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gitcode_cli-0.5.9-py3-none-any.whl
 
 Windows 用户激活虚拟环境：
 
@@ -170,35 +170,35 @@ are equivalent command entry points.
 
 ### DEB (Debian/Ubuntu)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_0.5.8_amd64.deb
-    sudo dpkg -i gc_0.5.8_amd64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_0.5.9_amd64.deb
+    sudo dpkg -i gc_0.5.9_amd64.deb
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_0.5.8_arm64.deb
-    sudo dpkg -i gc_0.5.8_arm64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_0.5.9_arm64.deb
+    sudo dpkg -i gc_0.5.9_arm64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc-0.5.8-1.x86_64.rpm
-    sudo rpm -i gc-0.5.8-1.x86_64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc-0.5.9-1.x86_64.rpm
+    sudo rpm -i gc-0.5.9-1.x86_64.rpm
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc-0.5.8-1.aarch64.rpm
-    sudo rpm -i gc-0.5.8-1.aarch64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc-0.5.9-1.aarch64.rpm
+    sudo rpm -i gc-0.5.9-1.aarch64.rpm
 
 ### Linux 二进制
 
 AMD64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_linux_amd64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_linux_amd64
     chmod +x gc_linux_amd64
     sudo mv gc_linux_amd64 /usr/local/bin/gc
 
 ARM64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_linux_arm64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_linux_arm64
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
@@ -209,19 +209,19 @@ EOF
 )"
 
 # 3. 上传所有包
-gc release upload v0.5.8 \
+gc release upload v0.5.9 \
   dist/gc_linux_amd64 \
   dist/gc_linux_arm64 \
-  dist/gc_0.5.8_amd64.deb \
-  dist/gc_0.5.8_arm64.deb \
-  dist/gc-0.5.8-1.x86_64.rpm \
-  dist/gc-0.5.8-1.aarch64.rpm \
-  dist/gitcode_cli-0.5.8-py3-none-any.whl \
-  dist/gitcode_cli-0.5.8.tar.gz \
+  dist/gc_0.5.9_amd64.deb \
+  dist/gc_0.5.9_arm64.deb \
+  dist/gc-0.5.9-1.x86_64.rpm \
+  dist/gc-0.5.9-1.aarch64.rpm \
+  dist/gitcode_cli-0.5.9-py3-none-any.whl \
+  dist/gitcode_cli-0.5.9.tar.gz \
   -R gitcode-cli/cli
 ```
 
-> **注意**：将示例中的版本号 `0.5.8` 替换为实际版本号。
+> **注意**：将示例中的版本号 `0.5.9` 替换为实际版本号。
 
 ### Release Notes 要求
 
@@ -281,7 +281,7 @@ GitCode 会错误渲染代码块内的 `#` 开头行为标题！
 
     python3 -m venv .venv
     source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gitcode_cli-0.5.8-py3-none-any.whl
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gitcode_cli-0.5.9-py3-none-any.whl
 
 Windows 用户激活虚拟环境：
 
@@ -295,35 +295,35 @@ Windows PowerShell 用户建议运行：
 
 ### DEB (Debian/Ubuntu)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_0.5.8_amd64.deb
-    sudo dpkg -i gc_0.5.8_amd64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_0.5.9_amd64.deb
+    sudo dpkg -i gc_0.5.9_amd64.deb
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_0.5.8_arm64.deb
-    sudo dpkg -i gc_0.5.8_arm64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_0.5.9_arm64.deb
+    sudo dpkg -i gc_0.5.9_arm64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc-0.5.8-1.x86_64.rpm
-    sudo rpm -i gc-0.5.8-1.x86_64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc-0.5.9-1.x86_64.rpm
+    sudo rpm -i gc-0.5.9-1.x86_64.rpm
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc-0.5.8-1.aarch64.rpm
-    sudo rpm -i gc-0.5.8-1.aarch64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc-0.5.9-1.aarch64.rpm
+    sudo rpm -i gc-0.5.9-1.aarch64.rpm
 
 ### Linux 二进制
 
 AMD64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_linux_amd64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_linux_amd64
     chmod +x gc_linux_amd64
     sudo mv gc_linux_amd64 /usr/local/bin/gc
 
 ARM64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_linux_arm64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_linux_arm64
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
@@ -334,7 +334,7 @@ ARM64：
 
 #### 注意事项
 
-1. **版本号替换**：将模板中的 `0.5.8` 替换为实际版本号
+1. **版本号替换**：将模板中的 `0.5.9` 替换为实际版本号
 2. **避免 `#` 字符问题**：GitCode 会错误渲染代码块内的 `#`
    - Issue 引用使用 `Issue XX` 格式，不使用 `#XX`
    - PR 引用使用 `PR XX` 格式，不使用 `#XX`
@@ -345,13 +345,13 @@ ARM64：
 
 ```bash
 # 查看 Release
-gc release view v0.5.8 -R gitcode-cli/cli
+gc release view v0.5.9 -R gitcode-cli/cli
 
 # 列出所有 Releases
 gc release list -R gitcode-cli/cli
 
 # 下载资产
-gc release download v0.5.8 -R gitcode-cli/cli
+gc release download v0.5.9 -R gitcode-cli/cli
 ```
 
 ---
@@ -366,7 +366,7 @@ gc release download v0.5.8 -R gitcode-cli/cli
 python3 -m venv .venv
 source .venv/bin/activate
 
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gitcode_cli-0.5.8-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gitcode_cli-0.5.9-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode
 gitcode version
@@ -377,8 +377,8 @@ gitcode version
 ### DEB (Debian/Ubuntu)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_0.5.8_amd64.deb
-sudo dpkg -i gc_0.5.8_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_0.5.9_amd64.deb
+sudo dpkg -i gc_0.5.9_amd64.deb
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -386,8 +386,8 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 ### RPM (RHEL/CentOS/Fedora)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc-0.5.8-1.x86_64.rpm
-sudo rpm -i gc-0.5.8-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc-0.5.9-1.x86_64.rpm
+sudo rpm -i gc-0.5.9-1.x86_64.rpm
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -395,7 +395,7 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 ### Linux 二进制
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_linux_amd64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_linux_amd64
 chmod +x gc_linux_amd64
 sudo mv gc_linux_amd64 /usr/local/bin/gc
 ```
@@ -456,7 +456,7 @@ GOOS=linux GOARCH=amd64 go build -o dist/gc_linux_amd64 ./cmd/gc
 GOOS=linux GOARCH=arm64 go build -o dist/gc_linux_arm64 ./cmd/gc
 
 # 2. 更新版本号
-VERSION="0.5.8"
+VERSION="0.5.9"
 sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-amd64.yaml
 sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-arm64.yaml
 
@@ -481,7 +481,7 @@ GOOS=darwin GOARCH=arm64 go build -o gc_cli/bin/gc-darwin-arm64 ./cmd/gc
 GOOS=windows GOARCH=amd64 go build -o gc_cli/bin/gc-windows-amd64.exe ./cmd/gc
 
 # 2. 更新版本号
-VERSION="0.5.8"
+VERSION="0.5.9"
 sed -i "s/version = \".*/version = \"$VERSION\"/" pyproject.toml
 sed -i "s/__version__ = \".*/__version__ = \"$VERSION\"/" gc_cli/__init__.py
 
@@ -502,7 +502,7 @@ python3 -m build --wheel --sdist --outdir dist/
 name: "gc"
 arch: "amd64"
 platform: "linux"
-version: "0.5.8"
+version: "0.5.9"
 maintainer: "gitcode-cli contributors"
 description: "GitCode CLI - Command line tool for GitCode"
 homepage: "https://gitcode.com/gitcode-cli/cli"

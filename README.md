@@ -4,7 +4,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v0.5.8-blue)](https://gitcode.com/gitcode-cli/cli/releases)
+[![Release](https://img.shields.io/badge/Release-v0.5.9-blue)](https://gitcode.com/gitcode-cli/cli/releases)
 
 GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
 
@@ -70,10 +70,10 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 # 从 Releases 下载 .deb 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc_0.5.8_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_0.5.9_amd64.deb
 
 # 安装
-sudo dpkg -i gc_0.5.8_amd64.deb
+sudo dpkg -i gc_0.5.9_amd64.deb
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -82,10 +82,10 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 
 ```bash
 # 从 Releases 下载 .rpm 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gc-0.5.8-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc-0.5.9-1.x86_64.rpm
 
 # 安装
-sudo rpm -i gc-0.5.8-1.x86_64.rpm
+sudo rpm -i gc-0.5.9-1.x86_64.rpm
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -101,7 +101,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.8/gitcode_cli-0.5.8-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gitcode_cli-0.5.9-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode，避免 gc 被内置 Get-Content 别名覆盖
 gitcode version
@@ -133,30 +133,26 @@ pip install gitcode-cli
 gitcode version
 ```
 
-### 预编译二进制文件
+### Linux 二进制文件
 
-从 Release Assets 直接下载对应平台的二进制文件：
+从 Release Assets 直接下载 Linux 二进制文件：
 
 | 平台 | 文件 |
 |------|------|
-| Linux x64 | `gc_<version>_linux_amd64.tar.gz` |
-| Linux ARM64 | `gc_<version>_linux_arm64.tar.gz` |
-| macOS Intel | `gc_<version>_darwin_amd64.tar.gz` |
-| macOS Apple Silicon | `gc_<version>_darwin_arm64.tar.gz` |
-| Windows x64 | `gc_<version>_windows_amd64.zip` |
+| Linux x64 | `gc_linux_amd64` |
+| Linux ARM64 | `gc_linux_arm64` |
 
 下载地址: https://gitcode.com/gitcode-cli/cli/releases
 
-解压后将二进制文件放到 PATH 目录：
+下载后赋予可执行权限，并放到 PATH 目录：
 
 ```bash
-# Linux/macOS
-tar -xzf gc_*.tar.gz
-mv gc ~/.local/bin/
-
-# Windows
-# 解压 zip 文件后，将 gc.exe 放到 PATH 目录
+chmod +x gc_linux_amd64
+mv gc_linux_amd64 ~/.local/bin/gc
+gc version
 ```
+
+Windows 和 macOS 用户建议使用上方 wheel 包；wheel 内置 Linux、macOS 和 Windows 二进制，并同时提供 `gc` 与 `gitcode` 两个命令入口。
 
 ### 规划中的安装方式
 

@@ -139,7 +139,7 @@ func reviewRun(opts *ReviewOptions) error {
 			return cmdutil.NewUsageError("--comment and --comment-file are mutually exclusive")
 		}
 		if opts.CommentFile == "-" {
-			comment, err := cmdutil.ReadText(opts.IO.In)
+			comment, err := cmdutil.ReadTextFromFlag(opts.IO.In, "--comment-file")
 			if err != nil {
 				return fmt.Errorf("failed to read from stdin: %w", err)
 			}

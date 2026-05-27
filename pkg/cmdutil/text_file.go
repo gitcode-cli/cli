@@ -3,8 +3,12 @@ package cmdutil
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
+	"fmt"
 	"io"
 	"os"
+	"runtime"
+	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
 
@@ -14,6 +18,10 @@ import (
 var utf8BOM = []byte{0xef, 0xbb, 0xbf}
 var utf16LEBOM = []byte{0xff, 0xfe}
 var utf16BEBOM = []byte{0xfe, 0xff}
+
+// ErrLossyPowerShellStdin is returned when Windows PowerShell appears to have
+// replaced non-ASCII stdin text with question marks before the CLI could read it.
+var ErrLossyPowerShellStdin = errors.New("lossy Windows PowerShell stdin")
 
 // ReadTextFile reads a user-provided text file and strips a UTF-8 BOM when present.
 func ReadTextFile(path string) (string, error) {
@@ -31,6 +39,21 @@ func ReadText(r io.Reader) (string, error) {
 		return "", err
 	}
 	return DecodeUserText(content), nil
+}
+
+// ReadTextFromFlag reads stdin text for an explicit file flag such as
+// --body-file - or --comment-file - and rejects input that Windows PowerShell
+// appears to have already corrupted before the CLI could decode it.
+func ReadTextFromFlag(r io.Reader, flagName string) (string, error) {
+	content, err := io.ReadAll(r)
+	if err != nil {
+		return "", err
+	}
+	text := DecodeUserText(content)
+	if isLikelyLossyPowerShellStdin(content, text, runtime.GOOS, os.Getenv("GITCODE_CLI_ALLOW_LOSSY_STDIN") != "") {
+		return "", newLossyPowerShellStdinError(flagName)
+	}
+	return text, nil
 }
 
 // DecodeUserText decodes text accepted from user-facing files or stdin.
@@ -61,4 +84,40 @@ func decodeUTF16(content []byte, order binary.ByteOrder) string {
 		content = content[2:]
 	}
 	return string(utf16.Decode(u16))
+}
+
+func isLikelyLossyPowerShellStdin(raw []byte, text, goos string, allowLossy bool) bool {
+	if allowLossy || goos != "windows" || len(raw) == 0 {
+		return false
+	}
+	if !isASCII(raw) {
+		return false
+	}
+	return hasQuestionMarkRun(text, 3)
+}
+
+func isASCII(raw []byte) bool {
+	for _, b := range raw {
+		if b >= utf8.RuneSelf {
+			return false
+		}
+	}
+	return true
+}
+
+func hasQuestionMarkRun(text string, minRun int) bool {
+	return strings.Contains(text, strings.Repeat("?", minRun))
+}
+
+func newLossyPowerShellStdinError(flagName string) error {
+	if flagName == "" {
+		flagName = "--body-file"
+	}
+	command := "gitcode issue create -R owner/repo --title \"标题\""
+	fileName := "body.md"
+	if flagName == "--comment-file" {
+		command = "gitcode pr review 1 -R owner/repo"
+		fileName = "comment.md"
+	}
+	return fmt.Errorf("%w: Windows PowerShell seems to have replaced Chinese/non-ASCII stdin text with ??? before GitCode CLI received it.\n\nCorrect usage / 正确用法:\n  $OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n  \"中文正文\" | %s %s -\n\nMore stable / 更稳妥:\n  Set-Content -Path %s -Value \"中文正文\" -Encoding UTF8\n  %s %s %s\n\nUse the same %s flag with the command you are running. If the literal question marks are intentional, set GITCODE_CLI_ALLOW_LOSSY_STDIN=1.", ErrLossyPowerShellStdin, command, flagName, fileName, command, flagName, fileName, flagName)
 }

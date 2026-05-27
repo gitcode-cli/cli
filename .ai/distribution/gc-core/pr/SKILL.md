@@ -44,3 +44,5 @@ gc pr merge 123 -R owner/repo --squash
 - `pr create` 在很多场景下仍建议显式传 `-R`
 - 未传 `--head` 时，CLI 会尝试使用当前分支
 - 合并前应确认目标仓库策略和分支保护要求
+- Windows PowerShell 中可将示例里的 `gc` 改为 `gitcode`；从 stdin 传中文/非 ASCII 正文到 `--body-file -` 时，优先使用 UTF-8 文件，直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`
+- `pr create --json` 若 warning 提示远端 body 未返回，不要把本地提交正文当作远端事实；使用 `gitcode pr view <number> -R owner/repo --json` 再核验

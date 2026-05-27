@@ -200,6 +200,12 @@ func CreatePullRequest(client *Client, owner, repo string, opts *CreatePROptions
 	if err != nil {
 		return nil, err
 	}
+	if opts != nil && opts.Body != "" && pr.Body == "" && pr.Number > 0 {
+		refreshed, refreshErr := GetPullRequest(client, owner, repo, pr.Number)
+		if refreshErr == nil {
+			return refreshed, nil
+		}
+	}
 	return &pr, nil
 }
 

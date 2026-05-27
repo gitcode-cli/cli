@@ -10,7 +10,7 @@
 gc auth login
 
 # 使用 Token 登录
-gc auth login --token YOUR_TOKEN
+echo "YOUR_TOKEN" | gc auth login --with-token
 ```
 
 ## auth status - 查看认证状态

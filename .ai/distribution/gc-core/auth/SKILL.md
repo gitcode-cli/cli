@@ -19,7 +19,7 @@ export GC_TOKEN="your_gitcode_token"
 gc auth login
 
 # 使用 token 登录
-gc auth login --token YOUR_TOKEN
+echo "YOUR_TOKEN" | gc auth login --with-token
 
 # 查看认证状态
 gc auth status
@@ -36,6 +36,7 @@ gc auth logout
 - 环境变量优先于本地登录配置
 - `gc auth logout` 只清理本地配置，不会自动取消环境变量
 - 在共享机器或 CI 环境中，优先使用环境变量
+- Windows PowerShell 中可将示例里的 `gc` 改为 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖
 
 ## 常见提醒
 

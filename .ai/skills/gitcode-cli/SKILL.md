@@ -16,6 +16,7 @@
 - 读取类命令优先使用 `--json`
 - 需要探索命令结构时优先使用 `gc schema`
 - 删除类命令在自动化场景中先用 `--dry-run`，真实执行时显式传 `--yes`
+- Windows PowerShell 中优先使用 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖；需要从 stdin 传中文/非 ASCII 正文时，优先使用 UTF-8 文件配合 `--body-file` / `--comment-file`，直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`
 
 ## AI 执行硬约束
 
@@ -42,6 +43,7 @@
 - 外部项目如何通过 AI 使用 `gc`：看 `docs/AI-GUIDE.md`
 - gitcode-cli 仓库内部 AI 本地开发闭环：看 `spec/workflows/ai-local-development-workflow.md`
 - 阶段背景说明可参考 `issues-plan/PROGRESS.md`，但实时事实仍看远端平台
+- `pr create --json` 若 warning 提示远端 body 未返回，不得把本地提交的正文当作远端事实；应使用 `gitcode pr view <number> -R owner/repo --json` 再核验
 
 ## 适配层说明
 

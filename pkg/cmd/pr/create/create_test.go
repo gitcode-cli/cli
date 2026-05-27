@@ -95,7 +95,7 @@ func TestCreateRunJSONWritesCreatedPR(t *testing.T) {
 		Base:       "main",
 		JSON:       true,
 		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
-			return &api.PullRequest{Number: 7, Title: createOpts.Title, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+			return &api.PullRequest{Number: 7, Title: createOpts.Title, Body: createOpts.Body, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
 		},
 		OpenBrowser: func(url string) error { return nil },
 	}
@@ -114,6 +114,52 @@ func TestCreateRunJSONWritesCreatedPR(t *testing.T) {
 	}
 	if strings.Contains(out, "Created PR") {
 		t.Fatalf("JSON output contains text banner: %q", out)
+	}
+	if errOut := f.IOStreams.ErrOut.(*bytes.Buffer).String(); errOut != "" {
+		t.Fatalf("unexpected stderr: %q", errOut)
+	}
+}
+
+func TestCreateRunJSONWarnsWhenBodyMissingFromRemoteResponse(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		Body:       "body",
+		Head:       "feature-branch",
+		Base:       "main",
+		JSON:       true,
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			return &api.PullRequest{Number: 7, Title: createOpts.Title, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+
+	var got map[string]interface{}
+	out := f.IOStreams.Out.(*bytes.Buffer).String()
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v", err)
+	}
+	if got["body"] != "" {
+		t.Fatalf("JSON body = %#v, want empty remote body", got["body"])
+	}
+	errOut := f.IOStreams.ErrOut.(*bytes.Buffer).String()
+	for _, want := range []string{
+		"warning:",
+		"PR 描述未能从远端返回",
+		"gitcode pr view 7 -R owner/repo --json",
+	} {
+		if !strings.Contains(errOut, want) {
+			t.Fatalf("stderr %q does not contain %q", errOut, want)
+		}
 	}
 }
 

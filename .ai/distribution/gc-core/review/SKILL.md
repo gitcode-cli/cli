@@ -39,3 +39,4 @@ gc pr review 123 -R owner/repo --approve --comment "LGTM"
 - 先查看 PR 和 diff，再发表评论
 - 审查结论应明确区分 blocker 和建议项
 - 平台限制应在评论中如实说明，不要假设 CLI 支持未实现能力
+- Windows PowerShell 中可将示例里的 `gc` 改为 `gitcode`；从 stdin 传中文/非 ASCII 正文到 `--comment-file -` 时，优先使用 UTF-8 文件，直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`

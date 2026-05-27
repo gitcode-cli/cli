@@ -49,3 +49,4 @@ gc repo delete owner/repo
 - 删除仓库是危险操作，必须明确确认目标仓库
 - `repo view` 在 Git 仓库内可尝试自动识别当前 remote
 - fork 或 delete 前，先确认账号权限和目标 host
+- Windows PowerShell 中可将示例里的 `gc` 改为 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖

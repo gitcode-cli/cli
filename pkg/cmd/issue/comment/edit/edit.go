@@ -132,7 +132,7 @@ func getBody(opts *EditOptions) (string, error) {
 
 	if opts.BodyFile != "" {
 		if opts.BodyFile == "-" {
-			body, err := cmdutil.ReadText(opts.IO.In)
+			body, err := cmdutil.ReadTextFromFlag(opts.IO.In, "--body-file")
 			if err != nil {
 				return "", fmt.Errorf("failed to read from stdin: %w", err)
 			}

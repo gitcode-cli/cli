@@ -170,6 +170,9 @@ func createRun(opts *CreateOptions) error {
 	}
 
 	if opts.JSON {
+		if body != "" && pr.Body == "" && pr.Number > 0 {
+			fmt.Fprintf(opts.IO.ErrOut, "warning: GitCode create response did not include PR body, and the follow-up read did not return it. 警告：PR 描述未能从远端返回；请运行 `gitcode pr view %d -R %s/%s --json` 核验远端 body。\n", pr.Number, owner, repo)
+		}
 		return cmdutil.WriteJSON(opts.IO.Out, pr)
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Created PR #%d in %s/%s\n", cs.Green("✓"), pr.Number, owner, repo)
@@ -219,7 +222,7 @@ func getBody(opts *CreateOptions) (string, error) {
 
 	if opts.BodyFile != "" {
 		if opts.BodyFile == "-" {
-			body, err := cmdutil.ReadText(opts.IO.In)
+			body, err := cmdutil.ReadTextFromFlag(opts.IO.In, "--body-file")
 			if err != nil {
 				return "", fmt.Errorf("failed to read from stdin: %w", err)
 			}

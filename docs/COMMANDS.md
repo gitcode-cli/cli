@@ -26,6 +26,26 @@ SSH default for code transfer:
 - 未显式传 `-R` 的命令，仍按各自命令说明决定是否支持从当前 Git 仓库自动推断。
 - 传入 HTTPS 或 SSH 仓库地址时，CLI 会统一解析出目标仓库，不再要求手工改写成 `owner/repo`。
 
+### Windows PowerShell 命令名和 stdin
+
+Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名。若在 PowerShell 中使用 CLI，推荐写完整命令名 `gitcode`；也可以显式调用 `gc.exe`。
+
+当中文或其他非 ASCII 正文需要通过 `--body-file -` / `--comment-file -` 从 stdin 传入时，推荐使用 UTF-8 文件：
+
+```powershell
+Set-Content -Path body.md -Value "中文正文" -Encoding UTF8
+gitcode issue create -R owner/repo --title "标题" --body-file body.md
+```
+
+若必须直接管道传入，请先设置 UTF-8 输出编码：
+
+```powershell
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+"中文正文" | gitcode issue create -R owner/repo --title "标题" --body-file -
+```
+
+CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comment-file -`）上拦截疑似已被 Windows PowerShell 损坏成 `???` 的输入，并在 stderr 提示正确用法；如果确实需要原样传入连续问号，可设置 `GITCODE_CLI_ALLOW_LOSSY_STDIN=1`。
+
 当前自动推断边界：
 - 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view`，以及 `pr list/view`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等“作用于当前仓库”的安全只读场景。
 - 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
@@ -406,7 +426,7 @@ gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --json
 - `--custom-fields-json` 与 `--custom-fields-file` 不能同时使用；两者都要求 JSON 顶层是 `object[]`。
 - 模板路径支持仓库下的 `.gitcode`、`.github`、`.gitee` 目录；组织模板可能来自 `owner/.gitcode`，第一阶段仅支持显式传路径，不保证自动发现。
 - 若 GitCode API 未实际应用 assignee，命令会成功完成创建并在 stderr 给出告警，避免自动化重试制造重复 issue。
-- Windows PowerShell 管道输入会经过 CLI 文本解码处理，支持 UTF-8、带 BOM 的 UTF-16 以及常见中文 Windows 代码页字节；跨 Windows/Linux 稳定写入中文长正文时，仍推荐使用 UTF-8 文件配合 `--body-file <path>`。
+- Windows PowerShell 中从 stdin 传中文正文时，建议使用 UTF-8 文件或先设置 `$OutputEncoding`，详见“Windows PowerShell 命令名和 stdin”。
 
 ### issue list - 列出 Issues
 
@@ -733,6 +753,7 @@ gc pr create -R infra-test/gctest1 --head feature-branch --title "Feature" --bod
 > `--fill` 会使用最近一次 Git commit 的标题和正文补全未显式提供的 `--title` / `--body` / `--body-file`。
 > `--web` 会在 PR 创建成功后打开新建 PR 页面。
 > `--json` 只在成功创建后输出 PR 对象；不能与 `--web` 同时使用。
+> 如果 GitCode 创建响应未返回 `body`，CLI 会在创建后尝试回读 PR；若回读仍未返回或无法确认远端 body，`--json` 会保持远端返回的空值并在 stderr 给出 warning，避免把本地提交内容伪装成远端事实。可用 `gitcode pr view <number> -R owner/repo --json` 再次核验。
 > **跨仓库 PR**: 当使用 `--fork` 创建跨仓库 PR 时，`--head` 必须使用 `owner:branch` 格式（如 `myfork:feature-branch`），否则会报错。
 > 当前分支解析已统一接入 `Factory.Branch`；若当前目录不是 Git 仓库或无法识别分支，会明确提示改用 `--head`。
 
@@ -975,6 +996,7 @@ gc pr review 1 --approve --force -R infra-test/gctest1
 - `--approve --comment` 会先提交普通评论，再执行批准动作。
 - `--comment-file` 支持从文件读取多行评论，使用 `-` 可从 stdin 读取。
 - `--comment` 与 `--comment-file` 互斥，不能同时使用。
+- Windows PowerShell 中从 stdin 传中文评论时，建议使用 UTF-8 文件或先设置 `$OutputEncoding`，详见“Windows PowerShell 命令名和 stdin”。
 - GitCode 当前公开 API 不支持”request changes”动作，`--request` 会明确报错并提示改用 `--comment` 留下审查意见。
 
 > **权限说明**: `--approve` 需要 GitCode 平台的”审批权限”，与 `gc pr merge` 的”合并权限”是两套独立权限体系。

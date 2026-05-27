@@ -48,3 +48,4 @@
 - 需要访问私有仓库时，应先完成 `gc` 认证
 - GitCode 平台能力以真实 API 和 CLI 当前行为为准
 - 这些通用 skill 不会替代目标项目自己的开发流程规范
+- Windows PowerShell 中推荐使用 `gitcode` 或 `gc.exe`，避免 `gc` 被内置 `Get-Content` 别名覆盖；通过 stdin 传中文/非 ASCII 正文时，优先使用 UTF-8 文件。

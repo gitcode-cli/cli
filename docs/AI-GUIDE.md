@@ -45,6 +45,7 @@ gitcode version
 - wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。
 - DEB/RPM 包也会同时安装 `gc` 和 `gitcode`；Linux 上二者功能相同。
 - Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+- Windows PowerShell 中让 AI 直接执行命令时，优先使用 `gitcode`。中文或其他非 ASCII 正文需要传给 `--body-file -` / `--comment-file -` 时，优先写入 UTF-8 临时文件再传文件路径；若必须直接管道，先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。
 
 **PyPI（备选）:**
 
@@ -158,6 +159,7 @@ gc release upload v1.0.0 app.zip -R owner/repo --json
 - 删除、关闭、重开、状态切换、合并、同步推送/建 PR 等高风险写操作在非交互环境中不会再隐式等待输入；如果未显式传 `--yes`，会直接失败。
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
 - 写路径 `--json` 只在操作成功后输出结构化结果；执行失败时不要从 stdout 解析半成品结果。
+- `pr create --json` 会尽量回读新建 PR 以补齐创建响应缺失的正文；如果远端仍未返回 body，会在 stderr 给 warning，并保持 JSON 中的远端事实为空，脚本可再运行 `gitcode pr view <number> -R owner/repo --json` 核验。
 - 当前基础退出码语义：`0` 成功，`1` 通用错误，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误，`5` 资源冲突。
 
 ## 6. 在规范化仓库中的协作提醒

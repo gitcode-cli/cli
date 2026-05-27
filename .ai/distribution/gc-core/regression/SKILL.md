@@ -42,3 +42,4 @@ go build -o ./gc ./cmd/gc
 - 真实命令回归应使用安全测试仓库
 - 写操作命令应明确区分是否允许污染测试数据
 - 回归结果要记录通过项和未覆盖项
+- Windows PowerShell 中测试正式安装包时可用 `gitcode version` 或 `gc.exe version`，避免 `gc` 被内置 `Get-Content` 别名覆盖

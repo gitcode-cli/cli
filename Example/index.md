@@ -54,6 +54,7 @@ gitcode schema
 | [同步 GitCode CLI 案例到发布平台文档](./cases/sync-repo-directory.md) | 平台团队、文档团队、多仓维护者 | `gitcode-repo` | 将案例目录同步到发布平台文档目录并自动开 PR | 双仓读写权限、SSH | 写 |
 | [对发布平台仓库做 CLI 冒烟验证](./cases/regression-after-install.md) | CLI 用户、发布负责人、测试人员 | `gitcode-regression` | 验证 CLI 对私有 Java 仓库的认证、SSH、读命令和 dry-run 能力 | CLI 已安装、auth | 读 |
 | [定位引入问题的 PR](./cases/pr-impact-locator.md) | 开发、维护者、QA、AI 排查代理 | `gitcode-pr-impact-locator` | 以 Ascend/pytorch 测试用例减少 50% 为例，从数十个合入 PR 中快速定位根因 PR | auth、仓库读权限 | 读 |
+| [流水线问题定位 — 对比正常/异常运行追查引入变更](./cases/pipeline-bisect.md) | 开发、SRE、CI 维护者、AI 排查代理 | `pipeline-bisect` | 以 ONNX 测试用例收集失败为例，对比正常/异常 CI 运行定位引入变更的 commit 和 PR | auth、仓库读权限 | 读 |
 | [多环境 GitCode CLI 认证配置](./cases/auth-setup.md) | 开发者、DevOps、平台团队 | `gitcode-auth` | CI/本地/容器三种环境下的认证配置与排查 | CLI 已安装、有 token | 读写 |
 | [Issue 实现前评审](./cases/issue-pre-review.md) | 开发者、技术负责人、AI 代理 | `gitcode-issue-review` | 开发前确认需求清晰、验收可测、信息完备 | auth、仓库读权限 | 读 |
 | [标签体系与里程碑治理](./cases/label-milestone-governance.md) | 维护者、项目经理、社区经理 | `gitcode-label-milestone` | 建立 type/scope/priority 标签体系和版本里程碑 | 管理权限 | 写 |
@@ -77,6 +78,7 @@ gitcode schema
 6. [冒烟验证](./cases/regression-after-install.md) — 验证 CLI 可用
 7. [标签体系与里程碑治理](./cases/label-milestone-governance.md)
 8. [定位引入问题的 PR](./cases/pr-impact-locator.md) — 排查回归问题
+9. [流水线问题定位](./cases/pipeline-bisect.md) — 对比正常/异常运行追查 CI 变更
 
 ### 贡献者路径 (Contributor Path)
 
@@ -96,6 +98,7 @@ gitcode schema
 3. [冒烟验证](./cases/regression-after-install.md) — 环境自检
 4. [多环境认证配置](./cases/auth-setup.md)
 5. [Release 直接操作](./cases/release-direct-ops.md)
+6. [流水线问题定位](./cases/pipeline-bisect.md) — 对比正常/异常运行追查 CI 变更
 
 ## GitHub Pages 静态部署说明
 

@@ -157,8 +157,13 @@ func MockAPIHandler() http.Handler {
 
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/1/comments", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id": "1", "body": "Test comment"}]`))
+		if r.Method == "POST" {
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"id":"2","body":"LGTM","discussion_id":"d2"}`))
+		} else {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`[{"id": "1", "body": "Test comment"}]`))
+		}
 	})
 
 	// Label endpoints

@@ -4,6 +4,7 @@ package list
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -23,16 +24,21 @@ type ListOptions struct {
 	Repository string
 
 	// Flags
-	State     string
-	Limit     int
-	Head      string
-	Base      string
-	Sort      string
-	Direction string
-	Page      int
-	JSON      bool
-	Format    string
-	Milestone string
+	State         string
+	Limit         int
+	Head          string
+	Base          string
+	Sort          string
+	Direction     string
+	Page          int
+	Paginate      bool
+	PerPage       int
+	LimitSet      bool
+	PerPageSet    bool
+	JSON          bool
+	Format        string
+	Milestone     string
+	CommitMessage string
 }
 
 // NewCmdList creates the list command
@@ -62,6 +68,12 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			# Sort results
 			$ gc pr list -R owner/repo --sort updated --direction desc
 
+			# Fetch all pages
+			$ gc pr list -R owner/repo --paginate --per-page 100
+
+			# Filter by commit message text
+			$ gc pr list -R owner/repo --commit-message "fix login"
+
 			# Render as a table
 			$ gc pr list -R owner/repo --format table
 
@@ -72,6 +84,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			if runF != nil {
 				return runF(opts)
 			}
+			opts.LimitSet = cmd.Flags().Changed("limit")
+			opts.PerPageSet = cmd.Flags().Changed("per-page")
 			return listRun(opts)
 		},
 	}
@@ -88,6 +102,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.Direction, "direction", "", "Sort direction (asc/desc)")
 	cmdutil.SetFlagEnum(cmd, "direction", "asc", "desc")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number to fetch")
+	cmd.Flags().BoolVar(&opts.Paginate, "paginate", false, "Fetch all pages")
+	cmd.Flags().IntVar(&opts.PerPage, "per-page", 0, "API page size (default: --limit, or 100 with --paginate)")
+	cmd.Flags().StringVar(&opts.CommitMessage, "commit-message", "", "Filter PRs whose commit messages contain text")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmdutil.AddFormatFlag(cmd, &opts.Format)
 
@@ -122,20 +139,23 @@ func listRun(opts *ListOptions) error {
 	if opts.Page < 0 {
 		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
 	}
+	if opts.PerPage < 0 {
+		return cmdutil.NewUsageError("--per-page must be greater than or equal to 0")
+	}
+	if opts.Paginate && opts.Page > 0 {
+		return cmdutil.NewUsageError("--paginate cannot be combined with --page")
+	}
 
 	// List PRs
-	prs, err := api.ListPullRequests(client, owner, repo, &api.PRListOptions{
-		State:     opts.State,
-		Head:      opts.Head,
-		Base:      opts.Base,
-		Sort:      opts.Sort,
-		Direction: opts.Direction,
-		PerPage:   opts.Limit,
-		Page:      opts.Page,
-		Milestone: opts.Milestone,
-	})
+	prs, err := listPullRequests(client, owner, repo, opts)
 	if err != nil {
 		return fmt.Errorf("failed to list PRs: %w", err)
+	}
+	if strings.TrimSpace(opts.CommitMessage) != "" {
+		prs, err = filterByCommitMessage(client, owner, repo, prs, opts.CommitMessage)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Output
@@ -158,6 +178,86 @@ func listRun(opts *ListOptions) error {
 		return err
 	}
 	return printer.Print(opts.IO.Out, prs)
+}
+
+func listPullRequests(client *api.Client, owner, repo string, opts *ListOptions) ([]api.PullRequest, error) {
+	perPage := resolvePerPage(opts)
+	if !opts.Paginate {
+		prs, err := api.ListPullRequests(client, owner, repo, &api.PRListOptions{
+			State:     opts.State,
+			Head:      opts.Head,
+			Base:      opts.Base,
+			Sort:      opts.Sort,
+			Direction: opts.Direction,
+			PerPage:   perPage,
+			Page:      opts.Page,
+			Milestone: opts.Milestone,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return trimPRs(prs, opts), nil
+	}
+
+	var all []api.PullRequest
+	for page := 1; ; page++ {
+		prs, err := api.ListPullRequests(client, owner, repo, &api.PRListOptions{
+			State:     opts.State,
+			Head:      opts.Head,
+			Base:      opts.Base,
+			Sort:      opts.Sort,
+			Direction: opts.Direction,
+			PerPage:   perPage,
+			Page:      page,
+			Milestone: opts.Milestone,
+		})
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, prs...)
+		if opts.LimitSet && len(all) >= opts.Limit {
+			return all[:opts.Limit], nil
+		}
+		if len(prs) < perPage {
+			break
+		}
+	}
+	return all, nil
+}
+
+func resolvePerPage(opts *ListOptions) int {
+	if opts.PerPageSet && opts.PerPage > 0 {
+		return opts.PerPage
+	}
+	if opts.Paginate {
+		return 100
+	}
+	return opts.Limit
+}
+
+func trimPRs(prs []api.PullRequest, opts *ListOptions) []api.PullRequest {
+	if opts.PerPageSet && opts.LimitSet && len(prs) > opts.Limit {
+		return prs[:opts.Limit]
+	}
+	return prs
+}
+
+func filterByCommitMessage(client *api.Client, owner, repo string, prs []api.PullRequest, query string) ([]api.PullRequest, error) {
+	needle := strings.ToLower(strings.TrimSpace(query))
+	var filtered []api.PullRequest
+	for _, pr := range prs {
+		commits, err := api.ListPRCommits(client, owner, repo, pr.Number)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list commits for PR #%d: %w", pr.Number, err)
+		}
+		for _, commit := range commits {
+			if strings.Contains(strings.ToLower(commit.MessageText()), needle) {
+				filtered = append(filtered, pr)
+				break
+			}
+		}
+	}
+	return filtered, nil
 }
 
 func parseRepo(repo string) (string, string, error) {

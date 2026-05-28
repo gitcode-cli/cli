@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -141,5 +142,40 @@ func TestGetCommitPatchReturnsRawText(t *testing.T) {
 	}
 	if patch != "From abc123 Mon Sep 17 00:00:00 2001" {
 		t.Fatalf("GetCommitPatch() = %q", patch)
+	}
+}
+
+func TestListCommitsBuildsFileAndBranchQuery(t *testing.T) {
+	var gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		return authTestResponse(http.StatusOK, `[{"sha":"abc123","commit":{"message":"fix file"}}]`), nil
+	})
+
+	commits, err := ListCommits(client, "owner", "repo", &CommitListOptions{
+		Path:    "src/main.go",
+		SHA:     "main",
+		Page:    2,
+		PerPage: 50,
+	})
+	if err != nil {
+		t.Fatalf("ListCommits() error = %v", err)
+	}
+	for _, want := range []string{
+		"/api/v5/repos/owner/repo/commits?",
+		"path=src%2Fmain.go",
+		"sha=main",
+		"page=2",
+		"per_page=50",
+	} {
+		if !strings.Contains(gotPath, want) {
+			t.Fatalf("request path = %q, missing %q", gotPath, want)
+		}
+	}
+	if len(commits) != 1 || commits[0].SHA != "abc123" {
+		t.Fatalf("unexpected commits: %#v", commits)
 	}
 }

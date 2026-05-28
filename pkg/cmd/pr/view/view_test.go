@@ -2,6 +2,7 @@ package view
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -215,5 +216,52 @@ func TestViewRunRejectsJSONWithWebBeforeAuth(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "cannot use --json with --web") {
 		t.Fatalf("viewRun() error = %v, want json/web usage error", err)
+	}
+}
+
+func TestViewRunEnrichesZeroStatsAndDescription(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	var gotPaths []string
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPaths = append(gotPaths, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v5/repos/owner/repo/pulls/123":
+			_, _ = w.Write([]byte(`{"number":123,"title":"PR","description":"remote description","head":{"ref":"feature"},"base":{"ref":"main"}}`))
+		case "/api/v5/repos/owner/repo/pulls/123/files.json":
+			_, _ = w.Write([]byte(`{"added_lines":7,"remove_lines":2,"count":3,"diffs":[{"new_path":"a.go"}]}`))
+		case "/api/v5/repos/owner/repo/pulls/123/commits":
+			_, _ = w.Write([]byte(`[{"sha":"abc","message":"fix"}]`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     123,
+		JSON:       true,
+		TimeFormat: "absolute",
+	})
+	if err != nil {
+		t.Fatalf("viewRun() error = %v", err)
+	}
+
+	var pr map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &pr); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if pr["body"] != "remote description" || pr["description"] != "remote description" {
+		t.Fatalf("body/description not normalized: %#v", pr)
+	}
+	if pr["additions"] != float64(7) || pr["deletions"] != float64(2) || pr["changed_files"] != float64(3) || pr["commits"] != float64(1) {
+		t.Fatalf("stats not enriched: %#v", pr)
+	}
+	if strings.Join(gotPaths, ",") != "/api/v5/repos/owner/repo/pulls/123,/api/v5/repos/owner/repo/pulls/123/files.json,/api/v5/repos/owner/repo/pulls/123/commits" {
+		t.Fatalf("paths = %#v", gotPaths)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 const (
@@ -132,6 +133,84 @@ func (c *Client) REST(method, path string, body interface{}, response interface{
 	}
 
 	return nil
+}
+
+// RawResponse represents a raw API response body and metadata.
+type RawResponse struct {
+	StatusCode int
+	Header     http.Header
+	Body       []byte
+}
+
+// RawREST performs a REST API call and returns the raw response body.
+func (c *Client) RawREST(method, endpoint string, body io.Reader, headers map[string]string) (*RawResponse, error) {
+	reqURL, err := c.rawURL(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(strings.ToUpper(method), reqURL, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	for key, value := range headers {
+		if strings.TrimSpace(key) != "" {
+			req.Header.Set(strings.TrimSpace(key), value)
+		}
+	}
+	if c.token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+	if resp.StatusCode >= 400 {
+		var apiErr APIError
+		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
+			apiErr.StatusCode = resp.StatusCode
+			return nil, &apiErr
+		}
+		return nil, fmt.Errorf("API error: %s", resp.Status)
+	}
+
+	return &RawResponse{
+		StatusCode: resp.StatusCode,
+		Header:     resp.Header.Clone(),
+		Body:       respBody,
+	}, nil
+}
+
+func (c *Client) rawURL(endpoint string) (string, error) {
+	endpoint = strings.TrimSpace(endpoint)
+	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
+		parsed, err := url.Parse(endpoint)
+		if err != nil {
+			return "", fmt.Errorf("invalid api endpoint: %w", err)
+		}
+		if !strings.EqualFold(parsed.Host, c.host) {
+			return "", fmt.Errorf("api endpoint host must be %s", c.host)
+		}
+		return endpoint, nil
+	}
+	if !strings.HasPrefix(endpoint, "/") {
+		endpoint = "/" + endpoint
+	}
+	if strings.HasPrefix(endpoint, "/api/") {
+		return fmt.Sprintf("https://%s%s", c.host, endpoint), nil
+	}
+	return fmt.Sprintf("https://%s/api/%s%s", c.host, DefaultAPIVersion, endpoint), nil
 }
 
 // Get performs a GET request

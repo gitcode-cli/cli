@@ -12,6 +12,7 @@ type PullRequest struct {
 	Number       int          `json:"number"`
 	Title        string       `json:"title"`
 	Body         string       `json:"body"`
+	Description  string       `json:"description"`
 	State        string       `json:"state"`
 	HTMLURL      string       `json:"html_url"`
 	DiffURL      string       `json:"diff_url"`
@@ -142,6 +143,9 @@ func ListPullRequests(client *Client, owner, repo string, opts *PRListOptions) (
 	if err != nil {
 		return nil, err
 	}
+	for i := range prs {
+		normalizePullRequest(&prs[i])
+	}
 	return prs, nil
 }
 
@@ -188,6 +192,7 @@ func GetPullRequest(client *Client, owner, repo string, number int) (*PullReques
 	if err != nil {
 		return nil, err
 	}
+	normalizePullRequest(&pr)
 	return &pr, nil
 }
 
@@ -200,6 +205,7 @@ func CreatePullRequest(client *Client, owner, repo string, opts *CreatePROptions
 	if err != nil {
 		return nil, err
 	}
+	normalizePullRequest(&pr)
 	if opts != nil && opts.Body != "" && pr.Body == "" && pr.Number > 0 {
 		refreshed, refreshErr := GetPullRequest(client, owner, repo, pr.Number)
 		if refreshErr == nil {
@@ -246,7 +252,20 @@ func UpdatePullRequest(client *Client, owner, repo string, number int, opts *Upd
 	if err != nil {
 		return nil, err
 	}
+	normalizePullRequest(&pr)
 	return &pr, nil
+}
+
+func normalizePullRequest(pr *PullRequest) {
+	if pr == nil {
+		return
+	}
+	if pr.Body == "" && pr.Description != "" {
+		pr.Body = pr.Description
+	}
+	if pr.Description == "" && pr.Body != "" {
+		pr.Description = pr.Body
+	}
 }
 
 func buildPRUpdateFormValues(opts *UpdatePROptions) url.Values {
@@ -498,21 +517,44 @@ func ListPRReviews(client *Client, owner, repo string, number int) ([]PRReview, 
 
 // ListPRCommits lists commits in a PR
 func ListPRCommits(client *Client, owner, repo string, number int) ([]Commit, error) {
-	var commits []Commit
-	// Use per_page=100 to get more commits per request (GitCode default is 20)
-	err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/commits?per_page=100", &commits)
-	if err != nil {
-		return nil, err
+	const perPage = 100
+
+	var all []Commit
+	for page := 1; ; page++ {
+		var commits []Commit
+		values := url.Values{}
+		values.Set("per_page", itoa(perPage))
+		values.Set("page", itoa(page))
+		err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/commits?"+values.Encode(), &commits)
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, commits...)
+		if len(commits) < perPage {
+			break
+		}
 	}
-	return commits, nil
+	return all, nil
 }
 
 // Commit represents a Git commit
 type Commit struct {
-	SHA       string `json:"sha"`
-	Message   string `json:"message"`
-	Author    *User  `json:"author"`
-	Committer *User  `json:"committer"`
+	SHA       string      `json:"sha"`
+	Message   string      `json:"message"`
+	Commit    *CommitInfo `json:"commit"`
+	Author    *User       `json:"author"`
+	Committer *User       `json:"committer"`
+}
+
+// MessageText returns the best available commit message.
+func (c Commit) MessageText() string {
+	if c.Message != "" {
+		return c.Message
+	}
+	if c.Commit != nil {
+		return c.Commit.Message
+	}
+	return ""
 }
 
 // PRFilesResponse represents the response from PR files API

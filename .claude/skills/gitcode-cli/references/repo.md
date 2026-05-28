@@ -29,6 +29,19 @@ gc repo list --limit 10
 gc repo list --visibility public
 ```
 
+## repo log - 查看提交历史
+
+```bash
+# 查看最近提交
+gc repo log -R owner/repo
+
+# 查看指定分支上触碰某个文件的提交
+gc repo log -R owner/repo --file README.md --branch main
+
+# 输出 JSON
+gc repo log -R owner/repo --file README.md --branch main --json
+```
+
 ## repo create - 创建仓库
 
 ```bash
@@ -77,4 +90,4 @@ gc repo stats --branch main --since 2024-01-01 --until 2024-12-31 -R owner/repo
 
 ---
 
-**最后更新**: 2026-03-26
+**最后更新**: 2026-05-27

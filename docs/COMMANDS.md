@@ -47,7 +47,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comment-file -`）上拦截疑似已被 Windows PowerShell 损坏成 `???` 的输入，并在 stderr 提示正确用法；如果确实需要原样传入连续问号，可设置 `GITCODE_CLI_ALLOW_LOSSY_STDIN=1`。
 
 当前自动推断边界：
-- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view`，以及 `pr list/view`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等“作用于当前仓库”的安全只读场景。
+- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view/log`，以及 `pr list/view`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等“作用于当前仓库”的安全只读场景。
 - 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
 ### Agent-Friendly CLI 能力
@@ -63,6 +63,7 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 
 - `repo view`
 - `repo list`
+- `repo log`
 - `issue list`
 - `issue view`
 - `pr list`
@@ -94,6 +95,8 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 - `--json` 与 `--format json` 等价，二者都应作为稳定机器可消费入口
 
 `issue list` 的 `--format` 非法值应直接报用法错误，不应静默回退到默认格式。
+
+`gc api` 可作为底层 API 调试入口，适合在 typed command 尚未覆盖时读取或调用 GitCode API；它输出远端原始响应，不额外包装 JSON。
 
 ### 退出码
 
@@ -213,6 +216,38 @@ gc auth logout --yes
 
 ---
 
+## API 命令 (api)
+
+### api - 调用 GitCode API
+
+```bash
+# 读取仓库 API 原始响应
+gc api repos/infra-test/gctest1
+
+# 读取 PR 文件列表
+gc api repos/infra-test/gctest1/pulls/1/files
+
+# 带查询参数的 API，包含 & 时请整体加引号
+gc api 'repos/infra-test/gctest1/commits?path=README.md&sha=main'
+
+# 指定 HTTP 方法和请求体文件
+gc api repos/infra-test/gctest1/pulls/1 --method PATCH --input body.json
+
+# 从 stdin 读取请求体
+printf '{"title":"New title"}' | gc api repos/infra-test/gctest1/pulls/1 --method PATCH --input -
+
+# 自定义请求头
+gc api repos/infra-test/gctest1 --header 'Accept: application/json'
+```
+
+说明：
+- endpoint 可写成 `repos/owner/repo` 或 `/api/v5/repos/owner/repo`；普通相对路径会自动补齐 `/api/v5/`。
+- 认证沿用当前 `gc` 登录态或 `GC_TOKEN` / `GITCODE_TOKEN` 环境变量。
+- 默认方法为 `GET`；传入 `--input` 但未指定 `--method` 时会自动使用 `POST`。
+- 输出为远端原始响应 body，便于脚本继续交给 `python -m json.tool`、`jq` 或其他工具处理。
+
+---
+
 ## 仓库命令 (repo)
 
 ### repo view - 查看仓库
@@ -259,6 +294,25 @@ gc repo list --format simple
 # 表格输出
 gc repo list --format table
 ```
+
+### repo log - 查看仓库提交日志
+
+```bash
+# 查看最近提交
+gc repo log -R infra-test/gctest1
+gc repo log
+
+# 查看指定分支上触碰某个文件的提交
+gc repo log -R infra-test/gctest1 --file README.md --branch main
+
+# 限制数量并输出 JSON
+gc repo log -R infra-test/gctest1 --file README.md --branch main --limit 5 --json
+```
+
+说明：
+- `repo log` 支持 `-R/--repo`，也支持在当前 Git 仓库中缺省 `-R` 自动推断目标仓库。
+- `--file` 对应提交 API 的文件路径过滤，`--branch` 可传分支、tag 或 commit SHA。
+- 文本输出会显示短 SHA、提交日期和提交信息首行；`--json` 输出远端提交对象数组。
 
 ### repo sync - 同步目录到目标仓库并创建 PR
 
@@ -781,12 +835,26 @@ gc pr list -R infra-test/gctest1 --limit 10
 # 排序与分页
 gc pr list -R infra-test/gctest1 --sort updated --direction desc --page 2
 
+# 自动翻页获取多页结果
+gc pr list -R infra-test/gctest1 --paginate --per-page 100
+
+# 按 PR 提交信息过滤
+gc pr list -R infra-test/gctest1 --commit-message "fix login"
+
+# 自动翻页后按提交信息过滤，仍可用 --limit 做结果上限
+gc pr list -R infra-test/gctest1 --paginate --per-page 100 --limit 200 --commit-message "fix login" --json
+
 # 输出 JSON
 gc pr list -R infra-test/gctest1 --json
 
 # 表格输出
 gc pr list -R infra-test/gctest1 --format table
 ```
+
+说明：
+- `--paginate` 会从第一页开始连续读取多页结果，直到远端返回不足一页；不能与 `--page` 同时使用。
+- `--per-page` 控制单页大小，未显式传 `--limit` 时默认每页 100；显式传 `--limit` 时会在本地截断到指定数量。
+- `--commit-message` 会读取每个候选 PR 的提交列表并按提交信息子串匹配，适合从提交标题反查关联 PR。
 
 ### pr view - 查看 PR
 
@@ -814,7 +882,8 @@ gc pr view 1 -R infra-test/gctest1 --time-format relative
 - `pr view` 的文本详情输出会使用更稳定的元信息排布，便于人工和代理阅读。
 - 文本输出包含里程碑信息（如果 PR 关联了里程碑）。
 - `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
-- `--json` 路径保持结构化输出，milestone 字段会自动包含在 JSON 中。
+- 如果 PR 详情 API 返回的 `additions`、`deletions`、`changed_files` 或 `commits` 为 0，CLI 会尝试通过 PR files/commits API 补齐统计；补齐失败时会给出 warning，但不阻断查看。
+- `--json` 路径保持结构化输出，milestone、body、description、merged_at 等字段会自动包含在 JSON 中；其中 `body` 与 `description` 会基于远端返回互相补齐。
 
 ### pr comments - 查看 PR 评论
 

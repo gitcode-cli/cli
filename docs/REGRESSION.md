@@ -41,10 +41,13 @@ go build -o ./gc ./cmd/gc
 11. `issue view <list 返回的首个 issue>`
 12. `issue view --json`
 13. `pr list --json`
-14. `release list --json`
-15. `release delete <tag> --dry-run`
-16. 非 Git 目录下的 `repo view` 错误路径，期望退出码 `2`
-17. 不存在 commit 的 `commit view` 错误路径，期望退出码 `3`
+14. `pr list --paginate --per-page 1 --limit 1 --json`
+15. `repo log --limit 1 --json`
+16. `gc api repos/<repo>`
+17. `release list --json`
+18. `release delete <tag> --dry-run`
+19. 非 Git 目录下的 `repo view` 错误路径，期望退出码 `2`
+20. 不存在 commit 的 `commit view` 错误路径，期望退出码 `3`
 
 说明：
 - 脚本会使用临时 `GC_CONFIG_DIR`，避免污染本地长期配置。
@@ -137,10 +140,15 @@ issue_number=$(printf '%s\n' "$issue_json" | python3 -c 'import json,sys; print(
 ./gc issue view 1 -R infra-test/gctest1 --json
 ./gc issue view 1 -R infra-test/gctest1
 ./gc pr list -R infra-test/gctest1 --json
+./gc pr list -R infra-test/gctest1 --paginate --per-page 100 --limit 200 --json
+./gc pr list -R infra-test/gctest1 --commit-message "fix login" --json
 ./gc pr view 1 -R infra-test/gctest1 --json
 ./gc pr view 1 -R infra-test/gctest1
 ./gc pr comments 1 -R infra-test/gctest1 --json
 ./gc issue prs 1 -R infra-test/gctest1 --json
+./gc repo log -R infra-test/gctest1 --file README.md --branch main --limit 5 --json
+./gc api repos/infra-test/gctest1
+./gc api 'repos/infra-test/gctest1/commits?path=README.md&sha=main'
 ./gc repo stats -R infra-test/gctest1 --branch main --json
 ./gc milestone list -R infra-test/gctest1 --json
 ./gc milestone view <milestone-number> -R infra-test/gctest1 --json
@@ -167,6 +175,8 @@ issue_number=$(printf '%s\n' "$issue_json" | python3 -c 'import json,sys; print(
 - `gc schema "issue list"` 应为 `format`、`time-format`、`state` 暴露稳定 `enum` 值。
 - `issue list --template` 应输出模板结果，并与 `--json`、`--format` 的冲突保持稳定报错。
 - `issue view` 和 `pr view` 的文本输出应保留稳定的详情布局，`--json` 继续输出结构化数据。
+- `pr view --json` 应包含 `body`、`description`、`merged_at`，并在远端详情接口统计为 0 时尽量通过 files/commits API 补齐统计。
+- `gc api` 应输出远端原始响应，不额外混入文本提示。
 
 ## 推荐记录方式
 

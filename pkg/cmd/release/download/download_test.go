@@ -399,6 +399,10 @@ func TestSanitizeAssetName(t *testing.T) {
 
 func TestSafeOutputPath(t *testing.T) {
 	tempDir := t.TempDir()
+	// Resolve symlinks for canonical comparison (macOS /var → /private/var)
+	if resolved, err := filepath.EvalSymlinks(tempDir); err == nil {
+		tempDir = resolved
+	}
 
 	tests := []struct {
 		name        string

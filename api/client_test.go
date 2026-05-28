@@ -238,3 +238,18 @@ func TestUploadToURL(t *testing.T) {
 		t.Log("UploadToURL succeeded unexpectedly")
 	}
 }
+
+func TestUploadAsset(t *testing.T) {
+	handler := testutil.MockAPIHandler()
+	mockClient := testutil.NewTestHTTPClient(handler)
+	c := NewClientFromHTTP(mockClient)
+	c.SetToken("test-token", "env")
+
+	asset, err := c.UploadAsset("/repos/owner/test-repo/releases/1/assets", "test.txt", []byte("data"), "text/plain")
+	if err != nil {
+		t.Fatalf("UploadAsset() error = %v", err)
+	}
+	if asset.Name != "test.txt" {
+		t.Errorf("Name = %q, want %q", asset.Name, "test.txt")
+	}
+}

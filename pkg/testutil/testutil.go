@@ -253,5 +253,12 @@ func MockAPIHandler() http.Handler {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	// Release asset upload
+	mux.HandleFunc("/api/v5/repos/owner/test-repo/releases/1/assets", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"id":1,"name":"test.txt","size":1024,"download_count":0}`))
+	})
+
 	return mux
 }

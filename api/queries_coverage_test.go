@@ -68,3 +68,56 @@ func TestListPRComments(t *testing.T) {
 		t.Fatalf("ListPRComments() = %+v, want [Test comment]", comments)
 	}
 }
+
+func TestGetCommit(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	commit, err := GetCommit(client, "owner", "test-repo", "abc123", false)
+	if err != nil {
+		t.Fatalf("GetCommit() error = %v", err)
+	}
+	if commit.SHA != "abc123" {
+		t.Errorf("GetCommit().SHA = %q, want %q", commit.SHA, "abc123")
+	}
+}
+
+func TestListCommitComments(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	comments, err := ListCommitComments(client, "owner", "test-repo", nil)
+	if err != nil {
+		t.Fatalf("ListCommitComments() error = %v", err)
+	}
+	if len(comments) != 1 || comments[0].Body != "nice fix" {
+		t.Fatalf("ListCommitComments() = %+v, want [nice fix]", comments)
+	}
+}
+
+func TestUpdateIssueComment(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	opts := &UpdateCommentOptions{Body: "updated"}
+	comment, err := UpdateIssueComment(client, "owner", "test-repo", "1", opts)
+	if err != nil {
+		t.Fatalf("UpdateIssueComment() error = %v", err)
+	}
+	if comment.Body != "updated comment" {
+		t.Errorf("Body = %q, want %q", comment.Body, "updated comment")
+	}
+}
+
+func TestDeleteIssueComment(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	if err := DeleteIssueComment(client, "owner", "test-repo", 1); err != nil {
+		t.Fatalf("DeleteIssueComment() error = %v", err)
+	}
+}
+
+func TestCreateMilestone(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	opts := &CreateMilestoneOptions{Title: "v1.0"}
+	milestone, err := CreateMilestone(client, "owner", "test-repo", opts)
+	if err != nil {
+		t.Fatalf("CreateMilestone() error = %v", err)
+	}
+	if milestone.Title != "v1.0" {
+		t.Errorf("Title = %q, want %q", milestone.Title, "v1.0")
+	}
+}

@@ -2,6 +2,7 @@ package api
 
 import (
 	"testing"
+	"time"
 )
 
 func TestBuildURL(t *testing.T) {
@@ -111,6 +112,76 @@ func TestAPIHostForGitCodeHost(t *testing.T) {
 				t.Errorf("apiHostForGitCodeHost(%q) = %q, want %q", tt.host, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestSetHost(t *testing.T) {
+	c := NewClientFromHTTP(nil)
+	c.SetHost("gitcode.internal")
+	if c.Host() != "api.gitcode.internal" {
+		t.Errorf("Host() = %q, want %q", c.Host(), "api.gitcode.internal")
+	}
+}
+
+func TestToken(t *testing.T) {
+	c := NewClientFromHTTP(nil)
+	if c.Token() != "" {
+		t.Errorf("Token() = %q, want empty", c.Token())
+	}
+	c.SetToken("tok123", "env")
+	if c.Token() != "tok123" {
+		t.Errorf("Token() = %q, want %q", c.Token(), "tok123")
+	}
+}
+
+func TestRawURL(t *testing.T) {
+	c := NewClientFromHTTP(nil)
+	tests := []struct {
+		name     string
+		endpoint string
+		want     string
+		wantErr  bool
+	}{
+		{"relative path", "repos/owner/repo", "https://api.gitcode.com/api/v5/repos/owner/repo", false},
+		{"leading slash", "/repos/owner/repo", "https://api.gitcode.com/api/v5/repos/owner/repo", false},
+		{"already api", "/api/v5/repos/owner/repo", "https://api.gitcode.com/api/v5/repos/owner/repo", false},
+		{"full url matching host", "https://api.gitcode.com/api/v5/repos/owner/repo", "https://api.gitcode.com/api/v5/repos/owner/repo", false},
+		{"foreign host rejected", "https://evil.com/api/v5/repos/owner/repo", "", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := c.rawURL(tt.endpoint)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("rawURL(%q) expected error", tt.endpoint)
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("rawURL(%q) error = %v", tt.endpoint, err)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("rawURL(%q) = %q, want %q", tt.endpoint, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDefaultHTTPClient(t *testing.T) {
+	c := DefaultHTTPClient()
+	if c == nil {
+		t.Fatal("DefaultHTTPClient() returned nil")
+	}
+	if c.Timeout == 0 {
+		t.Error("DefaultHTTPClient() timeout is zero")
+	}
+}
+
+func TestNewHTTPClientWithRetryAndLogger(t *testing.T) {
+	c := NewHTTPClientWithRetryAndLogger(time.Second, RetryConfig{MaxRetries: 3}, nil)
+	if c == nil {
+		t.Fatal("NewHTTPClientWithRetryAndLogger() returned nil")
 	}
 }
 

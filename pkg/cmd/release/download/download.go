@@ -312,7 +312,7 @@ func sanitizeAssetName(name string) (string, error) {
 	}
 
 	// 2. Reject absolute paths (Unix / or Windows drive letter)
-	if filepath.IsAbs(name) {
+	if filepath.IsAbs(name) || strings.HasPrefix(name, "/") {
 		return "", fmt.Errorf("asset name cannot be an absolute path")
 	}
 

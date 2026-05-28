@@ -46,6 +46,7 @@ gitcode schema
 | --- | --- | --- | --- | --- | --- |
 | [向发布平台提交高质量 Issue](./cases/create-issue.md) | 产品、测试、开发、开源用户 | `gitcode-issue-create` | 围绕发布结果追踪、附件管理、文件传输等真实问题创建可执行 Issue | auth、仓库读权限 | 写 |
 | [从 Fork 分支创建发布平台 PR](./cases/create-pr-from-fork.md) | 外部贡献者、协作开发者 | `gitcode-pr-create` | 从 fork 仓库向发布平台主仓提交功能或修复 | fork 仓库、SSH | 写 |
+| [创建 Issue 并关联提交 PR（端到端）](./cases/issue-to-pr.md) | 外部贡献者、协作开发者 | `gitcode-issue-create`、`gitcode-pr-create` | 将分支变更先创建 Issue 再提交关联 PR，形成完整变更链路 | fork 仓库、SSH、Issue 创建权限 | 写 |
 | [评审已有 Tag 发布能力 PR](./cases/review-pr.md) | Reviewer、维护者、AI 评审代理 | `gitcode-pr-review` | 以 PR #4 为例结构化审查发布流程变更风险 | auth、仓库读权限 | 读 |
 | [发布 openLiBing 发布平台版本](./cases/publish-release.md) | 维护者、发布负责人 | `gitcode-release-helper` | 汇总发布平台变更，创建 release 并上传构建产物 | 写权限、构建产物 | 写 |
 | [新成员上手发布平台仓库](./cases/repo-onboarding.md) | 新成员、外部贡献者、售前/交付团队 | `gitcode-repo-onboarding` | 快速了解发布平台的构建、测试和贡献路径 | auth、SSH | 读 |
@@ -84,8 +85,9 @@ gitcode schema
 
 1. [新成员上手](./cases/repo-onboarding.md) — 了解仓库
 2. [提交 Issue](./cases/create-issue.md) — 报告问题或提议功能
-3. [从 Fork 创建 PR](./cases/create-pr-from-fork.md) — 提交代码
-4. [PR 合并策略与清理](./cases/pr-merge-strategy.md)
+3. [创建 Issue 并关联提交 PR](./cases/issue-to-pr.md) — 端到端变更交付
+4. [从 Fork 创建 PR](./cases/create-pr-from-fork.md) — 提交代码
+5. [PR 合并策略与清理](./cases/pr-merge-strategy.md)
 
 ### 安全/运维路径 (Security/DevOps Path)
 

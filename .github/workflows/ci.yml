@@ -35,6 +35,7 @@ jobs:
         run: go mod download
 
       - name: Run tests
+        shell: bash
         run: go test -v -race -coverprofile=coverage.out ./...
 
       - name: Upload coverage
@@ -62,6 +63,7 @@ jobs:
           go-version: '1.22'
 
       - name: Build
+        shell: bash
         run: |
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
           COMMIT=$(git rev-parse --short HEAD)

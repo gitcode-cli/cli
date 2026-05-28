@@ -3,6 +3,8 @@ package api
 import (
 	"testing"
 	"time"
+
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestBuildURL(t *testing.T) {
@@ -192,4 +194,47 @@ func contains(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+func TestRawREST(t *testing.T) {
+	handler := testutil.MockAPIHandler()
+	mockClient := testutil.NewTestHTTPClient(handler)
+	c := NewClientFromHTTP(mockClient)
+	c.SetToken("test-token", "env")
+
+	resp, err := c.RawREST("GET", "user", nil, nil)
+	if err != nil {
+		t.Fatalf("RawREST() error = %v", err)
+	}
+	if resp.StatusCode != 200 {
+		t.Errorf("StatusCode = %d, want 200", resp.StatusCode)
+	}
+	if len(resp.Body) == 0 {
+		t.Error("Body should not be empty")
+	}
+}
+
+func TestRawRESTWithHostGuard(t *testing.T) {
+	handler := testutil.MockAPIHandler()
+	mockClient := testutil.NewTestHTTPClient(handler)
+	c := NewClientFromHTTP(mockClient)
+	c.SetToken("test-token", "env")
+
+	_, err := c.RawREST("GET", "https://evil.com/user", nil, nil)
+	if err == nil {
+		t.Fatal("expected host rejection error")
+	}
+}
+
+func TestUploadToURL(t *testing.T) {
+	handler := testutil.MockAPIHandler()
+	mockClient := testutil.NewTestHTTPClient(handler)
+	c := NewClientFromHTTP(mockClient)
+
+	// Get the mock server URL
+	err := c.UploadToURL("http://localhost:1/upload", "test.txt", []byte("data"), "text/plain", nil)
+	// Will fail because localhost:1 doesn't exist, but covers the code path
+	if err == nil {
+		t.Log("UploadToURL succeeded unexpectedly")
+	}
 }

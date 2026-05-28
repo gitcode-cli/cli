@@ -194,3 +194,50 @@ func TestUpdateCommitComment(t *testing.T) {
 		t.Errorf("Body = %q, want %q", c.Body, "updated body")
 	}
 }
+
+func TestMergePullRequest(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	pr, err := MergePullRequest(client, "owner", "test-repo", 1, &MergePROptions{SHA: "abc"})
+	if err != nil {
+		t.Fatalf("MergePullRequest() error = %v", err)
+	}
+	if !pr.Merged {
+		t.Fatal("expected merged=true")
+	}
+}
+
+func TestCreatePRComment(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	opts := &CreatePRCommentOptions{Body: "LGTM"}
+	c, err := CreatePRComment(client, "owner", "test-repo", 1, opts)
+	if err != nil {
+		t.Fatalf("CreatePRComment() error = %v", err)
+	}
+	if c.Body != "LGTM" {
+		t.Errorf("Body = %q, want %q", c.Body, "LGTM")
+	}
+}
+
+func TestCreatePRReview(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	opts := &CreatePRReviewOptions{Event: "APPROVED", Body: "LGTM"}
+	r, err := CreatePRReview(client, "owner", "test-repo", 1, opts)
+	if err != nil {
+		t.Fatalf("CreatePRReview() error = %v", err)
+	}
+	if r.State != "APPROVED" {
+		t.Errorf("State = %q, want %q", r.State, "APPROVED")
+	}
+}
+
+func TestEditPR(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	opts := &UpdatePROptions{Title: "Updated PR"}
+	pr, err := EditPR(client, "owner", "test-repo", 1, opts)
+	if err != nil {
+		t.Fatalf("EditPR() error = %v", err)
+	}
+	if pr.Title != "Updated PR" {
+		t.Errorf("Title = %q, want %q", pr.Title, "Updated PR")
+	}
+}

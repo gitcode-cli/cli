@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -110,6 +111,9 @@ func TestAuthConfigLoginRejectsUnsupportedSecureStorage(t *testing.T) {
 }
 
 func TestConfigWriteCreatesRestrictedDirectory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix permissions not supported on Windows")
+	}
 	dir := t.TempDir()
 	cfg := &config{configDir: filepath.Join(dir, "gc")}
 

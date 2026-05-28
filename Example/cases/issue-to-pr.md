@@ -92,9 +92,11 @@ description: 使用 GitCode CLI 将已完成的分支变更整理为 Issue，再
 - **PR**: [#36940 refactor(ci): 替换工作流引用为 Ascend/pytorch 并精简 setup-npu-test-env 动作](https://gitcode.com/Ascend/pytorch/merge_requests/36940)
 - **源分支**: `kerer-sk/pytorch:v2.7.1_fast_test`
 - **目标分支**: `Ascend/pytorch:v2.7.1`
+
 ![image.png](https://raw.gitcode.com/user-images/assets/9483585/8048a759-b3b0-456d-9d5f-e08afb504a76/image.png 'image.png')
 ![image.png](https://raw.gitcode.com/user-images/assets/9483585/e94f32ca-c349-48c3-aa85-345bd68480c8/image.png 'image.png')
 ![image.png](https://raw.gitcode.com/user-images/assets/9483585/d7af2559-d77c-47fa-b819-e11990073af1/image.png 'image.png')
+
 ### Issue 创建
 
 ```bash

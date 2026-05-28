@@ -69,19 +69,15 @@ func MockAPIHandler() http.Handler {
 		}
 	})
 
-	// User repos list
+	// User repos list and create
 	mux.HandleFunc("/api/v5/user/repos", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id": "1", "name": "test-repo", "full_name": "owner/test-repo", "html_url": "https://gitcode.com/owner/test-repo"}]`))
-	})
-
-	// Create repo
-	mux.HandleFunc("/api/v5/user/repos", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
 			w.Write([]byte(`{"id": "1", "name": "new-repo", "full_name": "owner/new-repo", "html_url": "https://gitcode.com/owner/new-repo"}`))
+		} else {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`[{"id": "1", "name": "test-repo", "full_name": "owner/test-repo", "html_url": "https://gitcode.com/owner/test-repo"}]`))
 		}
 	})
 

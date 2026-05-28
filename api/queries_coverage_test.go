@@ -254,3 +254,25 @@ func TestReopenPullRequest(t *testing.T) {
 		t.Logf("ReopenPullRequest state = %q", pr.State)
 	}
 }
+
+func TestAddLabelsToIssue(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	labels, err := AddLabelsToIssue(client, "owner", "test-repo", 1, []string{"bug", "enhancement"})
+	if err != nil {
+		t.Fatalf("AddLabelsToIssue() error = %v", err)
+	}
+	if len(labels) != 1 || labels[0].Name != "bug" {
+		t.Fatalf("AddLabelsToIssue() = %+v", labels)
+	}
+}
+
+func TestAddIssueLabels(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	labels, err := AddIssueLabels(client, "owner", "test-repo", 1, []string{"bug"})
+	if err != nil {
+		t.Fatalf("AddIssueLabels() error = %v", err)
+	}
+	if len(labels) < 1 {
+		t.Fatalf("AddIssueLabels() returned no labels")
+	}
+}

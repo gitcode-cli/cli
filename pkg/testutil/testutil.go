@@ -97,10 +97,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id": "1", "number": 1, "title": "Test Issue", "state": "open", "body": "Issue body", "html_url": "https://gitcode.com/owner/test-repo/issues/1"}`))
+			w.Write([]byte(`{"id":1,"number":"1","title":"Test Issue","state":"open","body":"Issue body","html_url":"https://gitcode.com/owner/test-repo/issues/1","labels":[{"id":1,"name":"enhancement","color":"00ff00"}]}`))
 		} else if r.Method == "PATCH" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id": "1", "number": 1, "title": "Updated Issue", "state": "closed", "html_url": "https://gitcode.com/owner/test-repo/issues/1"}`))
+			w.Write([]byte(`{"id":1,"number":"1","title":"Updated Issue","state":"closed","html_url":"https://gitcode.com/owner/test-repo/issues/1","labels":[{"id":1,"name":"bug","color":"ff0000"}]}`))
 		}
 	})
 
@@ -245,6 +245,20 @@ func MockAPIHandler() http.Handler {
 		} else if r.Method == "DELETE" {
 			w.WriteHeader(http.StatusNoContent)
 		}
+	})
+
+	// UpdateIssue path (repo-less, used by AddIssueLabels internally)
+	mux.HandleFunc("/api/v5/repos/owner/issues/1", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"id":1,"number":"1","title":"Test Issue","state":"open","labels":[{"id":1,"name":"bug","color":"ff0000"}]}`))
+	})
+
+	// Issue labels (add/update)
+	mux.HandleFunc("/api/v5/repos/owner/test-repo/issues/1/labels", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`[{"id":1,"name":"bug","color":"ff0000"}]`))
 	})
 
 	// Delete label

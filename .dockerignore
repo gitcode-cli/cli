@@ -30,7 +30,6 @@ docker-compose.yml
 Makefile
 
 # Completions (will be copied separately)
-completions/
 
 # Scripts (will be copied separately)
 scripts/

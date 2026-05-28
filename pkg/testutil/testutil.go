@@ -274,5 +274,29 @@ func MockAPIHandler() http.Handler {
 		w.Write([]byte(`{"id":1,"name":"test.txt","size":1024,"download_count":0}`))
 	})
 
+	// PR test endpoint
+	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/1/test", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// PR comment edit
+	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/comments/1", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"id":"1","body":"edited comment","discussion_id":"d1"}`))
+	})
+
+	// PR discussion reply
+	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/1/discussions/d1/comments", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"id":"2","noteId":2,"body":"reply"}`))
+	})
+
+	// Resolve PR comment
+	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/1/comments/d1", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	return mux
 }

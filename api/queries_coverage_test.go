@@ -276,3 +276,42 @@ func TestAddIssueLabels(t *testing.T) {
 		t.Fatalf("AddIssueLabels() returned no labels")
 	}
 }
+
+func TestTestPR(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	if err := TestPR(client, "owner", "test-repo", 1, nil); err != nil {
+		t.Fatalf("TestPR() error = %v", err)
+	}
+}
+
+func TestEditPRComment(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	opts := &EditPRCommentOptions{Body: "edited comment"}
+	c, err := EditPRComment(client, "owner", "test-repo", 1, opts)
+	if err != nil {
+		t.Fatalf("EditPRComment() error = %v", err)
+	}
+	if c.Body != "edited comment" {
+		t.Errorf("Body = %q, want %q", c.Body, "edited comment")
+	}
+}
+
+func TestReplyPRComment(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	opts := &ReplyPRCommentOptions{Body: "reply"}
+	r, err := ReplyPRComment(client, "owner", "test-repo", 1, "d1", opts)
+	if err != nil {
+		t.Fatalf("ReplyPRComment() error = %v", err)
+	}
+	if r.Body != "reply" {
+		t.Errorf("Body = %q, want %q", r.Body, "reply")
+	}
+}
+
+func TestResolvePRComment(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	opts := &ResolvePRCommentOptions{Resolved: true}
+	if err := ResolvePRComment(client, "owner", "test-repo", 1, "d1", opts); err != nil {
+		t.Fatalf("ResolvePRComment() error = %v", err)
+	}
+}

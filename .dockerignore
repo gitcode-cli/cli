@@ -29,7 +29,7 @@ testdata/
 docker-compose.yml
 Makefile
 
-# Completions (will be copied separately)
+# Completions (generated at build time, copied into image)
 
 # Scripts (will be copied separately)
 scripts/

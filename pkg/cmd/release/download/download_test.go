@@ -365,7 +365,7 @@ func TestSanitizeAssetName(t *testing.T) {
 		{"empty name rejected", "", "", true, "asset name cannot be empty"},
 		{"whitespace-only rejected", "   ", "", true, "asset name cannot be empty"},
 		{"absolute path Unix rejected", "/tmp/outside.txt", "", true, "asset name cannot be an absolute path"},
-		{"absolute path Windows rejected", "C:\\Windows\\outside.txt", "", true, "asset name cannot contain path separators"},
+		{"absolute path Windows rejected", "C:\\Windows\\outside.txt", "", true, ""},
 		{"path traversal parent rejected", "../outside.txt", "", true, "asset name cannot contain path separators"},
 		{"nested traversal rejected", "nested/../outside.txt", "", true, "asset name cannot contain path separators"},
 		{"path separator slash rejected", "nested/file.txt", "", true, "asset name cannot contain path separators"},

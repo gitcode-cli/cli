@@ -121,3 +121,43 @@ func TestCreateMilestone(t *testing.T) {
 		t.Errorf("Title = %q, want %q", milestone.Title, "v1.0")
 	}
 }
+
+func TestGetMilestone(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	m, err := GetMilestone(client, "owner", "test-repo", 1)
+	if err != nil {
+		t.Fatalf("GetMilestone() error = %v", err)
+	}
+	if m.Title != "v1.0" {
+		t.Errorf("Title = %q, want %q", m.Title, "v1.0")
+	}
+}
+
+func TestDeleteMilestone(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	if err := DeleteMilestone(client, "owner", "test-repo", 1); err != nil {
+		t.Fatalf("DeleteMilestone() error = %v", err)
+	}
+}
+
+func TestCreateCommitComment(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	c, err := CreateCommitComment(client, "owner", "test-repo", "abc123", "nice")
+	if err != nil {
+		t.Fatalf("CreateCommitComment() error = %v", err)
+	}
+	if c.Body != "nice" {
+		t.Errorf("Body = %q, want %q", c.Body, "nice")
+	}
+}
+
+func TestListCommentsForCommit(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	comments, err := ListCommentsForCommit(client, "owner", "test-repo", "abc123", nil)
+	if err != nil {
+		t.Fatalf("ListCommentsForCommit() error = %v", err)
+	}
+	if len(comments) != 1 || comments[0].Body != "nice fix" {
+		t.Fatalf("ListCommentsForCommit() = %+v", comments)
+	}
+}

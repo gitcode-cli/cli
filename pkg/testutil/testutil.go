@@ -187,11 +187,14 @@ func MockAPIHandler() http.Handler {
 
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/milestones/1", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method == "GET" {
+		if r.Method == "PATCH" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id": "1", "number": 1, "title": "v1.0", "state": "open", "description": "First release"}`))
+			w.Write([]byte(`{"id":1,"number":1,"title":"v1.1","state":"closed","description":"Updated"}`))
 		} else if r.Method == "DELETE" {
 			w.WriteHeader(http.StatusNoContent)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"id":1,"number":1,"title":"v1.0","state":"open","description":"First release"}`))
 		}
 	})
 
@@ -212,7 +215,10 @@ func MockAPIHandler() http.Handler {
 	// Commit comments for specific commit
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/commits/abc123/comments", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if r.Method == "GET" {
+		if r.Method == "POST" {
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"id":"2","body":"nice","discussion_id":"d2"}`))
+		} else {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`[{"id":"1","body":"nice fix","discussion_id":"d1"}]`))
 		}

@@ -129,6 +129,9 @@ func viewRun(opts *ViewOptions) error {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", pr.HTMLURL)
 		return browser.Open(pr.HTMLURL)
 	}
+	if err := enrichPRStats(client, owner, repo, pr); err != nil {
+		fmt.Fprintf(opts.IO.ErrOut, "%s Failed to enrich PR stats: %v\n", cs.Yellow("!"), err)
+	}
 
 	if opts.JSON {
 		if opts.Comments {
@@ -252,6 +255,38 @@ func joinUsers(users []*api.User) string {
 		}
 	}
 	return strings.Join(names, ", ")
+}
+
+func enrichPRStats(client *api.Client, owner, repo string, pr *api.PullRequest) error {
+	if pr == nil {
+		return nil
+	}
+	var errs []string
+	if pr.Additions == 0 && pr.Deletions == 0 && pr.ChangedFiles == 0 {
+		files, err := api.GetPRFiles(client, owner, repo, pr.Number)
+		if err != nil {
+			errs = append(errs, err.Error())
+		} else if files != nil {
+			pr.Additions = files.AddedLines
+			pr.Deletions = files.RemoveLines
+			pr.ChangedFiles = files.Count
+			if pr.ChangedFiles == 0 && len(files.Diffs) > 0 {
+				pr.ChangedFiles = len(files.Diffs)
+			}
+		}
+	}
+	if pr.Commits == 0 {
+		commits, err := api.ListPRCommits(client, owner, repo, pr.Number)
+		if err != nil {
+			errs = append(errs, err.Error())
+		} else if len(commits) > 0 {
+			pr.Commits = len(commits)
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("%s", strings.Join(errs, "; "))
+	}
+	return nil
 }
 
 func renderPRView(out io.Writer, cs *iostreams.ColorScheme, pr *api.PullRequest, comments []api.PRComment, timeFormat output.TimeFormat, now time.Time) error {

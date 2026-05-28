@@ -158,6 +158,18 @@ log "PR List JSON"
 run_capture pr_list_json "$GC_BIN" pr list -R "$READONLY_REPO" --limit 1 --json
 assert_contains "$pr_list_json" "["
 
+log "PR List Paginate JSON"
+run_capture pr_list_paginate_json "$GC_BIN" pr list -R "$READONLY_REPO" --paginate --per-page 1 --limit 1 --json
+assert_contains "$pr_list_paginate_json" "["
+
+log "Repo Log JSON"
+run_capture repo_log_json "$GC_BIN" repo log -R "$READONLY_REPO" --limit 1 --json
+assert_contains "$repo_log_json" "["
+
+log "API Repo"
+run_capture api_repo_json "$GC_BIN" api "repos/$READONLY_REPO"
+assert_contains "$api_repo_json" "\"full_name\""
+
 log "Release List JSON"
 run_capture release_list_json "$GC_BIN" release list -R "$READONLY_REPO" --json
 assert_contains "$release_list_json" "\"tag_name\""

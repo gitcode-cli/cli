@@ -1,6 +1,7 @@
 package list
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"slices"
@@ -9,6 +10,7 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 	"gitcode.com/gitcode-cli/cli/pkg/output"
 )
 
@@ -44,6 +46,16 @@ func TestNewCmdList(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "list with paginate",
+			args:    []string{"--paginate", "--per-page", "100"},
+			wantErr: false,
+		},
+		{
+			name:    "list with commit message filter",
+			args:    []string{"--commit-message", "fix login"},
+			wantErr: false,
+		},
+		{
 			name:    "list with table format",
 			args:    []string{"--format", "table"},
 			wantErr: false,
@@ -63,6 +75,110 @@ func TestNewCmdList(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestListRunPaginatesUntilLimit(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, out, _ := iostreams.Test()
+	var gotPaths []string
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotPath := req.URL.Path
+					if req.URL.RawQuery != "" {
+						gotPath += "?" + req.URL.RawQuery
+					}
+					gotPaths = append(gotPaths, gotPath)
+					switch req.URL.Query().Get("page") {
+					case "1":
+						return listTestResponse(http.StatusOK, `[{"number":1,"title":"one"},{"number":2,"title":"two"}]`), nil
+					case "2":
+						return listTestResponse(http.StatusOK, `[{"number":3,"title":"three"},{"number":4,"title":"four"}]`), nil
+					default:
+						t.Fatalf("unexpected page %q", req.URL.Query().Get("page"))
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		State:      "open",
+		Limit:      3,
+		LimitSet:   true,
+		Paginate:   true,
+		PerPage:    2,
+		PerPageSet: true,
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	for _, want := range []string{
+		"/api/v5/repos/owner/repo/pulls?page=1&per_page=2&state=open",
+		"/api/v5/repos/owner/repo/pulls?page=2&per_page=2&state=open",
+	} {
+		if !slices.Contains(gotPaths, want) {
+			t.Fatalf("paths = %#v, missing %q", gotPaths, want)
+		}
+	}
+	var prs []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &prs); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if len(prs) != 3 {
+		t.Fatalf("len(prs) = %d, want 3; output=%s", len(prs), out.String())
+	}
+}
+
+func TestListRunFiltersByCommitMessage(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, out, _ := iostreams.Test()
+	var gotPaths []string
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotPaths = append(gotPaths, req.URL.Path)
+					switch req.URL.Path {
+					case "/api/v5/repos/owner/repo/pulls":
+						return listTestResponse(http.StatusOK, `[{"number":1,"title":"one"},{"number":2,"title":"two"}]`), nil
+					case "/api/v5/repos/owner/repo/pulls/1/commits":
+						return listTestResponse(http.StatusOK, `[{"sha":"one","message":"docs only"}]`), nil
+					case "/api/v5/repos/owner/repo/pulls/2/commits":
+						return listTestResponse(http.StatusOK, `[{"sha":"two","commit":{"message":"fix login flow"}}]`), nil
+					default:
+						t.Fatalf("unexpected path %s", req.URL.Path)
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+		Repository:    "owner/repo",
+		State:         "open",
+		Limit:         30,
+		JSON:          true,
+		CommitMessage: "LOGIN",
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	if len(gotPaths) != 3 {
+		t.Fatalf("request paths = %#v", gotPaths)
+	}
+	var prs []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &prs); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if len(prs) != 1 || prs[0]["number"] != float64(2) {
+		t.Fatalf("unexpected filtered output: %#v", prs)
 	}
 }
 

@@ -43,7 +43,15 @@ gc pr list -R infra-test/gctest1 --state merged
 
 # 限制数量
 gc pr list -R infra-test/gctest1 --limit 10
+
+# 自动翻页
+gc pr list -R infra-test/gctest1 --paginate --per-page 100 --json
+
+# 按提交信息过滤
+gc pr list -R infra-test/gctest1 --commit-message "fix login" --json
 ```
+
+> `--paginate` 用于跨页扫描；`--commit-message` 会读取候选 PR 的提交列表并按提交信息子串匹配。
 
 ## pr view - 查看 PR
 
@@ -56,7 +64,12 @@ gc pr view 1 -R infra-test/gctest1 --comments
 
 # 在浏览器中打开
 gc pr view 1 -R infra-test/gctest1 --web
+
+# 输出 JSON
+gc pr view 1 -R infra-test/gctest1 --json
 ```
+
+> `pr view --json` 应包含 `body`、`description`、`merged_at`，并在远端详情接口统计为 0 时尽量通过 files/commits API 补齐统计字段。
 
 ## pr comments - 查看 PR 评论
 

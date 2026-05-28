@@ -349,6 +349,59 @@ func TestPullRequestUnmarshal(t *testing.T) {
 	}
 }
 
+func TestGetPullRequestNormalizesDescription(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Path != "/api/v5/repos/owner/repo/pulls/123" {
+			t.Fatalf("request path = %q", req.URL.Path)
+		}
+		return authTestResponse(http.StatusOK, `{"number":123,"title":"PR","description":"description text"}`), nil
+	})
+
+	pr, err := GetPullRequest(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("GetPullRequest() error = %v", err)
+	}
+	if pr.Body != "description text" || pr.Description != "description text" {
+		t.Fatalf("body/description not normalized: %#v", pr)
+	}
+}
+
+func TestListPRCommitsPaginatesAndReadsNestedMessage(t *testing.T) {
+	var requests int
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		requests++
+		if req.URL.Path != "/api/v5/repos/owner/repo/pulls/123/commits" {
+			t.Fatalf("request path = %q", req.URL.Path)
+		}
+		if req.URL.Query().Get("per_page") != "100" {
+			t.Fatalf("per_page = %q", req.URL.Query().Get("per_page"))
+		}
+		switch req.URL.Query().Get("page") {
+		case "1":
+			return authTestResponse(http.StatusOK, prCommitsJSON(100, "first page")), nil
+		case "2":
+			return authTestResponse(http.StatusOK, `[{"sha":"last","commit":{"message":"target message"}}]`), nil
+		default:
+			t.Fatalf("unexpected page %q", req.URL.Query().Get("page"))
+			return nil, nil
+		}
+	})
+
+	commits, err := ListPRCommits(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("ListPRCommits() error = %v", err)
+	}
+	if len(commits) != 101 {
+		t.Fatalf("len(commits) = %d, want 101", len(commits))
+	}
+	if got := commits[100].MessageText(); got != "target message" {
+		t.Fatalf("MessageText() = %q", got)
+	}
+	if requests != 2 {
+		t.Fatalf("requests = %d, want 2", requests)
+	}
+}
+
 func TestClosePullRequestUsesStateAndVerifiesClosedState(t *testing.T) {
 	var requests []string
 
@@ -509,6 +562,20 @@ func prCommentsJSON(count, offset int) string {
 	}
 
 	data, err := json.Marshal(comments)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
+}
+
+func prCommitsJSON(count int, message string) string {
+	commits := make([]Commit, count)
+	for i := range commits {
+		commits[i].SHA = itoa(i + 1)
+		commits[i].Message = message
+	}
+
+	data, err := json.Marshal(commits)
 	if err != nil {
 		panic(err)
 	}

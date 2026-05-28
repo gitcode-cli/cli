@@ -126,8 +126,11 @@ cp .ai/distribution/gc-core/pr/SKILL.md ~/.codex/skills/gc-pr/SKILL.md
 ```bash
 # 读取类命令优先使用 JSON
 gc repo view owner/repo --json
+gc repo log -R owner/repo --file README.md --branch main --json
 gc issue list -R owner/repo --json
 gc pr view 123 -R owner/repo --json
+gc pr list -R owner/repo --paginate --per-page 100 --json
+gc pr list -R owner/repo --commit-message "fix login" --json
 gc pr comments 123 -R owner/repo --json
 gc issue prs 123 -R owner/repo --json
 gc repo stats -R owner/repo --branch main --json
@@ -139,6 +142,10 @@ gc commit comments view <id> -R owner/repo --json
 # 探索命令结构优先使用 schema
 gc schema
 gc schema "issue view"
+
+# typed command 尚未覆盖时，可使用 gc api 读取 GitCode API 原始响应
+gc api repos/owner/repo
+gc api 'repos/owner/repo/commits?path=README.md&sha=main'
 
 # 高风险删除命令先 dry-run，再决定是否执行
 gc repo delete owner/repo --dry-run
@@ -158,6 +165,8 @@ gc release upload v1.0.0 app.zip -R owner/repo --json
 
 - 删除、关闭、重开、状态切换、合并、同步推送/建 PR 等高风险写操作在非交互环境中不会再隐式等待输入；如果未显式传 `--yes`，会直接失败。
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
+- `repo log --json` 适合按文件和分支追踪提交历史；`pr list --paginate` 适合跨页扫描，`--commit-message` 适合从提交信息反查 PR。
+- `gc api` 输出远端原始响应，适合 typed command 尚未覆盖的 API；使用含 `&` 的查询参数时建议整体加引号。
 - 写路径 `--json` 只在操作成功后输出结构化结果；执行失败时不要从 stdout 解析半成品结果。
 - `pr create --json` 会尽量回读新建 PR 以补齐创建响应缺失的正文；如果远端仍未返回 body，会在 stderr 给 warning，并保持 JSON 中的远端事实为空，脚本可再运行 `gitcode pr view <number> -R owner/repo --json` 核验。
 - 当前基础退出码语义：`0` 成功，`1` 通用错误，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误，`5` 资源冲突。

@@ -225,6 +225,8 @@ gc auth status
 # 结构化输出
 gc issue list -R owner/repo --json
 gc issue list -R owner/repo --format json
+gc repo log -R owner/repo --file README.md --branch main --json
+gc pr list -R owner/repo --paginate --per-page 100 --json
 
 # 常规文本与表格
 gc issue list -R owner/repo --format simple
@@ -236,6 +238,9 @@ gc issue list -R owner/repo --time-format relative
 
 # 自定义模板输出
 gc issue list -R owner/repo --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"}}{{end}}'
+
+# typed command 尚未覆盖的 API，可用 gc api 读取原始响应
+gc api repos/owner/repo
 ```
 
 `issue view` 和 `pr view` 的文本详情展示也会保持稳定布局，而 `--json` 仍然是面向机器调用的首选入口。
@@ -248,6 +253,9 @@ gc issue list -R owner/repo --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"
 # 查看仓库
 gc repo view
 
+# 查看文件提交历史
+gc repo log -R owner/repo --file README.md --branch main
+
 # 创建 Issue
 gc issue create --title "Bug report" --body "Description"
 
@@ -256,6 +264,12 @@ gc issue list --state open
 
 # 创建 PR
 gc pr create --title "New feature" --base main
+
+# 按提交信息反查 PR
+gc pr list -R owner/repo --commit-message "fix login"
+
+# 调用 GitCode API 原始响应
+gc api repos/owner/repo
 
 # 查看认证状态
 gc auth status

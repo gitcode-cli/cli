@@ -3,19 +3,21 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strconv"
 )
 
 // RepositoryCommit represents a detailed commit from the commits API
 type RepositoryCommit struct {
-	SHA         string        `json:"sha"`
-	URL         string        `json:"url"`
-	HTMLURL     string        `json:"html_url"`
-	CommentsURL string        `json:"comments_url"`
-	Commit      *CommitInfo   `json:"commit"`
-	Author      *User         `json:"author"`
-	Committer   *User         `json:"committer"`
-	Stats       *CommitStats  `json:"stats"`
-	Files       []CommitFile  `json:"files"`
+	SHA         string       `json:"sha"`
+	URL         string       `json:"url"`
+	HTMLURL     string       `json:"html_url"`
+	CommentsURL string       `json:"comments_url"`
+	Commit      *CommitInfo  `json:"commit"`
+	Author      *User        `json:"author"`
+	Committer   *User        `json:"committer"`
+	Stats       *CommitStats `json:"stats"`
+	Files       []CommitFile `json:"files"`
 }
 
 // CommitInfo represents the commit details
@@ -27,8 +29,8 @@ type CommitInfo struct {
 
 // CommitAuthor represents commit author info
 type CommitAuthor struct {
-	Name  string      `json:"name"`
-	Email string      `json:"email"`
+	Name  string       `json:"name"`
+	Email string       `json:"email"`
 	Date  FlexibleTime `json:"date"`
 }
 
@@ -46,6 +48,14 @@ type CommitFile struct {
 	Additions int    `json:"additions"`
 	Deletions int    `json:"deletions"`
 	Changes   int    `json:"changes"`
+}
+
+// CommitListOptions represents options for listing repository commits.
+type CommitListOptions struct {
+	Path    string
+	SHA     string
+	Page    int
+	PerPage int
 }
 
 // GetCommit fetches a single commit by SHA
@@ -73,6 +83,42 @@ func GetCommitDiff(client *Client, owner, repo, sha string) (string, error) {
 func GetCommitPatch(client *Client, owner, repo, sha string) (string, error) {
 	path := "/repos/" + owner + "/" + repo + "/commit/" + sha + "/patch"
 	return client.GetText(path)
+}
+
+// ListCommits lists repository commits, optionally scoped to a file path and branch/tag SHA.
+func ListCommits(client *Client, owner, repo string, opts *CommitListOptions) ([]RepositoryCommit, error) {
+	path := buildCommitListPath("/repos/"+owner+"/"+repo+"/commits", opts)
+
+	var commits []RepositoryCommit
+	err := client.Get(path, &commits)
+	if err != nil {
+		return nil, err
+	}
+	return commits, nil
+}
+
+func buildCommitListPath(base string, opts *CommitListOptions) string {
+	if opts == nil {
+		return base
+	}
+
+	values := url.Values{}
+	if opts.Path != "" {
+		values.Set("path", opts.Path)
+	}
+	if opts.SHA != "" {
+		values.Set("sha", opts.SHA)
+	}
+	if opts.Page > 0 {
+		values.Set("page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		values.Set("per_page", strconv.Itoa(opts.PerPage))
+	}
+	if len(values) == 0 {
+		return base
+	}
+	return base + "?" + values.Encode()
 }
 
 // CommitComment represents a commit comment

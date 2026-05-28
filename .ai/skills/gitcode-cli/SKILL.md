@@ -15,6 +15,9 @@
 - 质量门禁以 `spec/foundations/code-quality-gates.md` 为准
 - 读取类命令优先使用 `--json`
 - 需要探索命令结构时优先使用 `gc schema`
+- typed command 尚未覆盖的平台能力可使用 `gc api <endpoint>`，但必须把远端原始响应当作事实，不自行补写字段
+- 需要按文件或分支追踪提交历史时使用 `gc repo log --file ... --branch ... --json`
+- 需要跨页扫描 PR 或从提交信息反查 PR 时使用 `gc pr list --paginate` / `gc pr list --commit-message`
 - 删除类命令在自动化场景中先用 `--dry-run`，真实执行时显式传 `--yes`
 - Windows PowerShell 中优先使用 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖；需要从 stdin 传中文/非 ASCII 正文时，优先使用 UTF-8 文件配合 `--body-file` / `--comment-file`，直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`
 
@@ -44,6 +47,7 @@
 - gitcode-cli 仓库内部 AI 本地开发闭环：看 `spec/workflows/ai-local-development-workflow.md`
 - 阶段背景说明可参考 `issues-plan/PROGRESS.md`，但实时事实仍看远端平台
 - `pr create --json` 若 warning 提示远端 body 未返回，不得把本地提交的正文当作远端事实；应使用 `gitcode pr view <number> -R owner/repo --json` 再核验
+- `pr view --json` 应优先作为 PR 详情事实来源；新版本会包含 `body`、`description`、`merged_at` 并尽量补齐统计字段
 
 ## 适配层说明
 

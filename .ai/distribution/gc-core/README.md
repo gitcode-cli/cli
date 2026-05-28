@@ -47,5 +47,8 @@
 - `gc` 必须已安装并可执行
 - 需要访问私有仓库时，应先完成 `gc` 认证
 - GitCode 平台能力以真实 API 和 CLI 当前行为为准
+- typed command 尚未覆盖的平台能力，可优先用 `gc api <endpoint>` 读取或调用 GitCode API 原始响应
+- 需要按文件/分支追踪提交历史时使用 `gc repo log --file ... --branch ... --json`
+- 需要跨页扫描或从提交信息反查 PR 时使用 `gc pr list --paginate` 或 `gc pr list --commit-message`
 - 这些通用 skill 不会替代目标项目自己的开发流程规范
 - Windows PowerShell 中推荐使用 `gitcode` 或 `gc.exe`，避免 `gc` 被内置 `Get-Content` 别名覆盖；通过 stdin 传中文/非 ASCII 正文时，优先使用 UTF-8 文件。

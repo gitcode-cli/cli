@@ -79,17 +79,18 @@ func NewCmdComments(f *cmdutil.Factory, runF func(*CommentsOptions) error) *cobr
 func commentsRun(opts *CommentsOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	// Validate repository input before auth so usage errors are not masked by
+	// missing local credentials.
+	owner, repo, err := parseRepo(opts.Repository)
+	if err != nil {
+		return err
+	}
+
 	httpClient, err := opts.HttpClient()
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
 	}
 	client, err := cmdutil.AuthenticatedClient(httpClient)
-	if err != nil {
-		return err
-	}
-
-	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
 	if err != nil {
 		return err
 	}

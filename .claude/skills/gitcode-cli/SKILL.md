@@ -55,7 +55,9 @@ echo "YOUR_TOKEN" | gc auth login --with-token
 | 命令 | 说明 |
 |------|------|
 | `gc auth login` | 登录认证 |
+| `gc api repos/owner/repo` | 调用 GitCode API 原始响应 |
 | `gc repo clone owner/repo` | 克隆仓库 |
+| `gc repo log -R owner/repo` | 查看提交历史 |
 | `gc repo stats --branch main` | 代码贡献统计 |
 | `gc issue create -R owner/repo` | 创建 Issue |
 | `gc issue list -R owner/repo` | 列出 Issues |
@@ -73,6 +75,7 @@ echo "YOUR_TOKEN" | gc auth login --with-token
 需要详细命令说明时，参考以下文档：
 
 - [认证命令](references/auth.md)
+- [API 命令](references/api.md)
 - [仓库命令](references/repo.md)
 - [Issue 命令](references/issue.md)
 - [PR 命令](references/pr.md)
@@ -111,8 +114,12 @@ echo "YOUR_TOKEN" | gc auth login --with-token
   - `git@gitcode.com:owner/repo.git`
 - 部分命令在 Git 仓库内支持从当前 remote 自动推断仓库；具体以 `README.md` 和 `docs/COMMANDS.md` 为准。
 - 读取类命令优先使用 `--json`，需要探索命令结构时优先使用 `gc schema`。
+- typed command 尚未覆盖的平台能力可使用 `gc api <endpoint>`，输出是远端原始响应。
+- `gc repo log --file ... --branch ... --json` 可按文件和分支追踪提交历史。
+- `gc pr list --paginate` 用于跨页扫描，`gc pr list --commit-message` 用于从提交信息反查 PR。
 - 删除类命令在自动化场景中先用 `--dry-run`；真实执行时显式传 `--yes`。
 - `gc pr review --approve` 当前可用；`gc pr review --request` 会明确提示 GitCode API 暂不支持该动作。
 - Windows PowerShell 中优先使用 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖；从 stdin 传中文/非 ASCII 正文时，优先使用 UTF-8 文件，直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。
 - `pr create --json` 若 warning 提示远端 body 未返回，不得把本地提交的正文当作远端事实；应使用 `gitcode pr view <number> -R owner/repo --json` 再核验。
+- `pr view --json` 应包含 `body`、`description`、`merged_at`，并尽量补齐统计字段。
 - 优先使用 `./scripts/regression-core.sh` 做核心真实命令回归，再补充本次开发相关验证。

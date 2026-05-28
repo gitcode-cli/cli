@@ -205,6 +205,13 @@ func MockAPIHandler() http.Handler {
 		w.Write([]byte(`[{"id":"1","body":"nice fix","discussion_id":"d1"}]`))
 	})
 
+	// Commit comment update
+	mux.HandleFunc("/api/v5/repos/owner/test-repo/comments/1", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"id":"1","body":"updated body","discussion_id":"d1"}`))
+	})
+
 	// Commit endpoint (subtree match for /commits/<sha>)
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/commits/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

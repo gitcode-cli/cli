@@ -26,6 +26,7 @@
 | 补测试、修回归、做真实命令验证 | [测试指南](./foundations/testing-guide.md)、[测试流程](./workflows/test-workflow.md) |
 | 提交 PR、补 issue comment、补 review comment | [PR 流程](./workflows/pr-workflow.md)、[评审流程](./workflows/review-workflow.md)、[代码质量门禁规范](./foundations/code-quality-gates.md) |
 | 改构建、打包、发布 | [本地构建与打包规范](./delivery/build-and-package.md)、[发布流程规范](./delivery/release-process.md) |
+| 改 CI 工作流、远端验证 | [CI 工作流规范](./delivery/ci-workflows.md)、[代码质量门禁规范](./foundations/code-quality-gates.md) |
 | 改文档、skills、AGENTS、CLAUDE | [文档治理规范](./governance/docs-governance.md)、[代码质量门禁规范](./foundations/code-quality-gates.md) |
 
 ## 当前结构
@@ -49,7 +50,8 @@ spec/
 │   └── test-workflow.md
 ├── delivery/                # 构建与交付
 │   ├── build-and-package.md
-│   └── release-process.md
+│   ├── release-process.md
+│   └── ci-workflows.md
 └── governance/              # 治理与协作边界
     ├── docs-governance.md
     ├── source-of-truth-matrix.md
@@ -85,6 +87,7 @@ spec/
 | [AI 本地开发流程](./workflows/ai-local-development-workflow.md) | 仓库内 AI 从接任务到本地验证到评审前的编排流程 |
 | [本地构建与打包规范](./delivery/build-and-package.md) | 标准构建命令、打包方式、产物边界和验证要求 |
 | [发布流程规范](./delivery/release-process.md) | 版本规则、发布步骤、release notes 和发布后验证 |
+| [CI 工作流规范](./delivery/ci-workflows.md) | 远端 CI 定位、AI 触发方式、Job 映射、证据纳入规则 |
 | [代码质量门禁规范](./foundations/code-quality-gates.md) | 本地门禁、PR 门禁、合并门禁和 blocker 判定 |
 | [编码规范](./foundations/coding-standards.md) | 命名规范、文件结构、错误处理、代码风格 |
 | [测试指南](./foundations/testing-guide.md) | 单元测试、实际命令测试、测试仓库限制 |
@@ -101,14 +104,6 @@ spec/
 | [评审流程](./workflows/review-workflow.md) | Issue 评论、PR 审查评论 |
 | [测试流程](./workflows/test-workflow.md) | 单元测试、实际命令测试 |
 | [AI 本地开发流程](./workflows/ai-local-development-workflow.md) | AI 协作者执行本地开发闭环的编排流程 |
-
-## 计划补齐的规范
-
-以下规范仍在治理计划中，但尚未落地：
-
-- `spec/delivery/ci-workflows.md`
-
-其中 `spec/delivery/ci-workflows.md` 放在最后阶段实施，因为当前 GitCode CI 条件尚未具备。
 
 ## AI 使用建议
 
@@ -132,4 +127,4 @@ spec/
 | docs/PACKAGING.md | docs/ | 打包发布使用说明 |
 | issues-plan/PROGRESS.md | issues-plan/ | 项目阶段说明 |
 
-**最后更新**: 2026-03-30
+**最后更新**: 2026-06-02

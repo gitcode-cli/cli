@@ -39,6 +39,7 @@ AI 接到任务后，按以下顺序建立上下文：
 - 命令行为：看 `docs/COMMANDS.md`
 - 单个 issue / PR 当前状态：看远端 GitCode 平台
 - 是否已主干合入：看 merged PR 和 `origin/main`
+- CI 运行状态与结果：看 GitHub Actions（通过 `gh run view` 获取）
 - 阶段背景或收口说明：可参考 `issues-plan/PROGRESS.md`
 - 外部项目 AI 使用说明：`docs/AI-GUIDE.md`，不适用于本仓库内部开发规则
 
@@ -53,6 +54,7 @@ AI 接到任务后，按以下顺序建立上下文：
 → 开发实现
 → 本地测试与构建
 → 真实命令验证
+→ 远端 CI 验证（AI 通过 gh CLI 触发）
 → 安全审查
 → 文档同步
 → 风险分级
@@ -122,6 +124,41 @@ go build -o ./gc ./cmd/gc
 
 真实命令测试只能使用 `infra-test/*`。
 
+### 5bis. 远端 CI 验证
+
+本地验证通过后，涉及代码路径的改动必须触发远端 CI：
+
+```bash
+# 触发 GitHub Actions CI
+gh workflow run ci.yml
+
+# 等待运行创建
+sleep 5
+RUN_ID=$(gh run list --workflow=ci.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+
+# 监控 CI 运行直到完成
+gh run watch $RUN_ID
+
+# 获取结论
+CONCLUSION=$(gh run view $RUN_ID --json conclusion --jq '.conclusion')
+echo "CI conclusion: $CONCLUSION"
+```
+
+CI 通过标准：
+
+- 所有 Job（lint / test / build / docker）通过
+- `test` 和 `build` Job 在所有平台（ubuntu / macos / windows）通过
+
+CI 失败处理：
+
+- 获取失败日志：`gh run view <run-id> --log --job=<job-id>`
+- 分析根因并修复，修复后重新推送并重新触发 CI
+- 如是环境/平台偶发问题（非代码问题），在自检中记录后仍可继续
+
+docs-only 改动可跳过 CI，但必须在自检中说明。
+
+详细规范见 `spec/delivery/ci-workflows.md`。
+
 ### 6. AI 友好 CLI 约束
 
 AI 或脚本消费 `gc` 时，应优先使用：
@@ -174,6 +211,7 @@ python3 scripts/classify-change-risk.py --base origin/main
 - issue 开发进度记录
 - 本地测试结果
 - 构建结果
+- CI 验证结果（run ID / URL + 各 Job 结论）
 - 真实命令验证结果
 - 安全审查结果
 - 文档同步结果

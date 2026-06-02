@@ -30,6 +30,8 @@
 | 项目阶段说明 | `issues-plan/PROGRESS.md` | 否 | 可能滞后，只能作阶段说明与背景参考 |
 | 单个 issue / PR 的实时状态 | GitCode 远端 issue、PR、label、comment | 是 | 远端平台是实时事实源 |
 | 是否已主干合入 | merged PR + `origin/main` | 是 | 不能只看 issue 状态、comment 或 release 文案 |
+| CI 运行状态与结果 | GitHub Actions run（通过 `gh run view` 获取） | 是 | CI 结论是自动化事实；失败原因分析需人工/AI 判断 |
+| CI 工作流定义 | `.github/workflows/ci.yml` + `spec/delivery/ci-workflows.md` | 是 | workflow 文件定义 CI 行为，spec 定义 CI 规范 |
 
 ## 判定优先级
 
@@ -38,8 +40,9 @@
 1. `spec/` 定义项目正式规则
 2. `docs/COMMANDS.md` 定义命令行为
 3. GitCode 远端平台、merged PR 和 `origin/main` 定义实时事实
-4. `.ai/skills/*` 定义共享 AI 场景
-5. `README.md`、`AGENTS.md`、`CLAUDE.md`、`issues-plan/PROGRESS.md` 仅作入口、导航或阶段说明
+4. GitHub Actions CI 运行结果定义自动化验证事实
+5. `.ai/skills/*` 定义共享 AI 场景
+6. `README.md`、`AGENTS.md`、`CLAUDE.md`、`issues-plan/PROGRESS.md` 仅作入口、导航或阶段说明
 
 ## 必须
 

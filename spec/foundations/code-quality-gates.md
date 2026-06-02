@@ -52,13 +52,16 @@
 
 ## 2. 门禁分层
 
-本仓库采用三级门禁：
+本仓库采用四级门禁：
 
 1. 本地开发门禁
-2. PR 门禁
-3. 合并门禁
+2. 远端 CI 验证（自动化证据补充层）
+3. PR 门禁
+4. 合并门禁
 
 只有通过上一层门禁，才进入下一层。
+
+远端 CI 验证由 AI 通过 `gh` CLI 触发，详细规范见 `spec/delivery/ci-workflows.md`。
 
 ## 3. 本地开发门禁
 
@@ -128,7 +131,28 @@ gofmt -w <files>
 - 已有验证记录
 - 已有本地测试和真实命令验证证据
 
-如果缺少上述任一项，不得宣称“开发完成”。
+如果缺少上述任一项，不得宣称”开发完成”。
+
+### 3.7 远端 CI 验证
+
+本地门禁通过后，涉及代码路径的改动应由 AI 通过 `gh` CLI 触发 GitHub Actions CI：
+
+```bash
+gh workflow run ci.yml
+```
+
+CI 通过的判定标准：
+
+- `lint` Job 通过
+- `test` Job 在所有平台（ubuntu/macos/windows）通过
+- `build` Job 在所有平台通过
+- `docker` Job 通过
+
+CI 失败时不得进入 PR 门禁，除非失败原因已明确判定为环境/平台偶发问题（需在自检中记录）。
+
+CI 触发与监控的完整流程见 `spec/delivery/ci-workflows.md`。
+
+docs-only 改动可跳过 CI，但必须在自检中说明。
 
 ## 4. PR 门禁
 
@@ -149,6 +173,7 @@ PR 中必须有结构化作者自检，至少包含：
 - 改动内容
 - 单元测试结果
 - 构建结果
+- CI 验证结果（run ID / URL + 各 Job 结论；docs-only 可注明跳过）
 - 实际命令验证结果
 - 安全审查结果
 - 文档同步结果
@@ -285,10 +310,11 @@ python3 scripts/classify-change-risk.py --base origin/main
 当前仓库的执行基线为：
 
 1. 本地开发门禁必须执行
-2. PR 门禁必须留下结构化自检证据
-3. `low` 与大多数 `medium` 风险改动可走双 AI 闭环，但必须依赖独立执行主体评审和本地验证
-4. `high` 风险改动必须追加人工最终确认
-5. 后续如引入远端自动化，应映射本文件而不是改变本文件标准
+2. 远端 CI 验证由 AI 通过 `gh` CLI 触发，作为自动化证据补充（非代码改动可跳过）
+3. PR 门禁必须留下结构化自检证据（含 CI 结果）
+4. `low` 与大多数 `medium` 风险改动可走双 AI 闭环，但必须依赖独立执行主体评审、本地验证和 CI 结果
+5. `high` 风险改动必须追加人工最终确认
+6. CI 自动化已基于 GitHub Actions 落地，AI 通过 `gh workflow run` 触发，详见 `spec/delivery/ci-workflows.md`
 
 ## 下一步去看哪里
 
@@ -298,4 +324,4 @@ python3 scripts/classify-change-risk.py --base origin/main
 
 ---
 
-**最后更新**: 2026-04-03
+**最后更新**: 2026-06-02

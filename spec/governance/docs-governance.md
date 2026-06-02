@@ -236,11 +236,7 @@ skill 分为两类：
 
 ## 7. 规范补齐计划
 
-当前 `spec/` 目录已具备开发、测试、安全、build、release、quality 和 workflow 基础规范，但仍需补齐以下文档：
-
-- `spec/delivery/ci-workflows.md`
-
-其中 `spec/delivery/ci-workflows.md` 放在最后阶段落地，因为当前 GitCode CI 条件尚未具备。
+当前 `spec/` 目录已具备开发、测试、安全、build、release、quality、workflow 和 CI 基础规范，规范补齐计划已完成。
 
 ## 8. 分阶段实施方案
 
@@ -328,30 +324,32 @@ skill 分为两类：
 - 共享 skill 可同步到客户端适配层
 - 多人环境下可复用、可版本化、可审查
 
-### 阶段 6：CI 自动化
+### 阶段 6：CI 自动化 ✅
 
-目标：在 GitCode CI 环境具备后再落地自动化约束。
+目标：在 GitHub 镜像仓 CI 环境具备后落地自动化约束。
 
 交付物：
 
-- `spec/delivery/ci-workflows.md`
-- workflow 模板
-- 质量门禁的 CI 映射
+- `spec/delivery/ci-workflows.md` ✅
+- `.github/workflows/ci.yml` ✅
+- `.github/workflows/release.yml` ✅
+- 质量门禁的 CI 映射 ✅
 
 验收标准：
 
-- CI 规范基于真实环境，而不是纸面设计
-- 本地门禁和 CI 门禁保持一致
+- CI 规范基于真实环境（GitHub Actions），而不是纸面设计 ✅
+- 本地门禁和 CI 门禁保持一致 ✅
+- AI 通过 `gh` CLI 编排查触发与监控 ✅
 
 ## 9. 当前执行原则
 
-当前长期整改已完成目录级重组，但仍未进入 CI 自动化阶段。
+当前 6 阶段整改已全部完成。
 
 当前优先级固定为：
 
 1. 保持 `foundations/`、`workflows/`、`delivery/`、`governance/` 的边界稳定
 2. 同步更新入口文档和 skills 中的规范路径
-3. 在具备真实条件后补齐 `spec/delivery/ci-workflows.md`
+3. CI 规范已基于 GitHub Actions 真实环境落地，AI 通过 `gh` CLI 编排查触发与监控
 
 ## 下一步去看哪里
 

@@ -32,7 +32,9 @@ go.work.sum
 Thumbs.db
 
 # Build
-build/
+build/*
+!build/completions/
+!build/scripts/
 dist/
 *.deb
 *.rpm

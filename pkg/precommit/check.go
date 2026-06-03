@@ -55,7 +55,7 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 	}
 
 	// 3. Hook detection + optional install.
-	hookOK := HookInstalled(opts.Root)
+	hookOK := HookInstalled(r, opts.Root)
 	if !hookOK && opts.AllowInstall {
 		action, err := InstallHook(r, opts.Root)
 		if err != nil {
@@ -64,7 +64,7 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 		if action != "" {
 			res.ActionsTaken = append(res.ActionsTaken, action)
 		}
-		hookOK = HookInstalled(opts.Root)
+		hookOK = HookInstalled(r, opts.Root)
 	}
 	res.HookInstalled = hookOK
 	if !hookOK {

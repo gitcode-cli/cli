@@ -116,6 +116,25 @@ func TestCheckRunFails(t *testing.T) {
 	}
 }
 
+func TestCheckRunPasses(t *testing.T) {
+	root := t.TempDir()
+	writeConfig(t, root)
+	writeInstalledHook(t, root)
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{out: "pre-commit 3.7.0\n"}
+	r.responses[key("pre-commit", "run", "--all-files")] = fakeResp{out: "all passed"}
+	res, err := Check(r, Options{Root: root, Run: true})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if res.RunResult != "passed" {
+		t.Fatalf("RunResult = %q, want passed", res.RunResult)
+	}
+	if !res.OK {
+		t.Fatal("expected OK after passing run")
+	}
+}
+
 type errExit struct{}
 
 func (errExit) Error() string { return "exit status 1" }

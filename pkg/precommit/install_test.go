@@ -61,6 +61,53 @@ func TestInstallHook(t *testing.T) {
 	}
 }
 
+func TestEnsureToolViaPython3(t *testing.T) {
+	r := newFakeRunner()
+	calls := 0
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	r.look["python3"] = true
+	r.responses[key("python3", "-m", "pip", "install", "--user", "pre-commit")] = fakeResp{out: "ok"}
+	wrapped := &versionAfterInstall{fakeRunner: r, succeedAfter: 1, callCount: &calls}
+	action, err := EnsureTool(wrapped)
+	if err != nil {
+		t.Fatalf("EnsureTool() error = %v", err)
+	}
+	if action == "" {
+		t.Fatal("expected non-empty action")
+	}
+	if !r.called("python3", "-m", "pip", "install", "--user", "pre-commit") {
+		t.Fatal("expected python3 pip install to be called")
+	}
+}
+
+func TestEnsureToolViaPython(t *testing.T) {
+	r := newFakeRunner()
+	calls := 0
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	r.look["python"] = true
+	r.responses[key("python", "-m", "pip", "install", "--user", "pre-commit")] = fakeResp{out: "ok"}
+	wrapped := &versionAfterInstall{fakeRunner: r, succeedAfter: 1, callCount: &calls}
+	_, err := EnsureTool(wrapped)
+	if err != nil {
+		t.Fatalf("EnsureTool() error = %v", err)
+	}
+	if !r.called("python", "-m", "pip", "install", "--user", "pre-commit") {
+		t.Fatal("expected python pip install to be called")
+	}
+}
+
+func TestEnsureToolStillMissingAfterInstall(t *testing.T) {
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	r.look["pipx"] = true
+	r.responses[key("pipx", "install", "pre-commit")] = fakeResp{out: "ok"}
+	// pre-commit --version keeps failing even after install -> EnsureTool must error.
+	_, err := EnsureTool(r)
+	if err == nil {
+		t.Fatal("expected error when tool is still missing after install attempt")
+	}
+}
+
 // versionAfterInstall makes pre-commit --version fail until succeedAfter calls have
 // happened, simulating a tool that appears after installation.
 type versionAfterInstall struct {

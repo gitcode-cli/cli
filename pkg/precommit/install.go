@@ -3,6 +3,7 @@ package precommit
 import (
 	"fmt"
 	"runtime"
+	"strings"
 )
 
 // EnsureTool makes sure the pre-commit tool is available, installing it when
@@ -18,17 +19,17 @@ func EnsureTool(r CommandRunner) (string, error) {
 	switch {
 	case r.Look("pipx"):
 		if out, err := r.Run("", "pipx", "install", "pre-commit"); err != nil {
-			return "", fmt.Errorf("pipx install pre-commit failed: %w: %s", err, out)
+			return "", fmt.Errorf("pipx install pre-commit failed: %w: %s", err, strings.TrimSpace(out))
 		}
 		action = "installed pre-commit via pipx"
 	case r.Look("python3"):
 		if out, err := r.Run("", "python3", "-m", "pip", "install", "--user", "pre-commit"); err != nil {
-			return "", fmt.Errorf("python3 -m pip install pre-commit failed: %w: %s", err, out)
+			return "", fmt.Errorf("python3 -m pip install pre-commit failed: %w: %s", err, strings.TrimSpace(out))
 		}
 		action = "installed pre-commit via python3 -m pip --user"
 	case r.Look("python"):
 		if out, err := r.Run("", "python", "-m", "pip", "install", "--user", "pre-commit"); err != nil {
-			return "", fmt.Errorf("python -m pip install pre-commit failed: %w: %s", err, out)
+			return "", fmt.Errorf("python -m pip install pre-commit failed: %w: %s", err, strings.TrimSpace(out))
 		}
 		action = "installed pre-commit via python -m pip --user"
 	default:
@@ -44,7 +45,7 @@ func EnsureTool(r CommandRunner) (string, error) {
 // InstallHook runs `pre-commit install` in root to set up the git hook.
 func InstallHook(r CommandRunner, root string) (string, error) {
 	if out, err := r.Run(root, "pre-commit", "install"); err != nil {
-		return "", fmt.Errorf("pre-commit install failed: %w: %s", err, out)
+		return "", fmt.Errorf("pre-commit install failed: %w: %s", err, strings.TrimSpace(out))
 	}
 	return "ran pre-commit install", nil
 }

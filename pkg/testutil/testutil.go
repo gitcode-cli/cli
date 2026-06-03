@@ -55,7 +55,7 @@ func MockAPIHandler() http.Handler {
 	mux.HandleFunc("/api/v5/user", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"id": "1", "login": "testuser", "name": "Test User"}`))
+		_, _ = w.Write([]byte(`{"id": "1", "login": "testuser", "name": "Test User"}`))
 	})
 
 	// Repository endpoints
@@ -63,7 +63,7 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id": "1", "name": "test-repo", "full_name": "owner/test-repo", "html_url": "https://gitcode.com/owner/test-repo"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "name": "test-repo", "full_name": "owner/test-repo", "html_url": "https://gitcode.com/owner/test-repo"}`))
 		} else if r.Method == "DELETE" {
 			w.WriteHeader(http.StatusNoContent)
 		}
@@ -74,10 +74,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id": "1", "name": "new-repo", "full_name": "owner/new-repo", "html_url": "https://gitcode.com/owner/new-repo"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "name": "new-repo", "full_name": "owner/new-repo", "html_url": "https://gitcode.com/owner/new-repo"}`))
 		} else {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id": "1", "name": "test-repo", "full_name": "owner/test-repo", "html_url": "https://gitcode.com/owner/test-repo"}]`))
+			_, _ = w.Write([]byte(`[{"id": "1", "name": "test-repo", "full_name": "owner/test-repo", "html_url": "https://gitcode.com/owner/test-repo"}]`))
 		}
 	})
 
@@ -86,10 +86,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id": "1", "number": 1, "title": "Test Issue", "state": "open", "html_url": "https://gitcode.com/owner/test-repo/issues/1"}]`))
+			_, _ = w.Write([]byte(`[{"id": "1", "number": 1, "title": "Test Issue", "state": "open", "html_url": "https://gitcode.com/owner/test-repo/issues/1"}]`))
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id": "1", "number": 1, "title": "New Issue", "state": "open", "html_url": "https://gitcode.com/owner/test-repo/issues/1"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "number": 1, "title": "New Issue", "state": "open", "html_url": "https://gitcode.com/owner/test-repo/issues/1"}`))
 		}
 	})
 
@@ -97,10 +97,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id":1,"number":"1","title":"Test Issue","state":"open","body":"Issue body","html_url":"https://gitcode.com/owner/test-repo/issues/1","labels":[{"id":1,"name":"enhancement","color":"00ff00"}]}`))
+			_, _ = w.Write([]byte(`{"id":1,"number":"1","title":"Test Issue","state":"open","body":"Issue body","html_url":"https://gitcode.com/owner/test-repo/issues/1","labels":[{"id":1,"name":"enhancement","color":"00ff00"}]}`))
 		} else if r.Method == "PATCH" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id":1,"number":"1","title":"Updated Issue","state":"closed","html_url":"https://gitcode.com/owner/test-repo/issues/1","labels":[{"id":1,"name":"bug","color":"ff0000"}]}`))
+			_, _ = w.Write([]byte(`{"id":1,"number":"1","title":"Updated Issue","state":"closed","html_url":"https://gitcode.com/owner/test-repo/issues/1","labels":[{"id":1,"name":"bug","color":"ff0000"}]}`))
 		}
 	})
 
@@ -108,10 +108,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id": "1", "body": "Test comment"}]`))
+			_, _ = w.Write([]byte(`[{"id": "1", "body": "Test comment"}]`))
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id": "1", "body": "New comment"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "body": "New comment"}`))
 		}
 	})
 
@@ -120,10 +120,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id": "1", "number": 1, "title": "Test PR", "state": "open", "html_url": "https://gitcode.com/owner/test-repo/pull/1"}]`))
+			_, _ = w.Write([]byte(`[{"id": "1", "number": 1, "title": "Test PR", "state": "open", "html_url": "https://gitcode.com/owner/test-repo/pull/1"}]`))
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id": "1", "number": 1, "title": "New PR", "state": "open", "html_url": "https://gitcode.com/owner/test-repo/pull/1"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "number": 1, "title": "New PR", "state": "open", "html_url": "https://gitcode.com/owner/test-repo/pull/1"}`))
 		}
 	})
 
@@ -131,27 +131,27 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id": "1", "number": 1, "title": "Test PR", "state": "open", "body": "PR body", "head": {"ref": "feature"}, "base": {"ref": "main"}, "html_url": "https://gitcode.com/owner/test-repo/pull/1"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "number": 1, "title": "Test PR", "state": "open", "body": "PR body", "head": {"ref": "feature"}, "base": {"ref": "main"}, "html_url": "https://gitcode.com/owner/test-repo/pull/1"}`))
 		} else if r.Method == "PATCH" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id": "1", "number": 1, "title": "Updated PR", "state": "closed", "html_url": "https://gitcode.com/owner/test-repo/pull/1"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "number": 1, "title": "Updated PR", "state": "closed", "html_url": "https://gitcode.com/owner/test-repo/pull/1"}`))
 		}
 	})
 
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/1/merge", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"id": "1", "number": 1, "merged": true}`))
+		_, _ = w.Write([]byte(`{"id": "1", "number": 1, "merged": true}`))
 	})
 
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/1/reviews", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id": "1", "state": "APPROVED", "body": "LGTM"}]`))
+			_, _ = w.Write([]byte(`[{"id": "1", "state": "APPROVED", "body": "LGTM"}]`))
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id": "1", "state": "APPROVED", "body": "Approved"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "state": "APPROVED", "body": "Approved"}`))
 		}
 	})
 
@@ -159,10 +159,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id":"2","body":"LGTM","discussion_id":"d2"}`))
+			_, _ = w.Write([]byte(`{"id":"2","body":"LGTM","discussion_id":"d2"}`))
 		} else {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id": "1", "body": "Test comment"}]`))
+			_, _ = w.Write([]byte(`[{"id": "1", "body": "Test comment"}]`))
 		}
 	})
 
@@ -171,10 +171,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id": "1", "name": "bug", "color": "ff0000"}]`))
+			_, _ = w.Write([]byte(`[{"id": "1", "name": "bug", "color": "ff0000"}]`))
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id": "1", "name": "bug", "color": "ff0000"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "name": "bug", "color": "ff0000"}`))
 		}
 	})
 
@@ -183,10 +183,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id": "1", "number": 1, "title": "v1.0", "state": "open"}]`))
+			_, _ = w.Write([]byte(`[{"id": "1", "number": 1, "title": "v1.0", "state": "open"}]`))
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id": "1", "number": 1, "title": "v1.0", "state": "open"}`))
+			_, _ = w.Write([]byte(`{"id": "1", "number": 1, "title": "v1.0", "state": "open"}`))
 		}
 	})
 
@@ -194,12 +194,12 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "PATCH" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id":1,"number":1,"title":"v1.1","state":"closed","description":"Updated"}`))
+			_, _ = w.Write([]byte(`{"id":1,"number":1,"title":"v1.1","state":"closed","description":"Updated"}`))
 		} else if r.Method == "DELETE" {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id":1,"number":1,"title":"v1.0","state":"open","description":"First release"}`))
+			_, _ = w.Write([]byte(`{"id":1,"number":1,"title":"v1.0","state":"open","description":"First release"}`))
 		}
 	})
 
@@ -207,21 +207,21 @@ func MockAPIHandler() http.Handler {
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/comments", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":"1","body":"nice fix","discussion_id":"d1"}]`))
+		_, _ = w.Write([]byte(`[{"id":"1","body":"nice fix","discussion_id":"d1"}]`))
 	})
 
 	// Commit comment update
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/comments/1", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"id":"1","body":"updated body","discussion_id":"d1"}`))
+		_, _ = w.Write([]byte(`{"id":"1","body":"updated body","discussion_id":"d1"}`))
 	})
 
 	// Commit endpoint (subtree match for /commits/<sha>)
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/commits/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"sha":"abc123","html_url":"https://gitcode.com/owner/test-repo/commit/abc123","commit":{"message":"fix: bug","author":{"name":"dev","email":"dev@test.com","date":"2026-01-01T00:00:00Z"}},"author":{"id":1,"login":"dev","avatar_url":"https://gitcode.com/avatar.png"},"stats":{"total":1,"additions":10,"deletions":2}}`))
+		_, _ = w.Write([]byte(`{"sha":"abc123","html_url":"https://gitcode.com/owner/test-repo/commit/abc123","commit":{"message":"fix: bug","author":{"name":"dev","email":"dev@test.com","date":"2026-01-01T00:00:00Z"}},"author":{"id":1,"login":"dev","avatar_url":"https://gitcode.com/avatar.png"},"stats":{"total":1,"additions":10,"deletions":2}}`))
 	})
 
 	// Commit comments for specific commit
@@ -229,10 +229,10 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			w.Write([]byte(`{"id":"2","body":"nice","discussion_id":"d2"}`))
+			_, _ = w.Write([]byte(`{"id":"2","body":"nice","discussion_id":"d2"}`))
 		} else {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`[{"id":"1","body":"nice fix","discussion_id":"d1"}]`))
+			_, _ = w.Write([]byte(`[{"id":"1","body":"nice fix","discussion_id":"d1"}]`))
 		}
 	})
 
@@ -241,7 +241,7 @@ func MockAPIHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "PATCH" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id":1,"body":"updated comment"}`))
+			_, _ = w.Write([]byte(`{"id":1,"body":"updated comment"}`))
 		} else if r.Method == "DELETE" {
 			w.WriteHeader(http.StatusNoContent)
 		}
@@ -251,14 +251,14 @@ func MockAPIHandler() http.Handler {
 	mux.HandleFunc("/api/v5/repos/owner/issues/1", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"id":1,"number":"1","title":"Test Issue","state":"open","labels":[{"id":1,"name":"bug","color":"ff0000"}]}`))
+		_, _ = w.Write([]byte(`{"id":1,"number":"1","title":"Test Issue","state":"open","labels":[{"id":1,"name":"bug","color":"ff0000"}]}`))
 	})
 
 	// Issue labels (add/update)
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/issues/1/labels", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":1,"name":"bug","color":"ff0000"}]`))
+		_, _ = w.Write([]byte(`[{"id":1,"name":"bug","color":"ff0000"}]`))
 	})
 
 	// Delete label
@@ -271,7 +271,7 @@ func MockAPIHandler() http.Handler {
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/releases/1/assets", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(`{"id":1,"name":"test.txt","size":1024,"download_count":0}`))
+		_, _ = w.Write([]byte(`{"id":1,"name":"test.txt","size":1024,"download_count":0}`))
 	})
 
 	// PR test endpoint
@@ -283,14 +283,14 @@ func MockAPIHandler() http.Handler {
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/comments/1", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"id":"1","body":"edited comment","discussion_id":"d1"}`))
+		_, _ = w.Write([]byte(`{"id":"1","body":"edited comment","discussion_id":"d1"}`))
 	})
 
 	// PR discussion reply
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/1/discussions/d1/comments", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(`{"id":"2","noteId":2,"body":"reply"}`))
+		_, _ = w.Write([]byte(`{"id":"2","noteId":2,"body":"reply"}`))
 	})
 
 	// Resolve PR comment

@@ -73,7 +73,7 @@ func NewCmdStats(f *cmdutil.Factory, runF func(*StatsOptions) error) *cobra.Comm
 	cmd.Flags().StringVar(&opts.Until, "until", "", "Only commits before this date (YYYY-MM-DD)")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
-	cmd.MarkFlagRequired("branch")
+	_ = cmd.MarkFlagRequired("branch")
 
 	return cmd
 }

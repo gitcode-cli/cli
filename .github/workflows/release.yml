@@ -54,14 +54,6 @@ jobs:
           /tmp/gc completion zsh > completions/gc.zsh
           /tmp/gc completion fish > completions/gc.fish
 
-      - name: Sync version across configs
-        run: |
-          VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
-          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-amd64.yaml
-          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-arm64.yaml
-          sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
-          sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
@@ -69,6 +61,14 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync version across configs
+        run: |
+          VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
+          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-amd64.yaml
+          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-arm64.yaml
+          sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
+          sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
 
       - name: Install nfpm
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest

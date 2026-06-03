@@ -53,7 +53,7 @@ func TestNewCmdVersion(t *testing.T) {
 			// Capture output
 			var buf bytes.Buffer
 			cmd.SetOut(&buf)
-			cmd.Execute()
+			_ = cmd.Execute()
 
 			output := buf.String()
 			for _, want := range tt.wantContains {

@@ -76,20 +76,19 @@ jobs:
       - name: Build DEB/RPM packages
         run: |
           VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
-          cd dist
 
           # Extract GoReleaser linux binaries
-          tar -xzf gc_*_linux_amd64.tar.gz
-          mv gc gc_linux_amd64
+          tar -xzf dist/gc_*_linux_amd64.tar.gz -C dist
+          mv dist/gc dist/gc_linux_amd64
 
-          tar -xzf gc_*_linux_arm64.tar.gz
-          mv gc gc_linux_arm64
+          tar -xzf dist/gc_*_linux_arm64.tar.gz -C dist
+          mv dist/gc dist/gc_linux_arm64
 
           # Build packages
-          ~/go/bin/nfpm package -f ../nfpm-amd64.yaml -p deb -t .
-          ~/go/bin/nfpm package -f ../nfpm-amd64.yaml -p rpm -t .
-          ~/go/bin/nfpm package -f ../nfpm-arm64.yaml -p deb -t .
-          ~/go/bin/nfpm package -f ../nfpm-arm64.yaml -p rpm -t .
+          ~/go/bin/nfpm package -f nfpm-amd64.yaml -p deb -t dist
+          ~/go/bin/nfpm package -f nfpm-amd64.yaml -p rpm -t dist
+          ~/go/bin/nfpm package -f nfpm-arm64.yaml -p deb -t dist
+          ~/go/bin/nfpm package -f nfpm-arm64.yaml -p rpm -t dist
 
       - name: Upload DEB/RPM artifacts
         uses: actions/upload-artifact@v4

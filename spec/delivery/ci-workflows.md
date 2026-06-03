@@ -5,7 +5,7 @@
 ## 职责
 
 - 定义远端 CI 在项目质量门禁体系中的定位
-- 定义 AI 如何通过 `gh` CLI 触发和监控 CI
+- 定义 AI 如何通过 `gh` CLI 监控 CI 结果
 - 定义 CI Job 与 `spec/foundations/code-quality-gates.md` 的映射关系
 - 定义 CI 结果如何纳入 PR 自检证据
 
@@ -17,7 +17,7 @@
 
 ## 必须
 
-- CI 由 AI 通过 `gh` CLI 触发，不作为人工手动步骤
+- CI 在 PR 提交到 `main` 时自动触发，AI 通过 `gh` CLI 查看结果
 - CI 结果必须纳入 PR 自检证据
 - CI 失败时不得进入 `status/self-checked`
 - CI Job 定义变更时同步本文件
@@ -50,12 +50,13 @@
 
 ```
 本地开发门禁（必须，不可跳过）
-  → 远端 CI 验证（AI 触发，自动化证据采集）
+  → 推送分支 + 创建 PR
+  → 远端 CI 验证（PR 自动触发，AI 通过 gh CLI 查看结果）
   → PR 门禁（自检证据 + CI 结果）
   → 合并门禁（独立评审 + 人工确认）
 ```
 
-CI 不替代任何现有门禁层，只自动化采集原本需要人工手动执行的跨平台验证证据。
+CI 不替代任何现有门禁层，只在 PR 提交时自动运行跨平台验证。
 
 ### 1.2 运行平台
 
@@ -67,10 +68,10 @@ GitCode 主仓（`gitcode.com/gitcode-cli/cli`）当前不作为 CI 运行平台
 
 | 操作 | 工具 | 说明 |
 |------|------|------|
-| 触发 CI | `gh workflow run` | 触发 GitHub Actions workflow |
+| 自动触发 | GitHub Actions (`on: pull_request`) | PR 提交/更新到 `main` 时自动运行 |
+| 查看运行 | `gh run list --workflow=ci.yml` | 列出 CI 运行记录 |
 | 监控运行 | `gh run watch` | 实时等待 CI 完成 |
 | 查看日志 | `gh run view --log` | 失败时获取详细日志 |
-| 列出运行 | `gh run list` | 查看历史 CI 运行记录 |
 
 `gh` 是 GitHub CLI，操作对象是 GitHub 镜像仓。GitCode 平台操作仍使用 `gc`。
 
@@ -121,45 +122,31 @@ CI **不覆盖**的质量门禁（仍需本地或人工执行）：
 
 ---
 
-## 3. AI 触发与监控流程
+## 3. AI 监控流程
 
-### 3.1 触发时机
+### 3.1 触发机制
 
-AI 在以下条件下触发 CI：
+CI 在以下情况下**自动触发**（无需人工或 AI 手动操作）：
 
-1. 本地 `go test ./...` 和 `go build` 已通过
-2. 代码已提交并推送到 GitHub 镜像仓
-3. 改动涉及代码路径（docs-only 可跳过 CI）
+1. PR 提交到 `main` 分支
+2. PR 已有分支推送新 commit
 
-### 3.2 标准触发命令
+触发配置：`.github/workflows/ci.yml` 中的 `on: pull_request: branches: [main]`
+
+### 3.2 查看 CI 结果
 
 ```bash
-# 触发 CI（在项目根目录执行）
-gh workflow run ci.yml
+# 查看 PR 关联的最新 CI 运行
+gh run list --workflow=ci.yml --branch <pr-branch> --limit 1
 
-# 获取最新运行的 run ID
-gh run list --workflow=ci.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+# 实时等待最新 CI 完成
+gh run watch $(gh run list --workflow=ci.yml --branch <pr-branch> --limit 1 --json databaseId --jq '.[0].databaseId')
 
-# 实时等待 CI 完成
-gh run watch <run-id>
-
-# CI 完成后查看结论
+# 查看 CI 结论
 gh run view <run-id> --json conclusion --jq '.conclusion'
 ```
 
-### 3.3 推荐的一体化触发与等待脚本
-
-```bash
-# 触发 CI 并等待完成（一步到位）
-gh workflow run ci.yml
-sleep 5  # 等待 GitHub 创建运行记录
-RUN_ID=$(gh run list --workflow=ci.yml --limit 1 --json databaseId --jq '.[0].databaseId')
-gh run watch $RUN_ID
-CONCLUSION=$(gh run view $RUN_ID --json conclusion --jq '.conclusion')
-echo "CI conclusion: $CONCLUSION"
-```
-
-### 3.4 失败处理
+### 3.3 失败处理
 
 CI 失败时，AI 必须：
 

@@ -54,7 +54,7 @@ AI 接到任务后，按以下顺序建立上下文：
 → 开发实现
 → 本地测试与构建
 → 真实命令验证
-→ 远端 CI 验证（AI 通过 gh CLI 触发）
+→ 推送分支 + 远端 CI 自动验证（PR 触发）
 → 安全审查
 → 文档同步
 → 风险分级
@@ -126,21 +126,17 @@ go build -o ./gc ./cmd/gc
 
 ### 5bis. 远端 CI 验证
 
-本地验证通过后，涉及代码路径的改动必须触发远端 CI：
+本地验证通过后，推送分支到远端并创建 PR。CI 在 PR 提交时自动触发（`on: pull_request`）。AI 通过 `gh` CLI 监控结果：
 
 ```bash
-# 触发 GitHub Actions CI
-gh workflow run ci.yml
-
-# 等待运行创建
-sleep 5
-RUN_ID=$(gh run list --workflow=ci.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+# 查看 PR 分支的最新 CI 运行
+gh run list --workflow=ci.yml --branch <pr-branch> --limit 1
 
 # 监控 CI 运行直到完成
-gh run watch $RUN_ID
+gh run watch $(gh run list --workflow=ci.yml --branch <pr-branch> --limit 1 --json databaseId --jq '.[0].databaseId')
 
 # 获取结论
-CONCLUSION=$(gh run view $RUN_ID --json conclusion --jq '.conclusion')
+CONCLUSION=$(gh run view <run-id> --json conclusion --jq '.conclusion')
 echo "CI conclusion: $CONCLUSION"
 ```
 

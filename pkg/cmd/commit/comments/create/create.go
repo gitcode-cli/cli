@@ -52,7 +52,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "Comment body (required)")
-	cmd.MarkFlagRequired("body")
+	_ = cmd.MarkFlagRequired("body")
 
 	return cmd
 }

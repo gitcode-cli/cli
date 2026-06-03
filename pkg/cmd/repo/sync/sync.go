@@ -125,9 +125,9 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 	cmd.Flags().BoolVar(&opts.Draft, "draft", false, "Create the target pull request as draft")
 	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation prompt before pushing and creating the target PR")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
-	cmd.MarkFlagRequired("target-repo")
-	cmd.MarkFlagRequired("source-dir")
-	cmd.MarkFlagRequired("target-dir")
+	_ = cmd.MarkFlagRequired("target-repo")
+	_ = cmd.MarkFlagRequired("source-dir")
+	_ = cmd.MarkFlagRequired("target-dir")
 
 	return cmd
 }
@@ -209,7 +209,7 @@ func syncRun(opts *SyncOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create temporary directory: %w", err)
 	}
-	defer opts.RemoveAll(workDir)
+	defer func() { _ = opts.RemoveAll(workDir) }()
 
 	if _, err := gitRun(nil, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
 		return sshGitError("failed to clone target repository", err)

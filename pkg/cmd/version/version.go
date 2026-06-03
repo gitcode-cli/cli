@@ -39,7 +39,7 @@ func NewCmdVersion(ver, commit, date string, commandName ...string) *cobra.Comma
 					Built:   date,
 					URL:     "https://gitcode.com/gitcode-cli/cli",
 				}
-				cmdutil.WriteJSON(out, info)
+				_ = cmdutil.WriteJSON(out, info)
 				return
 			}
 

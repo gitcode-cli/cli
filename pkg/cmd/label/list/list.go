@@ -114,6 +114,7 @@ func listRun(opts *ListOptions) error {
 		if !strings.HasPrefix(color, "#") {
 			color = "#" + color
 		}
+		_ = color // TODO: use color in output formatting
 		fmt.Fprintf(opts.IO.Out, "%s  %s\n", cs.Bold(label.Name), label.Description)
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")

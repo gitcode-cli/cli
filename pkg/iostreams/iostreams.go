@@ -220,8 +220,8 @@ func CaptureOutput(f func() error) (stdout, stderr string, err error) {
 	os.Stderr = oldErr
 
 	var bufOut, bufErr bytes.Buffer
-	io.Copy(&bufOut, rOut)
-	io.Copy(&bufErr, rErr)
+	_, _ = io.Copy(&bufOut, rOut)
+	_, _ = io.Copy(&bufErr, rErr)
 	rOut.Close()
 	rErr.Close()
 

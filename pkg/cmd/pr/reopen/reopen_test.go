@@ -123,9 +123,7 @@ func orderedReopenHTTPClient(requests *[]string) func() (*http.Client, error) {
 	return func() (*http.Client, error) {
 		return &http.Client{Transport: prReopenRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			path := req.URL.Path
-			if strings.HasPrefix(path, "/api/v5") {
-				path = strings.TrimPrefix(path, "/api/v5")
-			}
+			path = strings.TrimPrefix(path, "/api/v5")
 			*requests = append(*requests, req.Method+" "+path)
 
 			body := `{"number":123,"title":"Test PR","state":"open","html_url":"https://gitcode.com/owner/repo/pulls/123"}`

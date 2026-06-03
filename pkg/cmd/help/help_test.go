@@ -271,7 +271,7 @@ func TestNewCmdHelp(t *testing.T) {
 			buf := &bytes.Buffer{}
 			testHelpCmd.SetOut(buf)
 			testHelpCmd.SetArgs(tt.args)
-			testHelpCmd.Execute()
+			_ = testHelpCmd.Execute()
 
 			output := buf.String()
 			if tt.contains != "" && !bytes.Contains(buf.Bytes(), []byte(tt.contains)) {

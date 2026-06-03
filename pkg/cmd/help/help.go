@@ -113,7 +113,7 @@ func NewCmdHelp(root *cobra.Command) *cobra.Command {
 }
 
 func standardHelp(cmd *cobra.Command) error {
-	cmd.Help()
+	_ = cmd.Help()
 
 	// Only append discovery hints for root command
 	if cmd.Parent() == nil {

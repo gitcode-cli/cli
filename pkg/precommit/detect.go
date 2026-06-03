@@ -34,7 +34,7 @@ func ToolVersion(r CommandRunner) (string, bool) {
 	if len(fields) == 1 {
 		return fields[0], true
 	}
-	return "", true
+	return "", false
 }
 
 // HookInstalled reports whether root/.git/hooks/pre-commit exists and was generated

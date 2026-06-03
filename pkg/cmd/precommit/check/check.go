@@ -149,6 +149,7 @@ func printResult(opts *CheckOptions, res precommit.Result, allowInstall bool) {
 
 	if !res.OK {
 		fmt.Fprintf(opts.IO.ErrOut, "\nEnvironment not ready.\n")
+		// Auto-install was wanted (not --no-install) but couldn't run: non-TTY without --yes.
 		if !allowInstall && !opts.NoInstall && (!res.ToolInstalled || !res.HookInstalled) {
 			fmt.Fprintf(opts.IO.ErrOut, "Re-run in a terminal, or pass --yes to auto-install/initialize.\n")
 		}

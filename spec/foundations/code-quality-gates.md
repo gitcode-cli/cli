@@ -135,11 +135,7 @@ gofmt -w <files>
 
 ### 3.7 远端 CI 验证
 
-本地门禁通过后，涉及代码路径的改动应由 AI 通过 `gh` CLI 触发 GitHub Actions CI：
-
-```bash
-gh workflow run ci.yml
-```
+本地门禁通过后，分支推送到远端并创建 PR 时，GitHub Actions CI 自动触发（`on: pull_request`）。AI 通过 `gh` CLI 查看结果：
 
 CI 通过的判定标准：
 
@@ -314,7 +310,7 @@ python3 scripts/classify-change-risk.py --base origin/main
 3. PR 门禁必须留下结构化自检证据（含 CI 结果）
 4. `low` 与大多数 `medium` 风险改动可走双 AI 闭环，但必须依赖独立执行主体评审、本地验证和 CI 结果
 5. `high` 风险改动必须追加人工最终确认
-6. CI 自动化已基于 GitHub Actions 落地，AI 通过 `gh workflow run` 触发，详见 `spec/delivery/ci-workflows.md`
+6. CI 自动化已基于 GitHub Actions 落地，PR 提交时自动触发（`on: pull_request`），详见 `spec/delivery/ci-workflows.md`
 
 ## 下一步去看哪里
 

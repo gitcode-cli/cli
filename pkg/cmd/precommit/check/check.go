@@ -87,7 +87,7 @@ func checkRun(opts *CheckOptions) error {
 		return cmdutil.NewCLIError(cmdutil.ExitError, "not in a git repository", err)
 	}
 
-	allowInstall := !opts.NoInstall && (opts.IO.IsStdoutTTY() || opts.Yes)
+	allowInstall := !opts.NoInstall && (opts.IO.CanPrompt() || opts.Yes)
 
 	res, err := precommit.Check(opts.Runner, precommit.Options{
 		Root:         root,
@@ -149,7 +149,7 @@ func printResult(opts *CheckOptions, res precommit.Result, allowInstall bool) {
 
 	if !res.OK {
 		fmt.Fprintf(opts.IO.ErrOut, "\nEnvironment not ready.\n")
-		if !allowInstall && (!res.ToolInstalled || !res.HookInstalled) {
+		if !allowInstall && !opts.NoInstall && (!res.ToolInstalled || !res.HookInstalled) {
 			fmt.Fprintf(opts.IO.ErrOut, "Re-run in a terminal, or pass --yes to auto-install/initialize.\n")
 		}
 		if !res.ToolInstalled {

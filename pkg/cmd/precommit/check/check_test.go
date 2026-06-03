@@ -1,6 +1,7 @@
 package check
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,7 +42,7 @@ func TestCheckRunNoConfigSkips(t *testing.T) {
 func TestCheckRunNotReadyReturnsExit1(t *testing.T) {
 	dir := t.TempDir()
 	writeConfig(t, dir)
-	io, _, _, _ := iostreams.Test()
+	io, _, _, errOut := iostreams.Test()
 	r := &stubRunner{}
 	opts := &CheckOptions{
 		IO:      io,
@@ -54,6 +55,9 @@ func TestCheckRunNotReadyReturnsExit1(t *testing.T) {
 	}
 	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
 		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitError)
+	}
+	if !strings.Contains(errOut.String(), "Environment not ready") {
+		t.Fatalf("expected stderr hint, got %q", errOut.String())
 	}
 }
 
@@ -72,8 +76,12 @@ func TestCheckRunJSON(t *testing.T) {
 	if err := checkRun(opts); err != nil {
 		t.Fatalf("checkRun() error = %v", err)
 	}
-	if !strings.Contains(out.String(), `"ok": true`) && !strings.Contains(out.String(), `"ok":true`) {
-		t.Fatalf("json output = %q", out.String())
+	var got precommit.Result
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatalf("output is not valid JSON: %v; raw=%q", err, out.String())
+	}
+	if !got.OK || !got.ConfigFound || !got.ToolInstalled || !got.HookInstalled {
+		t.Fatalf("unexpected result: %+v", got)
 	}
 }
 
@@ -87,6 +95,47 @@ func TestCheckRunNotInGitRepo(t *testing.T) {
 	err := checkRun(opts)
 	if err == nil {
 		t.Fatal("expected error when not in a git repo")
+	}
+}
+
+func TestCheckRunFlagFailureExits1(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir)
+	writeInstalledHook(t, dir)
+	io, _, _, _ := iostreams.Test()
+	r := &stubRunner{version: "pre-commit 3.7.0\n", runErr: true}
+	opts := &CheckOptions{
+		IO:      io,
+		GitRoot: func() (string, error) { return dir, nil },
+		Runner:  r,
+		Run:     true,
+	}
+	err := checkRun(opts)
+	if err == nil {
+		t.Fatal("expected error when pre-commit run fails")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitError)
+	}
+}
+
+func TestCheckRunFlagSuccess(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir)
+	writeInstalledHook(t, dir)
+	io, _, out, _ := iostreams.Test()
+	r := &stubRunner{version: "pre-commit 3.7.0\n"}
+	opts := &CheckOptions{
+		IO:      io,
+		GitRoot: func() (string, error) { return dir, nil },
+		Runner:  r,
+		Run:     true,
+	}
+	if err := checkRun(opts); err != nil {
+		t.Fatalf("checkRun() error = %v", err)
+	}
+	if !strings.Contains(out.String(), "pre-commit run passed") {
+		t.Fatalf("expected run passed output, got %q", out.String())
 	}
 }
 
@@ -112,6 +161,7 @@ func writeInstalledHook(t *testing.T, root string) {
 
 type stubRunner struct {
 	version string // output for `pre-commit --version`; empty => error
+	runErr  bool   // if true, `pre-commit run --all-files` returns an error
 }
 
 func (s *stubRunner) Look(string) bool { return false }
@@ -122,6 +172,12 @@ func (s *stubRunner) Run(_ string, name string, args ...string) (string, error) 
 			return "", errStub{}
 		}
 		return s.version, nil
+	}
+	if name == "pre-commit" && len(args) >= 1 && args[0] == "run" {
+		if s.runErr {
+			return "hook failed", errStub{}
+		}
+		return "all passed", nil
 	}
 	return "", nil
 }

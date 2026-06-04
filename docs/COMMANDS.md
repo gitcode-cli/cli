@@ -1531,10 +1531,17 @@ gc precommit check --json
 
 说明：
 
-- 支持 `--json`：输出写入 stdout，字段为 `config_found`、`tool_installed`、`tool_version`、`hook_installed`、`actions_taken`、`run_result`、`run_output`、`ok`（`run_output` 仅在 `run_result` 为 `failed` 时携带 `pre-commit run` 输出）。
+- 支持 `--json`：输出写入 stdout，字段为 `config_found`、`tool_installed`、`tool_version`、`hook_installed`、`actions_taken`、`run_result`、`run_output`、`ok`、`reason`（`run_output` 仅在 `run_result` 为 `failed` 时携带 `pre-commit run` 输出）。
+- `reason` 是稳定、机器可读的结果分类，便于脚本/agent 直接分支，取值：
+  - `no_config`：仓库未配置 pre-commit（`ok=true`，属正常跳过）。
+  - `tool_missing`：`pre-commit` 工具未安装（且未/无法安装）。
+  - `hook_missing`：git pre-commit hook 未初始化。
+  - `run_failed`：环境就绪但 `pre-commit run` 失败。
+  - `not_in_repo`：当前目录不在 git 仓库内。
+  - 环境完全就绪（且 `--run` 通过或未请求）时 `reason` 省略（为空）。
 - `--no-install` 与 `--yes` 互斥；hooks 本身运行失败时报"pre-commit checks failed"（区别于"环境未就绪"）。
 - 退出码：`0` 就绪或无配置；`1` 环境未就绪 / 检查失败 / 非 Git 仓库 / 非交互且未授权修改环境；`2` 用法错误。
-- 自动安装按工具可用性择优：`pipx` → `python3 -m pip install --user` → `python -m pip install --user`；都不可用时给出各平台手动安装指引。
+- 自动安装按工具可用性择优：`pipx` → `python3 -m pip install --user` → `python -m pip install --user`；都不可用时给出各平台手动安装指引。安装失败时按错误类型给出针对性指引（权限不足 / 网络失败 / 工具链缺失）。
 - 不在 PATH 目录间复制二进制，始终在项目内调用。
 
 ---

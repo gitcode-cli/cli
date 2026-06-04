@@ -41,12 +41,14 @@ func EnsureTool(r CommandRunner) (string, error) {
 	}
 
 	var attempts []string
+	cats := newCategorySet()
 	for _, ins := range installers() {
 		if !r.Look(ins.name) {
 			continue
 		}
 		if out, err := r.Run("", ins.name, ins.args...); err != nil {
 			attempts = append(attempts, fmt.Sprintf("%s: %v: %s", ins.desc, err, strings.TrimSpace(out)))
+			cats.add(classifyInstallFailure(err, out))
 			continue
 		}
 		if _, ok := ToolVersion(r); !ok {
@@ -59,7 +61,97 @@ func EnsureTool(r CommandRunner) (string, error) {
 	if len(attempts) == 0 {
 		return "", fmt.Errorf("cannot auto-install pre-commit: no pipx/python3/python found. %s", manualInstallHint())
 	}
-	return "", fmt.Errorf("failed to auto-install pre-commit (%s). %s", strings.Join(attempts, "; "), manualInstallHint())
+	msg := fmt.Sprintf("failed to auto-install pre-commit (%s).", strings.Join(attempts, "; "))
+	if guidance := cats.guidance(); guidance != "" {
+		msg += " " + guidance
+	}
+	return "", fmt.Errorf("%s %s", msg, manualInstallHint())
+}
+
+// installFailureCategory classifies an install failure so the aggregated error
+// can carry targeted remediation guidance instead of only raw tool output.
+type installFailureCategory int
+
+const (
+	failOther installFailureCategory = iota
+	failPermission
+	failNetwork
+	failToolchain
+)
+
+// classifyInstallFailure infers the failure category from the installer's error
+// and output. It is best-effort and intentionally string-based: the underlying
+// installers (pip/pipx) report these conditions in their messages, and matching
+// keeps the logic testable through the fake CommandRunner.
+func classifyInstallFailure(err error, output string) installFailureCategory {
+	s := strings.ToLower(output)
+	if err != nil {
+		s += " " + strings.ToLower(err.Error())
+	}
+	switch {
+	case containsAny(s, "permission denied", "access is denied", "errno 13", "not permitted", "operation not permitted"):
+		return failPermission
+	case containsAny(s,
+		"could not resolve", "temporary failure in name resolution", "network is unreachable",
+		"connection refused", "connection reset", "connection timed out", "timed out", "timeout",
+		"max retries exceeded", "failed to establish a new connection", "proxy", "ssl"):
+		return failNetwork
+	case containsAny(s, "no module named", "command not found", "not recognized", "no such file"):
+		return failToolchain
+	default:
+		return failOther
+	}
+}
+
+func (c installFailureCategory) hint() string {
+	switch c {
+	case failPermission:
+		return "Permission denied: avoid a privileged global install — prefer pipx, or install into a --user/virtualenv location you own."
+	case failNetwork:
+		return "Network failure: check your connection/proxy and retry, or install pre-commit from an offline package."
+	case failToolchain:
+		return "Toolchain missing: pip/python was not usable — install Python (with pip) first, then retry."
+	default:
+		return ""
+	}
+}
+
+func containsAny(s string, subs ...string) bool {
+	for _, sub := range subs {
+		if strings.Contains(s, sub) {
+			return true
+		}
+	}
+	return false
+}
+
+// categorySet collects distinct failure categories in first-seen order so the
+// guidance is deterministic and free of duplicates when several installers fail.
+type categorySet struct {
+	seen  map[installFailureCategory]bool
+	order []installFailureCategory
+}
+
+func newCategorySet() *categorySet {
+	return &categorySet{seen: map[installFailureCategory]bool{}}
+}
+
+func (cs *categorySet) add(c installFailureCategory) {
+	if c == failOther || cs.seen[c] {
+		return
+	}
+	cs.seen[c] = true
+	cs.order = append(cs.order, c)
+}
+
+func (cs *categorySet) guidance() string {
+	var hints []string
+	for _, c := range cs.order {
+		if h := c.hint(); h != "" {
+			hints = append(hints, h)
+		}
+	}
+	return strings.Join(hints, " ")
 }
 
 // InstallHook runs `pre-commit install` in root to set up the git hook.

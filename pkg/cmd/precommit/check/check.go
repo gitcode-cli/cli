@@ -88,6 +88,16 @@ func NewCmdCheck(f *cmdutil.Factory, runF func(*CheckOptions) error) *cobra.Comm
 func checkRun(opts *CheckOptions) error {
 	root, err := opts.GitRoot()
 	if err != nil {
+		// Surface the classification to --json consumers too: this branch never
+		// reaches precommit.Check, so set the reason here.
+		if opts.JSON {
+			if writeErr := cmdutil.WriteJSON(opts.IO.Out, precommit.Result{
+				ActionsTaken: []string{},
+				Reason:       precommit.ReasonNotInRepo,
+			}); writeErr != nil {
+				return writeErr
+			}
+		}
 		return cmdutil.NewCLIError(cmdutil.ExitError, "not in a git repository", err)
 	}
 

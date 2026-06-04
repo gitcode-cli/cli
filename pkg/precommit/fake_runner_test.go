@@ -10,8 +10,9 @@ type fakeRunner struct {
 }
 
 type fakeResp struct {
-	out string
-	err error
+	out    string // stdout
+	stderr string // stderr; combined into Run output but excluded from RunStdout
+	err    error
 }
 
 func newFakeRunner() *fakeRunner {
@@ -31,6 +32,13 @@ func key(name string, args ...string) string {
 func (f *fakeRunner) Look(name string) bool { return f.look[name] }
 
 func (f *fakeRunner) Run(_ string, name string, args ...string) (string, error) {
+	k := key(name, args...)
+	f.calls = append(f.calls, k)
+	r := f.responses[k]
+	return r.out + r.stderr, r.err
+}
+
+func (f *fakeRunner) RunStdout(_ string, name string, args ...string) (string, error) {
 	k := key(name, args...)
 	f.calls = append(f.calls, k)
 	r := f.responses[k]

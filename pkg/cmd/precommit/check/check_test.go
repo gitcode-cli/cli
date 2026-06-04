@@ -99,6 +99,27 @@ func TestCheckRunNotInGitRepo(t *testing.T) {
 	}
 }
 
+func TestCheckRunNotInGitRepoJSON(t *testing.T) {
+	io, _, out, _ := iostreams.Test()
+	opts := &CheckOptions{
+		IO:      io,
+		GitRoot: func() (string, error) { return "", os.ErrNotExist },
+		Runner:  &stubRunner{},
+		JSON:    true,
+	}
+	err := checkRun(opts)
+	if err == nil {
+		t.Fatal("expected error when not in a git repo")
+	}
+	var got precommit.Result
+	if jerr := json.Unmarshal(out.Bytes(), &got); jerr != nil {
+		t.Fatalf("output is not valid JSON: %v; raw=%q", jerr, out.String())
+	}
+	if got.OK || got.Reason != precommit.ReasonNotInRepo {
+		t.Fatalf("want ok=false reason=%q, got %+v", precommit.ReasonNotInRepo, got)
+	}
+}
+
 func TestCheckRunFlagFailureExits1(t *testing.T) {
 	dir := t.TempDir()
 	writeConfig(t, dir)
@@ -219,18 +240,22 @@ type stubRunner struct {
 
 func (s *stubRunner) Look(string) bool { return false }
 
-func (s *stubRunner) Run(_ string, name string, args ...string) (string, error) {
-	if name == "pre-commit" && len(args) == 1 && args[0] == "--version" {
-		if s.version == "" {
-			return "", errStub{}
-		}
-		return s.version, nil
-	}
+func (s *stubRunner) Run(dir string, name string, args ...string) (string, error) {
 	if name == "pre-commit" && len(args) >= 1 && args[0] == "run" {
 		if s.runErr {
 			return "hook failed", errStub{}
 		}
 		return "all passed", nil
+	}
+	return s.RunStdout(dir, name, args...)
+}
+
+func (s *stubRunner) RunStdout(_ string, name string, args ...string) (string, error) {
+	if name == "pre-commit" && len(args) == 1 && args[0] == "--version" {
+		if s.version == "" {
+			return "", errStub{}
+		}
+		return s.version, nil
 	}
 	return "", nil
 }

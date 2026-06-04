@@ -64,6 +64,20 @@ func TestToolVersionNameOnly(t *testing.T) {
 	}
 }
 
+func TestToolVersionIgnoresStderrWarning(t *testing.T) {
+	r := newFakeRunner()
+	// A warning on stderr must not leak into the parsed version: ToolVersion
+	// reads stdout only.
+	r.responses[key("pre-commit", "--version")] = fakeResp{
+		out:    "pre-commit 3.7.0\n",
+		stderr: "WARNING: deprecated flag\n",
+	}
+	v, ok := ToolVersion(r)
+	if !ok || v != "3.7.0" {
+		t.Fatalf("ToolVersion() = %q, %v; want 3.7.0, true", v, ok)
+	}
+}
+
 func TestConfigFileYamlPriority(t *testing.T) {
 	dir := t.TempDir()
 	yaml := filepath.Join(dir, ".pre-commit-config.yaml")

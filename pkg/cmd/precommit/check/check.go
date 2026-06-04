@@ -109,6 +109,14 @@ func checkRun(opts *CheckOptions) error {
 		Run:          opts.Run,
 	})
 	if err != nil {
+		// Surface the structured outcome (e.g. reason=install_failed plus the
+		// failure categories) to --json consumers; the human-readable error
+		// detail still goes to stderr via the CLIError below.
+		if opts.JSON {
+			if writeErr := cmdutil.WriteJSON(opts.IO.Out, res); writeErr != nil {
+				return writeErr
+			}
+		}
 		return cmdutil.NewCLIError(cmdutil.ExitError, "pre-commit check failed", err)
 	}
 

@@ -1,6 +1,9 @@
 package precommit
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 // Reason values are stable, machine-readable classifications of a Check outcome,
 // emitted in Result.Reason so scripts/agents can branch without parsing prose.
@@ -17,6 +20,10 @@ const (
 	ReasonHookMissing = "hook_missing"
 	// ReasonRunFailed: the environment is ready but `pre-commit run` failed.
 	ReasonRunFailed = "run_failed"
+	// ReasonInstallFailed: an auto-install attempt was made but failed. The
+	// machine-readable failure categories are carried in
+	// Result.InstallFailureCategories. Paired with a non-nil Check error.
+	ReasonInstallFailed = "install_failed"
 	// ReasonNotInRepo: the working directory is not inside a git repository.
 	// Set by the command layer, which never reaches Check.
 	ReasonNotInRepo = "not_in_repo"
@@ -52,6 +59,10 @@ type Result struct {
 	// Reason is a stable, machine-readable classification of the outcome (one of
 	// the Reason* constants), or "" when the environment is fully ready.
 	Reason string `json:"reason,omitempty"`
+	// InstallFailureCategories carries the distinct auto-install failure
+	// categories ("permission" | "network" | "toolchain"), in first-seen order,
+	// when Reason == ReasonInstallFailed. Empty otherwise.
+	InstallFailureCategories []string `json:"install_failure_categories,omitempty"`
 }
 
 // Check runs the detection/remediation pipeline and returns a structured Result.
@@ -73,6 +84,13 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 	if !ok && opts.AllowInstall {
 		action, err := EnsureTool(r)
 		if err != nil {
+			// A hard install failure: classify it so --json consumers get a
+			// machine-readable reason and categories, not just stderr prose.
+			res.Reason = ReasonInstallFailed
+			var ie *InstallError
+			if errors.As(err, &ie) {
+				res.InstallFailureCategories = ie.CategoryNames()
+			}
 			return res, err
 		}
 		if action != "" {

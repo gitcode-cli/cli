@@ -59,13 +59,44 @@ func EnsureTool(r CommandRunner) (string, error) {
 	}
 
 	if len(attempts) == 0 {
-		return "", fmt.Errorf("cannot auto-install pre-commit: no pipx/python3/python found. %s", manualInstallHint())
+		// No usable installer at all: the host lacks a Python/pip toolchain.
+		return "", &InstallError{
+			msg:        fmt.Sprintf("cannot auto-install pre-commit: no pipx/python3/python found. %s", manualInstallHint()),
+			categories: []installFailureCategory{failToolchain},
+		}
 	}
 	msg := fmt.Sprintf("failed to auto-install pre-commit (%s).", strings.Join(attempts, "; "))
 	if guidance := cats.guidance(); guidance != "" {
 		msg += " " + guidance
 	}
-	return "", fmt.Errorf("%s %s", msg, manualInstallHint())
+	return "", &InstallError{
+		msg:        fmt.Sprintf("%s %s", msg, manualInstallHint()),
+		categories: cats.order,
+	}
+}
+
+// InstallError reports a failure to auto-install pre-commit. Beyond the
+// human-readable message it carries the distinct failure categories (in
+// first-seen order) so callers can surface them in structured output (e.g.
+// --json) instead of only emitting prose to stderr.
+type InstallError struct {
+	msg        string
+	categories []installFailureCategory
+}
+
+func (e *InstallError) Error() string { return e.msg }
+
+// CategoryNames returns the failure categories as stable, machine-readable
+// identifiers ("permission" | "network" | "toolchain"), in first-seen order.
+// Unclassified failures are omitted, so the slice may be empty.
+func (e *InstallError) CategoryNames() []string {
+	names := make([]string, 0, len(e.categories))
+	for _, c := range e.categories {
+		if n := c.name(); n != "" {
+			names = append(names, n)
+		}
+	}
+	return names
 }
 
 // installFailureCategory classifies an install failure so the aggregated error
@@ -100,6 +131,21 @@ func classifyInstallFailure(err error, output string) installFailureCategory {
 		return failToolchain
 	default:
 		return failOther
+	}
+}
+
+// name is the stable, machine-readable identifier for a category, emitted in
+// the --json contract (Result.InstallFailureCategories). failOther has no name.
+func (c installFailureCategory) name() string {
+	switch c {
+	case failPermission:
+		return "permission"
+	case failNetwork:
+		return "network"
+	case failToolchain:
+		return "toolchain"
+	default:
+		return ""
 	}
 }
 

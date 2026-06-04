@@ -205,6 +205,28 @@ func TestCheckReasonEmptyWhenReady(t *testing.T) {
 	}
 }
 
+func TestCheckReasonInstallFailed(t *testing.T) {
+	root := t.TempDir()
+	writeConfig(t, root)
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errExit{}} // tool missing
+	r.look["pipx"] = true
+	r.responses[key("pipx", "install", "pre-commit")] = fakeResp{
+		err: errExit{},
+		out: "ERROR: [Errno 13] Permission denied",
+	}
+	res, err := Check(r, Options{Root: root, AllowInstall: true})
+	if err == nil {
+		t.Fatal("expected a hard error when auto-install fails")
+	}
+	if res.OK || res.Reason != ReasonInstallFailed {
+		t.Fatalf("want not-OK + reason=%q, got OK=%v reason=%q", ReasonInstallFailed, res.OK, res.Reason)
+	}
+	if len(res.InstallFailureCategories) != 1 || res.InstallFailureCategories[0] != "permission" {
+		t.Fatalf("want categories=[permission], got %v", res.InstallFailureCategories)
+	}
+}
+
 type errExit struct{}
 
 func (errExit) Error() string { return "exit status 1" }

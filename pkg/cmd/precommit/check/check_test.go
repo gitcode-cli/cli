@@ -182,6 +182,38 @@ func TestCheckRunFlagFailureJSON(t *testing.T) {
 	}
 }
 
+func TestCheckRunInstallFailureJSON(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir)
+	io, _, out, _ := iostreams.Test()
+	opts := &CheckOptions{
+		IO:      io,
+		GitRoot: func() (string, error) { return dir, nil },
+		Runner:  &installFailRunner{},
+		Yes:     true, // authorize install in this non-TTY test
+		JSON:    true,
+	}
+	err := checkRun(opts)
+	if err == nil {
+		t.Fatal("expected error when auto-install fails")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitError)
+	}
+	// The gap this guards: a --json consumer must still get a structured body
+	// (reason + categories), not just an exit code and stderr prose.
+	var got precommit.Result
+	if jerr := json.Unmarshal(out.Bytes(), &got); jerr != nil {
+		t.Fatalf("output is not valid JSON: %v; raw=%q", jerr, out.String())
+	}
+	if got.OK || got.Reason != precommit.ReasonInstallFailed {
+		t.Fatalf("want ok=false reason=%q, got %+v", precommit.ReasonInstallFailed, got)
+	}
+	if len(got.InstallFailureCategories) != 1 || got.InstallFailureCategories[0] != "permission" {
+		t.Fatalf("want install_failure_categories=[permission], got %+v", got)
+	}
+}
+
 func TestCheckMutuallyExclusiveFlags(t *testing.T) {
 	f := cmdutil.TestFactory()
 	cmd := NewCmdCheck(f, func(*CheckOptions) error { return nil })
@@ -265,3 +297,24 @@ type errStub struct{}
 func (errStub) Error() string { return "not found" }
 
 var _ precommit.CommandRunner = (*stubRunner)(nil)
+
+// installFailRunner simulates: pre-commit absent, pipx present, and the pipx
+// install attempt failing with a permission error. It drives the hard
+// install-failure path through the command layer.
+type installFailRunner struct{}
+
+func (installFailRunner) Look(name string) bool { return name == "pipx" }
+
+func (installFailRunner) Run(_ string, name string, _ ...string) (string, error) {
+	if name == "pipx" {
+		return "ERROR: [Errno 13] Permission denied", errStub{}
+	}
+	return "", errStub{}
+}
+
+func (installFailRunner) RunStdout(_ string, _ string, _ ...string) (string, error) {
+	// Version probe always fails: the tool is never present.
+	return "", errStub{}
+}
+
+var _ precommit.CommandRunner = installFailRunner{}

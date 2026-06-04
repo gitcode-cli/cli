@@ -192,6 +192,39 @@ func TestEnsureToolNetworkGuidance(t *testing.T) {
 	}
 }
 
+func TestEnsureToolInstallErrorCategories(t *testing.T) {
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	r.look["pipx"] = true
+	r.look["python3"] = true
+	// Two installers fail with distinct categories: both must be carried, in
+	// first-seen order, on the typed error.
+	r.responses[key("pipx", "install", "pre-commit")] = fakeResp{err: errors.New("e"), out: "Permission denied"}
+	r.responses[key("python3", "-m", "pip", "install", "--user", "pre-commit")] = fakeResp{err: errors.New("e"), out: "Could not resolve host: pypi.org"}
+	_, err := EnsureTool(r)
+	var ie *InstallError
+	if !errors.As(err, &ie) {
+		t.Fatalf("want *InstallError, got %T: %v", err, err)
+	}
+	if got := strings.Join(ie.CategoryNames(), ","); got != "permission,network" {
+		t.Fatalf("CategoryNames() = %q, want %q", got, "permission,network")
+	}
+}
+
+func TestEnsureToolNoInstallerCategoryToolchain(t *testing.T) {
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	// No pipx/python on PATH at all: the host lacks a usable toolchain.
+	_, err := EnsureTool(r)
+	var ie *InstallError
+	if !errors.As(err, &ie) {
+		t.Fatalf("want *InstallError, got %T: %v", err, err)
+	}
+	if got := strings.Join(ie.CategoryNames(), ","); got != "toolchain" {
+		t.Fatalf("CategoryNames() = %q, want %q", got, "toolchain")
+	}
+}
+
 func TestEnsureToolDedupesGuidance(t *testing.T) {
 	r := newFakeRunner()
 	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}

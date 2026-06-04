@@ -67,6 +67,7 @@ echo "YOUR_TOKEN" | gc auth login --with-token
 | `gc commit view <sha>` | 查看提交 |
 | `gc commit comments create <sha>` | 创建提交评论 |
 | `gc release create <tag>` | 创建 Release |
+| `gc precommit check` | 提交前检查 pre-commit 配置与本地环境 |
 
 ---
 

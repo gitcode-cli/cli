@@ -1497,6 +1497,48 @@ gc milestone delete 1 -R infra-test/gctest1 --yes
 
 ---
 
+## Pre-commit 命令 (precommit)
+
+`precommit` 命令组用于在提交代码前检查仓库的 pre-commit 配置与本地环境，确保提交时能正常拉起 pre-commit 检查。跨平台支持 Windows、Linux（x86/arm）、macOS。
+
+### precommit check - 检查 pre-commit 配置与环境
+
+检查流程：
+
+1. 检测仓库根是否存在 `.pre-commit-config.yaml`（或 `.yml`）。无配置时视为"无需检查"，退出码 `0`。
+2. 检测本地 `pre-commit` 工具是否安装。
+3. 检测 git pre-commit hook 是否已初始化。
+4. 可选：使用 `--run` 实际执行 `pre-commit run --all-files`。
+
+环境缺失时，在交互式终端（stdin 为 TTY）下会自动安装并初始化；在非交互环境下需显式传 `--yes` 才会修改环境，否则仅诊断并报错。`--no-install` 表示只诊断、绝不修改环境。
+
+```bash
+# 检查环境是否就绪
+gc precommit check
+
+# 检查并实际拉起 pre-commit 检查
+gc precommit check --run
+
+# 仅诊断，不安装/初始化（不修改环境）
+gc precommit check --no-install
+
+# 非交互环境允许自动安装/初始化
+gc precommit check --yes
+
+# 机器可消费输出
+gc precommit check --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，字段为 `config_found`、`tool_installed`、`tool_version`、`hook_installed`、`actions_taken`、`run_result`、`run_output`、`ok`（`run_output` 仅在 `run_result` 为 `failed` 时携带 `pre-commit run` 输出）。
+- `--no-install` 与 `--yes` 互斥；hooks 本身运行失败时报"pre-commit checks failed"（区别于"环境未就绪"）。
+- 退出码：`0` 就绪或无配置；`1` 环境未就绪 / 检查失败 / 非 Git 仓库 / 非交互且未授权修改环境；`2` 用法错误。
+- 自动安装按工具可用性择优：`pipx` → `python3 -m pip install --user` → `python -m pip install --user`；都不可用时给出各平台手动安装指引。
+- 不在 PATH 目录间复制二进制，始终在项目内调用。
+
+---
+
 ## 其他命令
 
 ### version - 显示版本

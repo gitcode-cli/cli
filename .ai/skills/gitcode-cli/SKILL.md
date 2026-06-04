@@ -19,6 +19,7 @@
 - 需要按文件或分支追踪提交历史时使用 `gc repo log --file ... --branch ... --json`
 - 需要跨页扫描 PR 或从提交信息反查 PR 时使用 `gc pr list --paginate` / `gc pr list --commit-message`
 - 删除类命令在自动化场景中先用 `--dry-run`，真实执行时显式传 `--yes`
+- 提交代码前可用 `gc precommit check` 校验仓库 pre-commit 配置与本地环境（`--run` 实际拉起检查；非交互修改环境需 `--yes`，`--no-install` 仅诊断）
 - Windows PowerShell 中优先使用 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖；需要从 stdin 传中文/非 ASCII 正文时，优先使用 UTF-8 文件配合 `--body-file` / `--comment-file`，直接管道前先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`
 
 ## AI 执行硬约束

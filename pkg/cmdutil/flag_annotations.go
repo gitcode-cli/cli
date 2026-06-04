@@ -12,13 +12,14 @@ const TopicAnnotation = "gc.topic"
 // StandardTopics is the list of standard topic categories.
 var StandardTopics = []string{
 	"auth",
+	"commits",
 	"issues",
+	"labels",
+	"milestones",
+	"precommit",
 	"pull-requests",
 	"releases",
-	"milestones",
 	"repo",
-	"commits",
-	"labels",
 }
 
 // SetFlagEnum records a stable enum set for schema/export consumers.

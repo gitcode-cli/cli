@@ -268,6 +268,9 @@ gc pr create --title "New feature" --base main
 # 按提交信息反查 PR
 gc pr list -R owner/repo --commit-message "fix login"
 
+# 提交前检查 pre-commit 配置与本地环境
+gc precommit check
+
 # 调用 GitCode API 原始响应
 gc api repos/owner/repo
 

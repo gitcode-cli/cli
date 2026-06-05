@@ -14,6 +14,8 @@ description: 使用 GitCode CLI 为 openLiBing 发布平台生成发布说明、
 - `gitcode-release-helper` — 发布规划和 release notes 生成
 - 可辅助使用：`gitcode-release` — Release 的 CRUD 直接操作
 
+以上 skill 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
+
 ## 适用人群
 
 - 维护者、发布负责人

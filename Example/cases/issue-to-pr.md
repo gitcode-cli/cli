@@ -16,6 +16,8 @@ description: 使用 GitCode CLI 将已完成的分支变更整理为 Issue，再
 - `gitcode-issue-create` — 撰写并创建高质量 Issue
 - `gitcode-pr-create` — 从 fork 分支向目标仓库创建 PR
 
+以上 skill 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
+
 ## 适用人群
 
 - 没有主仓写权限的外部贡献者

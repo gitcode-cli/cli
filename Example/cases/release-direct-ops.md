@@ -11,7 +11,7 @@ description: 不通过 release-helper，直接用 gitcode release 命令管理 r
 
 ## 推荐 skill
 
-- `gitcode-release` — Release 的 list、view、create、edit、upload、download、delete
+- `gitcode-release` — 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
 
 ## 适用人群
 

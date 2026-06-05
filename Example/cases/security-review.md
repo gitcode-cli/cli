@@ -11,7 +11,7 @@ description: 使用 GitCode CLI 对 openLiBing 发布平台执行敏感信息、
 
 ## 推荐 skill
 
-- `gitcode-security-check`
+- `gitcode-security-check` — 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
 
 ## 适用人群
 

@@ -15,10 +15,17 @@ gitcode-cli 项目定义了一套 AI 自驱动的全流程交付规范（`spec/w
 
 ## 推荐 skill
 
+本案例涉及两类 skill，来源不同：
+
+**gitcode-cli 项目内部开发 skill**（位于 `.claude/skills/` 和 `.ai/skills/`）：
 - `gc-dev-setup` — 初始化本地开发环境
-- `superpowers:writing-plans` — 制定实施计划
 - `pr-reviewer` — 独立代码评审
+
+**Superpowers 通用 skill**：
+- `superpowers:writing-plans` — 制定实施计划
 - `superpowers:verification-before-completion` — 完成前强制验证
+
+> 注意：`pr-reviewer`、`gc-dev-setup` 是 gitcode-cli/cli 项目自身的 AI 开发工具，不在 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目中。两者互补：skills 项目面向 GitCode 平台用户，CLI 内部 skill 面向 CLI 工具开发者。
 
 ## 适用人群
 

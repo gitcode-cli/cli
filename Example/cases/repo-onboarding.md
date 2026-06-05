@@ -11,7 +11,7 @@ description: 使用 GitCode CLI 和本地检查快速生成 openLiBing 发布平
 
 ## 推荐 skill
 
-- `gitcode-repo-onboarding`
+- `gitcode-repo-onboarding` — 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
 
 ## 适用人群
 

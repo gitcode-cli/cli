@@ -14,6 +14,8 @@ description: 使用 GitCode CLI 从 fork 仓库向 openLiBing 发布平台主仓
 - `gitcode-pr-create` — 从 fork 仓库创建 Pull Request
 - 可辅助使用：`gitcode-repo` — 查看 fork 和上游仓库信息
 
+以上 skill 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
+
 ## 适用人群
 
 - 外部贡献者（fork 权限、无主仓写权限）

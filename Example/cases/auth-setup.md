@@ -11,7 +11,7 @@ description: 在 CI、本地开发和容器三种环境下配置 GitCode CLI 认
 
 ## 推荐 skill
 
-- `gitcode-auth` — GitCode CLI 认证状态检查、登录、登出、token 管理
+- `gitcode-auth` — 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
 
 ## 适用人群
 

@@ -11,7 +11,7 @@ openLiBing 发布平台涉及发布评审、Jenkins 任务、OBS 制品下载、
 
 ## 推荐 skill
 
-- `gitcode-issue-create`
+- `gitcode-issue-create` — 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
 
 ## 适用人群
 

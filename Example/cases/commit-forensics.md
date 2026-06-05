@@ -11,7 +11,7 @@ description: 使用 GitCode CLI 的 commit view/diff/patch 追溯某次变更的
 
 ## 推荐 skill
 
-- `gitcode-commit` — commit 查看、diff、patch 和 commit 评论
+- `gitcode-commit` — 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
 
 ## 适用人群
 

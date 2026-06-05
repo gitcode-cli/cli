@@ -63,6 +63,7 @@ gitcode schema
 | [Issue 生命周期管理](./cases/issue-lifecycle.md) | 维护者、开发者、AI 代理 | `gitcode-issue` | Issue 从创建到关闭的完整生命周期操作 | 写权限 | 写 |
 | [Release 直接操作](./cases/release-direct-ops.md) | 维护者、测试人员、DevOps | `gitcode-release` | 直接操作 release 的查看、编辑、资产上传下载和删除 | 管理权限 | 读写 |
 | [批量代码审查评论](./cases/batch-review-comments.md) | Reviewer、维护者、自动化审查工具 | `gitcode-review` | 对多个 PR/commit 批量添加审查评论和行级注释 | 评论权限 | 写 |
+| [AI 全流程交付——从 Issue 到合并的标准化闭环](./cases/ai-full-delivery-workflow.md) | AI 代理、项目维护者、流程设计者 | `superpowers:writing-plans`、`pr-reviewer`、`gc-dev-setup` | 展示 AI 代理如何按 spec 规范的 15 阶段管线完成代码交付（以 bugfix #250 为实例） | CLI 开发环境、GC_TOKEN、了解 spec/ | 流程 |
 
 ## 推荐阅读路径
 
@@ -99,6 +100,17 @@ gitcode schema
 4. [多环境认证配置](./cases/auth-setup.md)
 5. [Release 直接操作](./cases/release-direct-ops.md)
 6. [流水线问题定位](./cases/pipeline-bisect.md) — 对比正常/异常运行追查 CI 变更
+
+### AI 开发者路径 (AI Developer Path)
+
+适合：参与 gitcode-cli 项目开发的 AI 代理（Claude、Codex）、想了解 AI 自驱动交付流程的项目维护者
+
+1. [AI 全流程交付——从 Issue 到合并](./cases/ai-full-delivery-workflow.md) — 以 bugfix #250 为例的端到端 AI 交付实战
+2. `spec/workflows/ai-local-development-workflow.md` — 15 阶段 AI 开发管线正式规范
+3. `spec/workflows/review-workflow.md` — 8 角色多轮评审体系
+4. `spec/workflows/status-label-checklist.md` — 标签状态更新操作指南
+5. [Issue 实现前评审](./cases/issue-pre-review.md) — 开发前的 Issue 完整性检查
+6. [PR 合并策略与清理](./cases/pr-merge-strategy.md) — merge 操作和分支清理
 
 ## GitHub Pages 静态部署说明
 

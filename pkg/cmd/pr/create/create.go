@@ -156,14 +156,20 @@ func createRun(opts *CreateOptions) error {
 		}
 	}
 
+	// Express a cross-repo (fork) source via head="<fork_owner>:<branch>" instead
+	// of a fork_path form field, which GitCode v5 mis-resolves (issue #259).
+	head, err = resolveHead(head, opts.Fork)
+	if err != nil {
+		return err
+	}
+
 	// Create PR
 	pr, err := opts.CreatePR(client, owner, repo, &api.CreatePROptions{
-		Title:    opts.Title,
-		Body:     body,
-		Head:     head,
-		Base:     opts.Base,
-		Draft:    opts.Draft,
-		ForkPath: opts.Fork,
+		Title: opts.Title,
+		Body:  body,
+		Head:  head,
+		Base:  opts.Base,
+		Draft: opts.Draft,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create PR: %w", err)
@@ -261,4 +267,27 @@ func execGitCommand(name string, args ...string) (string, error) {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+// resolveHead expresses a cross-repo PR source for GitCode.
+//
+// When --fork is supplied and head is a bare branch name, it returns the
+// Gitee-style "<fork_owner>:<branch>" form, which GitCode resolves to the fork's
+// branch even when the upstream has a same-name branch. A head that already
+// carries an "owner:" prefix is returned unchanged so callers can override the
+// inferred fork owner explicitly. See issue #259.
+func resolveHead(head, fork string) (string, error) {
+	if fork == "" || strings.Contains(head, ":") {
+		return head, nil
+	}
+
+	forkOwner := fork
+	if idx := strings.Index(fork, "/"); idx >= 0 {
+		forkOwner = fork[:idx]
+	}
+	if forkOwner == "" {
+		return "", cmdutil.NewUsageError("invalid --fork value; expected owner/repo")
+	}
+
+	return forkOwner + ":" + head, nil
 }

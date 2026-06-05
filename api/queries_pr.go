@@ -82,14 +82,18 @@ type PRListOptions struct {
 	Milestone string `url:"milestone,omitempty"`
 }
 
-// CreatePROptions represents options for creating a PR
+// CreatePROptions represents options for creating a PR.
+//
+// 跨仓库 PR（从 fork 提交到 upstream）通过 Head 使用 "<fork_owner>:<branch>"
+// 形式表达源仓库，而不是单独的 fork_path 表单字段——GitCode v5 对 fork_path
+// 的跨仓库创建会错误解析源（upstream 同名分支 → 0 commits）甚至直接 403。
+// 详见 issue #259。
 type CreatePROptions struct {
-	Title    string `json:"title"`
-	Body     string `json:"body,omitempty"`
-	Head     string `json:"head"`
-	Base     string `json:"base"`
-	Draft    bool   `json:"draft,omitempty"`
-	ForkPath string `json:"fork_path,omitempty"` // 跨仓库 PR：fork 项目路径【owner/repo】
+	Title string `json:"title"`
+	Body  string `json:"body,omitempty"`
+	Head  string `json:"head"`
+	Base  string `json:"base"`
+	Draft bool   `json:"draft,omitempty"`
 }
 
 // UpdatePROptions represents options for updating a PR
@@ -235,9 +239,6 @@ func buildPRCreateFormValues(opts *CreatePROptions) url.Values {
 	}
 	if opts.Draft {
 		formValues.Set("draft", "true")
-	}
-	if opts.ForkPath != "" {
-		formValues.Set("fork_path", opts.ForkPath)
 	}
 
 	return formValues

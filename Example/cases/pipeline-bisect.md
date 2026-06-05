@@ -204,8 +204,8 @@ PR !36631 (commit 581d77253)
 ## 推荐 skill
 
 - **pipeline-bisect**: 流水线问题定位 skill，6 步定位流程 + 错误分类参考表 + 常见陷阱
-- **Skill 仓库**: `git@gitcode.com:gitcode-cli/skills.git`
-- **触发方式**: 当描述中包含"流水线前几天正常现在失败"、"pipeline regression"、"定位引入问题的PR"、"对比正常和异常的流水线"等关键词时自动加载
+
+以上 skill 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用。
 
 ## 关联 Skill
 

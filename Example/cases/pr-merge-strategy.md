@@ -11,7 +11,7 @@ openLiBing 发布平台当前有多个 PR，部分处于 open 状态较久、部
 
 ## 推荐 skill
 
-- `gitcode-pr` — PR 的 checkout、merge、close、reopen、状态变更等直接操作
+- `gitcode-pr` — 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
 
 ## 适用人群
 

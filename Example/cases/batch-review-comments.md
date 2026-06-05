@@ -11,7 +11,7 @@ description: 使用 GitCode CLI 对多个 PR 和 commit 添加审查评论，包
 
 ## 推荐 skill
 
-- `gitcode-review` — PR/commit 评论、review 审批、行级注释、回复
+- `gitcode-review` — 来自 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目（`git@gitcode.com:gitcode-cli/skills.git`），可独立安装使用
 
 ## 适用人群
 

@@ -1,13 +1,21 @@
 ---
 title: GitCode CLI 应用案例库
-description: 以 openLiBing 发布平台为对象的 GitCode CLI 应用案例和可复用 prompt
+description: 覆盖 openLiBing、Ascend、gitcode-cli 等多个社区的 GitCode CLI 应用案例和可复用 prompt
 ---
 
 # GitCode CLI 应用案例库
 
 本目录用于沉淀 GitCode CLI 在各类业务场景中的应用案例，服务于推广宣传、用户使用指导和团队内部复用。
 
-当前案例统一以 `openLiBingNext/openlibing-platform-release` 为实例对象。该仓库是 openLiBing 发布平台代码仓，主要技术栈为 Java 21、Maven、Spring Boot，业务覆盖发布评审、Jenkins 集成、OBS 文件下载、附件管理、漏洞扫描和发布结果追踪等场景。
+案例库覆盖多个 GitCode 社区的真实仓库，以实际业务任务为驱动：
+
+| 社区 | 示例仓库 | 主要技术栈 | 涉及案例 |
+| --- | --- | --- | --- |
+| **openLiBing** | `openLiBingNext/openlibing-platform-release` | Java 21、Maven、Spring Boot | 发布评审、Jenkins 集成、OBS、安全审查等 |
+| **Ascend** | `Ascend/pytorch` | Python、C++、CI/CD | Issue/PR 端到端、流水线问题定位 |
+| **gitcode-cli** | `gitcode-cli/cli` | Go、Cobra | AI 全流程交付、多角色评审、CLI 开发 |
+
+案例覆盖发布评审、Jenkins 集成、OBS 文件下载、附件管理、漏洞扫描、CI 流水线、Issue/PR 管理、Release 发布、AI 全流程交付等场景。
 
 案例库采用总分结构：
 
@@ -31,14 +39,17 @@ gitcode schema
 - Linux/macOS 下 `gitcode` 和 `gc` 均可用；案例中统一使用 `gitcode` 作为跨平台入口。
 - 涉及代码下载、fork、sync、checkout 的场景默认使用 SSH，需先确认 `ssh -T git@gitcode.com` 可用。
 
-## 可选 Skill 仓库
+## Skill 仓库
 
-部分案例可配合 GitCode CLI 对外发布 skill 使用：
+案例库中的 skill 均来自 GitCode CLI 官方 skills 项目，每个案例标注的 `推荐 skill` 对应该项目中的独立 skill 目录：
 
-- 仓库地址：`git@gitcode.com:gitcode-cli/skills.git`
-- Web 地址：<https://gitcode.com/gitcode-cli/skills>
+- **Skills 项目仓库**：`git@gitcode.com:gitcode-cli/skills.git`
+- **Web 浏览**：<https://gitcode.com/gitcode-cli/skills>
+- **安装方式**：将对应 skill 目录复制到 AI 客户端的 skills 目录即可独立使用
 
-案例中的 `推荐 skill` 字段用于提示 AI 客户端优先使用哪个 skill。即使未安装 skill，也可以直接复制 prompt 给 AI 执行，AI 应按 prompt 中的 GitCode CLI 命令约束完成任务。
+案例中的 `推荐 skill` 字段用于提示 AI 客户端优先加载哪个 skill。即使未安装 skill，也可以直接复制 prompt 给 AI 执行，AI 应按 prompt 中的 GitCode CLI 命令约束完成任务。
+
+> **注意**：案例中引用的 skill 名称（如 `gitcode-pr-review`、`gitcode-issue-create` 等）均指向 skills 项目中的对应目录，每个 skill 自包含、可独立安装。如果案例涉及 gitcode-cli/cli 项目内部开发 skill（如 `pr-reviewer`、`gc-dev-setup`），这些是 CLI 项目自身的 AI 开发工具，不在 skills 项目中。
 
 ## 案例索引
 

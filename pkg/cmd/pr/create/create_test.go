@@ -572,11 +572,12 @@ func TestCreateRunUsesFactoryBranch(t *testing.T) {
 
 func TestResolveHead(t *testing.T) {
 	tests := []struct {
-		name    string
-		head    string
-		fork    string
-		want    string
-		wantErr bool
+		name        string
+		head        string
+		fork        string
+		want        string
+		wantWarning string
+		wantErr     bool
 	}{
 		{
 			name: "no fork leaves head unchanged",
@@ -597,10 +598,17 @@ func TestResolveHead(t *testing.T) {
 			want: "myfork:feature",
 		},
 		{
-			name: "head with explicit owner is preserved over fork",
-			head: "other:feature",
+			name: "head with matching owner is preserved without warning",
+			head: "myfork:feature",
 			fork: "myfork/repo",
-			want: "other:feature",
+			want: "myfork:feature",
+		},
+		{
+			name:        "head owner overriding mismatched fork owner warns",
+			head:        "other:feature",
+			fork:        "myfork/repo",
+			want:        "other:feature",
+			wantWarning: `--head owner "other" overrides --fork owner "myfork"`,
 		},
 		{
 			name:    "fork missing owner is rejected",
@@ -612,7 +620,7 @@ func TestResolveHead(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := resolveHead(tt.head, tt.fork)
+			got, warning, err := resolveHead(tt.head, tt.fork)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("resolveHead() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -621,6 +629,9 @@ func TestResolveHead(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Fatalf("resolveHead() = %q, want %q", got, tt.want)
+			}
+			if warning != tt.wantWarning {
+				t.Fatalf("resolveHead() warning = %q, want %q", warning, tt.wantWarning)
 			}
 		})
 	}
@@ -687,6 +698,10 @@ func TestCreateRunForkPreservesExplicitOwnerHead(t *testing.T) {
 	}
 	if createdOpts.Head != "explicitowner:feature" {
 		t.Fatalf("CreatePR Head = %q, want %q", createdOpts.Head, "explicitowner:feature")
+	}
+	errOut := f.IOStreams.ErrOut.(*bytes.Buffer).String()
+	if !strings.Contains(errOut, `--head owner "explicitowner" overrides --fork owner "myfork"`) {
+		t.Fatalf("expected owner-conflict warning on stderr, got %q", errOut)
 	}
 }
 

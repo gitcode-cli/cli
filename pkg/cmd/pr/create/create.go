@@ -158,9 +158,12 @@ func createRun(opts *CreateOptions) error {
 
 	// Express a cross-repo (fork) source via head="<fork_owner>:<branch>" instead
 	// of a fork_path form field, which GitCode v5 mis-resolves (issue #259).
-	head, err = resolveHead(head, opts.Fork)
+	head, warning, err := resolveHead(head, opts.Fork)
 	if err != nil {
 		return err
+	}
+	if warning != "" {
+		fmt.Fprintf(opts.IO.ErrOut, "warning: %s\n", warning)
 	}
 
 	// Create PR
@@ -276,18 +279,30 @@ func parseRepo(repo string) (string, string, error) {
 // branch even when the upstream has a same-name branch. A head that already
 // carries an "owner:" prefix is returned unchanged so callers can override the
 // inferred fork owner explicitly. See issue #259.
-func resolveHead(head, fork string) (string, error) {
-	if fork == "" || strings.Contains(head, ":") {
-		return head, nil
+//
+// The returned warning is non-empty when an explicit head owner overrides a
+// conflicting --fork owner (likely a typo), so the caller can surface it.
+func resolveHead(head, fork string) (resolved, warning string, err error) {
+	if fork == "" {
+		return head, "", nil
 	}
 
 	forkOwner := fork
 	if idx := strings.Index(fork, "/"); idx >= 0 {
 		forkOwner = fork[:idx]
 	}
-	if forkOwner == "" {
-		return "", cmdutil.NewUsageError("invalid --fork value; expected owner/repo")
+
+	// An explicit "owner:branch" head wins, but flag a mismatched --fork owner.
+	if idx := strings.Index(head, ":"); idx >= 0 {
+		if headOwner := head[:idx]; forkOwner != "" && headOwner != forkOwner {
+			warning = fmt.Sprintf("--head owner %q overrides --fork owner %q", headOwner, forkOwner)
+		}
+		return head, warning, nil
 	}
 
-	return forkOwner + ":" + head, nil
+	if forkOwner == "" {
+		return "", "", cmdutil.NewUsageError("invalid --fork value; expected owner/repo")
+	}
+
+	return forkOwner + ":" + head, "", nil
 }

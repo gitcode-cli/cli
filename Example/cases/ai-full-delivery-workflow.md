@@ -135,7 +135,7 @@ AI 按用户要求进入 Plan 模式，使用 `superpowers:writing-plans` skill 
 - 执行规则（每步总结、远端链接必附）
 - 后续 S1-S11 步骤（从创建分支到合并）
 
-计划保存到 `docs/superpowers/plans/`，经用户批准后执行。
+计划写入 `/home/wpf/.claude/plans/immutable-herding-crayon.md`（Claude Code plan 模式默认路径），经用户批准后执行。**事后复盘**：按 `superpowers:writing-plans` skill 要求，计划应保存到项目 `docs/superpowers/plans/2026-06-05-bugfix-issue-250.md`；实际执行中因 plan 模式默认路径覆盖未被纠正，已作为流程改进项记录在关键经验中。计划文件最终已同步到项目目录。
 
 ### 阶段 3: 编码与修复
 
@@ -328,6 +328,7 @@ Issue #250 open
 5. **自审批被平台阻止**：GitCode 不允许 PR 作者审批自己的 PR，这与规范中的"作者-评审者分离"原则一致，但实际执行时评审评论仍可发布（仅审批动作被拒）。
 6. **风险分级脚本的判断**：`classify-change-risk.py` 对任何 `pkg/cmd/` 下的 Go 文件都归类为 medium，即使变更只是代码块顺序调整。脚本判断的是文件路径类别而非变更语义。
 7. **每步总结的强制输出**：约定每步完成后打印总结和远端链接，使整个过程可审计、可回溯。这对 AI 代理自律和人类 oversight 都至关重要。
+8. **计划文件路径**：`superpowers:writing-plans` skill 要求计划保存到项目 `docs/superpowers/plans/`，但 Claude Code plan 模式默认使用 `~/.claude/plans/`。AI 代理应在退出 plan 模式后将计划同步到项目目录，避免主干代码中缺少计划记录。
 
 ## 相关案例
 

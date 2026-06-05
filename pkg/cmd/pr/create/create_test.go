@@ -570,6 +570,141 @@ func TestCreateRunUsesFactoryBranch(t *testing.T) {
 	}
 }
 
+func TestResolveHead(t *testing.T) {
+	tests := []struct {
+		name        string
+		head        string
+		fork        string
+		want        string
+		wantWarning string
+		wantErr     bool
+	}{
+		{
+			name: "no fork leaves head unchanged",
+			head: "feature",
+			fork: "",
+			want: "feature",
+		},
+		{
+			name: "fork prefixes owner from owner/repo",
+			head: "feature/issue-259",
+			fork: "myfork/repo",
+			want: "myfork:feature/issue-259",
+		},
+		{
+			name: "fork without repo segment still yields owner prefix",
+			head: "feature",
+			fork: "myfork",
+			want: "myfork:feature",
+		},
+		{
+			name: "head with matching owner is preserved without warning",
+			head: "myfork:feature",
+			fork: "myfork/repo",
+			want: "myfork:feature",
+		},
+		{
+			name:        "head owner overriding mismatched fork owner warns",
+			head:        "other:feature",
+			fork:        "myfork/repo",
+			want:        "other:feature",
+			wantWarning: `--head owner "other" overrides --fork owner "myfork"`,
+		},
+		{
+			name:    "fork missing owner is rejected",
+			head:    "feature",
+			fork:    "/repo",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, warning, err := resolveHead(tt.head, tt.fork)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("resolveHead() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err != nil {
+				return
+			}
+			if got != tt.want {
+				t.Fatalf("resolveHead() = %q, want %q", got, tt.want)
+			}
+			if warning != tt.wantWarning {
+				t.Fatalf("resolveHead() warning = %q, want %q", warning, tt.wantWarning)
+			}
+		})
+	}
+}
+
+func TestCreateRunForkNormalizesHeadToOwnerBranch(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	var createdOpts *api.CreatePROptions
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "upstream/repo",
+		Title:      "title",
+		Body:       "body",
+		Head:       "feature/issue-259",
+		Base:       "main",
+		Fork:       "myfork/repo",
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			createdOpts = createOpts
+			return &api.PullRequest{Number: 7, HTMLURL: "https://gitcode.com/upstream/repo/merge_requests/7"}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if createdOpts == nil {
+		t.Fatalf("CreatePR() was not called")
+	}
+	if createdOpts.Head != "myfork:feature/issue-259" {
+		t.Fatalf("CreatePR Head = %q, want %q", createdOpts.Head, "myfork:feature/issue-259")
+	}
+}
+
+func TestCreateRunForkPreservesExplicitOwnerHead(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	var createdOpts *api.CreatePROptions
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "upstream/repo",
+		Title:      "title",
+		Body:       "body",
+		Head:       "explicitowner:feature",
+		Base:       "main",
+		Fork:       "myfork/repo",
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			createdOpts = createOpts
+			return &api.PullRequest{Number: 8, HTMLURL: "https://gitcode.com/upstream/repo/merge_requests/8"}, nil
+		},
+		OpenBrowser: func(url string) error { return nil },
+	}
+
+	if err := createRun(opts); err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if createdOpts == nil {
+		t.Fatalf("CreatePR() was not called")
+	}
+	if createdOpts.Head != "explicitowner:feature" {
+		t.Fatalf("CreatePR Head = %q, want %q", createdOpts.Head, "explicitowner:feature")
+	}
+	errOut := f.IOStreams.ErrOut.(*bytes.Buffer).String()
+	if !strings.Contains(errOut, `--head owner "explicitowner" overrides --fork owner "myfork"`) {
+		t.Fatalf("expected owner-conflict warning on stderr, got %q", errOut)
+	}
+}
+
 func TestCreateRunBranchError(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

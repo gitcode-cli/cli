@@ -66,12 +66,11 @@ func TestCreatePullRequestUsesFormEncoding(t *testing.T) {
 	client.SetToken("test-token", "test")
 
 	pr, err := CreatePullRequest(client, "owner", "repo", &CreatePROptions{
-		Title:    "created",
-		Body:     "body text",
-		Head:     "feature",
-		Base:     "main",
-		Draft:    true,
-		ForkPath: "fork/repo",
+		Title: "created",
+		Body:  "body text",
+		Head:  "myfork:feature",
+		Base:  "main",
+		Draft: true,
 	})
 	if err != nil {
 		t.Fatalf("CreatePullRequest() error = %v", err)
@@ -91,10 +90,12 @@ func TestCreatePullRequestUsesFormEncoding(t *testing.T) {
 	expectedPairs := []string{
 		"title=created",
 		"body=body+text",
-		"head=feature",
+		"head=myfork%3Afeature",
 		"base=main",
 		"draft=true",
-		"fork_path=fork%2Frepo",
+	}
+	if strings.Contains(gotBody, "fork_path") {
+		t.Fatalf("request body %q should not contain fork_path", gotBody)
 	}
 	for _, pair := range expectedPairs {
 		if !strings.Contains(gotBody, pair) {

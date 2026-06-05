@@ -43,12 +43,15 @@ gitcode-cli 项目的评审规范（`spec/workflows/review-workflow.md`）要求
 5. 每个 Agent 输出结构化评审结论（checklist + issues + overall assessment）
 6. 等待所有 Agent 完成后汇总评审结果
 7. 将汇总发布到 PR 评论中
-8. 如 CI 未通过，在汇总中标记
+8. **对评审发现的问题创建跟踪 Issue**（即使是 minor 也建议创建）
+9. **在 PR 下 @作者 通知修复建议**（附上 Issue 链接）
+10. 如 CI 未通过，在汇总中标记
 
 注意：
 - 评审 Agent 和作者必须是不同执行上下文
 - 汇总使用标准化表格格式
 - CI 结果、PR 链接、Issue 链接全部附带 URL
+- **严禁"先合并后补 Issue"——Issue 必须在合并前创建**
 ```
 
 ## 预期产出
@@ -350,7 +353,80 @@ gc pr review 221 --comment "[汇总内容]" -R gitcode-cli/cli
 
 评审汇总评论已发布到 PR #221。
 
-### 阶段 9: 评审结论同步到 CI 镜像
+### 阶段 9: 创建跟踪 Issue 并通知作者
+
+> **⚠️ 流程教训**: 本次执行中此步骤在合并之后才补做（详见阶段 10 "反思"）。规范流程要求：**评审发现问题 → 创建 Issue → PR 下评论 @作者 → 确认修复/rebase → 合并**。以下记录实际执行过程（含事后补救）。
+
+评审发现的问题需转化为可跟踪的 Issue，并在 PR 下 @作者知悉：
+
+**创建跟踪 Issue**:
+
+```bash
+# Issue #262: Code Review 发现 — InstallHook 失败未设 Reason
+gc issue create -R gitcode-cli/cli \
+  --title "[Follow-up] PR #221 评审发现: InstallHook 失败时未设置 Reason 字段" \
+  --label "type/bug,scope/precommit,risk/low" \
+  --body "## 来源
+PR #221 多角色评审 — Code Reviewer 发现
+
+## 问题
+InstallHook 失败路径中，EnsureTool 成功但 InstallHook 失败时，
+代码直接返回 res, err，未设置 res.Reason。JSON 输出缺少 reason 字段。
+
+## 预期
+InstallHook 失败时设置 res.Reason = ReasonInstallFailed"
+
+# 返回: ✓ Created issue #262
+# 链接: https://gitcode.com/gitcode-cli/cli/issues/262
+
+# Issue #263: Test Review 发现 — classifyInstallFailure 关键词覆盖不完整
+gc issue create -R gitcode-cli/cli \
+  --title "[Follow-up] PR #221 评审发现: classifyInstallFailure 关键词覆盖不完整" \
+  --label "type/bug,scope/testing,risk/low" \
+  --body "## 来源
+PR #221 多角色评审 — Test Reviewer 发现
+
+## 问题
+classifyInstallFailure 关键词覆盖率 5/17 模式，
+缺少 error-only 分类路径测试。"
+# 返回: ✓ Created issue #263
+# 链接: https://gitcode.com/gitcode-cli/cli/issues/263
+```
+
+**PR 下评论通知作者**:
+
+```bash
+gc pr review 221 --comment "## 多角色评审后续跟进
+
+@zxf_0731 PR 已合入，感谢贡献！评审中发现以下问题，已创建跟踪 Issue：
+
+### 需修复
+| Issue | 问题 | 严重度 | 来源 |
+|-------|------|--------|------|
+| #262 | InstallHook 失败时未设置 res.Reason | minor | Code Review |
+| #263 | classifyInstallFailure 关键词覆盖 5/17 + 缺少 error-only 路径测试 | minor | Test Review |
+
+### 非阻塞建议
+| # | 问题 | 来源 |
+|---|------|------|
+| 1 | 设计文档 \"reason\":\"\" 与 omitempty 不一致 | Docs Review |
+| 2 | ssl 关键词分类为 network 可能误导 | Code Review |
+| 3 | RunStdout/Run override 不一致 (latent fragility) | Test Review |
+
+以上问题均非阻塞，请关注 #262 和 #263 并择机修复。" -R gitcode-cli/cli
+
+# 返回: ✓ Commented on PR #221
+```
+
+**创建 Issue 原则**:
+
+| 评审发现 | 处理方式 |
+|----------|---------|
+| 阻塞性问题 (blocker) | **必须**创建 Issue，作者修复后重新评审 |
+| 非阻塞改进 (minor) | **建议**创建 Issue 跟踪，不阻塞合并 |
+| 风格/偏好建议 | PR 评论中说明即可，不创建 Issue |
+
+### 阶段 10: 合并 PR
 
 ```bash
 gc pr merge 221 -R gitcode-cli/cli --yes
@@ -365,7 +441,19 @@ grep "Validate repository input before auth" pkg/cmd/issue/comments/comments.go
 # 确认 PR #222 修复完好无损
 ```
 
-### 端到端流程
+### 反思：正确流程 vs 本次执行
+
+```
+❌ 本次实际执行顺序:
+  评审汇总 → 发布评论 → 合并 PR → 创建 Issue → 通知作者
+
+✅ 规范要求顺序:
+  评审汇总 → 创建 Issue → PR 下 @作者通知 → 作者确认/修复 → 合并 PR
+```
+
+**教训**: 评审发现问题后不应直接合并——即使问题非阻塞，也应先创建 Issue 并通知作者，让作者有机会在合并前确认或修复。非阻塞 minor 问题可在 Issue 创建后先行合并，但 Issue 必须前置创建。
+
+### 端到端流程（修正后）
 
 ```
 PR #221 (zxf_0731 fork)
@@ -379,9 +467,11 @@ PR #221 (zxf_0731 fork)
   → 启动 4 Agent 并行评审
   → 等待全部 Agent 返回结论
   → 汇总结构化评审表
-  → 发布评论到 PR #221
+  → 发布评审汇总到 PR #221
+  → 创建跟踪 Issue (#262, #263)    ← 关键步骤
+  → PR 下 @作者 通知修复建议       ← 关键步骤
   → TeamDelete(清理)
-  → 合并 PR
+  → 合并 PR（非阻塞 minor 问题不阻止合并）
   → 验证 #222 修复完好
 ```
 
@@ -395,6 +485,8 @@ PR #221 (zxf_0731 fork)
 6. **团队清理**：所有 Agent 需通过 shutdown_request/response 协议关闭后，TeamDelete 才能成功。残留 active member 会阻止清理。
 7. **评审发现的关键问题**：Security Reviewer 发现的 #222 回退风险是本次评审最有价值的发现——证明多角色评审中 Security Reviewer 视角独特，不局限于传统安全漏洞扫描。
 8. **合并后验证**：合并 PR 后立即验证关键修复是否完好，避免"合并后无人检查"的盲区。
+9. **评审发现问题必须先创建 Issue**：规范顺序是"评审 → 创建 Issue → @作者 → 合并"，而非"评审 → 合并 → 补 Issue"。即使是非阻塞 minor 问题，Issue 也应前置创建，让作者有机会在合并前确认。本次执行中此步骤被遗漏，事后补救创建了 #262 和 #263。
+10. **PR 评论 @作者是必要步骤**：作者可能不主动关注已合入 PR 的后续评论，需显式 @作者 确保通知送达。评审结论中的问题清单和跟踪 Issue 链接应一并提供给作者。
 
 ## 相关案例
 

@@ -138,6 +138,95 @@ func TestCheckRunPasses(t *testing.T) {
 	}
 }
 
+func TestCheckReasonNoConfig(t *testing.T) {
+	res, err := Check(newFakeRunner(), Options{Root: t.TempDir()})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !res.OK || res.Reason != ReasonNoConfig {
+		t.Fatalf("want OK + reason=%q, got OK=%v reason=%q", ReasonNoConfig, res.OK, res.Reason)
+	}
+}
+
+func TestCheckReasonToolMissing(t *testing.T) {
+	root := t.TempDir()
+	writeConfig(t, root)
+	res, err := Check(newFakeRunner(), Options{Root: root})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if res.OK || res.Reason != ReasonToolMissing {
+		t.Fatalf("want not-OK + reason=%q, got OK=%v reason=%q", ReasonToolMissing, res.OK, res.Reason)
+	}
+}
+
+func TestCheckReasonHookMissing(t *testing.T) {
+	root := t.TempDir()
+	writeConfig(t, root)
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{out: "pre-commit 3.7.0\n"}
+	res, err := Check(r, Options{Root: root}) // AllowInstall false: hook stays missing
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if res.OK || res.Reason != ReasonHookMissing {
+		t.Fatalf("want not-OK + reason=%q, got OK=%v reason=%q", ReasonHookMissing, res.OK, res.Reason)
+	}
+}
+
+func TestCheckReasonRunFailed(t *testing.T) {
+	root := t.TempDir()
+	writeConfig(t, root)
+	writeInstalledHook(t, root)
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{out: "pre-commit 3.7.0\n"}
+	r.responses[key("pre-commit", "run", "--all-files")] = fakeResp{out: "boom", err: errExit{}}
+	res, err := Check(r, Options{Root: root, Run: true})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if res.OK || res.Reason != ReasonRunFailed {
+		t.Fatalf("want not-OK + reason=%q, got OK=%v reason=%q", ReasonRunFailed, res.OK, res.Reason)
+	}
+}
+
+func TestCheckReasonEmptyWhenReady(t *testing.T) {
+	root := t.TempDir()
+	writeConfig(t, root)
+	writeInstalledHook(t, root)
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{out: "pre-commit 3.7.0\n"}
+	res, err := Check(r, Options{Root: root})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !res.OK || res.Reason != "" {
+		t.Fatalf("want OK + empty reason, got OK=%v reason=%q", res.OK, res.Reason)
+	}
+}
+
+func TestCheckReasonInstallFailed(t *testing.T) {
+	root := t.TempDir()
+	writeConfig(t, root)
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errExit{}} // tool missing
+	r.look["pipx"] = true
+	r.responses[key("pipx", "install", "pre-commit")] = fakeResp{
+		err: errExit{},
+		out: "ERROR: [Errno 13] Permission denied",
+	}
+	res, err := Check(r, Options{Root: root, AllowInstall: true})
+	if err == nil {
+		t.Fatal("expected a hard error when auto-install fails")
+	}
+	if res.OK || res.Reason != ReasonInstallFailed {
+		t.Fatalf("want not-OK + reason=%q, got OK=%v reason=%q", ReasonInstallFailed, res.OK, res.Reason)
+	}
+	if len(res.InstallFailureCategories) != 1 || res.InstallFailureCategories[0] != "permission" {
+		t.Fatalf("want categories=[permission], got %v", res.InstallFailureCategories)
+	}
+}
+
 type errExit struct{}
 
 func (errExit) Error() string { return "exit status 1" }

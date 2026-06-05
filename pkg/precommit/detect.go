@@ -23,7 +23,9 @@ func ConfigFile(root string) (string, bool) {
 // ToolVersion returns the installed pre-commit version (e.g. "3.7.0") and whether
 // the tool is available.
 func ToolVersion(r CommandRunner) (string, bool) {
-	out, err := r.Run("", "pre-commit", "--version")
+	// Read stdout only: if pre-commit ever prints a warning to stderr, it must
+	// not leak into the parsed version token.
+	out, err := r.RunStdout("", "pre-commit", "--version")
 	if err != nil {
 		return "", false
 	}

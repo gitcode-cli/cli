@@ -1,6 +1,33 @@
 package precommit
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
+
+// Reason values are stable, machine-readable classifications of a Check outcome,
+// emitted in Result.Reason so scripts/agents can branch without parsing prose.
+// Reason is empty when the environment is fully ready (and any requested run
+// passed). The values are part of the --json contract; see docs/COMMANDS.md.
+const (
+	// ReasonNoConfig: the repository has no pre-commit config; nothing to check.
+	// Paired with OK == true (a clean skip, not a failure).
+	ReasonNoConfig = "no_config"
+	// ReasonToolMissing: the pre-commit tool is not installed (and was not, or
+	// could not be, installed).
+	ReasonToolMissing = "tool_missing"
+	// ReasonHookMissing: the git pre-commit hook is not initialized.
+	ReasonHookMissing = "hook_missing"
+	// ReasonRunFailed: the environment is ready but `pre-commit run` failed.
+	ReasonRunFailed = "run_failed"
+	// ReasonInstallFailed: an auto-install attempt was made but failed. The
+	// machine-readable failure categories are carried in
+	// Result.InstallFailureCategories. Paired with a non-nil Check error.
+	ReasonInstallFailed = "install_failed"
+	// ReasonNotInRepo: the working directory is not inside a git repository.
+	// Set by the command layer, which never reaches Check.
+	ReasonNotInRepo = "not_in_repo"
+)
 
 // Options controls a Check run.
 type Options struct {
@@ -29,6 +56,13 @@ type Result struct {
 	RunResult     string   `json:"run_result,omitempty"` // "passed" | "failed" | ""
 	RunOutput     string   `json:"run_output,omitempty"` // pre-commit run output when RunResult == "failed"
 	OK            bool     `json:"ok"`
+	// Reason is a stable, machine-readable classification of the outcome (one of
+	// the Reason* constants), or "" when the environment is fully ready.
+	Reason string `json:"reason,omitempty"`
+	// InstallFailureCategories carries the distinct auto-install failure
+	// categories ("permission" | "network" | "toolchain"), in first-seen order,
+	// when Reason == ReasonInstallFailed. Empty otherwise.
+	InstallFailureCategories []string `json:"install_failure_categories,omitempty"`
 }
 
 // Check runs the detection/remediation pipeline and returns a structured Result.
@@ -40,6 +74,7 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 	// 1. Config detection — absence is a clean skip, not an error.
 	if _, found := ConfigFile(opts.Root); !found {
 		res.OK = true
+		res.Reason = ReasonNoConfig
 		return res, nil
 	}
 	res.ConfigFound = true
@@ -49,6 +84,13 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 	if !ok && opts.AllowInstall {
 		action, err := EnsureTool(r)
 		if err != nil {
+			// A hard install failure: classify it so --json consumers get a
+			// machine-readable reason and categories, not just stderr prose.
+			res.Reason = ReasonInstallFailed
+			var ie *InstallError
+			if errors.As(err, &ie) {
+				res.InstallFailureCategories = ie.CategoryNames()
+			}
 			return res, err
 		}
 		if action != "" {
@@ -59,6 +101,7 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 	res.ToolInstalled = ok
 	res.ToolVersion = version
 	if !ok {
+		res.Reason = ReasonToolMissing
 		return res, nil // not ready; OK stays false
 	}
 
@@ -76,6 +119,7 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 	}
 	res.HookInstalled = hookOK
 	if !hookOK {
+		res.Reason = ReasonHookMissing
 		return res, nil
 	}
 
@@ -90,6 +134,7 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 			res.RunResult = "failed"
 			res.RunOutput = strings.TrimSpace(out)
 			res.OK = false
+			res.Reason = ReasonRunFailed
 		} else {
 			res.RunResult = "passed"
 		}

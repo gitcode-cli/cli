@@ -2,6 +2,7 @@ package precommit
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -134,6 +135,113 @@ func TestEnsureToolPipxFailsFallsBackToPython3(t *testing.T) {
 	}
 }
 
+func TestClassifyInstallFailure(t *testing.T) {
+	cases := []struct {
+		name   string
+		err    error
+		output string
+		want   installFailureCategory
+	}{
+		{"permission", errors.New("exit status 1"), "ERROR: Could not install packages due to an OSError: [Errno 13] Permission denied", failPermission},
+		{"windows permission", errors.New("exit 1"), "Access is denied", failPermission},
+		{"network dns", errors.New("exit 1"), "Could not resolve host: pypi.org", failNetwork},
+		{"network retries", errors.New("exit 1"), "Max retries exceeded with url", failNetwork},
+		{"toolchain", errors.New("exit 1"), "No module named pip", failToolchain},
+		{"other", errors.New("exit 1"), "some unrelated failure", failOther},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := classifyInstallFailure(tc.err, tc.output); got != tc.want {
+				t.Fatalf("classifyInstallFailure(%q) = %v, want %v", tc.output, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestEnsureToolPermissionGuidance(t *testing.T) {
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	r.look["pipx"] = true
+	r.responses[key("pipx", "install", "pre-commit")] = fakeResp{
+		err: errors.New("exit status 1"),
+		out: "ERROR: [Errno 13] Permission denied",
+	}
+	_, err := EnsureTool(r)
+	if err == nil {
+		t.Fatal("expected error when install fails")
+	}
+	if !strings.Contains(err.Error(), "Permission denied:") {
+		t.Fatalf("expected targeted permission guidance, got %q", err.Error())
+	}
+}
+
+func TestEnsureToolNetworkGuidance(t *testing.T) {
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	r.look["pipx"] = true
+	r.responses[key("pipx", "install", "pre-commit")] = fakeResp{
+		err: errors.New("exit status 1"),
+		out: "Could not resolve host: pypi.org",
+	}
+	_, err := EnsureTool(r)
+	if err == nil {
+		t.Fatal("expected error when install fails")
+	}
+	if !strings.Contains(err.Error(), "Network failure:") {
+		t.Fatalf("expected targeted network guidance, got %q", err.Error())
+	}
+}
+
+func TestEnsureToolInstallErrorCategories(t *testing.T) {
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	r.look["pipx"] = true
+	r.look["python3"] = true
+	// Two installers fail with distinct categories: both must be carried, in
+	// first-seen order, on the typed error.
+	r.responses[key("pipx", "install", "pre-commit")] = fakeResp{err: errors.New("e"), out: "Permission denied"}
+	r.responses[key("python3", "-m", "pip", "install", "--user", "pre-commit")] = fakeResp{err: errors.New("e"), out: "Could not resolve host: pypi.org"}
+	_, err := EnsureTool(r)
+	var ie *InstallError
+	if !errors.As(err, &ie) {
+		t.Fatalf("want *InstallError, got %T: %v", err, err)
+	}
+	if got := strings.Join(ie.CategoryNames(), ","); got != "permission,network" {
+		t.Fatalf("CategoryNames() = %q, want %q", got, "permission,network")
+	}
+}
+
+func TestEnsureToolNoInstallerCategoryToolchain(t *testing.T) {
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	// No pipx/python on PATH at all: the host lacks a usable toolchain.
+	_, err := EnsureTool(r)
+	var ie *InstallError
+	if !errors.As(err, &ie) {
+		t.Fatalf("want *InstallError, got %T: %v", err, err)
+	}
+	if got := strings.Join(ie.CategoryNames(), ","); got != "toolchain" {
+		t.Fatalf("CategoryNames() = %q, want %q", got, "toolchain")
+	}
+}
+
+func TestEnsureToolDedupesGuidance(t *testing.T) {
+	r := newFakeRunner()
+	r.responses[key("pre-commit", "--version")] = fakeResp{err: errors.New("not found")}
+	r.look["pipx"] = true
+	r.look["python3"] = true
+	// Both installers fail with the same category: guidance must appear once.
+	r.responses[key("pipx", "install", "pre-commit")] = fakeResp{err: errors.New("e"), out: "Permission denied"}
+	r.responses[key("python3", "-m", "pip", "install", "--user", "pre-commit")] = fakeResp{err: errors.New("e"), out: "Access is denied"}
+	_, err := EnsureTool(r)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if n := strings.Count(err.Error(), "Permission denied:"); n != 1 {
+		t.Fatalf("expected permission guidance exactly once, got %d in %q", n, err.Error())
+	}
+}
+
 // versionAfterInstall makes pre-commit --version fail until succeedAfter calls have
 // happened, simulating a tool that appears after installation.
 type versionAfterInstall struct {
@@ -142,7 +250,7 @@ type versionAfterInstall struct {
 	callCount    *int
 }
 
-func (w *versionAfterInstall) Run(dir, name string, args ...string) (string, error) {
+func (w *versionAfterInstall) RunStdout(dir, name string, args ...string) (string, error) {
 	if name == "pre-commit" && len(args) == 1 && args[0] == "--version" {
 		*w.callCount++
 		if *w.callCount > w.succeedAfter {
@@ -150,5 +258,5 @@ func (w *versionAfterInstall) Run(dir, name string, args ...string) (string, err
 		}
 		return "", errors.New("not found")
 	}
-	return w.fakeRunner.Run(dir, name, args...)
+	return w.fakeRunner.RunStdout(dir, name, args...)
 }

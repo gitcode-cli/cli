@@ -27,23 +27,29 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Setup version
+      - name: Validate version input
         id: version
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
-          VERSION="${{ inputs.version }}"
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "VERSION_NUM=${VERSION#v}" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          VERSION="${VERSION_INPUT}"
+          VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          VERSION="${{ inputs.version }}"
-          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
+          set -euo pipefail
+          if git rev-parse --verify --quiet "refs/tags/${VERSION}" >/dev/null; then
             echo "Tag ${VERSION} already exists, using it"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git tag -a "${VERSION}" -m "Release ${VERSION}"
-            git push origin "${VERSION}"
+            git push origin "refs/tags/${VERSION}"
           fi
 
       - name: Generate completions
@@ -63,8 +69,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync version across configs
+        env:
+          VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
         run: |
-          VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
+          set -euo pipefail
           sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-amd64.yaml
           sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-arm64.yaml
           sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
@@ -74,8 +82,10 @@ jobs:
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
       - name: Build DEB/RPM packages
+        env:
+          VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
         run: |
-          VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
+          set -euo pipefail
 
           # Extract GoReleaser linux binaries
           tar -xzf dist/gc_*_linux_amd64.tar.gz -C dist
@@ -102,8 +112,9 @@ jobs:
       - name: Upload packages to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
+          set -euo pipefail
           gh release upload "${VERSION}" dist/*.deb dist/*.rpm --clobber
 
   pypi:
@@ -127,22 +138,29 @@ jobs:
 
       - name: Setup version
         id: version
+        env:
+          VERSION_FROM_BUILD: ${{ needs.build.outputs.version }}
         run: |
-          VERSION="${{ needs.build.outputs.version }}"
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "VERSION_NUM=${VERSION#v}" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          VERSION="${VERSION_FROM_BUILD}"
+          VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
 
       - name: Sync version in configs
+        env:
+          VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
         run: |
-          VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
+          set -euo pipefail
           sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
           sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
 
       - name: Download release binaries
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
+          set -euo pipefail
           gh release download "${VERSION}" \
             --pattern 'gc_*_linux_amd64.tar.gz' \
             --pattern 'gc_*_linux_arm64.tar.gz' \

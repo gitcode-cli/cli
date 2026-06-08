@@ -91,10 +91,12 @@ func TestReviewRun_ApproveWithComment(t *testing.T) {
 	}
 }
 
-func TestReviewRun_RequestUnsupported(t *testing.T) {
-	io, _, _, _ := testutil.NewTestIOStreams()
+func TestReviewRun_RequestChanges(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
 	restoreToken := testutil.SetTestToken()
 	defer restoreToken()
+
+	commentCalled := false
 
 	err := reviewRun(&ReviewOptions{
 		IO:         io,
@@ -107,18 +109,97 @@ func TestReviewRun_RequestUnsupported(t *testing.T) {
 			return nil
 		},
 		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
-			t.Fatal("did not expect request to call CreatePRComment")
-			return nil, nil
+			commentCalled = true
+			if !strings.HasPrefix(opts.Body, "[REQUEST CHANGES] ") {
+				t.Fatalf("expected comment body to start with [REQUEST CHANGES] prefix, got %q", opts.Body)
+			}
+			return &api.PRComment{Body: opts.Body}, nil
 		},
 	})
-	if err == nil {
-		t.Fatal("expected error for unsupported request changes")
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "not supported by the current GitCode API") {
-		t.Fatalf("unexpected error: %v", err)
+	if !commentCalled {
+		t.Fatal("expected request changes to call CreatePRComment")
 	}
-	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
-		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
+	if !strings.Contains(out.String(), "requested changes on PR #123") {
+		t.Fatalf("expected request changes output, got %q", out.String())
+	}
+	if !strings.Contains(out.String(), "does not support REQUEST_CHANGES natively") {
+		t.Fatalf("expected degradation note in output, got %q", out.String())
+	}
+}
+
+func TestReviewRun_RequestChangesWithComment(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	commentCalled := false
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Request:    true,
+		Comment:    "Please fix the error handling",
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			t.Fatal("did not expect request to call ReviewPR")
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			commentCalled = true
+			expected := "[REQUEST CHANGES] Please fix the error handling"
+			if opts.Body != expected {
+				t.Fatalf("expected comment body %q, got %q", expected, opts.Body)
+			}
+			return &api.PRComment{Body: opts.Body}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
+	}
+	if !commentCalled {
+		t.Fatal("expected request changes with comment to call CreatePRComment")
+	}
+	if !strings.Contains(out.String(), "Please fix the error handling") {
+		t.Fatalf("expected comment echoed in output, got %q", out.String())
+	}
+	if !strings.Contains(out.String(), "requested changes on PR #123") {
+		t.Fatalf("expected request changes output, got %q", out.String())
+	}
+}
+
+func TestReviewRun_RequestChangesJSON(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Request:    true,
+		Comment:    "Needs work",
+		JSON:       true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			t.Fatal("did not expect request to call ReviewPR")
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			return &api.PRComment{Body: opts.Body}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
+	}
+	if !strings.Contains(out.String(), `"action": "requested_changes"`) {
+		t.Fatalf("expected JSON action requested_changes, got %q", out.String())
+	}
+	if !strings.Contains(out.String(), `[REQUEST CHANGES] Needs work`) {
+		t.Fatalf("expected [REQUEST CHANGES] prefix in JSON comment, got %q", out.String())
 	}
 }
 

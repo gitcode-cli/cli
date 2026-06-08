@@ -61,7 +61,9 @@ MAJOR.MINOR.PATCH
 MAJOR.MINOR.PATCH-PRERELEASE
 ```
 
-工作流不得把未验证的 `${{ inputs.version }}` 直接拼接进 shell 脚本文本中。应通过 `env` 传入 shell，再调用仓库脚本完成校验和归一化。
+其中 `PRERELEASE` 只允许包版本兼容的 `alpha.N`、`beta.N`、`rc.N` 形式，`N` 为非负整数且不能带多余前导零，例如 `beta.1`、`rc.2`。
+
+工作流不得把未验证的 `${{ inputs.version }}` 直接拼接进 shell 脚本文本中。应通过 `env` 传入 shell，再调用仓库脚本 `scripts/validate-release-version.sh` 完成校验和归一化。脚本输出去掉可选前缀 `v` 后的包版本号；release workflow 必须再派生出带 `v` 前缀的规范 tag，不能用原始输入创建 tag 或 release。
 
 ## 5. 发布前置条件
 

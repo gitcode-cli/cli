@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.0.0)'
+        description: 'Version, with optional v prefix (e.g., v1.0.0, 1.0.0, v1.0.0-rc.1)'
         required: true
         type: string
 
@@ -16,7 +16,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.VERSION }}
+      version: ${{ steps.version.outputs.VERSION_TAG }}
+      package_version: ${{ steps.version.outputs.VERSION_NUM }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,21 +36,22 @@ jobs:
           set -euo pipefail
           VERSION="${VERSION_INPUT}"
           VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
-          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+          VERSION_TAG="v${VERSION_NUM}"
+          echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
           echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
         env:
-          VERSION: ${{ steps.version.outputs.VERSION }}
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
         run: |
           set -euo pipefail
-          if git rev-parse --verify --quiet "refs/tags/${VERSION}" >/dev/null; then
-            echo "Tag ${VERSION} already exists, using it"
+          if git rev-parse --verify --quiet "refs/tags/${VERSION_TAG}" >/dev/null; then
+            echo "Tag ${VERSION_TAG} already exists, using it"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "${VERSION}" -m "Release ${VERSION}"
-            git push origin "refs/tags/${VERSION}"
+            git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
+            git push origin "refs/tags/${VERSION_TAG}"
           fi
 
       - name: Generate completions
@@ -112,10 +114,10 @@ jobs:
       - name: Upload packages to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.VERSION }}
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
         run: |
           set -euo pipefail
-          gh release upload "${VERSION}" dist/*.deb dist/*.rpm --clobber
+          gh release upload "${VERSION_TAG}" dist/*.deb dist/*.rpm --clobber
 
   pypi:
     name: PyPI
@@ -144,7 +146,8 @@ jobs:
           set -euo pipefail
           VERSION="${VERSION_FROM_BUILD}"
           VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
-          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+          VERSION_TAG="v${VERSION_NUM}"
+          echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
           echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
 
       - name: Sync version in configs
@@ -158,10 +161,10 @@ jobs:
       - name: Download release binaries
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.VERSION }}
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
         run: |
           set -euo pipefail
-          gh release download "${VERSION}" \
+          gh release download "${VERSION_TAG}" \
             --pattern 'gc_*_linux_amd64.tar.gz' \
             --pattern 'gc_*_linux_arm64.tar.gz' \
             --pattern 'gc_*_darwin_amd64.tar.gz' \

@@ -86,7 +86,7 @@ description: 使用 GitCode CLI 对多个 PR 和 commit 添加审查评论，包
 
 ### 跨平台提醒
 
-- `--path` 和 `--position` 基于 diff 的行号，不是源文件行号
+- `--position` 是目标代码在**新版本文件**中的行号（diff 新增侧/右侧的行号），不是 diff hunk 内的偏移量；先用 `gitcode pr diff` 读取新增侧行号
 - `--body-file` 在 Windows 下需要 UTF-8 编码文件
 
 ### 前置条件
@@ -115,7 +115,7 @@ description: 使用 GitCode CLI 对多个 PR 和 commit 添加审查评论，包
   - `gitcode commit comments create` — commit 评论可用
   - `gitcode pr comments --json` — 评论列表回读可用，返回完整的 comment 对象数组，含 discussion_id、comment_type、resolved 状态
 
-关键发现：行级注释的 `--position` 参数基于 diff 行号而非源文件行号。需要先用 `gitcode pr diff` 确定位置，再指定 `--path` 和 `--position`。如果 diff 更新后行号变化，之前的行级注释会显示为 "outdated"。当前 PR #5 的评论都是整体评论（`pr_comment` 类型，`diff_file` 为空），适合展示整体级别的审查流程。
+关键发现：行级注释的 `--position` 参数是目标代码在**新版本文件**中的行号（diff 新增侧/右侧的行号），不是 diff hunk 内的偏移量。需要先用 `gitcode pr diff` 读取新增侧行号，再指定 `--path` 和 `--position`。如果 diff 更新后行号变化，之前的行级注释会显示为 "outdated"。当前 PR #5 的评论都是整体评论（`pr_comment` 类型，`diff_file` 为空），适合展示整体级别的审查流程。
 
 ![GitCode CLI batch review evidence](assets/openlibing-batch-review-evidence.svg)
 

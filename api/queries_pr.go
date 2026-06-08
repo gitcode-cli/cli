@@ -111,9 +111,12 @@ type UpdatePROptions struct {
 
 // CreatePRCommentOptions represents options for creating a PR comment
 type CreatePRCommentOptions struct {
-	Body     string `json:"body"`
-	Path     string `json:"path,omitempty"`
-	Position int    `json:"position,omitempty"`
+	Body string `json:"body"`
+	Path string `json:"path,omitempty"`
+	// Position is the line number in the new version of the file (the new/right
+	// side of the diff), not an offset within the diff hunk. The API resolves it
+	// to the diff_position (new_line) of the comment.
+	Position int `json:"position,omitempty"`
 }
 
 // CreatePRReviewOptions represents options for creating a PR review

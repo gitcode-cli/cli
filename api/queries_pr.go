@@ -242,7 +242,10 @@ func buildPRCreateFormValues(opts *CreatePROptions) url.Values {
 		formValues.Set("draft", "true")
 	}
 	for _, label := range opts.Labels {
-		formValues.Add("labels[]", label)
+		trimmed := strings.TrimSpace(label)
+		if trimmed != "" {
+			formValues.Add("labels[]", trimmed)
+		}
 	}
 
 	return formValues
@@ -305,7 +308,10 @@ func buildPRUpdateFormValues(opts *UpdatePROptions) url.Values {
 		formValues.Set("milestone_number", itoa(opts.MilestoneNumber))
 	}
 	for _, label := range opts.Labels {
-		formValues.Add("labels[]", label)
+		trimmed := strings.TrimSpace(label)
+		if trimmed != "" {
+			formValues.Add("labels[]", trimmed)
+		}
 	}
 	if opts.CloseRelatedIssue != nil {
 		if *opts.CloseRelatedIssue {

@@ -86,7 +86,7 @@ GitCode 主仓（`gitcode.com/gitcode-cli/cli`）当前不作为 CI 运行平台
 | Job | 运行环境 | 内容 | 对应质量门禁 |
 |-----|---------|------|-------------|
 | `lint` | ubuntu-latest | golangci-lint | 代码规范检查（`coding-standards.md`） |
-| `test` | ubuntu / macos / windows | `go test -v -race -coverprofile` | 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
+| `test` | ubuntu / macos / windows | release version 脚本校验 + `go test -v -race -coverprofile` | 发布输入脚本回归 + 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
 | `build` | ubuntu / macos / windows | `go build` + `gc version` | 跨平台构建验证（`build-and-package.md`） |
 | `docker` | ubuntu-latest | Docker 构建 + shell 补全生成 | 容器化构建验证 |
 
@@ -108,6 +108,7 @@ test ──┘
 | 质量门禁要求 | CI 覆盖 |
 |-------------|---------|
 | `go test ./...` | `test` Job（3 OS，`-race`） |
+| release workflow 版本输入校验 | `test` Job 运行 `scripts/test-release-version-validation.sh` |
 | `go build` | `build` Job（3 OS） |
 | 格式/规范检查 | `lint` Job（golangci-lint） |
 | 跨平台兼容 | `test` + `build` 覆盖 ubuntu/macos/windows |

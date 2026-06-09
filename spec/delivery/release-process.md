@@ -52,6 +52,19 @@ vMAJOR.MINOR.PATCH[-PRERELEASE]
 - 产物文件名中的版本与 tag 一致
 - release notes 中的下载示例与实际版本一致
 
+手动触发发布工作流时，`workflow_dispatch.inputs.version` 必须在第一阶段通过白名单校验后才能进入 tag、release、资产上传或配置替换步骤。允许的输入格式为：
+
+```text
+vMAJOR.MINOR.PATCH
+vMAJOR.MINOR.PATCH-PRERELEASE
+MAJOR.MINOR.PATCH
+MAJOR.MINOR.PATCH-PRERELEASE
+```
+
+其中 `PRERELEASE` 只允许包版本兼容的 `alpha.N`、`beta.N`、`rc.N` 形式，`N` 为非负整数且不能带多余前导零，例如 `beta.1`、`rc.2`。
+
+工作流不得把未验证的 `${{ inputs.version }}` 直接拼接进 shell 脚本文本中。应通过 `env` 传入 shell，再调用仓库脚本 `scripts/validate-release-version.sh` 完成校验和归一化。脚本输出去掉可选前缀 `v` 后的包版本号；release workflow 必须再派生出带 `v` 前缀的规范 tag，不能用原始输入创建 tag 或 release。
+
 ## 5. 发布前置条件
 
 正式发布前必须满足：

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.0.0)'
+        description: 'Version, with optional v prefix (e.g., v1.0.0, 1.0.0, v1.0.0-rc.1)'
         required: true
         type: string
 
@@ -16,7 +16,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.VERSION }}
+      version: ${{ steps.version.outputs.VERSION_TAG }}
+      package_version: ${{ steps.version.outputs.VERSION_NUM }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,23 +28,30 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Setup version
+      - name: Validate version input
         id: version
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
-          VERSION="${{ inputs.version }}"
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "VERSION_NUM=${VERSION#v}" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          VERSION="${VERSION_INPUT}"
+          VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
+          VERSION_TAG="v${VERSION_NUM}"
+          echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
+          echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
         run: |
-          VERSION="${{ inputs.version }}"
-          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
-            echo "Tag ${VERSION} already exists, using it"
+          set -euo pipefail
+          if git rev-parse --verify --quiet "refs/tags/${VERSION_TAG}" >/dev/null; then
+            echo "Tag ${VERSION_TAG} already exists, using it"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "${VERSION}" -m "Release ${VERSION}"
-            git push origin "${VERSION}"
+            git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
+            git push origin "refs/tags/${VERSION_TAG}"
           fi
 
       - name: Generate completions
@@ -63,8 +71,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync version across configs
+        env:
+          VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
         run: |
-          VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
+          set -euo pipefail
           sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-amd64.yaml
           sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-arm64.yaml
           sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
@@ -74,8 +84,10 @@ jobs:
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
       - name: Build DEB/RPM packages
+        env:
+          VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
         run: |
-          VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
+          set -euo pipefail
 
           # Extract GoReleaser linux binaries
           tar -xzf dist/gc_*_linux_amd64.tar.gz -C dist
@@ -102,9 +114,10 @@ jobs:
       - name: Upload packages to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          gh release upload "${VERSION}" dist/*.deb dist/*.rpm --clobber
+          set -euo pipefail
+          gh release upload "${VERSION_TAG}" dist/*.deb dist/*.rpm --clobber
 
   pypi:
     name: PyPI
@@ -127,23 +140,31 @@ jobs:
 
       - name: Setup version
         id: version
+        env:
+          VERSION_FROM_BUILD: ${{ needs.build.outputs.version }}
         run: |
-          VERSION="${{ needs.build.outputs.version }}"
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "VERSION_NUM=${VERSION#v}" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          VERSION="${VERSION_FROM_BUILD}"
+          VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
+          VERSION_TAG="v${VERSION_NUM}"
+          echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
+          echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
 
       - name: Sync version in configs
+        env:
+          VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
         run: |
-          VERSION_NUM="${{ steps.version.outputs.VERSION_NUM }}"
+          set -euo pipefail
           sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
           sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
 
       - name: Download release binaries
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          gh release download "${VERSION}" \
+          set -euo pipefail
+          gh release download "${VERSION_TAG}" \
             --pattern 'gc_*_linux_amd64.tar.gz' \
             --pattern 'gc_*_linux_arm64.tar.gz' \
             --pattern 'gc_*_darwin_amd64.tar.gz' \

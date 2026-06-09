@@ -28,7 +28,7 @@ func NewCmdRepo(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(branch.NewCmdBranch(f, nil))
+	cmd.AddCommand(branch.NewCmdBranch(f))
 	cmd.AddCommand(clone.NewCmdClone(f, nil))
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
 	cmd.AddCommand(fork.NewCmdFork(f, nil))

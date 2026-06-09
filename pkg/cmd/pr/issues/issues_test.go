@@ -36,6 +36,16 @@ func TestNewCmdIssues(t *testing.T) {
 			args:    []string{"abc"},
 			wantErr: true,
 		},
+		{
+			name:    "zero PR number",
+			args:    []string{"0"},
+			wantErr: true,
+		},
+		{
+			name:    "negative PR number",
+			args:    []string{"-1"},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -162,5 +172,34 @@ func TestIssuesRunNotFound(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error for nonexistent PR")
+	}
+}
+
+func TestIssuesRunEmptyFields(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.HasSuffix(r.URL.Path, "/issues") {
+			_, _ = w.Write([]byte(`[{"id":"1","number":"","title":"","state":"open"}]`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+
+	err := issuesRun(&IssuesOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     1,
+		JSON:       false,
+	})
+	if err != nil {
+		t.Fatalf("issuesRun() error = %v", err)
+	}
+	output := out.String()
+	if !strings.Contains(output, "#?") || !strings.Contains(output, "(no title)") {
+		t.Fatalf("expected fallback for empty fields, got: %q", output)
 	}
 }

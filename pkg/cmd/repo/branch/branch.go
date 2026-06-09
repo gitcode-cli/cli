@@ -4,6 +4,7 @@ package branch
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -26,21 +27,21 @@ type ViewOptions struct {
 	JSON bool
 }
 
-// NewCmdBranch creates the repo branch command group with view subcommand
-func NewCmdBranch(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Command {
+// NewCmdBranch creates the repo branch command group
+func NewCmdBranch(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "branch <command>",
 		Short: "Manage branches",
 		Long:  "Work with repository branches.",
 	}
 
-	viewCmd := newCmdView(f, runF)
-	cmd.AddCommand(viewCmd)
+	cmd.AddCommand(NewCmdView(f, nil))
 
 	return cmd
 }
 
-func newCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Command {
+// NewCmdView creates the view subcommand for repo branch
+func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Command {
 	opts := &ViewOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
@@ -52,6 +53,9 @@ func newCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		Short: "View a branch in a repository",
 		Long: heredoc.Doc(`
 			View information about a branch in a GitCode repository.
+
+			Displays branch name, protection status, and latest commit details
+			(ID, short ID, title, author). Use --json for the full branch object.
 		`),
 		Example: heredoc.Doc(`
 			# View a branch
@@ -65,7 +69,10 @@ func newCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Branch = args[0]
+			opts.Branch = strings.TrimSpace(args[0])
+			if opts.Branch == "" {
+				return cmdutil.NewUsageError("branch name cannot be empty")
+			}
 
 			if runF != nil {
 				return runF(opts)

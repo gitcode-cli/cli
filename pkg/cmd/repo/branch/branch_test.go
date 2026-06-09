@@ -18,17 +18,17 @@ func TestNewCmdBranchView(t *testing.T) {
 	}{
 		{
 			name:    "view branch",
-			args:    []string{"view", "main"},
+			args:    []string{"main"},
 			wantErr: false,
 		},
 		{
 			name:    "view branch with repo",
-			args:    []string{"view", "main", "-R", "owner/repo"},
+			args:    []string{"main", "-R", "owner/repo"},
 			wantErr: false,
 		},
 		{
 			name:    "no branch name",
-			args:    []string{"view"},
+			args:    []string{},
 			wantErr: true,
 		},
 	}
@@ -36,7 +36,7 @@ func TestNewCmdBranchView(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := cmdutil.TestFactory()
-			cmd := NewCmdBranch(f, func(opts *ViewOptions) error {
+			cmd := NewCmdView(f, func(opts *ViewOptions) error {
 				return nil
 			})
 			cmd.SetArgs(tt.args)

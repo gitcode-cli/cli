@@ -41,6 +41,9 @@ func NewCmdIssues(f *cmdutil.Factory, runF func(*IssuesOptions) error) *cobra.Co
 		Short: "List issues linked to a pull request",
 		Long: heredoc.Doc(`
 			List issues linked to a pull request in a GitCode repository.
+
+			Displays issue state, number, and title in text mode.
+			Use --json to get the full issue objects including body, labels, and milestone.
 		`),
 		Example: heredoc.Doc(`
 			# List issues linked to a PR
@@ -56,7 +59,10 @@ func NewCmdIssues(f *cmdutil.Factory, runF func(*IssuesOptions) error) *cobra.Co
 		RunE: func(cmd *cobra.Command, args []string) error {
 			number, err := strconv.Atoi(args[0])
 			if err != nil {
-				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %s", args[0]))
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %q (must be a positive integer)", args[0]))
+			}
+			if number <= 0 {
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %d (must be a positive integer)", number))
 			}
 			opts.Number = number
 
@@ -100,7 +106,7 @@ func issuesRun(opts *IssuesOptions) error {
 	}
 
 	if len(issues) == 0 {
-		fmt.Fprintf(opts.IO.Out, "\nNo linked issues found for PR #%d\n\n", opts.Number)
+		fmt.Fprintf(opts.IO.Out, "No linked issues found for PR #%d\n", opts.Number)
 		return nil
 	}
 
@@ -111,7 +117,13 @@ func issuesRun(opts *IssuesOptions) error {
 			state = "unknown"
 		}
 		num := issue.Number
+		if num == "" {
+			num = "?"
+		}
 		title := issue.Title
+		if title == "" {
+			title = "(no title)"
+		}
 		fmt.Fprintf(opts.IO.Out, "  %s #%s  %s\n", stateLabel(cs, state), num, title)
 	}
 	fmt.Fprintf(opts.IO.Out, "\n")
@@ -129,8 +141,6 @@ func stateLabel(cs *iostreams.ColorScheme, state string) string {
 		return cs.Green("open")
 	case "closed":
 		return cs.Red("closed")
-	case "merged":
-		return cs.Magenta("merged")
 	default:
 		return state
 	}

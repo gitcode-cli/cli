@@ -65,9 +65,9 @@ func TestListRunMarksOnlyFirstPublishedReleaseAsLatest(t *testing.T) {
 						Status:     http.StatusText(http.StatusOK),
 						Header:     make(http.Header),
 						Body: io.NopCloser(strings.NewReader(`[
-							{"tag_name":"v2.0.0","html_url":"https://gitcode.com/owner/repo/-/releases/v2.0.0","draft":false,"prerelease":false},
-							{"tag_name":"v1.9.0","html_url":"https://gitcode.com/owner/repo/-/releases/v1.9.0","draft":false,"prerelease":false},
-							{"tag_name":"v2.1.0-rc1","html_url":"https://gitcode.com/owner/repo/-/releases/v2.1.0-rc1","draft":false,"prerelease":true}
+							{"tag_name":"v2.0.0","html_url":"https://gitcode.com/owner/repo/-/releases/v2.0.0","draft":false,"prerelease":false,"created_at":"2026-06-01T00:00:00Z","published_at":"2026-06-01T00:00:00Z"},
+							{"tag_name":"v1.9.0","html_url":"https://gitcode.com/owner/repo/-/releases/v1.9.0","draft":false,"prerelease":false,"created_at":"2026-05-01T00:00:00Z","published_at":"2026-05-01T00:00:00Z"},
+							{"tag_name":"v2.1.0-rc1","html_url":"https://gitcode.com/owner/repo/-/releases/v2.1.0-rc1","draft":false,"prerelease":true,"created_at":"2026-06-05T00:00:00Z","published_at":"2026-06-05T00:00:00Z"}
 						]`)),
 					}, nil
 				}),
@@ -89,6 +89,107 @@ func TestListRunMarksOnlyFirstPublishedReleaseAsLatest(t *testing.T) {
 	}
 	if !strings.Contains(output, "(pre-release)") {
 		t.Fatalf("output = %q, want pre-release marker", output)
+	}
+}
+
+func TestListRunSortsByPublishedAtDescending(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+
+	err := listRun(&ListOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					// API returns releases in creation order (oldest first),
+					// which is the default GitCode API behavior that causes #256.
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Status:     http.StatusText(http.StatusOK),
+						Header:     make(http.Header),
+						Body: io.NopCloser(strings.NewReader(`[
+							{"tag_name":"v0.2.3","html_url":"https://gitcode.com/owner/repo/-/releases/v0.2.3","draft":false,"prerelease":false,"created_at":"2026-03-01T00:00:00Z","published_at":"2026-03-02T00:00:00Z"},
+							{"tag_name":"v0.3.1","html_url":"https://gitcode.com/owner/repo/-/releases/v0.3.1","draft":false,"prerelease":false,"created_at":"2026-04-01T00:00:00Z","published_at":"2026-04-02T00:00:00Z"},
+							{"tag_name":"v0.5.9","html_url":"https://gitcode.com/owner/repo/-/releases/v0.5.9","draft":false,"prerelease":false,"created_at":"2026-06-01T00:00:00Z","published_at":"2026-06-01T00:00:00Z"},
+							{"tag_name":"v0.4.0","html_url":"https://gitcode.com/owner/repo/-/releases/v0.4.0","draft":false,"prerelease":false,"created_at":"2026-05-01T00:00:00Z","published_at":"2026-05-01T00:00:00Z"}
+						]`)),
+					}, nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+	})
+	if err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	output := out.String()
+
+	// Verify latest release (v0.5.9) appears first
+	v059Pos := strings.Index(output, "v0.5.9")
+	v040Pos := strings.Index(output, "v0.4.0")
+	v031Pos := strings.Index(output, "v0.3.1")
+	v023Pos := strings.Index(output, "v0.2.3")
+
+	if v059Pos < 0 || v040Pos < 0 || v031Pos < 0 || v023Pos < 0 {
+		t.Fatalf("output = %q, missing expected releases", output)
+	}
+
+	// Newest first: v0.5.9 > v0.4.0 > v0.3.1 > v0.2.3
+	if v059Pos > v040Pos || v040Pos > v031Pos || v031Pos > v023Pos {
+		t.Fatalf("output = %q, releases not sorted by newest first", output)
+	}
+
+	// v0.5.9 should be marked as (latest), not v0.2.3
+	if !strings.Contains(output, "v0.5.9 (latest)") {
+		t.Fatalf("output = %q, v0.5.9 should be marked as latest", output)
+	}
+}
+
+func TestListRunSortReleasesByDateHandlesNilPublishedAt(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+
+	err := listRun(&ListOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					// v0.2.3 has no published_at (should fall back to created_at)
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Status:     http.StatusText(http.StatusOK),
+						Header:     make(http.Header),
+						Body: io.NopCloser(strings.NewReader(`[
+							{"tag_name":"v0.2.3","html_url":"https://gitcode.com/owner/repo/-/releases/v0.2.3","draft":false,"prerelease":false,"created_at":"2026-03-01T00:00:00Z"},
+							{"tag_name":"v0.5.9","html_url":"https://gitcode.com/owner/repo/-/releases/v0.5.9","draft":false,"prerelease":false,"created_at":"2026-06-01T00:00:00Z","published_at":"2026-06-01T00:00:00Z"}
+						]`)),
+					}, nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+	})
+	if err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	output := out.String()
+
+	// v0.5.9 (newer) should appear before v0.2.3 (older)
+	v059Pos := strings.Index(output, "v0.5.9")
+	v023Pos := strings.Index(output, "v0.2.3")
+
+	if v059Pos > v023Pos {
+		t.Fatalf("output = %q, newer release should appear first even when older has nil published_at", output)
 	}
 }
 

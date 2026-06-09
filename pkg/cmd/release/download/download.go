@@ -257,15 +257,11 @@ func filterAssets(assets []api.ReleaseAsset, names []string) []api.ReleaseAsset 
 func filterSourceArchives(assets []api.ReleaseAsset) []api.ReleaseAsset {
 	var result []api.ReleaseAsset
 	for _, asset := range assets {
-		// Skip source archives (zip, tar.gz, etc. with tag name)
-		if strings.HasSuffix(asset.Name, ".zip") ||
-			strings.HasSuffix(asset.Name, ".tar.gz") ||
-			strings.HasSuffix(asset.Name, ".tar.bz2") ||
-			strings.HasSuffix(asset.Name, ".tar") {
-			// Check if it's a source archive (name contains tag name)
-			if strings.Contains(asset.Name, "v") && strings.Contains(asset.Name, ".") {
-				continue
-			}
+		// Skip auto-generated source archives, identified reliably by their
+		// browser download URL (see isSourceArchiveAsset). Normal release
+		// assets are never filtered, even when their names contain "v" and ".".
+		if isSourceArchiveAsset(asset) {
+			continue
 		}
 		result = append(result, asset)
 	}

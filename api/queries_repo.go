@@ -132,7 +132,7 @@ type BranchCommit struct {
 // GetBranch fetches a branch by name
 func GetBranch(client *Client, owner, repo, branch string) (*Branch, error) {
 	var b Branch
-	err := client.Get("/repos/"+owner+"/"+repo+"/branches/"+url.PathEscape(branch), &b)
+	err := client.Get("/repos/"+url.PathEscape(owner)+"/"+url.PathEscape(repo)+"/branches/"+url.PathEscape(branch), &b)
 	if err != nil {
 		return nil, err
 	}

@@ -26,8 +26,21 @@ type ViewOptions struct {
 	JSON bool
 }
 
-// NewCmdBranch creates the repo branch command
+// NewCmdBranch creates the repo branch command group with view subcommand
 func NewCmdBranch(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "branch <command>",
+		Short: "Manage branches",
+		Long:  "Work with repository branches.",
+	}
+
+	viewCmd := newCmdView(f, runF)
+	cmd.AddCommand(viewCmd)
+
+	return cmd
+}
+
+func newCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Command {
 	opts := &ViewOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
@@ -35,7 +48,7 @@ func NewCmdBranch(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comm
 	}
 
 	cmd := &cobra.Command{
-		Use:   "branch view <branch>",
+		Use:   "view <branch>",
 		Short: "View a branch in a repository",
 		Long: heredoc.Doc(`
 			View information about a branch in a GitCode repository.
@@ -43,6 +56,9 @@ func NewCmdBranch(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comm
 		Example: heredoc.Doc(`
 			# View a branch
 			$ gc repo branch view main -R owner/repo
+
+			# View a branch in current repository
+			$ gc repo branch view main
 
 			# Output as JSON
 			$ gc repo branch view main -R owner/repo --json

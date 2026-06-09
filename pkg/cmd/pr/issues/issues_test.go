@@ -143,3 +143,24 @@ func TestIssuesRunText(t *testing.T) {
 		t.Fatalf("expected issue info in output, got: %q", output)
 	}
 }
+
+func TestIssuesRunNotFound(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"message":"404 Not Found"}`))
+	}))
+
+	err := issuesRun(&IssuesOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     999,
+		JSON:       false,
+	})
+	if err == nil {
+		t.Fatal("expected error for nonexistent PR")
+	}
+}

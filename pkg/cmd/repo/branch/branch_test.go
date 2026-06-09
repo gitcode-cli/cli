@@ -10,7 +10,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
-func TestNewCmdBranch(t *testing.T) {
+func TestNewCmdBranchView(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []string
@@ -18,17 +18,17 @@ func TestNewCmdBranch(t *testing.T) {
 	}{
 		{
 			name:    "view branch",
-			args:    []string{"main"},
+			args:    []string{"view", "main"},
 			wantErr: false,
 		},
 		{
 			name:    "view branch with repo",
-			args:    []string{"main", "-R", "owner/repo"},
+			args:    []string{"view", "main", "-R", "owner/repo"},
 			wantErr: false,
 		},
 		{
 			name:    "no branch name",
-			args:    []string{},
+			args:    []string{"view"},
 			wantErr: true,
 		},
 	}
@@ -135,5 +135,37 @@ func TestViewRunNotFound(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error for nonexistent branch")
+	}
+}
+
+func TestViewRunNoCommit(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.Contains(r.URL.Path, "/branches/orphan") {
+			_, _ = w.Write([]byte(`{"name":"orphan","protected":false}`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Branch:     "orphan",
+		JSON:       false,
+	})
+	if err != nil {
+		t.Fatalf("viewRun() error = %v", err)
+	}
+	output := out.String()
+	if !strings.Contains(output, "orphan") {
+		t.Fatalf("output missing branch name: %s", output)
+	}
+	if strings.Contains(output, "Commit:") {
+		t.Fatalf("output should not contain Commit when nil: %s", output)
 	}
 }

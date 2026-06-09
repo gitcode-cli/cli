@@ -47,7 +47,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comment-file -`）上拦截疑似已被 Windows PowerShell 损坏成 `???` 的输入，并在 stderr 提示正确用法；如果确实需要原样传入连续问号，可设置 `GITCODE_CLI_ALLOW_LOSSY_STDIN=1`。
 
 当前自动推断边界：
-- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view/log`，以及 `pr list/view`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等“作用于当前仓库”的安全只读场景。
+- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view/log/branch view`，以及 `pr list/view/issues`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等"作用于当前仓库"的安全只读场景。
 - 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
 ### Agent-Friendly CLI 能力
@@ -64,10 +64,12 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 - `repo view`
 - `repo list`
 - `repo log`
+- `repo branch view`
 - `issue list`
 - `issue view`
 - `pr list`
 - `pr view`
+- `pr issues`
 - `release list`
 - `release view`
 - `label list`
@@ -273,13 +275,16 @@ gc repo view infra-test/gctest1 --json
 # 查看分支详情
 gc repo branch view main -R owner/repo
 
+# 查看分支详情（当前仓库）
+gc repo branch view main
+
 # 输出 JSON
 gc repo branch view main -R owner/repo --json
 ```
 
 说明：
 - `repo branch view` 显示指定分支的名称、保护状态和最新 commit 信息（ID、短 ID、标题、作者）。
-- `--json` 输出分支对象，包含 `name`、`protected`、`commit.id` 等字段。
+- `--json` 输出分支对象，包含 `name`、`protected`、`commit.id`、`commit.short_id`、`commit.title`、`commit.author.login` 等字段。
 - 分支不存在时返回明确错误。
 
 ### repo list - 列出仓库
@@ -908,6 +913,9 @@ gc pr view 1 -R infra-test/gctest1 --time-format relative
 ```bash
 # 查看 PR 关联的 Issues
 gc pr issues 123 -R owner/repo
+
+# 查看 PR 关联的 Issues（当前仓库）
+gc pr issues 123
 
 # 输出 JSON
 gc pr issues 123 -R owner/repo --json

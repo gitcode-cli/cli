@@ -46,6 +46,9 @@ func NewCmdIssues(f *cmdutil.Factory, runF func(*IssuesOptions) error) *cobra.Co
 			# List issues linked to a PR
 			$ gc pr issues 123 -R owner/repo
 
+			# List issues for a PR in current repository
+			$ gc pr issues 123
+
 			# Output as JSON
 			$ gc pr issues 123 -R owner/repo --json
 		`),

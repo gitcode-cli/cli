@@ -80,6 +80,7 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 - `pr create`
 - `pr edit`
 - `pr merge`
+- `pr review`
 - `repo create`
 - `repo fork`
 - `release create`

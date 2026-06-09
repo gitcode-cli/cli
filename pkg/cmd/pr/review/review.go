@@ -137,6 +137,11 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 func reviewRun(opts *ReviewOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	// --approve and --request are mutually exclusive
+	if opts.Approve && opts.Request {
+		return cmdutil.NewUsageError("--approve and --request are mutually exclusive")
+	}
+
 	httpClient, err := opts.HttpClient()
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP client: %w", err)
@@ -236,7 +241,11 @@ func reviewRun(opts *ReviewOptions) error {
 	if opts.Request {
 		// GitCode API does not natively support "REQUEST_CHANGES" event.
 		// Degrade gracefully: post a comment with [REQUEST CHANGES] prefix.
-		body := requestChangesPrefix + opts.Comment
+		userComment := opts.Comment
+		if userComment == "" {
+			userComment = "Changes requested without detailed feedback."
+		}
+		body := requestChangesPrefix + userComment
 
 		comment, err := opts.CreatePRComment(client, owner, repo, opts.Number, &api.CreatePRCommentOptions{
 			Body: body,
@@ -251,7 +260,7 @@ func reviewRun(opts *ReviewOptions) error {
 			Owner:   owner,
 			Repo:    repo,
 			URL:     fmt.Sprintf("%s#comment_%s", prURL, cmdutil.FormatAPIID(comment.ID)),
-			Comment: body,
+			Comment: userComment,
 		}
 
 		if opts.JSON {

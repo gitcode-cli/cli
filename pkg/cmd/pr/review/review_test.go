@@ -112,8 +112,9 @@ func TestReviewRun_RequestChanges(t *testing.T) {
 		},
 		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
 			commentCalled = true
-			if !strings.HasPrefix(opts.Body, "[REQUEST CHANGES] ") {
-				t.Fatalf("expected comment body to start with [REQUEST CHANGES] prefix, got %q", opts.Body)
+			expected := "[REQUEST CHANGES] Changes requested without detailed feedback."
+			if opts.Body != expected {
+				t.Fatalf("expected comment body %q, got %q", expected, opts.Body)
 			}
 			return &api.PRComment{Body: opts.Body}, nil
 		},
@@ -200,8 +201,11 @@ func TestReviewRun_RequestChangesJSON(t *testing.T) {
 	if !strings.Contains(out.String(), `"action": "requested_changes"`) {
 		t.Fatalf("expected JSON action requested_changes, got %q", out.String())
 	}
-	if !strings.Contains(out.String(), `[REQUEST CHANGES] Needs work`) {
-		t.Fatalf("expected [REQUEST CHANGES] prefix in JSON comment, got %q", out.String())
+	if !strings.Contains(out.String(), `"comment": "Needs work"`) {
+		t.Fatalf("expected JSON comment to contain original user input, got %q", out.String())
+	}
+	if strings.Contains(out.String(), `[REQUEST CHANGES] Needs work`) {
+		t.Fatalf("JSON comment field should NOT contain [REQUEST CHANGES] prefix, got %q", out.String())
 	}
 }
 
@@ -324,8 +328,40 @@ func TestReviewRun_RequestChangesNoCommentJSON(t *testing.T) {
 	if !strings.Contains(out.String(), `"action": "requested_changes"`) {
 		t.Fatalf("expected JSON action requested_changes, got %q", out.String())
 	}
-	if !strings.Contains(out.String(), `[REQUEST CHANGES] `) {
-		t.Fatalf("expected [REQUEST CHANGES] prefix in JSON comment, got %q", out.String())
+	if !strings.Contains(out.String(), "Changes requested without detailed feedback.") {
+		t.Fatalf("expected default comment in JSON output, got %q", out.String())
+	}
+}
+
+func TestReviewRun_ApproveAndRequestMutuallyExclusive(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Approve:    true,
+		Request:    true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			t.Fatal("did not expect approve+request to call ReviewPR")
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			t.Fatal("did not expect approve+request to call CreatePRComment")
+			return nil, nil
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error for --approve with --request")
+	}
+	if !strings.Contains(err.Error(), "--approve and --request are mutually exclusive") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitUsage)
 	}
 }
 

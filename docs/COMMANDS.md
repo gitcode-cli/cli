@@ -789,6 +789,9 @@ gc pr create -R infra-test/gctest1 --base main --title "Feature" --body "Descrip
 # 创建草稿 PR
 gc pr create -R infra-test/gctest1 --title "WIP: Feature" --draft
 
+# 创建 PR 并打标签
+gc pr create -R infra-test/gctest1 --title "New feature" --body "Description" --labels bug,enhancement
+
 # 创建跨仓库 PR（从 fork 到 upstream）；--fork 会自动把 head 规范化为 myfork:feature-branch
 gc pr create -R upstream/repo --fork myfork/repo --head feature-branch --title "Feature"
 
@@ -806,6 +809,7 @@ gc pr create -R infra-test/gctest1 --head feature-branch --title "Feature" --bod
 ```
 
 > **说明**: `--head` 参数可选，未指定时自动检测当前 Git 分支。
+> `--labels` 支持创建 PR 时直接打标签，值为逗号分隔的标签名（如 `bug,enhancement`），与 `gc pr edit --labels` 格式一致。不指定时不打标签。
 > `--body-file` 支持从文件读取 PR 内容；使用 `-` 可从 stdin 读取。`--body` 与 `--body-file` 不能同时使用。
 > `--fill` 会使用最近一次 Git commit 的标题和正文补全未显式提供的 `--title` / `--body` / `--body-file`。
 > `--web` 会在 PR 创建成功后打开新建 PR 页面。

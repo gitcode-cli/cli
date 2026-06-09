@@ -38,6 +38,7 @@ type CreateOptions struct {
 	Web      bool
 	JSON     bool
 	Fork     string // 跨仓库 PR：fork 项目路径【owner/repo】
+	Labels   []string
 }
 
 // NewCmdCreate creates the create command
@@ -73,6 +74,9 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 			# Create a draft PR
 			$ gc pr create -R owner/repo --title "Feature" --draft
 
+			# Create a PR with labels
+			$ gc pr create -R owner/repo --title "Feature" --labels bug,enhancement
+
 			# Create a cross-repo PR (from fork to upstream)
 			$ gc pr create -R upstream/repo --fork myfork/repo --head feature-branch --title "Feature"
 
@@ -98,6 +102,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open in browser")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmd.Flags().StringVarP(&opts.Fork, "fork", "F", "", "Fork repository path for cross-repo PR (owner/repo)")
+	cmd.Flags().StringSliceVarP(&opts.Labels, "labels", "l", nil, "Add labels (comma-separated)")
 
 	return cmd
 }
@@ -168,11 +173,12 @@ func createRun(opts *CreateOptions) error {
 
 	// Create PR
 	pr, err := opts.CreatePR(client, owner, repo, &api.CreatePROptions{
-		Title: opts.Title,
-		Body:  body,
-		Head:  head,
-		Base:  opts.Base,
-		Draft: opts.Draft,
+		Title:  opts.Title,
+		Body:   body,
+		Head:   head,
+		Base:   opts.Base,
+		Draft:  opts.Draft,
+		Labels: opts.Labels,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create PR: %w", err)

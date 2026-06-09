@@ -734,3 +734,79 @@ func TestCreateRunBranchError(t *testing.T) {
 		t.Fatalf("createRun() error = %v", err)
 	}
 }
+
+func TestCreateRunPassesLabelsToAPI(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	var receivedLabels []string
+
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		Body:       "body",
+		Head:       "feature-branch",
+		Base:       "main",
+		Labels:     []string{"bug", "enhancement"},
+		JSON:       true,
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			receivedLabels = createOpts.Labels
+			return &api.PullRequest{Number: 7, Title: createOpts.Title, Body: createOpts.Body, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+		},
+	}
+
+	err := createRun(opts)
+	if err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if len(receivedLabels) != 2 || receivedLabels[0] != "bug" || receivedLabels[1] != "enhancement" {
+		t.Fatalf("expected labels [bug, enhancement], got %v", receivedLabels)
+	}
+}
+
+func TestCreateRunNoLabels(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	var receivedLabels []string
+
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "title",
+		Body:       "body",
+		Head:       "feature-branch",
+		Base:       "main",
+		JSON:       true,
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			receivedLabels = createOpts.Labels
+			return &api.PullRequest{Number: 7, Title: createOpts.Title, Body: createOpts.Body, HTMLURL: "https://gitcode.com/owner/repo/merge_requests/7"}, nil
+		},
+	}
+
+	err := createRun(opts)
+	if err != nil {
+		t.Fatalf("createRun() error = %v", err)
+	}
+	if len(receivedLabels) != 0 {
+		t.Fatalf("expected no labels, got %v", receivedLabels)
+	}
+}
+
+func TestNewCmdCreate_LabelsFlag(t *testing.T) {
+	cmd := NewCmdCreate(cmdutil.TestFactory(), func(opts *CreateOptions) error {
+		if len(opts.Labels) != 2 || opts.Labels[0] != "bug" || opts.Labels[1] != "feature" {
+			t.Fatalf("expected labels [bug, feature], got %v", opts.Labels)
+		}
+		return nil
+	})
+	cmd.SetArgs([]string{"--title", "Feature", "--head", "feature-branch", "--repo", "owner/repo", "--labels", "bug,feature"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+}

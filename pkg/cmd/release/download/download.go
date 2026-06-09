@@ -233,6 +233,10 @@ func assetDownloadURL(asset api.ReleaseAsset, apiHost, owner, repo, tag string) 
 		apiHost, owner, repo, url.PathEscape(tag), url.PathEscape(asset.Name))
 }
 
+// isSourceArchiveAsset reports whether an asset is an auto-generated source
+// archive. Detection is based solely on the browser download URL containing
+// the /archive/refs/heads/ path that GitCode uses for generated archives; an
+// empty URL is treated as "not a source archive" (kept on default download).
 func isSourceArchiveAsset(asset api.ReleaseAsset) bool {
 	if strings.TrimSpace(asset.BrowserDownloadURL) == "" {
 		return false

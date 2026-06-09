@@ -566,8 +566,22 @@ func TestFilterSourceArchives(t *testing.T) {
 			BrowserDownloadURL: "https://api.gitcode.com/owner/repo/releases/download/v1.0.0/service.zip",
 		},
 		{
+			// Control sample (not a regression guard): plain .txt never triggered
+			// the old heuristic; included to confirm ordinary assets pass through.
 			Name:               "checksums.txt",
 			BrowserDownloadURL: "https://api.gitcode.com/owner/repo/releases/download/v1.0.0/checksums.txt",
+		},
+		{
+			// Edge case: a .zip asset with no browser_download_url. isSourceArchiveAsset
+			// treats an empty URL as "not a source archive", so it must be kept.
+			Name:               "noturl.zip",
+			BrowserDownloadURL: "",
+		},
+		{
+			// Edge case: detection is URL-only and ignores the file extension — an
+			// archive URL with an extension-less name must still be filtered.
+			Name:               "source",
+			BrowserDownloadURL: "https://raw.gitcode.com/owner/repo/archive/refs/heads/main",
 		},
 	}
 
@@ -578,14 +592,14 @@ func TestFilterSourceArchives(t *testing.T) {
 		gotNames[a.Name] = true
 	}
 
-	wantKept := []string{"server.tar.gz", "driver.zip", "service.zip", "checksums.txt"}
+	wantKept := []string{"server.tar.gz", "driver.zip", "service.zip", "checksums.txt", "noturl.zip"}
 	for _, name := range wantKept {
 		if !gotNames[name] {
 			t.Errorf("filterSourceArchives() dropped normal asset %q, want it kept", name)
 		}
 	}
 
-	wantFiltered := []string{"v1.0.0.zip", "v1.0.0.tar.gz"}
+	wantFiltered := []string{"v1.0.0.zip", "v1.0.0.tar.gz", "source"}
 	for _, name := range wantFiltered {
 		if gotNames[name] {
 			t.Errorf("filterSourceArchives() kept source archive %q, want it filtered", name)

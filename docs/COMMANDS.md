@@ -267,6 +267,21 @@ gc repo view infra-test/gctest1 --json
 说明：
 - 在当前 Git 仓库中执行时，`gc repo view` 可缺省仓库参数；CLI 会优先解析 `origin` remote，若不存在则回退到第一个 remote。
 
+### repo branch view - 查看分支
+
+```bash
+# 查看分支详情
+gc repo branch view main -R owner/repo
+
+# 输出 JSON
+gc repo branch view main -R owner/repo --json
+```
+
+说明：
+- `repo branch view` 显示指定分支的名称、保护状态和最新 commit 信息（ID、短 ID、标题、作者）。
+- `--json` 输出分支对象，包含 `name`、`protected`、`commit.id` 等字段。
+- 分支不存在时返回明确错误。
+
 ### repo list - 列出仓库
 
 ```bash
@@ -887,6 +902,21 @@ gc pr view 1 -R infra-test/gctest1 --time-format relative
 - `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
 - 如果 PR 详情 API 返回的 `additions`、`deletions`、`changed_files` 或 `commits` 为 0，CLI 会尝试通过 PR files/commits API 补齐统计；补齐失败时会给出 warning，但不阻断查看。
 - `--json` 路径保持结构化输出，milestone、body、description、merged_at 等字段会自动包含在 JSON 中；其中 `body` 与 `description` 会基于远端返回互相补齐。
+
+### pr issues - 查看 PR 关联的 Issues
+
+```bash
+# 查看 PR 关联的 Issues
+gc pr issues 123 -R owner/repo
+
+# 输出 JSON
+gc pr issues 123 -R owner/repo --json
+```
+
+说明：
+- `pr issues` 列出指定 PR 关联的 Issue 列表。
+- `--json` 输出 Issue 对象数组；无关联 Issue 时输出 `[]`，不会混入文本提示。
+- PR 不存在时返回明确错误；无关联 Issue 时文本输出提示"No linked issues"。
 
 ### pr comments - 查看 PR 评论
 

@@ -1,7 +1,9 @@
 package review
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -293,6 +295,327 @@ func TestNewCmdReview(t *testing.T) {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestReviewRun_RequestChangesNoCommentJSON(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Request:    true,
+		JSON:       true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			t.Fatal("did not expect request to call ReviewPR")
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			return &api.PRComment{Body: opts.Body}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
+	}
+	if !strings.Contains(out.String(), `"action": "requested_changes"`) {
+		t.Fatalf("expected JSON action requested_changes, got %q", out.String())
+	}
+	if !strings.Contains(out.String(), `[REQUEST CHANGES] `) {
+		t.Fatalf("expected [REQUEST CHANGES] prefix in JSON comment, got %q", out.String())
+	}
+}
+
+func TestReviewRun_RequestChangesAPIError(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Request:    true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			t.Fatal("did not expect request to call ReviewPR")
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			return nil, fmt.Errorf("API error: 500 Internal Server Error")
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error when CreatePRComment fails")
+	}
+	if !strings.Contains(err.Error(), "failed to request changes on PR") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestReviewRun_RequestChangesWithCommentFile(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	tmpFile, err := os.CreateTemp("", "comment-*.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	if _, err := tmpFile.WriteString("Fix the bug"); err != nil {
+		t.Fatal(err)
+	}
+	tmpFile.Close()
+
+	commentCalled := false
+
+	err = reviewRun(&ReviewOptions{
+		IO:           io,
+		HttpClient:   func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository:   "owner/repo",
+		Number:       123,
+		Request:      true,
+		CommentFile:  tmpFile.Name(),
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			t.Fatal("did not expect request to call ReviewPR")
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			commentCalled = true
+			expected := "[REQUEST CHANGES] Fix the bug"
+			if opts.Body != expected {
+				t.Fatalf("expected comment body %q, got %q", expected, opts.Body)
+			}
+			return &api.PRComment{Body: opts.Body}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
+	}
+	if !commentCalled {
+		t.Fatal("expected request changes with comment-file to call CreatePRComment")
+	}
+	if !strings.Contains(out.String(), "Fix the bug") {
+		t.Fatalf("expected comment echoed in output, got %q", out.String())
+	}
+}
+
+func TestReviewRun_ForceWithRequestReturnsError(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Force:      true,
+		Request:    true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			t.Fatal("did not expect force+request to call ReviewPR")
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			t.Fatal("did not expect force+request to call CreatePRComment")
+			return nil, nil
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error for --force with --request")
+	}
+	if !strings.Contains(err.Error(), "--force can only be used with --approve") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestReviewRun_ApproveWithCommentFile(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	tmpFile, err := os.CreateTemp("", "comment-*.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	if _, err := tmpFile.WriteString("Self-check passed"); err != nil {
+		t.Fatal(err)
+	}
+	tmpFile.Close()
+
+	reviewCalled := false
+	commentCalled := false
+
+	err = reviewRun(&ReviewOptions{
+		IO:           io,
+		HttpClient:   func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository:   "owner/repo",
+		Number:       123,
+		Approve:      true,
+		CommentFile:  tmpFile.Name(),
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			reviewCalled = true
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			commentCalled = true
+			if opts.Body != "Self-check passed" {
+				t.Fatalf("unexpected comment body %q", opts.Body)
+			}
+			return &api.PRComment{Body: opts.Body}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
+	}
+	if !reviewCalled || !commentCalled {
+		t.Fatalf("expected approve with comment-file to call both, got review=%v comment=%v", reviewCalled, commentCalled)
+	}
+	if !strings.Contains(out.String(), "Self-check passed") {
+		t.Fatalf("expected comment echoed in output, got %q", out.String())
+	}
+}
+
+func TestReviewRun_ForceApproveJSON(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Approve:    true,
+		Force:      true,
+		JSON:       true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			if !opts.Force {
+				t.Fatal("expected Force=true")
+			}
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			t.Fatal("did not expect force approve to call CreatePRComment")
+			return nil, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
+	}
+	if !strings.Contains(out.String(), `"action": "force_approved"`) {
+		t.Fatalf("expected JSON action force_approved, got %q", out.String())
+	}
+}
+
+func TestReviewRun_ApproveJSON(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Approve:    true,
+		JSON:       true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			return &api.PRComment{Body: opts.Body}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
+	}
+	if !strings.Contains(out.String(), `"action": "approved"`) {
+		t.Fatalf("expected JSON action approved, got %q", out.String())
+	}
+}
+
+func TestReviewRun_CommentOnlyJSON(t *testing.T) {
+	io, _, out, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Comment:    "Just a note",
+		JSON:       true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			t.Fatal("did not expect comment to call ReviewPR")
+			return nil
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			return &api.PRComment{Body: opts.Body}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("reviewRun() unexpected error: %v", err)
+	}
+	if !strings.Contains(out.String(), `"action": "commented"`) {
+		t.Fatalf("expected JSON action commented, got %q", out.String())
+	}
+}
+
+func TestReviewRun_ApproveAPIError(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository: "owner/repo",
+		Number:     123,
+		Approve:    true,
+		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
+			return fmt.Errorf("API error: 403 Forbidden")
+		},
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			return &api.PRComment{}, nil
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error when ReviewPR fails")
+	}
+	if !strings.Contains(err.Error(), "failed to approve PR") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestReviewRun_CommentAndCommentFileMutuallyExclusive(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	restoreToken := testutil.SetTestToken()
+	defer restoreToken()
+
+	err := reviewRun(&ReviewOptions{
+		IO:           io,
+		HttpClient:   func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository:   "owner/repo",
+		Number:       123,
+		Comment:      "inline comment",
+		CommentFile:  "some-file.txt",
+		ReviewPR:     func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error { return nil },
+		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
+			return nil, nil
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error for --comment with --comment-file")
+	}
+	if !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

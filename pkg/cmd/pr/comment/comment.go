@@ -28,7 +28,7 @@ type CommentOptions struct {
 	Body     string
 	BodyFile string
 	Path     string // File path for inline comment
-	Position int    // Diff position for inline comment
+	Position int    // Line number in the new version of the file (new side of the diff) for inline comment
 	JSON     bool
 }
 
@@ -62,7 +62,9 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 
 			For inline comments on specific lines, use --path and --position flags.
 			--path specifies the file path (e.g., "api/auth.go").
-			--position specifies the diff line number.
+			--position specifies the line number in the new version of the file
+			(the new/right side of the diff), not an offset within the diff hunk.
+			Use the new-side line number shown by "gc pr diff".
 		`),
 		Example: heredoc.Doc(`
 			# Add a general comment
@@ -74,11 +76,11 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 			# Add comment from stdin
 			$ echo "Comment from stdin" | gc pr comment 123 --body-file - -R owner/repo
 
-			# Add inline comment on specific file and line
-			# First, check the diff to get the correct file path:
+			# Add inline comment on a specific file and line.
+			# Run the diff first and read the new-side line number of the target line:
 			$ gc pr diff 123 -R owner/repo
-			# Then add inline comment with the actual file path:
-			$ gc pr comment 123 --body "Consider renaming this" --path api/auth.go --position 1 -R owner/repo
+			# Here 42 is the line number in the new version of api/auth.go:
+			$ gc pr comment 123 --body "Consider renaming this" --path api/auth.go --position 42 -R owner/repo
 
 			# Output as JSON
 			$ gc pr comment 123 --body "This looks good" --json
@@ -102,7 +104,7 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "Comment body")
 	cmd.Flags().StringVarP(&opts.BodyFile, "body-file", "F", "", "Read comment body from file (use - for stdin)")
 	cmd.Flags().StringVar(&opts.Path, "path", "", "File path for inline comment")
-	cmd.Flags().IntVar(&opts.Position, "position", 0, "Diff position for inline comment")
+	cmd.Flags().IntVar(&opts.Position, "position", 0, "Line number in the new version of the file (new side of the diff) for inline comment")
 	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd

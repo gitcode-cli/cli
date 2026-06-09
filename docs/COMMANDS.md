@@ -904,7 +904,7 @@ gc pr comments 1 -R infra-test/gctest1 --json
 评论列表会显示 `Discussion ID`，可直接用于 `gc pr reply --discussion`。
 `--json` 输出评论对象数组；无评论时输出 `[]`，不会混入文本提示。
 当前 GitCode 公开 API 不支持通过 CLI 将 PR 评论标记为已解决或未解决；resolved 状态需要在 Web UI 中手动处理。
-inline comment 会显示文件路径和 diff position 信息。
+inline comment 会显示文件路径和所在行号（新版本文件的行号）。
 
 ### pr comment - 添加 PR 评论
 
@@ -920,7 +920,7 @@ echo "Comment from stdin" | gc pr comment 123 --body-file - -R owner/repo
 
 # 添加行内评论 - 先获取文件路径
 gc pr diff 123 -R owner/repo                        # 查看变更文件获取文件路径
-gc pr comment 123 --body "代码逻辑正确" --path api/auth.go --position 1 -R owner/repo
+gc pr comment 123 --body "代码逻辑正确" --path api/auth.go --position 42 -R owner/repo
 
 # 输出 JSON
 gc pr comment 123 --body "This looks good" --json
@@ -929,9 +929,9 @@ gc pr comment 123 --body "This looks good" --json
 添加评论到 PR。支持普通评论和行内评论（inline comment）。
 
 **行内评论注意事项**：
-- 需要同时提供 `--path`（文件路径）和 `--position`（diff 行号）
+- 需要同时提供 `--path`（文件路径）和 `--position`（新版本文件中的行号）
 - 文件路径必须是 diff 中显示的实际文件名（如 `test-cross-pr.txt`）
-- diff 行号：新文件从 1 开始计数
+- `--position` 是目标代码在**新版本文件**中的行号（diff 新增侧/右侧的行号），不是 diff hunk 内的偏移量；可用 `gc pr diff <number>` 查看新增侧行号
 - 可通过 `gc pr diff <number>` 查看变更文件列表来获取文件路径
 - 如果文件名错误，会返回错误：`diff failed to be generated due to invalid params under position param`
 

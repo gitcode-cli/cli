@@ -410,12 +410,12 @@ func TestReviewRun_RequestChangesWithCommentFile(t *testing.T) {
 	commentCalled := false
 
 	err = reviewRun(&ReviewOptions{
-		IO:           io,
-		HttpClient:   func() (*http.Client, error) { return &http.Client{}, nil },
-		Repository:   "owner/repo",
-		Number:       123,
-		Request:      true,
-		CommentFile:  tmpFile.Name(),
+		IO:          io,
+		HttpClient:  func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository:  "owner/repo",
+		Number:      123,
+		Request:     true,
+		CommentFile: tmpFile.Name(),
 		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
 			t.Fatal("did not expect request to call ReviewPR")
 			return nil
@@ -488,12 +488,12 @@ func TestReviewRun_ApproveWithCommentFile(t *testing.T) {
 	commentCalled := false
 
 	err = reviewRun(&ReviewOptions{
-		IO:           io,
-		HttpClient:   func() (*http.Client, error) { return &http.Client{}, nil },
-		Repository:   "owner/repo",
-		Number:       123,
-		Approve:      true,
-		CommentFile:  tmpFile.Name(),
+		IO:          io,
+		HttpClient:  func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository:  "owner/repo",
+		Number:      123,
+		Approve:     true,
+		CommentFile: tmpFile.Name(),
 		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
 			reviewCalled = true
 			return nil
@@ -636,13 +636,13 @@ func TestReviewRun_CommentAndCommentFileMutuallyExclusive(t *testing.T) {
 	defer restoreToken()
 
 	err := reviewRun(&ReviewOptions{
-		IO:           io,
-		HttpClient:   func() (*http.Client, error) { return &http.Client{}, nil },
-		Repository:   "owner/repo",
-		Number:       123,
-		Comment:      "inline comment",
-		CommentFile:  "some-file.txt",
-		ReviewPR:     func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error { return nil },
+		IO:          io,
+		HttpClient:  func() (*http.Client, error) { return &http.Client{}, nil },
+		Repository:  "owner/repo",
+		Number:      123,
+		Comment:     "inline comment",
+		CommentFile: "some-file.txt",
+		ReviewPR:    func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error { return nil },
 		CreatePRComment: func(client *api.Client, owner, repo string, number int, opts *api.CreatePRCommentOptions) (*api.PRComment, error) {
 			return nil, nil
 		},

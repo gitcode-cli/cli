@@ -35,6 +35,10 @@ type ReviewOptions struct {
 	JSON        bool
 }
 
+// requestChangesPrefix is prepended to comments when using --request,
+// since GitCode API does not natively support the "REQUEST_CHANGES" event.
+const requestChangesPrefix = "[REQUEST CHANGES] "
+
 // ReviewResult represents the JSON output for pr review
 type ReviewResult struct {
 	Number  int    `json:"number"`
@@ -61,8 +65,11 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 		Long: heredoc.Doc(`
 			Review a pull request in a GitCode repository.
 
-			You can approve or comment on a PR. GitCode's current API does not
-			support "request changes", so --request returns a clear error.
+			You can approve, request changes, or comment on a PR.
+
+			Since GitCode's API does not natively support "request changes",
+			--request posts a comment with a [REQUEST CHANGES] prefix to signal
+			that changes are needed before the PR can be approved.
 
 			Note: --approve requires GitCode's "approval permission", which is
 			separate from the "merge permission" used by 'gc pr merge'. Users
@@ -89,6 +96,12 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 			# Approve a PR with comment from file
 			$ gc pr review 123 -R owner/repo --approve --comment-file self-check.md
 
+			# Request changes on a PR
+			$ gc pr review 123 -R owner/repo --request
+
+			# Request changes with a comment
+			$ gc pr review 123 -R owner/repo --request --comment "Please fix the error handling"
+
 			# Force approve a PR (admin only)
 			$ gc pr review 123 -R owner/repo --approve --force
 
@@ -112,7 +125,7 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVarP(&opts.Approve, "approve", "a", false, "Approve the PR")
-	cmd.Flags().BoolVarP(&opts.Request, "request", "r", false, "Request changes on the PR (currently unsupported by GitCode API)")
+	cmd.Flags().BoolVarP(&opts.Request, "request", "r", false, "Request changes on the PR (posts a [REQUEST CHANGES] comment)")
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Comment body")
 	cmd.Flags().StringVarP(&opts.CommentFile, "comment-file", "F", "", "Read comment from file (use - for stdin)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Force approval (admin only)")
@@ -123,6 +136,11 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 
 func reviewRun(opts *ReviewOptions) error {
 	cs := opts.IO.ColorScheme()
+
+	// --approve and --request are mutually exclusive
+	if opts.Approve && opts.Request {
+		return cmdutil.NewUsageError("--approve and --request are mutually exclusive")
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {
@@ -221,7 +239,40 @@ func reviewRun(opts *ReviewOptions) error {
 	}
 
 	if opts.Request {
-		return cmdutil.NewUsageError("requesting changes is not supported by the current GitCode API. Use --comment to leave review feedback")
+		// GitCode API does not natively support "REQUEST_CHANGES" event.
+		// Degrade gracefully: post a comment with [REQUEST CHANGES] prefix.
+		userComment := opts.Comment
+		if userComment == "" {
+			userComment = "Changes requested without detailed feedback."
+		}
+		body := requestChangesPrefix + userComment
+
+		comment, err := opts.CreatePRComment(client, owner, repo, opts.Number, &api.CreatePRCommentOptions{
+			Body: body,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to request changes on PR: %w", err)
+		}
+
+		result := ReviewResult{
+			Number:  opts.Number,
+			Action:  "requested_changes",
+			Owner:   owner,
+			Repo:    repo,
+			URL:     fmt.Sprintf("%s#comment_%s", prURL, cmdutil.FormatAPIID(comment.ID)),
+			Comment: userComment,
+		}
+
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, result)
+		}
+
+		fmt.Fprintf(opts.IO.Out, "%s %s PR #%d\n", cs.Yellow("!"), cs.Yellow("requested changes on"), opts.Number)
+		if opts.Comment != "" {
+			fmt.Fprintf(opts.IO.Out, "  %s\n", opts.Comment)
+		}
+		fmt.Fprintf(opts.IO.Out, "  %s\n", cs.Yellow("Note: GitCode API does not support REQUEST_CHANGES natively; a [REQUEST CHANGES] comment was posted instead."))
+		return nil
 	}
 
 	if opts.Approve {
@@ -257,7 +308,7 @@ func reviewRun(opts *ReviewOptions) error {
 		return nil
 	}
 
-	return cmdutil.NewUsageError("no review action specified. Use --comment, --approve, or --force with --approve")
+	return cmdutil.NewUsageError("no review action specified. Use --comment, --approve, --request, or --force with --approve")
 }
 
 func parseRepo(repo string) (string, string, error) {

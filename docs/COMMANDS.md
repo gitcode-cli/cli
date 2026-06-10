@@ -80,6 +80,7 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 - `pr create`
 - `pr edit`
 - `pr merge`
+- `pr review`
 - `repo create`
 - `repo fork`
 - `release create`
@@ -1042,22 +1043,28 @@ gc pr ready 1 -R infra-test/gctest1 --json
 
 ```bash
 # 评论 PR
-gc pr review 1 --comment “评审意见” -R infra-test/gctest1
+gc pr review 1 --comment "评审意见" -R infra-test/gctest1
 
 # 从文件读取评论
 gc pr review 1 --comment-file review-notes.md -R infra-test/gctest1
 
 # 从 stdin 读取评论
-echo “评审意见” | gc pr review 1 --comment-file - -R infra-test/gctest1
+echo "评审意见" | gc pr review 1 --comment-file - -R infra-test/gctest1
 
 # 批准 PR
 gc pr review 1 --approve -R infra-test/gctest1
 
 # 批准 PR 并附带评论
-gc pr review 1 --approve --comment “LGTM” -R infra-test/gctest1
+gc pr review 1 --approve --comment "LGTM" -R infra-test/gctest1
 
 # 批准 PR 并从文件读取评论
 gc pr review 1 --approve --comment-file self-check.md -R infra-test/gctest1
+
+# 请求修改 PR
+gc pr review 1 --request -R infra-test/gctest1
+
+# 请求修改 PR 并附带评论
+gc pr review 1 --request --comment "请修复错误处理" -R infra-test/gctest1
 
 # 强制通过审批（管理员权限）
 gc pr review 1 --approve --force -R infra-test/gctest1
@@ -1066,10 +1073,11 @@ gc pr review 1 --approve --force -R infra-test/gctest1
 说明：
 - `--approve` 现在走 GitCode 实际可用的 `/pulls/:number/review` endpoint，不再命中错误的 `/reviews` 路径。
 - `--approve --comment` 会先提交普通评论，再执行批准动作。
+- `--request` 由于 GitCode API 不原生支持 "REQUEST_CHANGES" 事件，会以 `[REQUEST CHANGES]` 前缀提交评论来标记请求修改，输出中会提示降级行为。
+- `--request --comment` 会将 `[REQUEST CHANGES]` 前缀与评论内容合并后提交。
 - `--comment-file` 支持从文件读取多行评论，使用 `-` 可从 stdin 读取。
 - `--comment` 与 `--comment-file` 互斥，不能同时使用。
-- Windows PowerShell 中从 stdin 传中文评论时，建议使用 UTF-8 文件或先设置 `$OutputEncoding`，详见“Windows PowerShell 命令名和 stdin”。
-- GitCode 当前公开 API 不支持”request changes”动作，`--request` 会明确报错并提示改用 `--comment` 留下审查意见。
+- Windows PowerShell 中从 stdin 传中文评论时，建议使用 UTF-8 文件或先设置 `$OutputEncoding`，详见"Windows PowerShell 命令名和 stdin"。
 
 > **权限说明**: `--approve` 需要 GitCode 平台的”审批权限”，与 `gc pr merge` 的”合并权限”是两套独立权限体系。
 > - 有合并权限的用户不一定有审批权限

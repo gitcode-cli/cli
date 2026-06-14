@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
@@ -213,12 +212,12 @@ func TestParseRepo(t *testing.T) {
 }
 
 func TestEditRun_AuthError(t *testing.T) {
-	// Clear any existing token
-	os.Unsetenv("GC_TOKEN")
-	os.Unsetenv("GITCODE_TOKEN")
+	// Use isolated config dir so no stored token leaks in
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
 
 	f := cmdutil.TestFactory()
-	// Override EnvToken to return empty
 	opts := &EditOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,

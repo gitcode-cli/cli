@@ -66,11 +66,12 @@ func TestCreatePullRequestUsesFormEncoding(t *testing.T) {
 	client.SetToken("test-token", "test")
 
 	pr, err := CreatePullRequest(client, "owner", "repo", &CreatePROptions{
-		Title: "created",
-		Body:  "body text",
-		Head:  "myfork:feature",
-		Base:  "main",
-		Draft: true,
+		Title:  "created",
+		Body:   "body text",
+		Head:   "myfork:feature",
+		Base:   "main",
+		Draft:  true,
+		Labels: []string{"bug", "enhancement"},
 	})
 	if err != nil {
 		t.Fatalf("CreatePullRequest() error = %v", err)
@@ -93,6 +94,8 @@ func TestCreatePullRequestUsesFormEncoding(t *testing.T) {
 		"head=myfork%3Afeature",
 		"base=main",
 		"draft=true",
+		"labels%5B%5D=bug",
+		"labels%5B%5D=enhancement",
 	}
 	if strings.Contains(gotBody, "fork_path") {
 		t.Fatalf("request body %q should not contain fork_path", gotBody)

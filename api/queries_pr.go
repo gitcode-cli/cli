@@ -89,11 +89,12 @@ type PRListOptions struct {
 // 的跨仓库创建会错误解析源（upstream 同名分支 → 0 commits）甚至直接 403。
 // 详见 issue #259。
 type CreatePROptions struct {
-	Title string `json:"title"`
-	Body  string `json:"body,omitempty"`
-	Head  string `json:"head"`
-	Base  string `json:"base"`
-	Draft bool   `json:"draft,omitempty"`
+	Title  string   `json:"title"`
+	Body   string   `json:"body,omitempty"`
+	Head   string   `json:"head"`
+	Base   string   `json:"base"`
+	Draft  bool     `json:"draft,omitempty"`
+	Labels []string `json:"labels,omitempty"`
 }
 
 // UpdatePROptions represents options for updating a PR
@@ -243,6 +244,12 @@ func buildPRCreateFormValues(opts *CreatePROptions) url.Values {
 	if opts.Draft {
 		formValues.Set("draft", "true")
 	}
+	for _, label := range opts.Labels {
+		trimmed := strings.TrimSpace(label)
+		if trimmed != "" {
+			formValues.Add("labels[]", trimmed)
+		}
+	}
 
 	return formValues
 }
@@ -304,7 +311,10 @@ func buildPRUpdateFormValues(opts *UpdatePROptions) url.Values {
 		formValues.Set("milestone_number", itoa(opts.MilestoneNumber))
 	}
 	for _, label := range opts.Labels {
-		formValues.Add("labels[]", label)
+		trimmed := strings.TrimSpace(label)
+		if trimmed != "" {
+			formValues.Add("labels[]", trimmed)
+		}
 	}
 	if opts.CloseRelatedIssue != nil {
 		if *opts.CloseRelatedIssue {

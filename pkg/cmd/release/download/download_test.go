@@ -538,3 +538,75 @@ func TestDownloadAssetRejectsPathSeparator(t *testing.T) {
 		t.Fatalf("nested directory was created inside output directory: %s", nestedPath)
 	}
 }
+
+func TestFilterSourceArchives(t *testing.T) {
+	// Regression for #285: the previous heuristic skipped any .zip/.tar* asset
+	// whose name contained both "v" and ".", wrongly dropping normal assets.
+	assets := []api.ReleaseAsset{
+		// Real source archives: identified by the /archive/refs/heads/ URL.
+		{
+			Name:               "v1.0.0.zip",
+			BrowserDownloadURL: "https://raw.gitcode.com/owner/repo/archive/refs/heads/v1.0.0.zip",
+		},
+		{
+			Name:               "v1.0.0.tar.gz",
+			BrowserDownloadURL: "https://raw.gitcode.com/owner/repo/archive/refs/heads/v1.0.0.tar.gz",
+		},
+		// Normal release assets whose names contain both "v" and "." — must be kept.
+		{
+			Name:               "server.tar.gz",
+			BrowserDownloadURL: "https://api.gitcode.com/owner/repo/releases/download/v1.0.0/server.tar.gz",
+		},
+		{
+			Name:               "driver.zip",
+			BrowserDownloadURL: "https://api.gitcode.com/owner/repo/releases/download/v1.0.0/driver.zip",
+		},
+		{
+			Name:               "service.zip",
+			BrowserDownloadURL: "https://api.gitcode.com/owner/repo/releases/download/v1.0.0/service.zip",
+		},
+		{
+			// Control sample (not a regression guard): plain .txt never triggered
+			// the old heuristic; included to confirm ordinary assets pass through.
+			Name:               "checksums.txt",
+			BrowserDownloadURL: "https://api.gitcode.com/owner/repo/releases/download/v1.0.0/checksums.txt",
+		},
+		{
+			// Edge case: a .zip asset with no browser_download_url. isSourceArchiveAsset
+			// treats an empty URL as "not a source archive", so it must be kept.
+			Name:               "noturl.zip",
+			BrowserDownloadURL: "",
+		},
+		{
+			// Edge case: detection is URL-only and ignores the file extension — an
+			// archive URL with an extension-less name must still be filtered.
+			Name:               "source",
+			BrowserDownloadURL: "https://raw.gitcode.com/owner/repo/archive/refs/heads/main",
+		},
+	}
+
+	got := filterSourceArchives(assets)
+
+	gotNames := make(map[string]bool, len(got))
+	for _, a := range got {
+		gotNames[a.Name] = true
+	}
+
+	wantKept := []string{"server.tar.gz", "driver.zip", "service.zip", "checksums.txt", "noturl.zip"}
+	for _, name := range wantKept {
+		if !gotNames[name] {
+			t.Errorf("filterSourceArchives() dropped normal asset %q, want it kept", name)
+		}
+	}
+
+	wantFiltered := []string{"v1.0.0.zip", "v1.0.0.tar.gz", "source"}
+	for _, name := range wantFiltered {
+		if gotNames[name] {
+			t.Errorf("filterSourceArchives() kept source archive %q, want it filtered", name)
+		}
+	}
+
+	if len(got) != len(wantKept) {
+		t.Errorf("filterSourceArchives() returned %d assets, want %d", len(got), len(wantKept))
+	}
+}

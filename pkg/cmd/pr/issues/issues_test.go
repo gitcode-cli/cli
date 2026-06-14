@@ -28,6 +28,11 @@ func TestNewCmdIssues(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "list PR issues with json",
+			args:    []string{"123", "--json"},
+			wantErr: false,
+		},
+		{
 			name:    "no PR number",
 			args:    []string{},
 			wantErr: true,
@@ -70,12 +75,11 @@ func TestIssuesRunJSON(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
-			_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fix login bug","state":"open","html_url":"https://gitcode.com/owner/repo/issues/42"}]`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/pulls/1/issues" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fix login bug","state":"open","html_url":"https://gitcode.com/owner/repo/issues/42"}]`))
 	}))
 
 	err := issuesRun(&IssuesOptions{
@@ -103,12 +107,11 @@ func TestIssuesRunJSONEmpty(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
-			_, _ = w.Write([]byte(`[]`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/pulls/1/issues" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
 	}))
 
 	err := issuesRun(&IssuesOptions{
@@ -131,12 +134,11 @@ func TestIssuesRunEmpty(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
-			_, _ = w.Write([]byte(`[]`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/pulls/1/issues" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
 	}))
 
 	err := issuesRun(&IssuesOptions{
@@ -159,12 +161,11 @@ func TestIssuesRunText(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
-			_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fix login bug","state":"open","html_url":"https://gitcode.com/owner/repo/issues/42"}]`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/pulls/1/issues" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fix login bug","state":"open","html_url":"https://gitcode.com/owner/repo/issues/42"}]`))
 	}))
 
 	err := issuesRun(&IssuesOptions{
@@ -188,12 +189,11 @@ func TestIssuesRunTextClosedState(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
-			_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fixed bug","state":"closed"},{"id":"2","number":"43","title":"Merged feature","state":"merged"}]`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/pulls/1/issues" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fixed bug","state":"closed"},{"id":"2","number":"43","title":"Merged feature","state":"merged"}]`))
 	}))
 
 	err := issuesRun(&IssuesOptions{
@@ -244,12 +244,11 @@ func TestIssuesRunEmptyFields(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
-			_, _ = w.Write([]byte(`[{"id":"1","number":"","title":"","state":"open"}]`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/pulls/1/issues" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"id":"1","number":"","title":"","state":""}]`))
 	}))
 
 	err := issuesRun(&IssuesOptions{
@@ -263,8 +262,23 @@ func TestIssuesRunEmptyFields(t *testing.T) {
 		t.Fatalf("issuesRun() error = %v", err)
 	}
 	output := out.String()
-	if !strings.Contains(output, "#?") || !strings.Contains(output, "(no title)") {
+	if !strings.Contains(output, "#?") || !strings.Contains(output, "(no title)") || !strings.Contains(output, "unknown") {
 		t.Fatalf("expected fallback for empty fields, got: %q", output)
+	}
+}
+
+func TestIssuesRunAuthError(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+
+	err := issuesRun(&IssuesOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     1,
+		JSON:       false,
+	})
+	if err == nil {
+		t.Fatal("expected error when not authenticated")
 	}
 }
 
@@ -300,5 +314,25 @@ func TestIssuesRunBaseRepoError(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error when BaseRepo fails")
+	}
+}
+
+func TestIssuesRunParseRepoError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	err := issuesRun(&IssuesOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "invalid", nil },
+		Number:     1,
+		JSON:       false,
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid repo format")
 	}
 }

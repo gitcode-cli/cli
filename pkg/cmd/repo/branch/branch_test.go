@@ -28,8 +28,18 @@ func TestNewCmdBranchView(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "view branch with json",
+			args:    []string{"main", "--json"},
+			wantErr: false,
+		},
+		{
 			name:    "no branch name",
 			args:    []string{},
+			wantErr: true,
+		},
+		{
+			name:    "whitespace branch name",
+			args:    []string{"   "},
 			wantErr: true,
 		},
 	}
@@ -55,12 +65,11 @@ func TestViewRunJSON(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/branches/main" {
-			_, _ = w.Write([]byte(`{"name":"main","protected":false,"commit":{"id":"abc123def456","short_id":"abc123de","title":"Initial commit","author":{"id":"1","login":"dev"}}}`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/branches/main" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"name":"main","protected":false,"commit":{"id":"abc123def456","short_id":"abc123de","title":"Initial commit","author":{"id":"1","login":"dev"}}}`))
 	}))
 
 	err := viewRun(&ViewOptions{
@@ -92,12 +101,11 @@ func TestViewRunText(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/branches/main" {
-			_, _ = w.Write([]byte(`{"name":"main","protected":true,"commit":{"id":"abc123def456","short_id":"abc123de","title":"Initial commit","author":{"id":"1","login":"dev"}}}`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/branches/main" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"name":"main","protected":true,"commit":{"id":"abc123def456","short_id":"abc123de","title":"Initial commit","author":{"id":"1","login":"dev"}}}`))
 	}))
 
 	err := viewRun(&ViewOptions{
@@ -123,12 +131,11 @@ func TestViewRunTextUnprotected(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/branches/develop" {
-			_, _ = w.Write([]byte(`{"name":"develop","protected":false,"commit":{"id":"def789","short_id":"def789","title":"Add feature","author":{"id":"1","login":"dev"}}}`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/branches/develop" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"name":"develop","protected":false,"commit":{"id":"def789","short_id":"def789","title":"Add feature","author":{"id":"1","login":"dev"}}}`))
 	}))
 
 	err := viewRun(&ViewOptions{
@@ -179,12 +186,11 @@ func TestViewRunNoCommit(t *testing.T) {
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/api/v5/repos/owner/repo/branches/orphan" {
-			_, _ = w.Write([]byte(`{"name":"orphan","protected":false}`))
-			return
+		if r.URL.Path != "/api/v5/repos/owner/repo/branches/orphan" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"name":"orphan","protected":false}`))
 	}))
 
 	err := viewRun(&ViewOptions{
@@ -203,6 +209,52 @@ func TestViewRunNoCommit(t *testing.T) {
 	}
 	if strings.Contains(output, "Commit:") {
 		t.Fatalf("output should not contain Commit when nil: %s", output)
+	}
+}
+
+func TestViewRunCommitPartialFields(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v5/repos/owner/repo/branches/feature" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"name":"feature","protected":false,"commit":{"id":"abc123","short_id":"","title":"","author":null}}`))
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Branch:     "feature",
+		JSON:       false,
+	})
+	if err != nil {
+		t.Fatalf("viewRun() error = %v", err)
+	}
+	output := out.String()
+	if !strings.Contains(output, "abc123") {
+		t.Fatalf("expected commit ID in output, got: %q", output)
+	}
+	if strings.Contains(output, "Short ID:") || strings.Contains(output, "Title:") || strings.Contains(output, "Author:") {
+		t.Fatalf("should not show empty Short ID/Title/Author, got: %q", output)
+	}
+}
+
+func TestViewRunAuthError(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Branch:     "main",
+		JSON:       false,
+	})
+	if err == nil {
+		t.Fatal("expected error when not authenticated")
 	}
 }
 
@@ -238,5 +290,25 @@ func TestViewRunBaseRepoError(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error when BaseRepo fails")
+	}
+}
+
+func TestViewRunParseRepoError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "invalid", nil },
+		Branch:     "main",
+		JSON:       false,
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid repo format")
 	}
 }

@@ -4,6 +4,7 @@ package repo
 import (
 	"github.com/spf13/cobra"
 
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/branch"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/clone"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/create"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/delete"
@@ -27,6 +28,7 @@ func NewCmdRepo(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 
+	cmd.AddCommand(branch.NewCmdBranch(f))
 	cmd.AddCommand(clone.NewCmdClone(f, nil))
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
 	cmd.AddCommand(fork.NewCmdFork(f, nil))

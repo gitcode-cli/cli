@@ -111,6 +111,34 @@ func DeleteBranch(client *Client, owner, name, branch string) error {
 	return client.Delete("/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(name) + "/branches/" + url.PathEscape(branch))
 }
 
+// Branch represents a repository branch
+type Branch struct {
+	Name      string        `json:"name"`
+	Protected bool          `json:"protected"`
+	Commit    *BranchCommit `json:"commit"`
+}
+
+// BranchCommit represents the commit a branch points to
+type BranchCommit struct {
+	ID        string       `json:"id"`
+	ShortID   string       `json:"short_id"`
+	Title     string       `json:"title"`
+	Message   string       `json:"message"`
+	Author    *User        `json:"author"`
+	Committer *User        `json:"committer"`
+	CreatedAt FlexibleTime `json:"created_at"`
+}
+
+// GetBranch fetches a branch by name
+func GetBranch(client *Client, owner, repo, branch string) (*Branch, error) {
+	var b Branch
+	err := client.Get("/repos/"+url.PathEscape(owner)+"/"+url.PathEscape(repo)+"/branches/"+url.PathEscape(branch), &b)
+	if err != nil {
+		return nil, err
+	}
+	return &b, nil
+}
+
 // ForkRepo forks a repository
 func ForkRepo(client *Client, owner, name string) (*Repository, error) {
 	var repo Repository

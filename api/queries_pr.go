@@ -627,3 +627,13 @@ func GetPRFiles(client *Client, owner, repo string, number int) (*PRFilesRespons
 	}
 	return &result, nil
 }
+
+// ListPRIssues lists issues linked to a pull request
+func ListPRIssues(client *Client, owner, repo string, number int) ([]Issue, error) {
+	var issues []Issue
+	err := client.Get("/repos/"+url.PathEscape(owner)+"/"+url.PathEscape(repo)+"/pulls/"+itoa(number)+"/issues", &issues)
+	if err != nil {
+		return nil, err
+	}
+	return issues, nil
+}

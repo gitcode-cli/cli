@@ -47,7 +47,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comment-file -`）上拦截疑似已被 Windows PowerShell 损坏成 `???` 的输入，并在 stderr 提示正确用法；如果确实需要原样传入连续问号，可设置 `GITCODE_CLI_ALLOW_LOSSY_STDIN=1`。
 
 当前自动推断边界：
-- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view/log`，以及 `pr list/view`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等“作用于当前仓库”的安全只读场景。
+- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view/log/branch view`，以及 `pr list/view/issues`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等"作用于当前仓库"的安全只读场景。
 - 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
 ### Agent-Friendly CLI 能力
@@ -64,10 +64,12 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 - `repo view`
 - `repo list`
 - `repo log`
+- `repo branch view`
 - `issue list`
 - `issue view`
 - `pr list`
 - `pr view`
+- `pr issues`
 - `release list`
 - `release view`
 - `label list`
@@ -267,6 +269,24 @@ gc repo view infra-test/gctest1 --json
 
 说明：
 - 在当前 Git 仓库中执行时，`gc repo view` 可缺省仓库参数；CLI 会优先解析 `origin` remote，若不存在则回退到第一个 remote。
+
+### repo branch view - 查看分支
+
+```bash
+# 查看分支详情
+gc repo branch view main -R owner/repo
+
+# 查看分支详情（当前仓库）
+gc repo branch view main
+
+# 输出 JSON
+gc repo branch view main -R owner/repo --json
+```
+
+说明：
+- `repo branch view` 显示指定分支的名称、保护状态和最新 commit 信息（ID、短 ID、标题、作者）。
+- `--json` 输出分支对象，包含 `name`、`protected`、`commit.id`、`commit.short_id`、`commit.title`、`commit.message`、`commit.author.login`、`commit.committer.login`、`commit.created_at` 等字段。
+- 分支不存在时返回明确错误。
 
 ### repo list - 列出仓库
 
@@ -888,6 +908,24 @@ gc pr view 1 -R infra-test/gctest1 --time-format relative
 - `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
 - 如果 PR 详情 API 返回的 `additions`、`deletions`、`changed_files` 或 `commits` 为 0，CLI 会尝试通过 PR files/commits API 补齐统计；补齐失败时会给出 warning，但不阻断查看。
 - `--json` 路径保持结构化输出，milestone、body、description、merged_at 等字段会自动包含在 JSON 中；其中 `body` 与 `description` 会基于远端返回互相补齐。
+
+### pr issues - 查看 PR 关联的 Issues
+
+```bash
+# 查看 PR 关联的 Issues
+gc pr issues 123 -R owner/repo
+
+# 查看 PR 关联的 Issues（当前仓库）
+gc pr issues 123
+
+# 输出 JSON
+gc pr issues 123 -R owner/repo --json
+```
+
+说明：
+- `pr issues` 列出指定 PR 关联的 Issue 列表。
+- `--json` 输出 Issue 对象数组，包含 `id`、`number`、`title`、`body`、`state`、`html_url`、`user`、`labels`、`milestone`、`created_at` 等字段；无关联 Issue 时输出 `[]`，不会混入文本提示。
+- PR 不存在时返回明确错误；无关联 Issue 时文本输出提示"No linked issues found for PR #\<number\>"。
 
 ### pr comments - 查看 PR 评论
 

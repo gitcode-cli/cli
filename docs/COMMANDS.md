@@ -284,7 +284,7 @@ gc repo branch view main -R owner/repo --json
 
 说明：
 - `repo branch view` 显示指定分支的名称、保护状态和最新 commit 信息（ID、短 ID、标题、作者）。
-- `--json` 输出分支对象，包含 `name`、`protected`、`commit.id`、`commit.short_id`、`commit.title`、`commit.author.login` 等字段。
+- `--json` 输出分支对象，包含 `name`、`protected`、`commit.id`、`commit.short_id`、`commit.title`、`commit.message`、`commit.author.login`、`commit.committer.login`、`commit.created_at` 等字段。
 - 分支不存在时返回明确错误。
 
 ### repo list - 列出仓库
@@ -923,8 +923,8 @@ gc pr issues 123 -R owner/repo --json
 
 说明：
 - `pr issues` 列出指定 PR 关联的 Issue 列表。
-- `--json` 输出 Issue 对象数组；无关联 Issue 时输出 `[]`，不会混入文本提示。
-- PR 不存在时返回明确错误；无关联 Issue 时文本输出提示"No linked issues"。
+- `--json` 输出 Issue 对象数组，包含 `id`、`number`、`title`、`body`、`state`、`html_url`、`user`、`labels`、`milestone`、`created_at` 等字段；无关联 Issue 时输出 `[]`，不会混入文本提示。
+- PR 不存在时返回明确错误；无关联 Issue 时文本输出提示"No linked issues found for PR #\<number\>"。
 
 ### pr comments - 查看 PR 评论
 

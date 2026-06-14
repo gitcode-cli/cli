@@ -2,6 +2,7 @@ package issues
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -70,7 +71,7 @@ func TestIssuesRunJSON(t *testing.T) {
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if strings.HasSuffix(r.URL.Path, "/issues") {
+		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
 			_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fix login bug","state":"open","html_url":"https://gitcode.com/owner/repo/issues/42"}]`))
 			return
 		}
@@ -97,13 +98,41 @@ func TestIssuesRunJSON(t *testing.T) {
 	}
 }
 
+func TestIssuesRunJSONEmpty(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
+			_, _ = w.Write([]byte(`[]`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+
+	err := issuesRun(&IssuesOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     1,
+		JSON:       true,
+	})
+	if err != nil {
+		t.Fatalf("issuesRun() error = %v", err)
+	}
+	if out.String() != "[]\n" {
+		t.Fatalf("expected empty JSON array, got: %q", out.String())
+	}
+}
+
 func TestIssuesRunEmpty(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if strings.HasSuffix(r.URL.Path, "/issues") {
+		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
 			_, _ = w.Write([]byte(`[]`))
 			return
 		}
@@ -131,7 +160,7 @@ func TestIssuesRunText(t *testing.T) {
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if strings.HasSuffix(r.URL.Path, "/issues") {
+		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
 			_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fix login bug","state":"open","html_url":"https://gitcode.com/owner/repo/issues/42"}]`))
 			return
 		}
@@ -154,6 +183,38 @@ func TestIssuesRunText(t *testing.T) {
 	}
 }
 
+func TestIssuesRunTextClosedState(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
+			_, _ = w.Write([]byte(`[{"id":"1","number":"42","title":"Fixed bug","state":"closed"},{"id":"2","number":"43","title":"Merged feature","state":"merged"}]`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+
+	err := issuesRun(&IssuesOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     1,
+		JSON:       false,
+	})
+	if err != nil {
+		t.Fatalf("issuesRun() error = %v", err)
+	}
+	output := out.String()
+	if !strings.Contains(output, "#42") || !strings.Contains(output, "Fixed bug") {
+		t.Fatalf("expected closed issue in output, got: %q", output)
+	}
+	if !strings.Contains(output, "#43") || !strings.Contains(output, "Merged feature") {
+		t.Fatalf("expected merged issue in output, got: %q", output)
+	}
+}
+
 func TestIssuesRunNotFound(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
@@ -173,6 +234,9 @@ func TestIssuesRunNotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for nonexistent PR")
 	}
+	if !strings.Contains(err.Error(), "999") || !strings.Contains(err.Error(), "owner/repo") {
+		t.Fatalf("error should reference PR number and repo, got: %v", err)
+	}
 }
 
 func TestIssuesRunEmptyFields(t *testing.T) {
@@ -181,7 +245,7 @@ func TestIssuesRunEmptyFields(t *testing.T) {
 	io, _, out, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if strings.HasSuffix(r.URL.Path, "/issues") {
+		if r.URL.Path == "/api/v5/repos/owner/repo/pulls/1/issues" {
 			_, _ = w.Write([]byte(`[{"id":"1","number":"","title":"","state":"open"}]`))
 			return
 		}
@@ -201,5 +265,40 @@ func TestIssuesRunEmptyFields(t *testing.T) {
 	output := out.String()
 	if !strings.Contains(output, "#?") || !strings.Contains(output, "(no title)") {
 		t.Fatalf("expected fallback for empty fields, got: %q", output)
+	}
+}
+
+func TestIssuesRunHttpClientError(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+
+	err := issuesRun(&IssuesOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return nil, fmt.Errorf("client error") },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     1,
+		JSON:       false,
+	})
+	if err == nil {
+		t.Fatal("expected error when HttpClient fails")
+	}
+}
+
+func TestIssuesRunBaseRepoError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	err := issuesRun(&IssuesOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "", fmt.Errorf("no remote") },
+		Number:     1,
+		JSON:       false,
+	})
+	if err == nil {
+		t.Fatal("expected error when BaseRepo fails")
 	}
 }

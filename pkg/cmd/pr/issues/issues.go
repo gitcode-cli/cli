@@ -141,6 +141,8 @@ func stateLabel(cs *iostreams.ColorScheme, state string) string {
 		return cs.Green("open")
 	case "closed":
 		return cs.Red("closed")
+	case "merged":
+		return cs.Magenta("merged")
 	default:
 		return state
 	}

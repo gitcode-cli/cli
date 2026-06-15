@@ -51,6 +51,7 @@ issue-reviewer-workspace/
 context/
 statistics.json
 project-management-statistics.json
+.loop-output/
 
 # 敏感文件 - 禁止提交
 *.pem

@@ -4,55 +4,49 @@
 
 ## 职责
 
-- 明确“哪类信息该去哪看”
-- 防止把入口文档、阶段说明或外部使用说明误当成正式规则源
-- 统一人工与 AI 在判定事实时的依据
-
-## 适用场景
-
-- 判断某份文档能否直接作为事实依据
-- 识别仓库内开发与外部项目使用 `gc` 的边界
-- 处理文档之间出现冲突或信息滞后时的优先级
+- 说明哪些来源可以直接作为事实依据
+- 避免把阶段说明、聊天记录、旧 skill 目录或镜像仓状态误当作事实源
+- 为 Loop Engineering 的状态推进、证据记录和归档提供判定基础
 
 ## 真相源矩阵
 
 | 信息类型 | 真相源 | 可否直接判事实 | 说明 |
-|------|------|------|------|
-| 项目正式规则 | `spec/` | 是 | 项目规则唯一正式来源 |
+| --- | --- | --- | --- |
+| 项目正式规则 | `spec/` | 是 | 最高规则源；入口文档、skills、docs 不得覆盖 |
 | 命令行为 | `docs/COMMANDS.md` | 是 | `gc` 命令行为唯一真相源 |
-| 测试、门禁、评审规则 | `spec/foundations/*`、`spec/workflows/*` | 是 | 包括测试、状态机、门禁、评审边界 |
-| 构建与打包规则 | `spec/delivery/*` | 是 | 当前本地构建与打包规则以此为准 |
-| AI 共享场景定义 | `.ai/skills/*` | 有条件地是 | 只对共享 skill 场景定义生效，不得覆盖 `spec/` |
-| 项目入口导航 | `README.md` | 否 | 入口文档，不是规则源 |
-| AI 客户端入口 | `AGENTS.md`、`CLAUDE.md` | 否 | 入口文档，不是规则源 |
-| 外部项目 AI 使用说明 | `docs/AI-GUIDE.md` | 否 | 只服务外部项目通过 AI 使用 `gc` |
-| 外部通用 skill 分发 | `.ai/distribution/gc-core/*` | 否 | 只服务外部项目复用，不定义本仓库开发规则 |
-| 项目阶段说明 | `issues-plan/PROGRESS.md` | 否 | 可能滞后，只能作阶段说明与背景参考 |
-| 单个 issue / PR 的实时状态 | GitCode 远端 issue、PR、label、comment | 是 | 远端平台是实时事实源 |
-| 是否已主干合入 | merged PR + `origin/main` | 是 | 不能只看 issue 状态、comment 或 release 文案 |
-| CI 运行状态与结果 | GitHub Actions run（通过 `gh run view` 获取） | 是 | CI 结论是自动化事实；失败原因分析需人工/AI 判断 |
-| CI 工作流定义 | `.github/workflows/ci.yml` + `spec/delivery/ci-workflows.md` | 是 | workflow 文件定义 CI 行为，spec 定义 CI 规范 |
+| 用户使用说明 | `docs/` | 有条件地是 | 只对用户文档范围生效，不定义内部流程 |
+| GitCode 协作状态 | GitCode issue / PR / labels / comments | 是 | issue、PR、评审讨论和状态推进事实源 |
+| 主干完成事实 | GitCode merged PR + `origin/main` | 是 | 判断功能是否合入主干必须同时看远端主干事实 |
+| CI 执行结果 | GitHub mirror Actions run | 是 | 只作为 CI 执行事实源，必须绑定 commit SHA |
+| CI 与 GitCode 关联 | commit SHA | 是 | GitCode PR head SHA 与 GitHub Actions run 的绑定键 |
+| AI skill | `gitcode-cli/skills` | 有条件地是 | 定义 AI 执行方法，不定义低于 `spec/` 的项目规则 |
+| Loop 标准件 | `gitcode-cli/loop-kits` | 有条件地是 | 定义 schema、policy、hooks、templates、adapters 的通用契约 |
+| 仓内旧 skill 目录 | `.ai/skills/`、`.claude/skills/`、`.codex/skills/` | 否 | 仅作为历史兼容/迁移参考 |
+| 阶段说明 | `issues-plan/PROGRESS.md` | 否 | 可作为背景，不作为单个 issue / PR 实时状态事实源 |
+| 本地 runtime | `.loop/runtime/` | 否 | 只作为本地临时缓存，不提交、不判事实 |
+| 会话记忆 | `MEMORY.md` 或聊天上下文 | 否 | 只作恢复辅助；与 `spec/` 或远端事实冲突时以后者为准 |
 
 ## 判定优先级
 
-当不同文档或信息源出现冲突时，按以下顺序理解：
+1. `spec/` 定义项目规则
+2. GitCode issue / PR / labels / comments 定义协作状态
+3. GitCode merged PR + `origin/main` 定义主干完成事实
+4. GitHub mirror Actions run 定义 CI 执行事实
+5. `docs/COMMANDS.md` 定义命令行为
+6. `gitcode-cli/skills` 定义 AI 执行方法
+7. `gitcode-cli/loop-kits` 定义可复用标准件
+8. 本地文件、阶段说明、会话记忆只作辅助
 
-1. `spec/` 定义项目正式规则
-2. `docs/COMMANDS.md` 定义命令行为
-3. GitCode 远端平台、merged PR 和 `origin/main` 定义实时事实
-4. GitHub Actions CI 运行结果定义自动化验证事实
-5. `.ai/skills/*` 定义共享 AI 场景
-6. `README.md`、`AGENTS.md`、`CLAUDE.md`、`issues-plan/PROGRESS.md` 仅作入口、导航或阶段说明
+## Loop Engineering 特别规则
 
-## 必须
+- 状态长期事实必须写回 GitCode issue / PR。
+- CI 证据必须引用 GitHub Actions run URL 和 commit SHA。
+- GitHub mirror 不能替代 GitCode 主仓，也不能作为合并事实源。
+- `loop-kits` 的 schema 和 templates 不保存项目运行状态。
+- 可复用规则进入 `spec/`，可复用 AI 方法进入 `gitcode-cli/skills`，可复用标准件进入 `gitcode-cli/loop-kits`。
 
-- 不得把入口文档当成正式规则源
-- 不得把 `issues-plan/PROGRESS.md` 当成实时状态真相源
-- 不得把 `docs/AI-GUIDE.md` 当成 gitcode-cli 仓库内部开发流程规范
-- 判断交付完成度时，必须检查远端平台事实和 `origin/main`
+## 下一步去哪里
 
-## 下一步去看哪里
-
-- 如果你在改文档边界，继续看 [docs-governance.md](./docs-governance.md)
-- 如果你在改 AI 入口或 skill 分层，继续看 [ai-collaboration.md](./ai-collaboration.md)
-- 如果你在执行仓库内 AI 开发流程，继续看 [../workflows/ai-local-development-workflow.md](../workflows/ai-local-development-workflow.md)
+- 改 AI 协作边界：继续看 [ai-collaboration.md](./ai-collaboration.md)
+- 改文档分层：继续看 [docs-governance.md](./docs-governance.md)
+- 改 Loop Engineering：继续看 [../loop/README.md](../loop/README.md)

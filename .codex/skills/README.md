@@ -1,33 +1,24 @@
-# Codex skill 适配层
+# Codex skill 历史适配层
 
-本目录是 gitcode-cli 的 Codex skill 适配层。
+本目录曾经作为 gitcode-cli 仓库内 Codex skill 适配层。
 
-## 角色
+当前正式 skill 真相源已经迁移到独立仓库：
 
-- 为 Codex 提供仓库内可版本化的 skill 适配入口
-- 与共享 skill 真相源保持同步
-- 避免仅依赖用户本地 `~/.codex/skills/` 作为唯一来源
+- https://gitcode.com/gitcode-cli/skills
 
-## 权威边界
+## 当前边界
 
-- 共享 skill 真相源：`../.ai/skills/`
-- Codex 适配层：本目录
-- 项目正式规则：`spec/`
+- 本目录只作为历史兼容层和迁移参考。
+- 不在本目录新增正式 skill。
+- Codex 使用的最新 GitCode CLI skill 应从 `gitcode-cli/skills` 安装或同步。
+- 项目正式规则仍以 `spec/` 为准。
 
-本目录不是项目规则源，只负责 Codex 侧适配。
+## Loop Engineering
 
-## 当前映射
+Loop Engineering 相关执行 skill 应落在 `gitcode-cli/skills`：
 
-| Codex 目录 | 共享 skill |
-|------------|------------|
-| `gitcode-cli/` | `.ai/skills/gitcode-cli/` |
-| `pr-reviewer/` | `.ai/skills/pr-reviewer/` |
-| `issue-reviewer/` | `.ai/skills/issue-reviewer/` |
-| `gc-dev-setup/` | `.ai/skills/gc-dev-setup/` |
-| `gitcode-cmd-generator/` | `.ai/skills/gitcode-cmd-generator/` |
+- `gitcode-loop-engineering`
+- `gitcode-loop-ci`
+- `gitcode-loop-archive`
 
-## 当前阶段说明
-
-本阶段先补齐目录结构和适配说明。
-
-后续阶段再根据共享 skill 真相源逐步补充更细的 Codex 侧技能文档。
+本目录不得定义低于 `spec/` 或 `gitcode-cli/skills` 的规则。

@@ -242,3 +242,16 @@ python3 scripts/validate-ai-record.py --mode record --kind pr-self-check /path/t
 - PR 级动作：看 [pr-workflow.md](./pr-workflow.md)
 - 独立评审：看 [review-workflow.md](./review-workflow.md)
 - 本地验证：看 [test-workflow.md](./test-workflow.md)
+
+## Loop Engineering 执行路径
+
+当 AI 本地开发任务属于 Loop Engineering Demo v1：
+
+1. 先读取 `spec/loop/README.md` 和 `.loop/project.yaml`
+2. 使用 `gitcode-cli/skills` 中的 loop skill 执行任务
+3. 使用 `gitcode-cli/loop-kits` 的模板、schema、hook 和 adapter 契约
+4. 将长期状态和证据写回 GitCode issue / PR
+5. 将 GitHub mirror Actions 作为 CI 执行事实源，并绑定 commit SHA
+6. 合并后再做 archive decision
+
+本阶段不得依赖尚未实现的 `gc loop` 命令。

@@ -274,6 +274,21 @@ git pull origin main
 - [ ] PR 已合并
 - [ ] Issue 已关闭
 
+## Loop Engineering PR 证据
+
+当 PR 属于 Loop Engineering 闭环时，PR body 或评论中必须补充：
+
+- 关联 GitCode issue
+- 当前 loop phase
+- 作者 self-check
+- 本地验证命令和结果摘要
+- GitHub mirror CI run URL（如适用）
+- CI 对应 commit SHA
+- 独立评审结论
+- archive decision（合并后）
+
+GitHub mirror CI 只作为 CI 执行事实源；PR 是否完成仍以 GitCode merged PR 和 `origin/main` 为准。
+
 ---
 
 **最后更新**: 2026-05-01

@@ -298,6 +298,17 @@ Issue 和 PR 至少应使用以下标签维度：
 - 多角色评审角色与检查清单：看 [评审流程](./review-workflow.md)
 - 本地与合并门禁：看 [代码质量门禁规范](../foundations/code-quality-gates.md)
 
+## Loop Engineering 关系
+
+当开发任务作为 Loop Engineering 闭环执行时，还必须遵守 `spec/loop/`：
+
+- GitCode issue / PR 保存长期状态和证据
+- 本地 `.loop/runtime` 只能作为临时缓存
+- GitHub mirror Actions 只作为 CI 执行事实源，必须绑定 commit SHA
+- `gitcode-cli/skills` 定义 AI 执行方法
+- `gitcode-cli/loop-kits` 定义 schema、policy、hooks、templates、adapters
+- Phase 1-3 演示不依赖 `gc loop` 命令，也不得实现自动驾驶式 `gc loop run`
+
 ---
 
 **最后更新**: 2026-05-01

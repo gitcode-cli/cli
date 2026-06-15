@@ -242,6 +242,22 @@ Release CI 规范详见 `spec/delivery/release-process.md`。
 - Release CI 详情：看 [发布流程规范](./release-process.md)
 - AI 如何编排 CI：看 [AI 本地开发流程](../workflows/ai-local-development-workflow.md)
 
+## GitHub mirror CI for Loop Engineering
+
+gitcode-cli 的 Loop Engineering Demo v1 使用 GitHub mirror Actions 作为 CI 执行事实源。
+
+规则：
+
+- GitCode issue / PR 仍是协作事实源
+- GitCode `origin/main` 仍是主干完成事实源
+- GitHub Actions run 只证明某个 commit SHA 的 CI 执行结果
+- CI evidence 必须包含 commit SHA、workflow/run URL、状态和获取时间
+- mirror 尚未同步时，不得宣称 CI 通过或失败
+- CI 不可访问时，应标记为 `ci_unavailable` 并停止推进到通过状态
+- CI 失败时进入 fix loop，而不是直接 archive
+
+相关规范见 `spec/loop/mirror-ci-contract.md`。
+
 ---
 
 **最后更新**: 2026-06-02

@@ -153,12 +153,18 @@ func listRun(opts *ListOptions) error {
 }
 
 // sortReleasesByDate sorts releases by published date in descending order (newest first).
-// Falls back to created_at when published_at is nil.
+//
+// When PublishedAt is nil (e.g., draft releases or API omissions), the function
+// falls back to CreatedAt. If CreatedAt is the zero value (time.Time{}), the
+// comparison via time.Time.After places that release at the oldest position —
+// time.Time{} corresponds to year 1, which is earlier than any real timestamp.
+// In practice this is acceptable because releases always have a valid CreatedAt
+// populated by GitCode at creation time.
 func sortReleasesByDate(releases []api.Release) {
 	sort.Slice(releases, func(i, j int) bool {
 		a, b := releases[i], releases[j]
 
-		// Use PublishedAt if both have it; fall back to CreatedAt
+		// Prefer PublishedAt; fall back to CreatedAt when PublishedAt is nil.
 		var aTime, bTime *api.FlexibleTime
 		if a.PublishedAt != nil {
 			aTime = a.PublishedAt

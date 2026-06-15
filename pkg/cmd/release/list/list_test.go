@@ -193,6 +193,114 @@ func TestListRunSortReleasesByDateHandlesNilPublishedAt(t *testing.T) {
 	}
 }
 
+func TestListRunSortReleasesByDateAllNilPublishedAt(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+
+	err := listRun(&ListOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					// All releases have no published_at — must fall back to created_at.
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Status:     http.StatusText(http.StatusOK),
+						Header:     make(http.Header),
+						Body: io.NopCloser(strings.NewReader(`[
+							{"tag_name":"v0.2.3","html_url":"https://gitcode.com/owner/repo/-/releases/v0.2.3","draft":false,"prerelease":false,"created_at":"2026-03-01T00:00:00Z"},
+							{"tag_name":"v0.5.9","html_url":"https://gitcode.com/owner/repo/-/releases/v0.5.9","draft":false,"prerelease":false,"created_at":"2026-06-01T00:00:00Z"},
+							{"tag_name":"v0.4.0","html_url":"https://gitcode.com/owner/repo/-/releases/v0.4.0","draft":false,"prerelease":false,"created_at":"2026-05-01T00:00:00Z"}
+						]`)),
+					}, nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+	})
+	if err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	output := out.String()
+
+	// When all PublishedAt are nil, sort falls back to CreatedAt:
+	// Newest created first: v0.5.9 (Jun) > v0.4.0 (May) > v0.2.3 (Mar)
+	v059Pos := strings.Index(output, "v0.5.9")
+	v040Pos := strings.Index(output, "v0.4.0")
+	v023Pos := strings.Index(output, "v0.2.3")
+
+	if v059Pos < 0 || v040Pos < 0 || v023Pos < 0 {
+		t.Fatalf("output = %q, missing expected releases", output)
+	}
+	if v059Pos > v040Pos || v040Pos > v023Pos {
+		t.Fatalf("output = %q, releases not sorted by created_at when all published_at are nil", output)
+	}
+
+	// v0.5.9 should be marked as (latest)
+	if !strings.Contains(output, "v0.5.9 (latest)") {
+		t.Fatalf("output = %q, v0.5.9 should be marked as latest", output)
+	}
+}
+
+func TestListRunSortReleasesByDatePublishedAtPriority(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+
+	err := listRun(&ListOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					// v1.0.0 was created first but published last (backport release).
+					// v2.0.0 was created later but published first.
+					// PublishedAt must take priority over CreatedAt for sorting.
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Status:     http.StatusText(http.StatusOK),
+						Header:     make(http.Header),
+						Body: io.NopCloser(strings.NewReader(`[
+							{"tag_name":"v1.0.0","html_url":"https://gitcode.com/owner/repo/-/releases/v1.0.0","draft":false,"prerelease":false,"created_at":"2026-01-01T00:00:00Z","published_at":"2026-06-01T00:00:00Z"},
+							{"tag_name":"v2.0.0","html_url":"https://gitcode.com/owner/repo/-/releases/v2.0.0","draft":false,"prerelease":false,"created_at":"2026-04-01T00:00:00Z","published_at":"2026-04-01T00:00:00Z"}
+						]`)),
+					}, nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+	})
+	if err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	output := out.String()
+
+	// v1.0.0 published Jun > v2.0.0 published Apr, so v1.0.0 should appear first
+	// even though v2.0.0 was created later.
+	v100Pos := strings.Index(output, "v1.0.0")
+	v200Pos := strings.Index(output, "v2.0.0")
+
+	if v100Pos < 0 || v200Pos < 0 {
+		t.Fatalf("output = %q, missing expected releases", output)
+	}
+	if v100Pos > v200Pos {
+		t.Fatalf("output = %q, v1.0.0 should appear before v2.0.0 (published_at takes priority over created_at)", output)
+	}
+
+	// v1.0.0 published later, should be (latest)
+	if !strings.Contains(output, "v1.0.0 (latest)") {
+		t.Fatalf("output = %q, v1.0.0 should be marked as latest", output)
+	}
+}
+
 func TestListRunUsesBaseRepoWhenRepoOmitted(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

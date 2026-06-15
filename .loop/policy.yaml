@@ -1,0 +1,32 @@
+version: 1
+name: gitcode-cli-loop-policy
+
+gates:
+  require_non_main_branch: true
+  require_issue_or_pr_context: true
+  require_evidence_for_state_change: true
+  require_commit_sha_for_ci: true
+  require_independent_review_before_approval: true
+  require_origin_main_for_completion: true
+
+ci:
+  provider: github_actions
+  mirror_repo: gitcode-cli/cli
+  fact_binding: commit_sha
+  unavailable_state: ci_unavailable
+
+archive:
+  issue_or_pr_comment: one_time_evidence
+  spec: long_term_rules
+  docs: user_explanation
+  skills_repo: ai_execution_methods
+  loop_kits_repo: reusable_machine_contracts
+
+human_approval:
+  required_for:
+    - merge
+    - release
+    - repository_create_or_delete
+    - rule_conflict
+    - high_risk_scope_change
+    - long_term_rule_archive

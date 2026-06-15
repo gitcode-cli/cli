@@ -16,6 +16,7 @@
 如果改动涉及命令行为、文档同步或 AI 协作边界，再补读：
 
 5. [文档治理规范](./governance/docs-governance.md)
+6. [Loop Engineering 规范](./loop/README.md)
 
 ## 按任务选择入口
 
@@ -28,6 +29,7 @@
 | 改构建、打包、发布 | [本地构建与打包规范](./delivery/build-and-package.md)、[发布流程规范](./delivery/release-process.md) |
 | 改 CI 工作流、远端验证 | [CI 工作流规范](./delivery/ci-workflows.md)、[代码质量门禁规范](./foundations/code-quality-gates.md) |
 | 改文档、skills、AGENTS、CLAUDE | [文档治理规范](./governance/docs-governance.md)、[代码质量门禁规范](./foundations/code-quality-gates.md) |
+| 改 Loop Engineering 规则、状态、证据、归档 | [Loop Engineering 规范](./loop/README.md)、[真相源矩阵](./governance/source-of-truth-matrix.md) |
 
 ## 当前结构
 
@@ -52,10 +54,11 @@ spec/
 │   ├── build-and-package.md
 │   ├── release-process.md
 │   └── ci-workflows.md
-└── governance/              # 治理与协作边界
-    ├── docs-governance.md
-    ├── source-of-truth-matrix.md
-    └── ai-collaboration.md
+├── governance/              # 治理与协作边界
+│   ├── docs-governance.md
+│   ├── source-of-truth-matrix.md
+│   └── ai-collaboration.md
+└── loop/                    # Loop Engineering 规则
 ```
 
 ## 权威边界
@@ -83,6 +86,7 @@ spec/
 | [文档治理规范](./governance/docs-governance.md) | 文档分层、唯一真相源、AI 协作分层、分阶段实施方案 |
 | [真相源矩阵](./governance/source-of-truth-matrix.md) | 各类信息的事实来源、边界和判定优先级 |
 | [AI 协作规范](./governance/ai-collaboration.md) | Codex / Claude 入口关系、共享源与适配层边界 |
+| [Loop Engineering 规范](./loop/README.md) | 状态机、证据、hook、skill、mirror CI 和归档规则 |
 | [开发工作流程](./workflows/development-workflow.md) | 完整流程、分支规范、禁止行为、检查清单 |
 | [AI 本地开发流程](./workflows/ai-local-development-workflow.md) | 仓库内 AI 从接任务到本地验证到评审前的编排流程 |
 | [本地构建与打包规范](./delivery/build-and-package.md) | 标准构建命令、打包方式、产物边界和验证要求 |
@@ -114,7 +118,8 @@ spec/
 3. 开始修改前回到 [代码质量门禁规范](./foundations/code-quality-gates.md) 确认交付标准
 4. 判断某类信息能否直接作为事实依据时，先看 [真相源矩阵](./governance/source-of-truth-matrix.md)
 5. 仓库内 AI 执行本地开发闭环时，继续看 [AI 本地开发流程](./workflows/ai-local-development-workflow.md)
-6. 命令行为或协作规则变化时，回到 [文档治理规范](./governance/docs-governance.md) 检查同步范围
+6. 执行 Loop Engineering 时，继续看 [Loop Engineering 规范](./loop/README.md)
+7. 命令行为或协作规则变化时，回到 [文档治理规范](./governance/docs-governance.md) 检查同步范围
 
 ## 相关文档
 

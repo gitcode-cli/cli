@@ -1,0 +1,23 @@
+version: 1
+
+hooks:
+  pre_loop:
+    - pre-loop
+  pre_change:
+    - pre-change
+  post_change:
+    - post-change
+  pre_pr:
+    - pre-pr
+  post_pr:
+    - post-pr
+  pre_merge:
+    - pre-merge
+  post_merge:
+    - post-merge
+  archive:
+    - archive
+
+runner:
+  phase_1_to_3: skills_and_loop_kits
+  gc_loop_required: false

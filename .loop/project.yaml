@@ -1,0 +1,27 @@
+version: 1
+
+project:
+  name: gitcode-cli
+  gitcode_repo: gitcode-cli/cli
+  github_mirror: gitcode-cli/cli
+  reference_issue: gitcode-cli/cli#299
+
+truth_sources:
+  rules: spec/
+  command_behavior: docs/COMMANDS.md
+  collaboration: gitcode.issue_pr
+  mainline: gitcode.origin.main
+  ci: github.actions
+  skills: gitcode-cli/skills
+  loop_kits: gitcode-cli/loop-kits
+
+loop_kits:
+  source: gitcode-cli/loop-kits
+  version: v0.1.0
+
+skills:
+  source: gitcode-cli/skills
+
+runtime:
+  local_cache: .loop/runtime
+  committed: false

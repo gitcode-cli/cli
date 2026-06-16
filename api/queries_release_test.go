@@ -263,3 +263,167 @@ func TestGetReleaseUploadURL_TagEscaping(t *testing.T) {
 		t.Errorf("Expected escaped tag '%s' in URL, got %s", expectedEscaped, gotURL)
 	}
 }
+
+// TestDeleteReleaseByTagDirect_DeletePath tests that DeleteReleaseByTagDirect uses correct DELETE path
+func TestDeleteReleaseByTagDirect_DeletePath(t *testing.T) {
+	var gotMethod string
+	var gotPath string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotMethod = req.Method
+		gotPath = req.URL.Path
+		return authTestResponse(http.StatusNoContent, ``), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := DeleteReleaseByTagDirect(client, "owner", "repo", "v1.0.0")
+	if err != nil {
+		t.Fatalf("DeleteReleaseByTagDirect() error = %v", err)
+	}
+
+	if gotMethod != "DELETE" {
+		t.Errorf("Expected DELETE method, got %s", gotMethod)
+	}
+	if gotPath != "/api/v5/repos/owner/repo/releases/v1.0.0" {
+		t.Errorf("Expected path '/api/v5/repos/owner/repo/releases/v1.0.0', got %s", gotPath)
+	}
+}
+
+// TestDeleteReleaseByTagDirect_TagEscaping tests that tags with slashes are properly escaped
+func TestDeleteReleaseByTagDirect_TagEscaping(t *testing.T) {
+	var gotURL string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotURL = req.URL.String()
+		return authTestResponse(http.StatusNoContent, ``), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := DeleteReleaseByTagDirect(client, "owner", "repo", "release/v1.0.0")
+	if err != nil {
+		t.Fatalf("DeleteReleaseByTagDirect() error = %v", err)
+	}
+
+	expectedEscaped := "release%2Fv1.0.0"
+	if !strings.Contains(gotURL, expectedEscaped) {
+		t.Errorf("Expected escaped tag '%s' in URL, got %s", expectedEscaped, gotURL)
+	}
+}
+
+// TestDeleteReleaseByTag_DirectSucceeds tests that DeleteReleaseByTag succeeds via direct endpoint
+func TestDeleteReleaseByTag_DirectSucceeds(t *testing.T) {
+	var callCount int
+	var lastMethod string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		callCount++
+		lastMethod = req.Method
+		return authTestResponse(http.StatusNoContent, ``), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := DeleteReleaseByTag(client, "owner", "repo", "v1.0.0")
+	if err != nil {
+		t.Fatalf("DeleteReleaseByTag() error = %v", err)
+	}
+
+	if callCount != 1 {
+		t.Errorf("Expected 1 API call via direct endpoint, got %d", callCount)
+	}
+	if lastMethod != "DELETE" {
+		t.Errorf("Expected DELETE method, got %s", lastMethod)
+	}
+}
+
+// TestDeleteReleaseByTag_FallbackOnDirect404 tests fallback to ID-based when direct endpoint returns 404
+func TestDeleteReleaseByTag_FallbackOnDirect404(t *testing.T) {
+	var callCount int
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		callCount++
+		if callCount == 1 {
+			return authTestResponse(http.StatusNotFound, `{"error_message":"not found"}`), nil
+		}
+		if callCount == 2 {
+			return authTestResponse(http.StatusOK, `{"id":42,"tag_name":"v1.0.0","name":"Test"}`), nil
+		}
+		return authTestResponse(http.StatusNoContent, ``), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := DeleteReleaseByTag(client, "owner", "repo", "v1.0.0")
+	if err != nil {
+		t.Fatalf("DeleteReleaseByTag() error = %v", err)
+	}
+
+	if callCount != 3 {
+		t.Errorf("Expected 3 API calls (direct->get->delete), got %d", callCount)
+	}
+}
+
+// TestDeleteReleaseByTag_DirectNon404Error tests that non-404 errors are returned immediately
+func TestDeleteReleaseByTag_DirectNon404Error(t *testing.T) {
+	var callCount int
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		callCount++
+		return authTestResponse(http.StatusForbidden, `{"error_message":"forbidden"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := DeleteReleaseByTag(client, "owner", "repo", "v1.0.0")
+	if err == nil {
+		t.Fatal("Expected error for 403 response")
+	}
+
+	if callCount != 1 {
+		t.Errorf("Expected 1 API call, got %d", callCount)
+	}
+}
+
+// TestDeleteReleaseByTag_FallbackNoReleaseID tests fallback when release has no ID
+func TestDeleteReleaseByTag_FallbackNoReleaseID(t *testing.T) {
+	var callCount int
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		callCount++
+		if callCount == 1 {
+			return authTestResponse(http.StatusNotFound, `{"error_message":"not found"}`), nil
+		}
+		if callCount == 2 {
+			return authTestResponse(http.StatusOK, `{"tag_name":"v1.0.0","name":"Test Release"}`), nil
+		}
+		return authTestResponse(http.StatusNoContent, ``), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := DeleteReleaseByTag(client, "owner", "repo", "v1.0.0")
+	if err == nil {
+		t.Fatal("Expected ErrNoReleaseID")
+	}
+	if err != ErrNoReleaseID {
+		t.Errorf("Expected ErrNoReleaseID, got %v", err)
+	}
+}
+
+// TestIsNotFoundError tests the isNotFoundError helper
+func TestIsNotFoundError(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"nil error", nil, false},
+		{"API 404 error", &APIError{StatusCode: 404}, true},
+		{"API 403 error", &APIError{StatusCode: 403}, false},
+		{"non-API error", ErrNoReleaseID, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isNotFoundError(tt.err); got != tt.want {
+				t.Errorf("isNotFoundError() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -115,7 +115,7 @@ func deleteRun(opts *DeleteOptions) error {
 	err = api.DeleteReleaseByTag(client, owner, repo, opts.TagName)
 	if err != nil {
 		if err == api.ErrNoReleaseID {
-			return fmt.Errorf("failed to delete release: %w; GitCode currently omits release IDs in release lookup responses", err)
+			return fmt.Errorf("failed to delete release: %w; tag-based endpoint unavailable and GitCode omits release IDs in lookup responses", err)
 		}
 		return fmt.Errorf("failed to delete release: %w", err)
 	}

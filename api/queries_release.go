@@ -176,9 +176,19 @@ func DeleteRelease(client *Client, owner, repo string, id int64) error {
 	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + itoa64(id))
 }
 
-// DeleteReleaseByTag deletes a release by tag name
+// DeleteReleaseByTag deletes a release by tag name.
+// It first tries the tag-based DELETE endpoint; if the API does not support it (404),
+// it falls back to the ID-based flow (get release → extract ID → delete by ID).
 func DeleteReleaseByTag(client *Client, owner, repo, tag string) error {
-	// First get the release to find its ID
+	err := DeleteReleaseByTagDirect(client, owner, repo, tag)
+	if err == nil {
+		return nil
+	}
+	// If the tag endpoint isn't available, fall back to ID-based deletion
+	if !isNotFoundError(err) {
+		return err
+	}
+
 	release, err := GetRelease(client, owner, repo, tag)
 	if err != nil {
 		return err
@@ -190,6 +200,21 @@ func DeleteReleaseByTag(client *Client, owner, repo, tag string) error {
 	}
 
 	return DeleteRelease(client, owner, repo, id)
+}
+
+// DeleteReleaseByTagDirect deletes a release by tag name directly.
+// This bypasses the need for release ID which GitCode API may not return.
+func DeleteReleaseByTagDirect(client *Client, owner, repo, tag string) error {
+	escapedTag := url.PathEscape(tag)
+	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + escapedTag)
+}
+
+// isNotFoundError checks whether err is an API 404 error.
+func isNotFoundError(err error) bool {
+	if apiErr, ok := err.(*APIError); ok {
+		return apiErr.StatusCode == 404
+	}
+	return false
 }
 
 // GetID extracts the release ID as int64

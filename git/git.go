@@ -215,9 +215,12 @@ func SafeCheckoutWithOutput(stdout, stderr io.Writer, dir string, branch string)
 }
 
 // SafeFetch runs "git fetch <remote> <ref>:<localBranch>" after validating
-// both the remote ref and the local branch name. The remote parameter is
-// validated as a ref name (not a URL) since it's typically "origin".
+// both the remote ref and the local branch name. All parameters including
+// "remote" are validated to prevent option-injection.
 func SafeFetch(remote, ref, localBranch string) error {
+	if err := ValidateRef(remote); err != nil {
+		return fmt.Errorf("invalid remote name for fetch: %w", err)
+	}
 	if err := ValidateRef(localBranch); err != nil {
 		return fmt.Errorf("invalid local branch for fetch: %w", err)
 	}
@@ -230,8 +233,11 @@ func SafeFetch(remote, ref, localBranch string) error {
 }
 
 // SafeFetchWithOutput runs a validated git fetch, streaming output.
-// The remote parameter is treated as a ref name for "origin"-style remotes.
+// All parameters including "remote" are validated to prevent option-injection.
 func SafeFetchWithOutput(stdout, stderr io.Writer, dir, remote, ref, localBranch string) error {
+	if err := ValidateRef(remote); err != nil {
+		return fmt.Errorf("invalid remote name for fetch: %w", err)
+	}
 	if err := ValidateRef(localBranch); err != nil {
 		return fmt.Errorf("invalid local branch for fetch: %w", err)
 	}

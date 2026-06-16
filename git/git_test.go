@@ -99,6 +99,14 @@ func TestSafeFetchArgs_ValidateRef(t *testing.T) {
 		t.Errorf("error = %v, want 'invalid remote ref'", err)
 	}
 
+	err = SafeFetch("--upload-pack=evil", "ref", "branch")
+	if err == nil {
+		t.Error("SafeFetch with dash-prefixed remote should fail")
+	}
+	if !strings.Contains(err.Error(), "invalid remote name") {
+		t.Errorf("error = %v, want 'invalid remote name'", err)
+	}
+
 	err = SafeFetch("origin", "feature/x", "--force")
 	if err == nil {
 		t.Error("SafeFetch with dash-prefixed branch should fail")

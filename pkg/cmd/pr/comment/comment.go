@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
-	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	cmtDelete "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/delete"
 	cmtEdit "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/edit"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 

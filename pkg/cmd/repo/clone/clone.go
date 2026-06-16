@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/internal/config"
+	gitpkg "gitcode.com/gitcode-cli/cli/git"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -89,9 +90,22 @@ func NewCmdClone(f *cmdutil.Factory, runF func(*CloneOptions) error) *cobra.Comm
 func cloneRun(opts *CloneOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	// Design note: repo clone does not use git.SafeFetch / SafeCheckout wrappers
+	// because its inputs (repository URL, --branch, directory) are user-supplied,
+	// not server-controlled. A user who can inject arguments into their own git
+	// clone command could simply run git directly instead.
+	// We do validate --branch via git.ValidateRef for consistency with pr checkout.
+
 	// Validate depth
 	if opts.Depth < 0 {
 		return cmdutil.NewUsageError("--depth must be greater than 0")
+	}
+
+	// Validate branch name
+	if opts.Branch != "" {
+		if err := gitpkg.ValidateRef(opts.Branch); err != nil {
+			return cmdutil.NewUsageError(fmt.Sprintf("invalid branch name: %v", err))
+		}
 	}
 
 	// Parse repository

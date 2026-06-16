@@ -4,13 +4,13 @@ package checkout
 import (
 	"fmt"
 	"net/http"
-	"os/exec"
 	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	gitpkg "gitcode.com/gitcode-cli/cli/git"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -97,18 +97,22 @@ func checkoutRun(opts *CheckoutOptions) error {
 		branchName = pr.Head.Ref
 	}
 
-	// Fetch the branch
-	fetchCmd := exec.Command("git", "fetch", "origin", pr.Head.Ref+":"+branchName)
-	fetchCmd.Stdout = opts.IO.Out
-	fetchCmd.Stderr = opts.IO.ErrOut
-	if err := fetchCmd.Run(); err != nil {
-		// Try fetching from head repo if different
+	// Validate branch name before using it in git commands
+	if err := gitpkg.ValidateRef(branchName); err != nil {
+		return fmt.Errorf("invalid branch name %q: %w", branchName, err)
+	}
+
+	// Use SafeFetch and SafeFetchFromURL for validated git fetch operations.
+	// These prevent option-injection attacks when ref or URL comes from the API.
+
+	// Fetch the branch from origin
+	err = gitpkg.SafeFetchWithOutput(opts.IO.Out, opts.IO.ErrOut, "", "origin", pr.Head.Ref, branchName)
+	if err != nil {
+		// Try fetching from head repo if different (fork)
 		if pr.Head.Repo != nil && pr.Head.Repo.FullName != owner+"/"+repo {
 			fetchURL := pr.Head.Repo.CloneURL
-			fetchCmd = exec.Command("git", "fetch", fetchURL, pr.Head.Ref+":"+branchName)
-			fetchCmd.Stdout = opts.IO.Out
-			fetchCmd.Stderr = opts.IO.ErrOut
-			if err := fetchCmd.Run(); err != nil {
+			err = gitpkg.SafeFetchFromURLWithOutput(opts.IO.Out, opts.IO.ErrOut, "", fetchURL, pr.Head.Ref, branchName)
+			if err != nil {
 				return fmt.Errorf("failed to fetch branch: %w", err)
 			}
 		} else {
@@ -117,10 +121,7 @@ func checkoutRun(opts *CheckoutOptions) error {
 	}
 
 	// Checkout the branch
-	checkoutCmd := exec.Command("git", "checkout", branchName)
-	checkoutCmd.Stdout = opts.IO.Out
-	checkoutCmd.Stderr = opts.IO.ErrOut
-	if err := checkoutCmd.Run(); err != nil {
+	if err := gitpkg.SafeCheckoutWithOutput(opts.IO.Out, opts.IO.ErrOut, "", branchName); err != nil {
 		return fmt.Errorf("failed to checkout branch: %w", err)
 	}
 

@@ -195,7 +195,7 @@ func SafeCheckout(branch string) error {
 	if err := ValidateRef(branch); err != nil {
 		return err
 	}
-	_, err := runWithEnv("", nil, "checkout", branch)
+	_, err := runWithEnv("", nil, "checkout", "--", branch)
 	return err
 }
 
@@ -205,7 +205,7 @@ func SafeCheckoutWithOutput(stdout, stderr io.Writer, dir string, branch string)
 	if err := ValidateRef(branch); err != nil {
 		return err
 	}
-	cmd := exec.Command("git", "checkout", branch)
+	cmd := exec.Command("git", "checkout", "--", branch)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	if dir != "" {
@@ -214,7 +214,7 @@ func SafeCheckoutWithOutput(stdout, stderr io.Writer, dir string, branch string)
 	return cmd.Run()
 }
 
-// SafeFetch runs "git fetch <remote> <ref>:<localBranch>" after validating
+// SafeFetch runs "git fetch <remote> -- <ref>:<localBranch>" after validating
 // both the remote ref and the local branch name. All parameters including
 // "remote" are validated to prevent option-injection.
 func SafeFetch(remote, ref, localBranch string) error {
@@ -228,7 +228,7 @@ func SafeFetch(remote, ref, localBranch string) error {
 		return fmt.Errorf("invalid remote ref for fetch: %w", err)
 	}
 	refspec := ref + ":" + localBranch
-	_, err := runWithEnv("", nil, "fetch", remote, refspec)
+	_, err := runWithEnv("", nil, "fetch", remote, "--", refspec)
 	return err
 }
 
@@ -245,7 +245,7 @@ func SafeFetchWithOutput(stdout, stderr io.Writer, dir, remote, ref, localBranch
 		return fmt.Errorf("invalid remote ref for fetch: %w", err)
 	}
 	refspec := ref + ":" + localBranch
-	cmd := exec.Command("git", "fetch", remote, refspec)
+	cmd := exec.Command("git", "fetch", remote, "--", refspec)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	if dir != "" {
@@ -254,7 +254,7 @@ func SafeFetchWithOutput(stdout, stderr io.Writer, dir, remote, ref, localBranch
 	return cmd.Run()
 }
 
-// SafeFetchFromURL runs "git fetch <fetchURL> <ref>:<localBranch>" after
+// SafeFetchFromURL runs "git fetch <fetchURL> -- <ref>:<localBranch>" after
 // validating both the URL and the ref names. This is used when fetching from
 // a fork or external repository.
 func SafeFetchFromURL(fetchURL, ref, localBranch string) error {
@@ -268,7 +268,7 @@ func SafeFetchFromURL(fetchURL, ref, localBranch string) error {
 		return fmt.Errorf("invalid remote ref for fetch: %w", err)
 	}
 	refspec := ref + ":" + localBranch
-	_, err := runWithEnv("", nil, "fetch", fetchURL, refspec)
+	_, err := runWithEnv("", nil, "fetch", fetchURL, "--", refspec)
 	return err
 }
 
@@ -284,7 +284,7 @@ func SafeFetchFromURLWithOutput(stdout, stderr io.Writer, dir, fetchURL, ref, lo
 		return fmt.Errorf("invalid remote ref for fetch: %w", err)
 	}
 	refspec := ref + ":" + localBranch
-	cmd := exec.Command("git", "fetch", fetchURL, refspec)
+	cmd := exec.Command("git", "fetch", fetchURL, "--", refspec)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	if dir != "" {

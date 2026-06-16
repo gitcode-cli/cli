@@ -17,6 +17,7 @@ import (
 type DeleteOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	Repository string
 	ID         int
@@ -28,6 +29,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 	opts := &DeleteOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -49,7 +51,10 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.Atoi(args[0])
 			if err != nil {
-				return cmdutil.NewUsageError(fmt.Sprintf("invalid comment ID: %s", args[0]))
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid comment ID: %q, expected a numeric ID", args[0]))
+			}
+			if id <= 0 {
+				return cmdutil.NewUsageError(fmt.Sprintf("comment ID must be a positive integer, got: %s", args[0]))
 			}
 			opts.ID = id
 
@@ -78,7 +83,12 @@ func deleteRun(opts *DeleteOptions) error {
 		return err
 	}
 
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+
+	owner, repo, err := cmdutil.ParseRepo(repository)
 	if err != nil {
 		return err
 	}
@@ -98,8 +108,4 @@ func deleteRun(opts *DeleteOptions) error {
 
 	fmt.Fprintf(opts.IO.Out, "%s Deleted comment #%d\n", cs.Red("✗"), opts.ID)
 	return nil
-}
-
-func parseRepo(repo string) (string, string, error) {
-	return cmdutil.ParseRepo(repo)
 }

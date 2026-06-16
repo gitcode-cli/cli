@@ -18,6 +18,11 @@ func TestNewCmdEdit(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "edit with --body-file",
+			args:    []string{"123", "--body-file", "comment.md"},
+			wantErr: false,
+		},
+		{
 			name:    "edit with repo flag",
 			args:    []string{"123", "--body", "Updated comment", "-R", "owner/repo"},
 			wantErr: false,
@@ -33,9 +38,19 @@ func TestNewCmdEdit(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "missing --body",
-			args:    []string{"123"},
+			name:    "comment ID zero",
+			args:    []string{"0", "--body", "Updated comment"},
 			wantErr: true,
+		},
+		{
+			name:    "comment ID negative",
+			args:    []string{"-1", "--body", "Updated comment"},
+			wantErr: true,
+		},
+		{
+			name:    "missing both --body and --body-file",
+			args:    []string{"123"},
+			wantErr: false, // Cobra passes; validation happens in editRun
 		},
 	}
 

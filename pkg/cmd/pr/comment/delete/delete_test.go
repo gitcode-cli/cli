@@ -13,7 +13,7 @@ func TestNewCmdDelete(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "delete with ID",
+			name:    "delete with ID and repo",
 			args:    []string{"123", "-R", "owner/repo"},
 			wantErr: false,
 		},
@@ -30,6 +30,16 @@ func TestNewCmdDelete(t *testing.T) {
 		{
 			name:    "invalid comment ID",
 			args:    []string{"abc", "-R", "owner/repo"},
+			wantErr: true,
+		},
+		{
+			name:    "comment ID zero",
+			args:    []string{"0", "-R", "owner/repo"},
+			wantErr: true,
+		},
+		{
+			name:    "comment ID negative",
+			args:    []string{"-1", "-R", "owner/repo"},
 			wantErr: true,
 		},
 	}

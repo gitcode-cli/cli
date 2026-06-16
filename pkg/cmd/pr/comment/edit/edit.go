@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -17,10 +18,12 @@ import (
 type EditOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	Repository string
 	ID         int
 	Body       string
+	BodyFile   string
 }
 
 // NewCmdEdit creates the edit command
@@ -28,6 +31,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	opts := &EditOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -35,16 +39,28 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 		Short: "Edit a PR comment",
 		Long: heredoc.Doc(`
 			Edit an existing pull request comment.
+
+			The comment body can be provided via --body flag or --body-file flag.
+			Use --body-file - to read from stdin.
 		`),
 		Example: heredoc.Doc(`
 			# Edit a comment
 			$ gc pr comment edit 123 --body "Updated text" -R owner/repo
+
+			# Edit from file
+			$ gc pr comment edit 123 --body-file comment.md -R owner/repo
+
+			# Edit from stdin
+			$ echo "Updated text" | gc pr comment edit 123 --body-file - -R owner/repo
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := strconv.Atoi(args[0])
 			if err != nil {
-				return cmdutil.NewUsageError(fmt.Sprintf("invalid comment ID: %s", args[0]))
+				return cmdutil.NewUsageError(fmt.Sprintf("invalid comment ID: %q, expected a numeric ID", args[0]))
+			}
+			if id <= 0 {
+				return cmdutil.NewUsageError(fmt.Sprintf("comment ID must be a positive integer, got: %s", args[0]))
 			}
 			opts.ID = id
 
@@ -56,14 +72,22 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
-	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "New comment body (required)")
-	_ = cmd.MarkFlagRequired("body")
+	cmd.Flags().StringVarP(&opts.Body, "body", "b", "", "New comment body")
+	cmd.Flags().StringVarP(&opts.BodyFile, "body-file", "F", "", "Read comment body from file (use - for stdin)")
 
 	return cmd
 }
 
 func editRun(opts *EditOptions) error {
 	cs := opts.IO.ColorScheme()
+
+	body, err := getBody(opts)
+	if err != nil {
+		return err
+	}
+	if body == "" {
+		return cmdutil.NewUsageError("comment body is required. Use --body or --body-file flag")
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {
@@ -74,13 +98,18 @@ func editRun(opts *EditOptions) error {
 		return err
 	}
 
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+
+	owner, repo, err := cmdutil.ParseRepo(repository)
 	if err != nil {
 		return err
 	}
 
 	editOpts := &api.EditPRCommentOptions{
-		Body: opts.Body,
+		Body: body,
 	}
 	comment, err := api.EditPRComment(client, owner, repo, opts.ID, editOpts)
 	if err != nil {
@@ -88,9 +117,36 @@ func editRun(opts *EditOptions) error {
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Edited comment #%s\n", cs.Green("✓"), cmdutil.FormatAPIID(comment.ID))
+	if !comment.UpdatedAt.IsZero() {
+		fmt.Fprintf(opts.IO.Out, "  Updated: %s\n", comment.UpdatedAt.Format("2006-01-02 15:04"))
+	}
 	return nil
 }
 
-func parseRepo(repo string) (string, string, error) {
-	return cmdutil.ParseRepo(repo)
+func getBody(opts *EditOptions) (string, error) {
+	if opts.Body != "" && opts.BodyFile != "" {
+		return "", fmt.Errorf("cannot use both --body and --body-file")
+	}
+
+	if opts.Body != "" {
+		return opts.Body, nil
+	}
+
+	if opts.BodyFile != "" {
+		if opts.BodyFile == "-" {
+			body, err := cmdutil.ReadTextFromFlag(opts.IO.In, "--body-file")
+			if err != nil {
+				return "", fmt.Errorf("failed to read from stdin: %w", err)
+			}
+			return strings.TrimSpace(body), nil
+		}
+
+		content, err := cmdutil.ReadTextFile(opts.BodyFile)
+		if err != nil {
+			return "", fmt.Errorf("failed to read file %s: %w", opts.BodyFile, err)
+		}
+		return strings.TrimSpace(content), nil
+	}
+
+	return "", nil
 }

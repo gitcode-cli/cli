@@ -31,9 +31,10 @@
 4. [PACKAGING.md](./PACKAGING.md)
 5. [AI-GUIDE.md](./AI-GUIDE.md)
 6. [LOOP_ENGINEERING.md](./LOOP_ENGINEERING.md)
-7. [AI-TEMPLATES.md](./AI-TEMPLATES.md)
-8. `docs/ai-templates/*.md`
-9. [应用案例库](../Example/index.md)
+7. [LOOP_ENGINEERING_DEMO.md](./LOOP_ENGINEERING_DEMO.md)
+8. [AI-TEMPLATES.md](./AI-TEMPLATES.md)
+9. `docs/ai-templates/*.md`
+10. [应用案例库](../Example/index.md)
 
 说明：
 
@@ -51,6 +52,7 @@
 | [PACKAGING.md](./PACKAGING.md) | 本地打包与发布使用说明 |
 | [AI-GUIDE.md](./AI-GUIDE.md) | 外部项目使用 AI 操作 GitCode 的场景指南 |
 | [LOOP_ENGINEERING.md](./LOOP_ENGINEERING.md) | gitcode-cli Loop Engineering Demo v1 说明 |
+| [LOOP_ENGINEERING_DEMO.md](./LOOP_ENGINEERING_DEMO.md) | Loop Engineering 分支验证演示记录 |
 | [AI-TEMPLATES.md](./AI-TEMPLATES.md) | gitcode-cli 仓库内部协作的固定模板 |
 | `docs/ai-templates/*.md` | 可直接复用的 AI 评论与检查模板文件 |
 | [Example/](../Example/index.md) | GitCode CLI 在业务场景中的应用案例和可复制 prompt |

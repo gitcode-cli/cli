@@ -35,6 +35,7 @@ Phase 1-3 不实现 `gc loop` 命令。演示依赖：
 ## 继续阅读
 
 - [Loop Engineering Architecture](./LOOP_ENGINEERING_ARCHITECTURE.md)
+- [Loop Engineering Demo](./LOOP_ENGINEERING_DEMO.md)
 - [Mirror CI](./MIRROR_CI.md)
 - [Hooks](./HOOKS.md)
 - [spec/loop](../spec/loop/README.md)

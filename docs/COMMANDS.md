@@ -999,6 +999,24 @@ gc pr comment delete 123 -R owner/repo --yes
 
 删除 PR 评论。默认需要输入评论 ID 确认；使用 `--yes` 跳过确认。
 
+### pr comment resolve - 标记 PR 评论为已解决
+
+```bash
+# 标记评论讨论为已解决
+gc pr comment resolve 1 d1 -R owner/repo
+```
+
+标记 PR 评论讨论为已解决状态。Discussion ID 可通过 `gc pr comments` 查看。
+
+### pr comment unresolve - 标记 PR 评论为未解决
+
+```bash
+# 标记评论讨论为未解决
+gc pr comment unresolve 1 d1 -R owner/repo
+```
+
+标记 PR 评论讨论为未解决状态。
+
 ### pr reply - 回复 PR 评论
 
 ```bash

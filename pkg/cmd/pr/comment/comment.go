@@ -14,6 +14,7 @@ import (
 	cmtDelete "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/delete"
 	cmtEdit "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/edit"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	cmtResolve "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/resolve"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
@@ -109,8 +110,10 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Line number in the new version of the file (new side of the diff) for inline comment")
 	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
-	cmd.AddCommand(cmtEdit.NewCmdEdit(f, nil))
+cmd.AddCommand(cmtEdit.NewCmdEdit(f, nil))
 	cmd.AddCommand(cmtDelete.NewCmdDelete(f, nil))
+	cmd.AddCommand(cmtResolve.NewCmdResolve(f, nil))
+	cmd.AddCommand(cmtResolve.NewCmdUnresolve(f, nil))
 
 	return cmd
 }

@@ -978,6 +978,27 @@ gc pr comment 123 --body "This looks good" --json
 - 可通过 `gc pr diff <number>` 查看变更文件列表来获取文件路径
 - 如果文件名错误，会返回错误：`diff failed to be generated due to invalid params under position param`
 
+### pr comment edit - 编辑 PR 评论
+
+```bash
+# 编辑评论
+gc pr comment edit 123 --body "Updated comment" -R owner/repo
+```
+
+编辑已存在的 PR 评论。评论 ID 可通过 `gc pr comments <number>` 查看。
+
+### pr comment delete - 删除 PR 评论
+
+```bash
+# 删除评论
+gc pr comment delete 123 -R owner/repo
+
+# 跳过确认直接删除
+gc pr comment delete 123 -R owner/repo --yes
+```
+
+删除 PR 评论。默认需要输入评论 ID 确认；使用 `--yes` 跳过确认。
+
 ### pr reply - 回复 PR 评论
 
 ```bash

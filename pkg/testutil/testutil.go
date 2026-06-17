@@ -279,11 +279,16 @@ func MockAPIHandler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// PR comment edit
+	// PR comment edit / delete
 	mux.HandleFunc("/api/v5/repos/owner/test-repo/pulls/comments/1", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"id":"1","body":"edited comment","discussion_id":"d1"}`))
+		switch r.Method {
+		case http.MethodDelete:
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"id":"1","body":"edited comment","discussion_id":"d1"}`))
+		}
 	})
 
 	// PR discussion reply

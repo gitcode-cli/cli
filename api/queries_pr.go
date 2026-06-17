@@ -487,6 +487,11 @@ func EditPRComment(client *Client, owner, repo string, commentID int, opts *Edit
 	return &comment, nil
 }
 
+// DeletePRComment deletes a PR comment
+func DeletePRComment(client *Client, owner, repo string, commentID int) error {
+	return client.Delete("/repos/" + owner + "/" + repo + "/pulls/comments/" + itoa(commentID))
+}
+
 // ReplyPRCommentOptions represents options for replying to a PR comment
 type ReplyPRCommentOptions struct {
 	Body string `json:"body"`

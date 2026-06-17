@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	cmtDelete "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/delete"
+	cmtEdit "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/edit"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -106,6 +108,9 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 	cmd.Flags().StringVar(&opts.Path, "path", "", "File path for inline comment")
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Line number in the new version of the file (new side of the diff) for inline comment")
 	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
+
+	cmd.AddCommand(cmtEdit.NewCmdEdit(f, nil))
+	cmd.AddCommand(cmtDelete.NewCmdDelete(f, nil))
 
 	return cmd
 }

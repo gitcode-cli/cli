@@ -130,6 +130,70 @@ func TestReviewPRReturnsErrorMessageField(t *testing.T) {
 	}
 }
 
+func TestEditPRCommentUsesAuthorizationHeader(t *testing.T) {
+	var gotMethod string
+	var gotPath string
+	var gotAuth string
+	var gotBody string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotMethod = req.Method
+		gotPath = req.URL.Path
+		gotAuth = req.Header.Get("Authorization")
+		gotBody = readAuthTestRequestBody(t, req)
+		return authTestResponse(http.StatusOK, `{"id":"1","body":"edited"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	opts := &EditPRCommentOptions{Body: "edited"}
+	_, err := EditPRComment(client, "owner", "repo", 42, opts)
+	if err != nil {
+		t.Fatalf("EditPRComment() error = %v", err)
+	}
+
+	if gotMethod != "PATCH" {
+		t.Errorf("method = %q, want PATCH", gotMethod)
+	}
+	if gotPath != "/api/v5/repos/owner/repo/pulls/comments/42" {
+		t.Errorf("path = %q, want /api/v5/repos/owner/repo/pulls/comments/42", gotPath)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Errorf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+	if !strings.Contains(gotBody, `"edited"`) {
+		t.Errorf("body = %q, want it to contain \"edited\"", gotBody)
+	}
+}
+
+func TestDeletePRCommentUsesAuthorizationHeader(t *testing.T) {
+	var gotMethod string
+	var gotPath string
+	var gotAuth string
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotMethod = req.Method
+		gotPath = req.URL.Path
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusNoContent, ``), nil
+	})
+	client.SetToken("test-token", "test")
+
+	err := DeletePRComment(client, "owner", "repo", 42)
+	if err != nil {
+		t.Fatalf("DeletePRComment() error = %v", err)
+	}
+
+	if gotMethod != "DELETE" {
+		t.Errorf("method = %q, want DELETE", gotMethod)
+	}
+	if gotPath != "/api/v5/repos/owner/repo/pulls/comments/42" {
+		t.Errorf("path = %q, want /api/v5/repos/owner/repo/pulls/comments/42", gotPath)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Errorf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+}
+
 func TestNewClientMapsGitCodeHostToAPIHost(t *testing.T) {
 	client := NewClient(&http.Client{}, "gitcode.com", "")
 	if client.Host() != DefaultHost {

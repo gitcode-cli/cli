@@ -296,6 +296,13 @@ func TestEditPRComment(t *testing.T) {
 	}
 }
 
+func TestDeletePRComment(t *testing.T) {
+	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
+	if err := DeletePRComment(client, "owner", "test-repo", 1); err != nil {
+		t.Fatalf("DeletePRComment() error = %v", err)
+	}
+}
+
 func TestReplyPRComment(t *testing.T) {
 	client := NewClientFromHTTP(testutil.NewTestHTTPClient(testutil.MockAPIHandler()))
 	opts := &ReplyPRCommentOptions{Body: "reply"}

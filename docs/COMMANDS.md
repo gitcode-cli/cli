@@ -1355,7 +1355,7 @@ gc release delete v1.0.0 -R infra-test/gctest1 --yes
 ```
 
 说明：
-- 若 GitCode 当前 release 查询响应未返回 release ID，`release delete` 会明确报错提示上游 API 限制。
+- `release delete` 优先使用 tag 端点直接删除；若 tag 端点不可用，自动回退到 ID 方式删除。
 
 ---
 
@@ -1713,7 +1713,6 @@ gc schema "issue view"
 |------|----------|
 | `repo fork` | 仓库路径已按用户输入解析，但 GitCode API 在部分仓库上仍可能返回 `400 Bad Request` |
 | `milestone create/view` | 返回 400 错误，API 可能不支持 |
-| `release delete` | GitCode API 不返回 release ID，且不支持按 tag 删除（#241） |
 
 ---
 

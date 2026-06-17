@@ -1,6 +1,9 @@
 package api
 
-import "net/url"
+import (
+	"net/url"
+	"strings"
+)
 
 // Release represents a GitCode release
 type Release struct {
@@ -176,9 +179,19 @@ func DeleteRelease(client *Client, owner, repo string, id int64) error {
 	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + itoa64(id))
 }
 
-// DeleteReleaseByTag deletes a release by tag name
+// DeleteReleaseByTag deletes a release by tag name.
+// It first tries the tag-based DELETE endpoint; if the API does not support it (404),
+// it falls back to the ID-based flow (get release → extract ID → delete by ID).
 func DeleteReleaseByTag(client *Client, owner, repo, tag string) error {
-	// First get the release to find its ID
+	err := DeleteReleaseByTagDirect(client, owner, repo, tag)
+	if err == nil {
+		return nil
+	}
+	// If the tag endpoint isn't available, fall back to ID-based deletion
+	if !isNotFoundError(err) {
+		return err
+	}
+
 	release, err := GetRelease(client, owner, repo, tag)
 	if err != nil {
 		return err
@@ -190,6 +203,46 @@ func DeleteReleaseByTag(client *Client, owner, repo, tag string) error {
 	}
 
 	return DeleteRelease(client, owner, repo, id)
+}
+
+// DeleteReleaseByTagDirect deletes a release by tag name directly.
+// This bypasses the need for release ID which GitCode API may not return.
+func DeleteReleaseByTagDirect(client *Client, owner, repo, tag string) error {
+	escapedTag := url.PathEscape(tag)
+	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + escapedTag)
+}
+
+// DeleteReleaseByTagKnown is like DeleteReleaseByTag but uses a previously
+// fetched release to avoid an extra GetRelease call in the fallback path.
+// Callers that already have the release (e.g. for pre-confirm) should use
+// this to skip the redundant API round-trip.
+func DeleteReleaseByTagKnown(client *Client, owner, repo, tag string, release *Release) error {
+	err := DeleteReleaseByTagDirect(client, owner, repo, tag)
+	if err == nil {
+		return nil
+	}
+	if !isNotFoundError(err) {
+		return err
+	}
+	id, idErr := release.GetID()
+	if idErr != nil {
+		return idErr
+	}
+	return DeleteRelease(client, owner, repo, id)
+}
+
+// isNotFoundError checks whether err represents a 404 response.
+// It first checks for *APIError with status 404, then falls back to
+// inspecting the error string for non-*APIError edge cases where
+// client.REST returns a bare fmt.Errorf for a 404 response.
+func isNotFoundError(err error) bool {
+	if apiErr, ok := err.(*APIError); ok {
+		return apiErr.StatusCode == 404
+	}
+	if err != nil {
+		return strings.Contains(err.Error(), "404")
+	}
+	return false
 }
 
 // GetID extracts the release ID as int64

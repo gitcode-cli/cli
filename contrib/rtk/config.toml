@@ -1,0 +1,117 @@
+# RTK (Rust Token Killer) filter configuration for gitcode-cli (gc)
+#
+# Copy this file to ~/.config/rtk/config.toml and customize as needed.
+# RTK intercepts gc command output and compresses it before it reaches the LLM.
+#
+# Install RTK: https://github.com/rtk-ai/rtk
+# Init hook:    rtk init -g
+
+# --- Pull Request commands ---
+
+[filter.gc-pr-list]
+command = "gc pr list"
+strategy = "table-compact"
+keep_columns = ["number", "state", "title"]
+max_rows = 20
+
+[filter.gc-pr-view]
+command = "gc pr view"
+strategy = "strip-ansi-and-condense"
+keep_sections = ["title", "state", "body", "diff_stats"]
+
+[filter.gc-pr-comments]
+command = "gc pr comments"
+strategy = "table-compact"
+keep_columns = ["id", "author", "body"]
+max_rows = 20
+
+[filter.gc-pr-diff]
+command = "gc pr diff"
+strategy = "strip-ansi-and-condense"
+
+# --- Issue commands ---
+
+[filter.gc-issue-list]
+command = "gc issue list"
+strategy = "table-compact"
+keep_columns = ["number", "state", "title"]
+max_rows = 20
+
+[filter.gc-issue-view]
+command = "gc issue view"
+strategy = "strip-ansi-and-condense"
+keep_sections = ["title", "state", "body"]
+
+[filter.gc-issue-comments]
+command = "gc issue comments"
+strategy = "table-compact"
+keep_columns = ["id", "author", "body"]
+max_rows = 20
+
+# --- Repository commands ---
+
+[filter.gc-repo-list]
+command = "gc repo list"
+strategy = "table-compact"
+keep_columns = ["name", "visibility", "description"]
+max_rows = 20
+
+[filter.gc-repo-view]
+command = "gc repo view"
+strategy = "strip-ansi-and-condense"
+keep_sections = ["name", "description", "stars", "forks"]
+
+[filter.gc-repo-log]
+command = "gc repo log"
+strategy = "table-compact"
+keep_columns = ["sha", "author", "date", "message"]
+max_rows = 10
+
+[filter.gc-repo-stats]
+command = "gc repo stats"
+strategy = "strip-ansi-and-condense"
+
+# --- Release commands ---
+
+[filter.gc-release-list]
+command = "gc release list"
+strategy = "table-compact"
+keep_columns = ["tag", "title", "date"]
+max_rows = 10
+
+[filter.gc-release-view]
+command = "gc release view"
+strategy = "strip-ansi-and-condense"
+keep_sections = ["tag", "title", "body"]
+
+# --- Label / Milestone ---
+
+[filter.gc-label-list]
+command = "gc label list"
+strategy = "table-compact"
+keep_columns = ["name", "color"]
+max_rows = 10
+
+[filter.gc-milestone-list]
+command = "gc milestone list"
+strategy = "table-compact"
+keep_columns = ["number", "title", "state"]
+max_rows = 10
+
+# --- Utility commands ---
+
+[filter.gc-auth-status]
+command = "gc auth status"
+strategy = "one-line"
+
+[filter.gc-version]
+command = "gc version"
+strategy = "one-line"
+
+# --- Global settings ---
+
+[settings]
+# When true, all gc commands output is intercepted
+enabled = true
+# When true, errors pass through unfiltered
+passthrough_errors = true

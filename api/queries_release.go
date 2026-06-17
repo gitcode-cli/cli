@@ -1,6 +1,9 @@
 package api
 
-import "net/url"
+import (
+	"net/url"
+	"strings"
+)
 
 // Release represents a GitCode release
 type Release struct {
@@ -209,10 +212,35 @@ func DeleteReleaseByTagDirect(client *Client, owner, repo, tag string) error {
 	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + escapedTag)
 }
 
-// isNotFoundError checks whether err is an API 404 error.
+// DeleteReleaseByTagKnown is like DeleteReleaseByTag but uses a previously
+// fetched release to avoid an extra GetRelease call in the fallback path.
+// Callers that already have the release (e.g. for pre-confirm) should use
+// this to skip the redundant API round-trip.
+func DeleteReleaseByTagKnown(client *Client, owner, repo, tag string, release *Release) error {
+	err := DeleteReleaseByTagDirect(client, owner, repo, tag)
+	if err == nil {
+		return nil
+	}
+	if !isNotFoundError(err) {
+		return err
+	}
+	id, idErr := release.GetID()
+	if idErr != nil {
+		return idErr
+	}
+	return DeleteRelease(client, owner, repo, id)
+}
+
+// isNotFoundError checks whether err represents a 404 response.
+// It first checks for *APIError with status 404, then falls back to
+// inspecting the error string for non-*APIError edge cases where
+// client.REST returns a bare fmt.Errorf for a 404 response.
 func isNotFoundError(err error) bool {
 	if apiErr, ok := err.(*APIError); ok {
 		return apiErr.StatusCode == 404
+	}
+	if err != nil {
+		return strings.Contains(err.Error(), "404")
 	}
 	return false
 }

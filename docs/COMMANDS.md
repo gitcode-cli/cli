@@ -1692,7 +1692,6 @@ gc schema "issue view"
 |------|----------|
 | `repo fork` | 仓库路径已按用户输入解析，但 GitCode API 在部分仓库上仍可能返回 `400 Bad Request` |
 | `milestone create/view` | 返回 400 错误，API 可能不支持 |
-| - | - |
 
 ---
 

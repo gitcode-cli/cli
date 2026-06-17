@@ -171,11 +171,79 @@ gc release upload v1.0.0 app.zip -R owner/repo --json
 - `pr create --json` 会尽量回读新建 PR 以补齐创建响应缺失的正文；如果远端仍未返回 body，会在 stderr 给 warning，并保持 JSON 中的远端事实为空，脚本可再运行 `gitcode pr view <number> -R owner/repo --json` 核验。
 - 当前基础退出码语义：`0` 成功，`1` 通用错误，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误，`5` 资源冲突。
 
-## 6. 在规范化仓库中的协作提醒
+## 6. 使用 RTK 优化 Token 消耗（可选）
+
+[RTK（Rust Token Killer）](https://github.com/rtk-ai/rtk) 是一个轻量级 CLI 代理工具，可在 CLI 命令的输出到达 LLM 上下文之前进行智能过滤与压缩，减少 60-90% 的 Token 消耗。
+
+### 安装 RTK
+
+```bash
+# 从 GitHub 安装 RTK
+cargo install rtk
+# 或下载预编译二进制: https://github.com/rtk-ai/rtk/releases
+```
+
+### 配置 gc 过滤器
+
+```bash
+# 复制参考配置
+mkdir -p ~/.config/rtk
+cp contrib/rtk/config.toml ~/.config/rtk/config.toml
+
+# 编辑配置以自定义过滤规则
+$EDITOR ~/.config/rtk/config.toml
+```
+
+### 在 AI 工具中启用
+
+```bash
+# Claude Code
+rtk init -g
+
+# Hook 会自动拦截 gc 命令输出:
+# gc pr list -R owner/repo → rtk gc pr list -R owner/repo
+```
+
+### 配置示例
+
+参考配置文件位于 `contrib/rtk/config.toml`，预置了以下 gc 命令的过滤规则：
+
+| 命令 | 策略 | 效果 |
+|------|------|------|
+| `gc pr list` / `gc issue list` | table-compact | 仅保留 number/state/title 列，限制 20 行 |
+| `gc pr view` / `gc issue view` | strip-ansi-and-condense | 剥离颜色，仅保留标题/状态/正文 |
+| `gc repo list` | table-compact | 仅保留 name/visibility/description |
+| `gc release list` | table-compact | 仅保留 tag/title/date |
+| `gc auth status` / `gc version` | one-line | 单行输出 |
+
+### 效果对比
+
+```
+# 标准输出（~120 tokens）
+$ gc pr list -R owner/repo
+Showing 15 of 15 pull requests in owner/repo (filtered)
+#1  open    Fix login bug                    bugfix/login ...
+#2  merged  Add dark mode support           feature/dark-mode ...
+...
+
+# RTK 压缩后（~40 tokens，节省 ~67%）
+#1 open Fix login bug
+#2 merged Add dark mode support
+...
+```
+
+### 注意事项
+
+- RTK 是可选的外部工具，不影响 `gc` 的默认行为
+- RTK 未安装时，`gc` 命令完全不受影响
+- 错误输出默认透传，不会被过滤
+- [参考配置文件](../../contrib/rtk/config.toml) 可根据需要自定义
+
+## 7. 在规范化仓库中的协作提醒
 
 如果目标仓库本身已经定义了开发规范，AI 应直接遵守目标仓库自己的正式规则、状态机和证据门禁，而不是套用本文档。
 
-## 7. 可参考的固定模板
+## 8. 可参考的固定模板
 
 外部项目如需固定模板，应由目标项目自己定义。
 

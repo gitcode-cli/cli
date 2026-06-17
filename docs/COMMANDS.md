@@ -946,7 +946,7 @@ gc pr comments 1 -R infra-test/gctest1 --json
 
 评论列表会显示 `Discussion ID`，可直接用于 `gc pr reply --discussion`。
 `--json` 输出评论对象数组；无评论时输出 `[]`，不会混入文本提示。
-当前 GitCode 公开 API 不支持通过 CLI 将 PR 评论标记为已解决或未解决；resolved 状态需要在 Web UI 中手动处理。
+可通过 `gc pr comment resolve` 和 `gc pr comment unresolve` 标记评论讨论的解决状态。
 inline comment 会显示文件路径和所在行号（新版本文件的行号）。
 
 ### pr comment - 添加 PR 评论

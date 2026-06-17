@@ -237,7 +237,7 @@ Showing 15 of 15 pull requests in owner/repo (filtered)
 - RTK 是可选的外部工具，不影响 `gc` 的默认行为
 - RTK 未安装时，`gc` 命令完全不受影响
 - 错误输出默认透传，不会被过滤
-- [参考配置文件](../../contrib/rtk/config.toml) 可根据需要自定义
+- [参考配置文件](../contrib/rtk/config.toml) 可根据需要自定义
 
 ## 7. 在规范化仓库中的协作提醒
 
@@ -272,4 +272,4 @@ AI 会自动使用 `gc` 命令执行操作。
 
 ---
 
-**最后更新**: 2026-04-02
+**最后更新**: 2026-06-17

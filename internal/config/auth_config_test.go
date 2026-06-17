@@ -136,6 +136,9 @@ func TestConfigWriteCreatesRestrictedDirectory(t *testing.T) {
 
 func TestConfigSetGetAndWritePersistValues(t *testing.T) {
 	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_EDITOR", "")
+	t.Setenv("EDITOR", "")
+	t.Setenv("GC_BROWSER", "")
 
 	cfg := New()
 	if err := cfg.Set("gitcode.com", "editor", "nano"); err != nil {

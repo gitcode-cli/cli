@@ -13,6 +13,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/api"
 	cmtDelete "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/delete"
 	cmtEdit "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/edit"
+	cmtResolve "gitcode.com/gitcode-cli/cli/pkg/cmd/pr/comment/resolve"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -111,6 +112,8 @@ func NewCmdComment(f *cmdutil.Factory, runF func(*CommentOptions) error) *cobra.
 
 	cmd.AddCommand(cmtEdit.NewCmdEdit(f, nil))
 	cmd.AddCommand(cmtDelete.NewCmdDelete(f, nil))
+	cmd.AddCommand(cmtResolve.NewCmdResolve(f, nil))
+	cmd.AddCommand(cmtResolve.NewCmdUnresolve(f, nil))
 
 	return cmd
 }

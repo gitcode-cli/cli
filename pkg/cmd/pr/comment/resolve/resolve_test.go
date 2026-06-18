@@ -9,25 +9,25 @@ import (
 
 func TestNewCmdResolve(t *testing.T) {
 	tests := []struct {
-		name       string
-		args       []string
-		wantErr    bool
-		wantPRNum  int
-		wantDiscID string
+		name         string
+		args         []string
+		wantErr      bool
+		wantPRNum    int
+		wantDiscID   string
 		wantResolved bool
 	}{
 		{
-			name:       "resolve with PR number and discussion ID",
-			args:       []string{"123", "d1", "-R", "owner/repo"},
-			wantPRNum:  123,
-			wantDiscID: "d1",
+			name:         "resolve with PR number and discussion ID",
+			args:         []string{"123", "d1", "-R", "owner/repo"},
+			wantPRNum:    123,
+			wantDiscID:   "d1",
 			wantResolved: true,
 		},
 		{
-			name:       "resolve without repo flag",
-			args:       []string{"42", "disc_abc"},
-			wantPRNum:  42,
-			wantDiscID: "disc_abc",
+			name:         "resolve without repo flag",
+			args:         []string{"42", "disc_abc"},
+			wantPRNum:    42,
+			wantDiscID:   "disc_abc",
 			wantResolved: true,
 		},
 		{
@@ -90,25 +90,25 @@ func TestNewCmdResolve(t *testing.T) {
 
 func TestNewCmdUnresolve(t *testing.T) {
 	tests := []struct {
-		name       string
-		args       []string
-		wantErr    bool
-		wantPRNum  int
-		wantDiscID string
+		name         string
+		args         []string
+		wantErr      bool
+		wantPRNum    int
+		wantDiscID   string
 		wantResolved bool
 	}{
 		{
-			name:       "unresolve with PR number and discussion ID",
-			args:       []string{"123", "d1", "-R", "owner/repo"},
-			wantPRNum:  123,
-			wantDiscID: "d1",
+			name:         "unresolve with PR number and discussion ID",
+			args:         []string{"123", "d1", "-R", "owner/repo"},
+			wantPRNum:    123,
+			wantDiscID:   "d1",
 			wantResolved: false,
 		},
 		{
-			name:       "unresolve without repo flag",
-			args:       []string{"42", "disc_abc"},
-			wantPRNum:  42,
-			wantDiscID: "disc_abc",
+			name:         "unresolve without repo flag",
+			args:         []string{"42", "disc_abc"},
+			wantPRNum:    42,
+			wantDiscID:   "disc_abc",
 			wantResolved: false,
 		},
 		{
@@ -162,12 +162,12 @@ func TestNewCmdUnresolve(t *testing.T) {
 func TestResolveRunMissingRepo(t *testing.T) {
 	f := cmdutil.TestFactory()
 	opts := &resolveOptions{
-		IO:         f.IOStreams,
-		HttpClient: f.HttpClient,
-		BaseRepo:   func() (string, error) { return "", nil },
-		PRNumber:   123,
+		IO:           f.IOStreams,
+		HttpClient:   f.HttpClient,
+		BaseRepo:     func() (string, error) { return "", nil },
+		PRNumber:     123,
 		DiscussionID: "d1",
-		Resolved:   true,
+		Resolved:     true,
 	}
 
 	err := resolveRun(opts)

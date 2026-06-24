@@ -41,13 +41,14 @@
 | [#146](issue-146.md) | bug | closed | — | — | — | — |
 | [#293](issue-293.md) | security | closed | — | — | high | — |
 | [#99](issue-99.md) | bug | closed | — | — | high | — |
+| [#98](issue-98.md) | bug | closed | — | — | medium | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 34 |
+| 总 issue | 35 |
 | 已合并 | 24 |
-| 已关闭 | 10 |
+| 已关闭 | 11 |
 | 含代码改动 | 13 |
 | docs-only | 8 |
 | risk/high | 5 |

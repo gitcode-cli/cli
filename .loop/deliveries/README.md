@@ -6,21 +6,21 @@
 
 | Issue | 类型 | 状态 | PR | CI | 风险 | 门禁 |
 |-------|------|------|----|----|:--:|:----:|
-| [#298](issue-298.md) | bug | merged | #252 | ✅ 28071396966 | low | 8/8 |
-| [#302](issue-302.md) | bug | merged | #252 | ✅ 28071396966 | low | 8/8 |
+| [#298](issue-298.md) | bug | merged | #252 | ✅ | low | 8/8 |
+| [#302](issue-302.md) | bug | merged | #252 | ✅ | low | 8/8 |
 | [#291](issue-291.md) | docs | closed | — | — | — | — |
-| [#275](issue-275.md) | docs | merged | #253 | skipped | low | 5/8* |
-| [#276](issue-276.md) | docs | merged | #254 | skipped | low | 4/8* |
-| [#271](issue-271.md) | bug | merged | #255 | ✅ 28073808666 | medium | 8/8 |
+| [#275](issue-275.md) | docs | merged | #253 | skipped | low | 5/8 |
+| [#276](issue-276.md) | docs | merged | #254 | skipped | low | 4/8 |
+| [#271](issue-271.md) | bug | merged | #255 | ✅ | medium | 8/8 |
 | [#251](issue-251.md) | bug | closed | — | — | — | — |
-| [#274](issue-274.md) | bug | merged | #257 | ✅ 28074422614 | medium | 8/8 |
-| [#273](issue-273.md) | bug | merged | #258 | ✅ 28075508360 | medium | 8/8 |
-| [#280](issue-280.md) | docs | merged | #265 | skipped | low | 4/8* |
-| [#279](issue-279.md) | docs | merged | #268 | skipped | low | 5/8* |
-| [#256](issue-256.md) | bug | merged | #260 | ⚠️ macos | high‡ | 8/8 |
-| [#272](issue-272.md) | bug | merged | #264 | ✅ 28077718073 | high‡ | 8/8 |
-| [#278](issue-278.md) | docs | merged | #271 | skipped | low | 4/8* |
-| [#277](issue-277.md) | docs | merged | #272 | skipped | low | 4/8* |
+| [#274](issue-274.md) | bug | merged | #257 | ✅ | medium | 8/8 |
+| [#273](issue-273.md) | bug | merged | #258 | ✅ | medium | 8/8 |
+| [#280](issue-280.md) | docs | merged | #265 | skipped | low | 4/8 |
+| [#279](issue-279.md) | docs | merged | #268 | skipped | low | 5/8 |
+| [#256](issue-256.md) | bug | merged | #260 | ⚠️ | high | 8/8 |
+| [#272](issue-272.md) | bug | merged | #264 | ✅ | high | 8/8 |
+| [#278](issue-278.md) | docs | merged | #271 | skipped | low | 4/8 |
+| [#277](issue-277.md) | docs | merged | #272 | skipped | low | 4/8 |
 | [#261](issue-261.md) | docs | closed | — | — | low | — |
 | [#263](issue-263.md) | bug | closed | — | — | low | — |
 | [#262](issue-262.md) | bug | closed | — | — | low | — |
@@ -28,12 +28,4 @@
 
 ## 统计
 
-| 维度 | 数据 |
-|------|------|
-| 总 issue | 19 |
-| 已合并 | 14 |
-| 已关闭 | 5 |
-| 含代码改动 | 8 |
-| docs-only | 8 |
-| risk/high（误判） | 2 |
-| 平均门禁 | 6.8/8 |
+运行 `bash scripts/count-deliveries.sh` 生成。

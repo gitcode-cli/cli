@@ -19,15 +19,14 @@
 | [#279](issue-279.md) | docs | merged | #268 | skipped | low | 5/8* |
 | [#256](issue-256.md) | bug | merged | #260 | ⚠️ macos flake | high‡ | 8/8 |
 | [#272](issue-272.md) | bug | merged | #264 | ✅ 28077718073 | high‡ | 8/8 |
-
-> \* docs-only 按 spec 5.3 跳过构建/UT/CI
-> ‡ risk/high 评估脚本误判，人工确认后合并
-
 | [#278](issue-278.md) | docs | merged | #271 | skipped | low | 4/8* |
 | [#277](issue-277.md) | docs | merged | #272 | skipped | low | 4/8* |
 | [#261](issue-261.md) | docs | closed | — | — | low | — |
 | [#263](issue-263.md) | bug | closed | — | — | low | — |
 | [#262](issue-262.md) | bug | closed | — | — | low | — |
+
+> \* docs-only 按 spec 5.3 跳过构建/UT/CI
+> ‡ risk/high 评估脚本误判，人工确认后合并
 
 ## 统计
 

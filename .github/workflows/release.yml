@@ -40,20 +40,6 @@ jobs:
           echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
           echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
 
-      - name: Create and push tag
-        env:
-          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
-        run: |
-          set -euo pipefail
-          if git rev-parse --verify --quiet "refs/tags/${VERSION_TAG}" >/dev/null; then
-            echo "Tag ${VERSION_TAG} already exists, using it"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
-            git push origin "refs/tags/${VERSION_TAG}"
-          fi
-
       - name: Generate completions
         run: |
           go build -o /tmp/gc ./cmd/gc
@@ -110,6 +96,20 @@ jobs:
             dist/*.rpm
             dist/*.deb
           retention-days: 90
+
+      - name: Create and push tag
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
+        run: |
+          set -euo pipefail
+          if git rev-parse --verify --quiet "refs/tags/${VERSION_TAG}" >/dev/null; then
+            echo "Tag ${VERSION_TAG} already exists, using it"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
+            git push origin "refs/tags/${VERSION_TAG}"
+          fi
 
       - name: Upload packages to release
         env:

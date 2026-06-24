@@ -13,6 +13,24 @@ if [[ -z "${SOURCE_TOKEN}" ]]; then
   exit 1
 fi
 
+# Guard: write paths must only target infra-test/* repositories.
+WRITE_REPOS=()
+if [[ "${RUN_WRITE_PATHS}" != "0" ]]; then
+  WRITE_PR_REPO="${GC_REGRESSION_PR_REPO:-infra-test/gctest1}"
+  WRITE_REPOS+=("$WRITE_PR_REPO")
+fi
+for repo in "${WRITE_REPOS[@]}"; do
+  if [[ "$repo" != infra-test/* ]]; then
+    echo "REGRESSION: write-path repository must be infra-test/*, got '$repo'" >&2
+    echo "Set GC_REGRESSION_PR_REPO to an infra-test/* repository." >&2
+    exit 1
+  fi
+done
+if [[ "$READONLY_REPO" != infra-test/* ]]; then
+  echo "REGRESSION: READONLY_REPO must be infra-test/*, got '$READONLY_REPO'" >&2
+  exit 1
+fi
+
 log() {
   printf '\n[%s]\n' "$1"
 }

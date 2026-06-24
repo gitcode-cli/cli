@@ -26,9 +26,6 @@
 | [#262](issue-262.md) | bug | closed | — | — | low | — |
 | [#266](issue-266.md) | bug | merged | #273 | skipped | medium | 5/8 |
 
-> \* docs-only 按 spec 5.3 跳过构建/UT/CI
-> ‡ risk/high 评估脚本误判，人工确认后合并
-
 ## 统计
 
 | 维度 | 数据 |

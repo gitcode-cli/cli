@@ -140,7 +140,7 @@ func viewRun(opts *ViewOptions) error {
 
 	if opts.JSON {
 		if opts.Comments {
-			var comments []api.IssueComment
+			comments := make([]api.IssueComment, 0)
 			if issue.Comments > 0 {
 				var err error
 				comments, err = api.ListIssueCommentsAll(client, owner, repo, opts.Number, nil)

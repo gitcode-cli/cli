@@ -38,13 +38,14 @@
 | [#270](issue-270.md) | bug | merged | #282 | N/A | medium | — |
 | [#269](issue-269.md) | test | merged | #283 | N/A | medium | — |
 | [#243](issue-243.md) | process | closed | — | — | — | — |
+| [#146](issue-146.md) | bug | closed | — | — | — | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 31 |
+| 总 issue | 32 |
 | 已合并 | 24 |
-| 已关闭 | 7 |
+| 已关闭 | 8 |
 | 含代码改动 | 13 |
 | docs-only | 8 |
 | risk/high | 3 |

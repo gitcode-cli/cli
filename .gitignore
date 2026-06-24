@@ -68,8 +68,8 @@ token.txt
 secrets.yaml
 secrets.yml
 
-# Loop runtime data (not committed)
+# Loop personal runtime data (not committed)
 .loop/registry/
 .loop/history/
-.loop/deliveries/
-.loop/memory/
+.loop/memory/INDEX.md
+.loop/memory/*-session.md

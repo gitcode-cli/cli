@@ -159,6 +159,19 @@ func editRun(opts *EditOptions) error {
 	if state == "closed" {
 		state = "close"
 	}
+	if state == "open" {
+		state = "reopen"
+	}
+
+	// When changing state, preserve the existing title if none is provided,
+	// to avoid API failures from empty title on state-only updates.
+	if state != "" && opts.Title == "" {
+		current, err := api.GetIssue(client, owner, repo, opts.Number)
+		if err != nil {
+			return fmt.Errorf("failed to get issue for state change: %w", err)
+		}
+		opts.Title = current.Title
+	}
 
 	// Confirm state changes (close/reopen)
 	if state == "close" || state == "reopen" {

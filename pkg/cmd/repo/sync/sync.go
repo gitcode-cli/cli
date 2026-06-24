@@ -379,6 +379,10 @@ func copyDirContents(sourcePath, targetPath string) error {
 		if rel == "." {
 			return nil
 		}
+		// Reject symlinks to prevent following links outside source tree
+		if d.Type()&fs.ModeSymlink != 0 {
+			return fmt.Errorf("refusing to sync symlink: %s", path)
+		}
 		dst := filepath.Join(targetPath, rel)
 		if d.IsDir() {
 			return os.MkdirAll(dst, 0o755)

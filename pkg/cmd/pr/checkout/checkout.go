@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -131,4 +132,41 @@ func checkoutRun(opts *CheckoutOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+// fetchURLHost extracts the host from the authority component of a scheme-based
+// URL: "[user@]host[:port][/path]". For IPv6 literal addresses wrapped in
+// brackets (e.g. [::1]:22), the brackets are stripped and the address returned
+// without the port.
+func fetchURLHost(authority string) string {
+	host := authority
+	if i := strings.IndexByte(host, '/'); i >= 0 {
+		host = host[:i]
+	}
+	if i := strings.LastIndexByte(host, '@'); i >= 0 {
+		host = host[i+1:]
+	}
+	// IPv6 literal: [address]:port → strip brackets, return address only
+	if strings.HasPrefix(host, "[") {
+		if end := strings.IndexByte(host, ']'); end >= 0 {
+			return host[1:end]
+		}
+	}
+	// Non-IPv6: strip port after first ':'
+	if i := strings.IndexByte(host, ':'); i >= 0 {
+		host = host[:i]
+	}
+	return host
+}
+
+// scpHost extracts the host from scp-like syntax: "[user@]host:path".
+func scpHost(rawURL string) string {
+	host := rawURL
+	if i := strings.IndexByte(host, '@'); i >= 0 {
+		host = host[i+1:]
+	}
+	if i := strings.IndexByte(host, ':'); i >= 0 {
+		host = host[:i]
+	}
+	return host
 }

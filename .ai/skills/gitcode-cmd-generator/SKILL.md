@@ -1,3 +1,17 @@
+---
+name: gitcode-cmd-generator
+description: Generate command code templates and test files for gitcode-cli project.
+
+Use this skill when:
+- Creating a new command for gitcode-cli (e.g., "create a new gc release command")
+- Adding a subcommand to existing command (e.g., "add list subcommand to release")
+- Generating command template (e.g., "generate command template for workflow list")
+- Creating test files for commands (e.g., "create test for auth logout")
+- Scaffolding CLI commands following project conventions
+
+This skill generates production-ready Go code following gitcode-cli patterns with Cobra framework, Factory dependency injection, and IOStreams for output handling.
+---
+
 # 共享 skill: gitcode-cmd-generator
 
 ## 目标

@@ -1,3 +1,8 @@
+---
+name: gc-issue
+description: GitCode CLI issue operations — create, list, view, edit, close, reopen, and comment on issues.
+---
+
 # gc-issue
 
 使用 `gc` 完成 GitCode issue 相关操作。

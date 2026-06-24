@@ -1,3 +1,8 @@
+---
+name: gc-regression
+description: GitCode CLI regression testing — run regression-core.sh to validate CLI against infra-test repositories.
+---
+
 # gc-regression
 
 使用 `gc` 完成最小真实命令回归验证。

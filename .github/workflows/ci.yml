@@ -122,3 +122,13 @@ jobs:
           push: false
           tags: gitcode/gc:latest
           platforms: linux/amd64
+
+      - name: Wheel entrypoint smoke test
+        run: |
+          set -euo pipefail
+          pip install build
+          python -m build --wheel --outdir dist/
+          pip install dist/*.whl
+          echo "=== gc version ===" && gc version
+          echo "=== gitcode version ===" && gitcode version
+          echo "=== python -m gc_cli version ===" && python -m gc_cli version

@@ -204,6 +204,13 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 		return fmt.Errorf("download failed: %s", resp.Status)
 	}
 
+	// Reject symlink targets to prevent writing through symlinks
+	if fi, err := os.Lstat(outputPath); err == nil {
+		if fi.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("refusing to overwrite symlink: %s", outputPath)
+		}
+	}
+
 	// Create file
 	file, err := os.Create(outputPath)
 	if err != nil {

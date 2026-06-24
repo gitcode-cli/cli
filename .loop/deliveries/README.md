@@ -1,6 +1,6 @@
 # 交付记录
 
-按 issue 维度的交付追踪。每条记录包含完整的 8 项门禁证据表 + 状态流转 + 关键制品链接。
+按 issue 维度的交付追踪。每条记录包含完整的 8 项门禁证据表。
 
 ## 汇总
 
@@ -17,17 +17,13 @@
 | [#273](issue-273.md) | bug | merged | #258 | ✅ 28075508360 | medium | 8/8 |
 | [#280](issue-280.md) | docs | merged | #265 | skipped | low | 4/8* |
 | [#279](issue-279.md) | docs | merged | #268 | skipped | low | 5/8* |
-| [#256](issue-256.md) | bug | merged | #260 | ⚠️ macos flake | high‡ | 8/8 |
+| [#256](issue-256.md) | bug | merged | #260 | ⚠️ macos | high‡ | 8/8 |
 | [#272](issue-272.md) | bug | merged | #264 | ✅ 28077718073 | high‡ | 8/8 |
 | [#278](issue-278.md) | docs | merged | #271 | skipped | low | 4/8* |
 | [#277](issue-277.md) | docs | merged | #272 | skipped | low | 4/8* |
 | [#261](issue-261.md) | docs | closed | — | — | low | — |
 | [#263](issue-263.md) | bug | closed | — | — | low | — |
 | [#262](issue-262.md) | bug | closed | — | — | low | — |
-
-> \* docs-only 按 spec 5.3 跳过构建/UT/CI
-> ‡ risk/high 评估脚本误判，人工确认后合并
-
 | [#266](issue-266.md) | bug | merged | #273 | skipped | medium | 5/8 |
 
 > \* docs-only 按 spec 5.3 跳过构建/UT/CI
@@ -39,12 +35,8 @@
 |------|------|
 | 总 issue | 19 |
 | 已合并 | 14 |
-| 已关闭（无需修复） | 5 |
+| 已关闭 | 5 |
 | 含代码改动 | 8 |
 | docs-only | 8 |
 | risk/high（误判） | 2 |
-| 平均门禁完成率 | 6.8/8 |
-
----
-
-**最后更新**: 2026-06-24
+| 平均门禁 | 6.8/8 |

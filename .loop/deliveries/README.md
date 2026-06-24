@@ -28,4 +28,12 @@
 
 ## 统计
 
-运行 `bash scripts/count-deliveries.sh` 生成。
+| 维度 | 数据 |
+|------|------|
+| 总 issue | 19 |
+| 已合并 | 14 |
+| 已关闭 | 5 |
+| 含代码改动 | 8 |
+| docs-only | 8 |
+| risk/high | 2 |
+| 平均门禁 | 6.2/8 |

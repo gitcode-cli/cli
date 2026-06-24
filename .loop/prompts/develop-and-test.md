@@ -6,6 +6,7 @@
 /goal until go test ./... passes AND go build -o ./gc ./cmd/gc succeeds
 AND at least one real command test passes against infra-test/*
 AND pre-commit hooks all pass
+完成后更新 .loop/deliveries/issue-<N>.md 记录状态转入 in-progress
 ```
 
 ## 替换参数
@@ -22,3 +23,10 @@ AND pre-commit hooks all pass
 
 - docs-only 改动可跳过此阶段（见 spec 5.3 门禁表）
 - 代码改动必须在此阶段通过全部 4 项检查
+
+## .loop/ 更新
+
+```markdown
+# deliveries/issue-<N>.md
+| status/verified | status/in-progress | <ts> | branch created, initial commit |
+```

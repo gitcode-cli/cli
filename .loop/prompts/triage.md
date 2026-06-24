@@ -8,6 +8,7 @@
   - 复现问题或确认需求有效
   - 在 issue comment 中留下结构化验证记录
   - 标签更新为 status/verified
+完成后更新 .loop/deliveries/issue-<ISSUE_NUMBER>.md 记录状态流转
 ```
 
 ## 替换参数
@@ -29,4 +30,15 @@
 - 实际结果: <output>
 - 预期结果: <expected>
 - 结论: 问题仍存在/已修复/无需处理
+```
+
+## .loop/ 更新
+
+完成后写 `.loop/deliveries/issue-<N>.md`:
+```markdown
+# Delivery Record: Issue #<N>
+## State Transitions
+| From | To | When | Evidence |
+|------|----|------|----------|
+| status/triage | status/verified | <timestamp> | <comment_url> |
 ```

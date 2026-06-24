@@ -3,19 +3,19 @@
 ## Prompt
 
 ```
-/loop 30m 检查 gitcode-cli/cli 的 open issue，对缺少 type/* scope/* status/* 标签的 issue 补全分类标签
+/loop 30m 检查 gitcode-cli/cli 的 open issue，对缺少 type/* scope/* status/* 标签的 issue 补全分类标签。
+每次批量操作后更新 .loop/memory/INDEX.md 的"当前活跃 Issue"列表。
 ```
 
 ## 替换参数
 
 间隔可按需调整（推荐 30m 或 1h）
 
-## 门禁检查
+## .loop/ 更新
 
-- 每个 open issue 是否至少有 type/* + scope/* + status/* 标签
-- 缺标签的在 issue comment 中说明补充了什么
-
-## 预期输出
-
-- 每个 issue 的分类标签完整
-- Loop 自动收敛（无事可做时停止）
+```markdown
+# memory/INDEX.md
+## 当前活跃 Issue
+- [#N] (新发现) - <title>
+- [#M] - 标签已补全
+```

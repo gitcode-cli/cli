@@ -10,14 +10,12 @@
   - commit + push
   - 回复 review 线程
   - 全部解决后更新 PR 标签，停止
+  - 完成后更新 .loop/deliveries/issue-<N>.md 记录评审结果
 ```
 
-## 替换参数
+## .loop/ 更新
 
-- `<PR_NUMBER>`: 目标 PR 编号
-
-## 预期输出
-
-- 每个 review comment 已回复/已解决
-- 修复后的代码通过 UT + 构建
-- PR 标签更新
+```markdown
+| review | <ts> | 4/4 approved | PR comment <url> |
+| review | <ts> | 2 issues found → fixed → re-reviewed |
+```

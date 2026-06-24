@@ -131,7 +131,7 @@ func relationsRun(opts *RelationsOptions) error {
 	rows := make([]RelationRow, 0)
 	seen := make(map[string]struct{})
 	for _, issue := range issues {
-		number, err := issueNumberToInt(issue.Number)
+		number, err := issueNumberToInt(string(issue.Number))
 		if err != nil {
 			continue
 		}
@@ -150,7 +150,7 @@ func relationsRun(opts *RelationsOptions) error {
 
 			rows = append(rows, RelationRow{
 				Issue: RelationIssue{
-					Number:  issue.Number,
+					Number:  string(issue.Number),
 					Title:   issue.Title,
 					State:   issue.State,
 					HTMLURL: issue.HTMLURL,

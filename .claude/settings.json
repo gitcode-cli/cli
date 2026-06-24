@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "subcommand_matcher": "git push origin",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'read cmd; if echo \"$cmd\" | grep -q \"git push origin\"; then ref=$(echo \"$cmd\" | grep -oP \"git push origin \\K\\S+\" | head -1); [ -n \"$ref\" ] && git push github $ref 2>/dev/null; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}

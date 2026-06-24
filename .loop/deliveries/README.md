@@ -33,12 +33,13 @@
 | [#300](issue-300.md) | chore | merged | #277 | N/A | low | — |
 | [#292](issue-292.md) | chore | merged | #278 | N/A | low | — |
 | [#281](issue-281.md) | bug | merged | #279 | N/A | medium | — |
+| [#284](issue-284.md) | security | merged | #280 | N/A | medium | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 26 |
-| 已合并 | 20 |
+| 总 issue | 27 |
+| 已合并 | 21 |
 | 已关闭 | 6 |
 | 含代码改动 | 12 |
 | docs-only | 8 |

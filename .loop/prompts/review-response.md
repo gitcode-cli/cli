@@ -10,7 +10,7 @@
   - commit + push
   - 回复 review 线程
   - 全部解决后更新 PR 标签，停止
-  - 完成后更新 .loop/deliveries/issue-<N>.md 记录评审结果
+  - 完成后更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表
 ```
 
 ## .loop/ 更新

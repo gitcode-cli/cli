@@ -8,7 +8,7 @@
   - 复现问题或确认需求有效
   - 在 issue comment 中留下结构化验证记录
   - 标签更新为 status/verified
-完成后更新 .loop/deliveries/issue-<ISSUE_NUMBER>.md 记录状态流转
+完成后更新 .loop/deliveries/issue-<ISSUE_NUMBER>.md 和 .loop/deliveries/README.md 汇总表
 ```
 
 ## 替换参数

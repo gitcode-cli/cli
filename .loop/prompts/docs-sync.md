@@ -7,7 +7,7 @@
   - 命令行为变化 → docs/COMMANDS.md 已更新
   - 流程变化 → spec/* 已更新
   - 无变化 → 在自检中说明无需更新的依据
-完成后更新 .loop/deliveries/issue-<N>.md 记录文档同步决策
+完成后更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表
 ```
 
 ## .loop/ 更新

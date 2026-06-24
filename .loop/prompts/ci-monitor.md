@@ -9,7 +9,7 @@
     - 本次改动导致 → 修复，commit，push，回到监控
     - 环境/平台偶发 → 在自检中记录
     - 预存 bug → 记录 issue
-  - 完成后更新 .loop/deliveries/issue-<N>.md 记录 CI 结果
+  - 完成后更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表
 ```
 
 ## 注意事项

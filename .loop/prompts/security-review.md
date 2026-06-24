@@ -8,7 +8,7 @@
   - 文档、测试中未误写真实凭证
   - 涉及认证/配置/权限路径的改动已对照 spec/foundations/security.md 检查
   - 审查结论已写入自检记录
-完成后更新 .loop/deliveries/issue-<N>.md 记录安全审查完成
+完成后更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表
 ```
 
 ## 注意事项

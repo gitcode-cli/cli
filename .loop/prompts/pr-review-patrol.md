@@ -25,7 +25,7 @@
    - 全部门禁 + CI 全绿 → gc pr merge <N> --yes
    - 有问题 → PR 评论列出具体问题
 
-5. 每检查一个 PR，更新 .loop/deliveries/issue-<N>.md 记录审查结果
+5. 每检查一个 PR，更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表
 
 禁止: 修改他人代码、跳过评审直接合并
 ```

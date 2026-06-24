@@ -8,7 +8,9 @@
 禁止：在 main 开发、跳过验证、作者自检当独立评审。
 每处理完一个 issue，更新 .loop/ 目录：
   .loop/deliveries/issue-<N>.md — 记录状态流转 + PR/CI 证据链接
-  .loop/memory/INDEX.md — 更新活跃 Issue、待办、经验教训
+  .loop/deliveries/README.md — 更新汇总表中的对应行
+  .loop/memory/INDEX.md — 更新活跃 Issue、待办
+  .loop/memory/lessons.md — 如有新发现，追加经验教训
 会话结束时写 .loop/memory/YYYY-MM-DD-session.md
 ```
 

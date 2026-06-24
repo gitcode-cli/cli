@@ -5,7 +5,7 @@
 ```
 /goal until python3 scripts/classify-change-risk.py --base origin/main
 outputs a risk level AND the result is recorded in self-check
-完成后更新 .loop/deliveries/issue-<N>.md 记录风险等级
+完成后更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表
 ```
 
 ## 注意事项

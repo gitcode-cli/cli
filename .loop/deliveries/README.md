@@ -43,12 +43,13 @@
 | [#99](issue-99.md) | bug | closed | — | — | high | — |
 | [#98](issue-98.md) | bug | closed | — | — | medium | — |
 | [#294](issue-294.md) | security | merged | #284 | N/A | high | — |
+| [#190](issue-190.md) | test | merged | #285 | N/A | low | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 36 |
-| 已合并 | 25 |
+| 总 issue | 37 |
+| 已合并 | 26 |
 | 已关闭 | 11 |
 | 含代码改动 | 13 |
 | docs-only | 8 |

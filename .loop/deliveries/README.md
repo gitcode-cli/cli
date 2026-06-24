@@ -23,17 +23,23 @@
 > \* docs-only 按 spec 5.3 跳过构建/UT/CI
 > ‡ risk/high 评估脚本误判，人工确认后合并
 
+| [#278](issue-278.md) | docs | merged | #271 | skipped | low | 4/8* |
+| [#277](issue-277.md) | docs | merged | #272 | skipped | low | 4/8* |
+| [#261](issue-261.md) | docs | closed | — | — | low | — |
+| [#263](issue-263.md) | bug | closed | — | — | low | — |
+| [#262](issue-262.md) | bug | closed | — | — | low | — |
+
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 13 |
-| 已合并 | 11 |
-| 已关闭（无需修复） | 2 |
+| 总 issue | 18 |
+| 已合并 | 13 |
+| 已关闭（无需修复） | 5 |
 | 含代码改动 | 7 |
-| docs-only | 6 |
+| docs-only | 8 |
 | risk/high（误判） | 2 |
-| 平均门禁完成率 | 7.2/8 |
+| 平均门禁完成率 | 6.9/8 |
 
 ---
 

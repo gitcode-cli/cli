@@ -31,14 +31,14 @@ func (ft *FlexibleTime) UnmarshalJSON(data []byte) error {
 
 	// List of time formats to try (most common first)
 	formats := []string{
-		"2006-01-02T15:04:05Z07:00",                // RFC3339 with timezone
-		"2006-01-02T15:04:05Z",                      // RFC3339 UTC
-		"2006-01-02T15:04:05",                       // ISO 8601 without timezone
-		"2006-01-02 15:04:05",                       // Common datetime format
-		time.RFC3339,                                 // Standard RFC3339
-		"2006-01-02",                                 // Date only
-		"2006-01-02T15:04:05.999999999Z07:00",      // RFC3339 with nanoseconds
-		"2006-01-02T15:04:05.999999999Z",           // ISO 8601 with nanoseconds UTC
+		"2006-01-02T15:04:05Z07:00",           // RFC3339 with timezone
+		"2006-01-02T15:04:05Z",                // RFC3339 UTC
+		"2006-01-02T15:04:05",                 // ISO 8601 without timezone
+		"2006-01-02 15:04:05",                 // Common datetime format
+		time.RFC3339,                          // Standard RFC3339
+		"2006-01-02",                          // Date only
+		"2006-01-02T15:04:05.999999999Z07:00", // RFC3339 with nanoseconds
+		"2006-01-02T15:04:05.999999999Z",      // ISO 8601 with nanoseconds UTC
 	}
 
 	var lastErr error

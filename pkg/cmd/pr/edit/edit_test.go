@@ -116,22 +116,24 @@ func TestEditRunUsesFormEncodedLabels(t *testing.T) {
 
 	ioStreams, _, _, _ := iostreams.Test()
 	opts := &EditOptions{
-		IO:         ioStreams,
-		HttpClient: func() (*http.Client, error) { return &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-			gotPath = req.URL.Path
-			gotContentType = req.Header.Get("Content-Type")
-			body, err := io.ReadAll(req.Body)
-			if err != nil {
-				t.Fatalf("failed to read request body: %v", err)
-			}
-			gotBody = string(body)
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Status:     http.StatusText(http.StatusOK),
-				Header:     make(http.Header),
-				Body:       io.NopCloser(strings.NewReader(`{"number":123,"title":"updated"}`)),
-			}, nil
-		})}, nil },
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				gotPath = req.URL.Path
+				gotContentType = req.Header.Get("Content-Type")
+				body, err := io.ReadAll(req.Body)
+				if err != nil {
+					t.Fatalf("failed to read request body: %v", err)
+				}
+				gotBody = string(body)
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Status:     http.StatusText(http.StatusOK),
+					Header:     make(http.Header),
+					Body:       io.NopCloser(strings.NewReader(`{"number":123,"title":"updated"}`)),
+				}, nil
+			})}, nil
+		},
 		Repository: "owner/repo",
 		Number:     123,
 		Labels:     []string{"type/feature", "risk/medium"},

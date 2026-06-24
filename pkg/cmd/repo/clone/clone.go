@@ -11,8 +11,8 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	"gitcode.com/gitcode-cli/cli/internal/config"
 	gitpkg "gitcode.com/gitcode-cli/cli/git"
+	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )

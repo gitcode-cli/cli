@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/url"
+	"sort"
 	"strings"
 )
 
@@ -89,6 +90,11 @@ func ListReleases(client *Client, owner, repo string, opts *ReleaseListOptions) 
 	if err != nil {
 		return nil, err
 	}
+	// Sort by created_at descending so --limit returns the latest releases.
+	// The GitCode API does not guarantee sort order.
+	sort.Slice(releases, func(i, j int) bool {
+		return releases[i].CreatedAt.Time.After(releases[j].CreatedAt.Time)
+	})
 	return releases, nil
 }
 

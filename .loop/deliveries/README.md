@@ -1,1 +1,40 @@
-# 交付记录（团队共享）
+# 交付记录
+
+按 issue 维度的交付追踪。每条记录包含完整的 8 项门禁证据表 + 状态流转 + 关键制品链接。
+
+## 汇总
+
+| Issue | 类型 | 状态 | PR | CI | 风险 | 门禁 |
+|-------|------|------|----|----|:--:|:----:|
+| [#298](issue-298.md) | bug | merged | #252 | ✅ 28071396966 | low | 8/8 |
+| [#302](issue-302.md) | bug | merged | #252 | ✅ 28071396966 | low | 8/8 |
+| [#291](issue-291.md) | docs | closed | — | — | — | — |
+| [#275](issue-275.md) | docs | merged | #253 | skipped | low | 5/8* |
+| [#276](issue-276.md) | docs | merged | #254 | skipped | low | 4/8* |
+| [#271](issue-271.md) | bug | merged | #255 | ✅ 28073808666 | medium | 8/8 |
+| [#251](issue-251.md) | bug | closed | — | — | — | — |
+| [#274](issue-274.md) | bug | merged | #257 | ✅ 28074422614 | medium | 8/8 |
+| [#273](issue-273.md) | bug | merged | #258 | ✅ 28075508360 | medium | 8/8 |
+| [#280](issue-280.md) | docs | merged | #265 | skipped | low | 4/8* |
+| [#279](issue-279.md) | docs | merged | #268 | skipped | low | 5/8* |
+| [#256](issue-256.md) | bug | merged | #260 | ⚠️ macos flake | high‡ | 8/8 |
+| [#272](issue-272.md) | bug | merged | #264 | ✅ 28077718073 | high‡ | 8/8 |
+
+> \* docs-only 按 spec 5.3 跳过构建/UT/CI
+> ‡ risk/high 评估脚本误判，人工确认后合并
+
+## 统计
+
+| 维度 | 数据 |
+|------|------|
+| 总 issue | 13 |
+| 已合并 | 11 |
+| 已关闭（无需修复） | 2 |
+| 含代码改动 | 7 |
+| docs-only | 6 |
+| risk/high（误判） | 2 |
+| 平均门禁完成率 | 7.2/8 |
+
+---
+
+**最后更新**: 2026-06-24

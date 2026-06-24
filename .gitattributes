@@ -1,0 +1,17 @@
+# Normalize line endings to LF across all platforms.
+# Prevents CRLF/LF noise in pre-commit hooks on Windows.
+* text=auto eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.ico binary
+*.gz binary
+*.zip binary
+*.whl binary
+*.tar.gz binary
+*.deb binary
+*.rpm binary
+
+# Generated files
+go.sum -text

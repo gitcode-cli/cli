@@ -6,7 +6,8 @@
 /goal until go test ./... passes AND go build -o ./gc ./cmd/gc succeeds
 AND at least one real command test passes against infra-test/*
 AND pre-commit hooks all pass
-完成后更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表
+完成后更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表。
+构建和测试结果同步发布到 PR 评论区。
 ```
 
 ## 替换参数

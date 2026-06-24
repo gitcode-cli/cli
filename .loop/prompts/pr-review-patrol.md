@@ -28,6 +28,8 @@
 5. 每检查一个 PR，更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表
 
 禁止: 修改他人代码、跳过评审直接合并
+
+必须在 PR 评论区留下每次检查的证据（门禁缺失评论 / CI 结果评论 / 合并判断评论）。
 ```
 
 ## 门禁检查清单

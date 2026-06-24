@@ -6,6 +6,9 @@
 /loop 30m 从 status/triage 中取一个 issue，按 spec/workflows/development-workflow.md
 状态机全流程推进到 merged。risk/low 自动合并，risk/high 暂停确认。
 禁止：在 main 开发、跳过验证、作者自检当独立评审。
+必须在 Issue 评论和 PR 评论留下门禁证据：
+  Issue comment: 验证记录 + 作者自检 9 项
+  PR comment: 多角色评审结论 + CI 结果 + gate 完成表
 每处理完一个 issue，更新 .loop/ 目录：
   .loop/deliveries/issue-<N>.md — 记录状态流转 + PR/CI 证据链接
   .loop/deliveries/README.md — 更新汇总表中的对应行

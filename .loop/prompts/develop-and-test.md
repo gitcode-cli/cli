@@ -1,0 +1,24 @@
+# /goal: 开发 + UT + 构建
+
+## Prompt
+
+```
+/goal until go test ./... passes AND go build -o ./gc ./cmd/gc succeeds
+AND at least one real command test passes against infra-test/*
+AND pre-commit hooks all pass
+```
+
+## 替换参数
+
+无需替换。如改动限定在特定包，缩小 `./...` 范围。
+
+## 评估器检查点
+
+- 对话中是否出现 `PASS` 标记
+- 是否出现 `go build: Success`
+- 是否出现 pre-commit 全部通过
+
+## 注意事项
+
+- docs-only 改动可跳过此阶段（见 spec 5.3 门禁表）
+- 代码改动必须在此阶段通过全部 4 项检查

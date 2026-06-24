@@ -50,5 +50,6 @@
 | [PACKAGING.md](./PACKAGING.md) | 本地打包与发布使用说明 |
 | [AI-GUIDE.md](./AI-GUIDE.md) | 外部项目使用 AI 操作 GitCode 的场景指南 |
 | [AI-TEMPLATES.md](./AI-TEMPLATES.md) | gitcode-cli 仓库内部协作的固定模板 |
+| [LOOP-GOAL-GUIDE.md](./LOOP-GOAL-GUIDE.md) | Claude Code /loop 与 /goal 命令在本项目开发流程中的使用指南 |
 | `docs/ai-templates/*.md` | 可直接复用的 AI 评论与检查模板文件 |
 | [Example/](../Example/index.md) | GitCode CLI 在业务场景中的应用案例和可复制 prompt |

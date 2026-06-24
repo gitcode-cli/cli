@@ -18,7 +18,7 @@ func TestStatsRun(t *testing.T) {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"total":2,"statistics":[{"author":"alice","additions":10,"deletions":2,"total":12}]}`))
+		_, _ = w.Write([]byte(`{"total":2,"statistics":[{"user_name":"alice","add_lines":10,"delete_lines":2,"total":12}]}`))
 	}))
 
 	err := statsRun(&StatsOptions{
@@ -49,7 +49,7 @@ func TestStatsRunJSONOutput(t *testing.T) {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"total":2,"statistics":[{"author":"alice","additions":10,"deletions":2,"total":12}]}`))
+		_, _ = w.Write([]byte(`{"total":2,"statistics":[{"user_name":"alice","add_lines":10,"delete_lines":2,"total":12}]}`))
 	}))
 
 	err := statsRun(&StatsOptions{

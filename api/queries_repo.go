@@ -158,15 +158,15 @@ type CommitStatistics struct {
 
 // CommitStatItem represents a single commit stat item
 type CommitStatItem struct {
-	Author  string `json:"author"`
-	Commits int    `json:"commits"`
+	Author  string `json:"user_name"`
+	Commits int    `json:"commit_count"`
 }
 
 // StatItem represents a statistics item
 type StatItem struct {
-	Author    string `json:"author"`
-	Additions int    `json:"additions"`
-	Deletions int    `json:"deletions"`
+	Author    string `json:"user_name"`
+	Additions int    `json:"add_lines"`
+	Deletions int    `json:"delete_lines"`
 	Total     int    `json:"total"`
 }
 

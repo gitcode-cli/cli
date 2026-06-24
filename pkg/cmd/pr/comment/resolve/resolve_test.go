@@ -160,6 +160,7 @@ func TestNewCmdUnresolve(t *testing.T) {
 }
 
 func TestResolveRunMissingRepo(t *testing.T) {
+	t.Setenv("GC_TOKEN", "dummy-token")
 	f := cmdutil.TestFactory()
 	opts := &resolveOptions{
 		IO:           f.IOStreams,

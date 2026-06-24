@@ -32,6 +32,7 @@ type ReviewOptions struct {
 	Comment     string
 	CommentFile string
 	Force       bool // Force approval (admin only)
+	Yes         bool // Skip confirmation for --force
 	JSON        bool
 }
 
@@ -129,6 +130,7 @@ func NewCmdReview(f *cmdutil.Factory, runF func(*ReviewOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Comment, "comment", "c", "", "Comment body")
 	cmd.Flags().StringVarP(&opts.CommentFile, "comment-file", "F", "", "Read comment from file (use - for stdin)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Force approval (admin only)")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip force approval confirmation")
 	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output as JSON")
 
 	return cmd
@@ -187,6 +189,14 @@ func reviewRun(opts *ReviewOptions) error {
 	if opts.Force {
 		if !opts.Approve {
 			return cmdutil.NewUsageError("--force can only be used with --approve")
+		}
+		if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+			IO:       opts.IO,
+			Yes:      opts.Yes,
+			Expected: "force-approve",
+			Prompt:   fmt.Sprintf("Force-approve PR #%d? Type 'force-approve' to confirm: ", opts.Number),
+		}); err != nil {
+			return err
 		}
 		err := opts.ReviewPR(client, owner, repo, opts.Number, &api.ReviewPROptions{
 			Force: true,

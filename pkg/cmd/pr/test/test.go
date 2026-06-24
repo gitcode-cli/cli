@@ -24,6 +24,7 @@ type TestOptions struct {
 
 	// Flags
 	Force bool // Force test pass (admin only)
+	Yes   bool // Skip confirmation for --force
 }
 
 // NewCmdTest creates the test command
@@ -65,6 +66,7 @@ func NewCmdTest(f *cmdutil.Factory, runF func(*TestOptions) error) *cobra.Comman
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Force test pass (admin only)")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip force test pass confirmation")
 
 	return cmd
 }
@@ -88,6 +90,16 @@ func testRun(opts *TestOptions) error {
 	}
 
 	// Trigger or force test
+	if opts.Force {
+		if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+			IO:       opts.IO,
+			Yes:      opts.Yes,
+			Expected: "force-test",
+			Prompt:   fmt.Sprintf("Force test-pass PR #%d? Type 'force-test' to confirm: ", opts.Number),
+		}); err != nil {
+			return err
+		}
+	}
 	err = api.TestPR(client, owner, repo, opts.Number, &api.TestPROptions{
 		Force: opts.Force,
 	})

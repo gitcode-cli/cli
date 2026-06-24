@@ -528,6 +528,7 @@ func TestReviewRun_ForceApproveJSON(t *testing.T) {
 		Repository: "owner/repo",
 		Number:     123,
 		Approve:    true,
+		Yes:        true,
 		Force:      true,
 		JSON:       true,
 		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {

@@ -37,13 +37,14 @@
 | [#283](issue-283.md) | security | merged | #281 | N/A | high | — |
 | [#270](issue-270.md) | bug | merged | #282 | N/A | medium | — |
 | [#269](issue-269.md) | test | merged | #283 | N/A | medium | — |
+| [#243](issue-243.md) | process | closed | — | — | — | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 30 |
+| 总 issue | 31 |
 | 已合并 | 24 |
-| 已关闭 | 6 |
+| 已关闭 | 7 |
 | 含代码改动 | 13 |
 | docs-only | 8 |
 | risk/high | 3 |

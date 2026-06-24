@@ -40,14 +40,15 @@
 | [#243](issue-243.md) | process | closed | — | — | — | — |
 | [#146](issue-146.md) | bug | closed | — | — | — | — |
 | [#293](issue-293.md) | security | closed | — | — | high | — |
+| [#99](issue-99.md) | bug | closed | — | — | high | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 33 |
+| 总 issue | 34 |
 | 已合并 | 24 |
-| 已关闭 | 9 |
+| 已关闭 | 10 |
 | 含代码改动 | 13 |
 | docs-only | 8 |
-| risk/high | 4 |
+| risk/high | 5 |
 | 平均门禁 | 6.2/8 |

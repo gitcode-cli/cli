@@ -1,3 +1,8 @@
+---
+name: gc-release
+description: GitCode CLI release operations — create, list, view, edit, delete, download, and upload release assets.
+---
+
 # gc-release
 
 使用 `gc` 完成 GitCode release 相关操作。

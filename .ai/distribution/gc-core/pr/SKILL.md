@@ -1,3 +1,8 @@
+---
+name: gc-pr
+description: GitCode CLI pull request operations — create, list, view, edit, merge, checkout, and comment on PRs.
+---
+
 # gc-pr
 
 使用 `gc` 完成 GitCode Pull Request 相关操作。

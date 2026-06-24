@@ -1,3 +1,10 @@
+---
+name: issue-reviewer
+description: Review and analyze GitCode CLI project issues. Assess validity, add comments, and apply labels.
+
+TRIGGER when: user asks to review issues, analyze issues, triage issues, manage issue backlog, evaluate issue acceptance, or check issue quality. Also trigger for phrases like "评审Issue", "分析Issue", "Issue评审", "帮我看看这个Issue".
+---
+
 # 共享 skill: issue-reviewer
 
 ## 目标

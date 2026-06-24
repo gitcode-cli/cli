@@ -1,3 +1,8 @@
+---
+name: gc-dev-setup
+description: 初始化 gitcode-cli 项目本地开发环境。当用户说"初始化本地开发环境"、"搭建本地开发环境"、"init dev environment"、"setup local dev"时触发，或用户有开发需求时首先检查本地开发环境是否就绪。检查标准：本地代码编译无错误。
+---
+
 # 共享 skill: gc-dev-setup
 
 ## 目标

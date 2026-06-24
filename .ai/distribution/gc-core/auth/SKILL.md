@@ -1,3 +1,8 @@
+---
+name: gc-auth
+description: GitCode CLI authentication operations — login, logout, status, and token management.
+---
+
 # gc-auth
 
 使用 `gc` 完成 GitCode 认证相关操作。

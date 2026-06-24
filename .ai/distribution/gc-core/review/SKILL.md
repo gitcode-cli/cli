@@ -1,3 +1,8 @@
+---
+name: gc-review
+description: GitCode CLI PR review operations — submit, approve, and request changes on pull request reviews.
+---
+
 # gc-review
 
 使用 `gc` 完成 GitCode Pull Request 审查相关操作。

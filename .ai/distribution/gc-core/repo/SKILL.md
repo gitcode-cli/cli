@@ -1,3 +1,8 @@
+---
+name: gc-repo
+description: GitCode CLI repository operations — create, list, view, fork, clone, sync, and manage branches.
+---
+
 # gc-repo
 
 使用 `gc` 完成 GitCode 仓库相关操作。

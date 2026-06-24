@@ -1,3 +1,10 @@
+---
+name: pr-reviewer
+description: Review Pull Requests for GitCode CLI project. Check code quality, security issues, and compliance with coding standards.
+
+TRIGGER when: user asks to review PR, check PR quality, audit PR security, analyze PR changes, or phrases like "评审PR", "审查PR", "检查PR", "代码审查", "安全审查".
+---
+
 # 共享 skill: pr-reviewer
 
 ## 目标

@@ -1,3 +1,13 @@
+---
+name: gitcode-cli
+description: |
+  Use `gc` (GitCode CLI) for ALL GitCode repository operations. This is a custom CLI tool for GitCode platform, NOT GitHub's `gh` command.
+
+  TRIGGER when: working with gitcode.com repositories, creating/viewing PRs, issues, releases, or any GitCode operations. Even if user doesn't explicitly mention "gc" or "gitcode", default to `gc` for repository operations in this project.
+
+  IMPORTANT: Never use `gh` (GitHub CLI) for GitCode operations. The command is `gc`, not `gh`.
+---
+
 # 共享 skill: gitcode-cli
 
 ## 目标

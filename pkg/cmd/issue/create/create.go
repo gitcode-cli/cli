@@ -206,14 +206,14 @@ func createRun(opts *CreateOptions) error {
 		return fmt.Errorf("failed to create issue: %w", err)
 	}
 	if opts.JSON {
-		if err := ensureAssigneesApplied(client, owner, repo, issue.Number, issue.HTMLURL, assigneeIDs, "created"); err != nil {
+		if err := ensureAssigneesApplied(client, owner, repo, string(issue.Number), issue.HTMLURL, assigneeIDs, "created"); err != nil {
 			return err
 		}
 		return cmdutil.WriteJSON(opts.IO.Out, issue)
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
-	if err := ensureAssigneesApplied(client, owner, repo, issue.Number, issue.HTMLURL, assigneeIDs, "created"); err != nil {
+	if err := ensureAssigneesApplied(client, owner, repo, string(issue.Number), issue.HTMLURL, assigneeIDs, "created"); err != nil {
 		return err
 	}
 	return nil

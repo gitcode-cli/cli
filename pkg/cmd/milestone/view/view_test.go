@@ -2,6 +2,7 @@ package view
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -373,5 +374,53 @@ func TestCountIssuesByState(t *testing.T) {
 	closedCount := countIssuesByState(issues, "closed")
 	if closedCount != 2 {
 		t.Errorf("closed count = %d, want 2", closedCount)
+	}
+}
+
+func TestViewRunMilestoneNotFound(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	io, _, _, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		Number:     99999,
+		Repository: "owner/repo",
+		HttpClient: func() (*http.Client, error) { return client, nil },
+	})
+	if err == nil || !strings.Contains(err.Error(), "404") {
+		t.Fatalf("viewRun() error = %v, want error with 404", err)
+	}
+}
+
+func TestViewRunAuthError(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		Number:     1,
+		Repository: "owner/repo",
+		HttpClient: func() (*http.Client, error) { return client, nil },
+	})
+	if err == nil {
+		t.Fatal("viewRun() should fail for auth error")
+	}
+}
+
+func TestViewRunNetworkError(t *testing.T) {
+	io, _, _, _ := testutil.NewTestIOStreams()
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		Number:     1,
+		Repository: "owner/repo",
+		HttpClient: func() (*http.Client, error) {
+			return nil, fmt.Errorf("connection refused")
+		},
+	})
+	if err == nil {
+		t.Fatal("viewRun() should fail for network error")
 	}
 }

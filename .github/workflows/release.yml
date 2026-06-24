@@ -189,5 +189,13 @@ jobs:
       - name: Build Python package
         run: python -m build --wheel --sdist --outdir dist/
 
+      - name: Upload wheel and sdist to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
+        run: |
+          set -euo pipefail
+          gh release upload "${VERSION_TAG}" dist/*.whl dist/*.tar.gz --clobber
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

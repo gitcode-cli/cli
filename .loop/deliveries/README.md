@@ -36,12 +36,13 @@
 | [#284](issue-284.md) | security | merged | #280 | N/A | medium | — |
 | [#283](issue-283.md) | security | merged | #281 | N/A | high | — |
 | [#270](issue-270.md) | bug | merged | #282 | N/A | medium | — |
+| [#269](issue-269.md) | test | merged | #283 | N/A | medium | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 29 |
-| 已合并 | 23 |
+| 总 issue | 30 |
+| 已合并 | 24 |
 | 已关闭 | 6 |
 | 含代码改动 | 13 |
 | docs-only | 8 |

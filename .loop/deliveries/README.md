@@ -34,14 +34,15 @@
 | [#292](issue-292.md) | chore | merged | #278 | N/A | low | — |
 | [#281](issue-281.md) | bug | merged | #279 | N/A | medium | — |
 | [#284](issue-284.md) | security | merged | #280 | N/A | medium | — |
+| [#283](issue-283.md) | security | merged | #281 | N/A | high | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 27 |
-| 已合并 | 21 |
+| 总 issue | 28 |
+| 已合并 | 22 |
 | 已关闭 | 6 |
 | 含代码改动 | 12 |
 | docs-only | 8 |
-| risk/high | 2 |
+| risk/high | 3 |
 | 平均门禁 | 6.2/8 |

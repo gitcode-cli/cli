@@ -32,14 +32,15 @@
 | [#301](issue-301.md) | bug | merged | #276 | N/A | low | — |
 | [#300](issue-300.md) | chore | merged | #277 | N/A | low | — |
 | [#292](issue-292.md) | chore | merged | #278 | N/A | low | — |
+| [#281](issue-281.md) | bug | merged | #279 | N/A | medium | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 25 |
-| 已合并 | 19 |
+| 总 issue | 26 |
+| 已合并 | 20 |
 | 已关闭 | 6 |
-| 含代码改动 | 11 |
+| 含代码改动 | 12 |
 | docs-only | 8 |
 | risk/high | 2 |
 | 平均门禁 | 6.2/8 |

@@ -161,9 +161,16 @@ Windows PowerShell 用户建议运行：
 
 说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
 
-Windows command-name behavior: when the wheel entrypoint is launched as
-`gitcode` or with `python -m gc_cli`, help, schema, version, and completion
-metadata display `gitcode`. The `gc` script keeps displaying `gc`.
+Command-name behavior by platform (wheel entrypoint):
+
+| 启动方式 | Windows | Linux / macOS |
+|---------|---------|---------------|
+| `gc` | `gc` | `gc` |
+| `gitcode` | `gitcode` | `gitcode` |
+| `python -m gc_cli` | `gitcode` | `gc` |
+
+`python -m gc_cli` 的 argv[0] stem 为 `gc_cli`，不匹配 `gc`/`gitcode`，
+因此回退到平台默认值：Windows → `gitcode`，非 Windows → `gc`。
 
 DEB/RPM packages install `/usr/bin/gc` and `/usr/bin/gitcode`; on Linux they
 are equivalent command entry points.

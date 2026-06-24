@@ -1469,6 +1469,9 @@ gc commit comments list-by-sha abc123 -R infra-test/gctest1 --json
 # 列出所有标签
 gc label list -R infra-test/gctest1
 
+# 分页查询
+gc label list -R infra-test/gctest1 --limit 50 --page 2
+
 # 结构化输出
 gc label list -R infra-test/gctest1 --json
 ```
@@ -1506,12 +1509,15 @@ gc label delete bug -R infra-test/gctest1 --yes
 # 列出所有里程碑
 gc milestone list -R infra-test/gctest1
 
+# 分页查询
+gc milestone list -R infra-test/gctest1 --limit 50 --page 2
+
 # 结构化输出
 gc milestone list -R infra-test/gctest1 --json
 ```
 
 说明：
-- `milestone list` 当前不提供 `--state` 或 `--limit`，因为 GitCode milestones list API 还没有对应筛选参数。
+- `milestone list` 当前不提供 `--state`，因为 GitCode milestones list API 还没有对应筛选参数。`--limit` 和 `--page` 已支持。
 
 ### milestone create - 创建里程碑
 

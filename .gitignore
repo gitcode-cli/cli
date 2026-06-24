@@ -67,3 +67,9 @@ token.txt
 *.token
 secrets.yaml
 secrets.yml
+
+# Loop runtime data (not committed)
+.loop/registry/
+.loop/history/
+.loop/deliveries/
+.loop/memory/

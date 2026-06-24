@@ -13,6 +13,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/diff"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/edit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/issues"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/label"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/merge"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr/ready"
@@ -66,6 +67,7 @@ func NewCmdPR(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(reopen.NewCmdReopen(f, nil))
 	cmd.AddCommand(review.NewCmdReview(f, nil))
 	cmd.AddCommand(diff.NewCmdDiff(f, nil))
+	cmd.AddCommand(label.NewCmdLabel(f, nil))
 	cmd.AddCommand(ready.NewCmdReady(f, nil))
 	cmd.AddCommand(edit.NewCmdEdit(f, nil))
 	cmd.AddCommand(issues.NewCmdIssues(f, nil))

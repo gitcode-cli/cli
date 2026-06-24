@@ -652,3 +652,32 @@ func ListPRIssues(client *Client, owner, repo string, number int) ([]Issue, erro
 	}
 	return issues, nil
 }
+
+// AddLabelsToPR adds labels to a pull request.
+func AddLabelsToPR(client *Client, owner, repo string, number int, labels []string) ([]Label, error) {
+	var result []Label
+	err := client.Post("/repos/"+owner+"/"+repo+"/merge_requests/"+itoa(number)+"/labels", map[string]interface{}{
+		"labels": labels,
+	}, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// RemoveLabelFromPR removes a label from a pull request.
+func RemoveLabelFromPR(client *Client, owner, repo string, number int, label string) error {
+	return client.Delete("/repos/" + owner + "/" + repo + "/merge_requests/" + itoa(number) + "/labels/" + url.PathEscape(label))
+}
+
+// SetPRLabels sets (replaces) labels on a pull request.
+func SetPRLabels(client *Client, owner, repo string, number int, labels []string) ([]Label, error) {
+	var result []Label
+	err := client.Put("/repos/"+owner+"/"+repo+"/merge_requests/"+itoa(number)+"/labels", map[string]interface{}{
+		"labels": labels,
+	}, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}

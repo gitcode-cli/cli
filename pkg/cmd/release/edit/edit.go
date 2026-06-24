@@ -46,15 +46,18 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 		Long: heredoc.Doc(`
 			Edit an existing release.
 
-			You can update the release title, notes, draft status, prerelease status,
-			or target branch.
+			You can update the release title, notes, and prerelease status.
+			--draft and --target flags are not supported by the GitCode API.
 		`),
 		Example: heredoc.Doc(`
 			# Edit release title and notes
 			$ gc release edit v1.0.0 -R owner/repo --title "New Title" --notes "New notes"
 
-			# Mark release as prerelease
-			$ gc release edit v1.0.0 -R owner/repo --prerelease
+			# Mark release as prerelease (release_status=pre)
+			$ gc release edit v1.0.0 -R owner/repo --prerelease true
+
+			# Mark release as full release (release_status=latest)
+			$ gc release edit v1.0.0 -R owner/repo --prerelease false
 
 			# Read notes from a file
 			$ gc release edit v1.0.0 -R owner/repo --notes-file RELEASE_NOTES.md

@@ -5,12 +5,12 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
-	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/comments/create"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/comments/edit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/comments/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/comments/listbysha"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/commit/comments/view"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
 // NewCmdComments creates the comments command

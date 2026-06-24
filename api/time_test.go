@@ -78,18 +78,18 @@ func TestFlexibleTime_UnmarshalJSON(t *testing.T) {
 
 func TestFlexibleTime_MarshalJSON(t *testing.T) {
 	tests := []struct {
-		name    string
-		time    FlexibleTime
+		name     string
+		time     FlexibleTime
 		wantNull bool
 	}{
 		{
-			name:    "Zero time",
-			time:    FlexibleTime{},
+			name:     "Zero time",
+			time:     FlexibleTime{},
 			wantNull: true,
 		},
 		{
-			name:    "Valid time",
-			time:    FlexibleTime{Time: time.Date(2026, 3, 26, 16, 3, 7, 0, time.UTC)},
+			name:     "Valid time",
+			time:     FlexibleTime{Time: time.Date(2026, 3, 26, 16, 3, 7, 0, time.UTC)},
 			wantNull: false,
 		},
 	}

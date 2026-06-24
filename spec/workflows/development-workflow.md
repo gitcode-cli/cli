@@ -159,12 +159,23 @@ Issue 创建/受理
 - issue 已进入 `status/verified`
 - 已创建非 `main` 开发分支
 
-本阶段必须完成：
+本阶段必须完成以下全部门禁，按执行顺序：
 
-- 开发实现
-- 编写或补齐测试
-- 执行本地构建与相关测试
-- 执行至少一个真实命令验证
+| 序号 | 门禁 | 要求 | 详细规范 | docs-only 是否跳过 |
+|------|------|------|---------|:--:|
+| 1 | 开发实现 | 修复或实现 issue 描述的功能 | — | — |
+| 2 | 编写/补齐测试 | 覆盖修改路径的单元测试 | [测试指南](../foundations/testing-guide.md) | ✅ 可跳过 |
+| 3 | 本地构建 | `go build -o ./gc ./cmd/gc` 成功 | — | ✅ 可跳过 |
+| 4 | 单元测试 | `go test ./...` 全部通过 | [测试指南](../foundations/testing-guide.md) | ✅ 可跳过 |
+| 5 | Pre-commit | 通过项目 `.pre-commit-config.yaml` 定义的全部 hooks | [代码质量门禁规范](../foundations/code-quality-gates.md) | — |
+| 6 | 实际命令验证 | 至少一条真实命令，仅限 `infra-test/*` 仓库 | [测试流程](./test-workflow.md) | ✅ 可跳过 |
+| 7 | 远端 CI | 通过 GitHub Actions CI 全部 Job（lint/test/build/docker） | [CI 工作流规范](../delivery/ci-workflows.md) | ✅ 可跳过 |
+| 8 | 风险分级 | 运行 `scripts/classify-change-risk.py --base origin/main` | [AI 本地开发流程](./ai-local-development-workflow.md) | — |
+
+docs-only 改动可跳过门禁 2-4、6-7，但必须在自检中说明跳过理由。
+CI 因环境原因（如 GitHub 镜像仓不可达）无法执行时，必须在自检中明确记录原因。
+
+> **AI 协作者提示**：`/loop` 或 `/goal` 执行本阶段时，应逐项对照此表，每项完成后在对话中留下证据，未完成不得进入 5.5 自检。此表是 development-workflow.md 的权威门禁清单，其他文档的补充说明不得与此表冲突。
 
 ### 5.4 Security Review
 
@@ -297,7 +308,9 @@ Issue 和 PR 至少应使用以下标签维度：
 - PR 级状态、自检与合并要求：看 [PR 流程](./pr-workflow.md)
 - 多角色评审角色与检查清单：看 [评审流程](./review-workflow.md)
 - 本地与合并门禁：看 [代码质量门禁规范](../foundations/code-quality-gates.md)
+- 远端 CI 与 AI 编排：看 [CI 工作流规范](../delivery/ci-workflows.md)
+- AI 本地开发闭环编排：看 [AI 本地开发流程](./ai-local-development-workflow.md)
 
 ---
 
-**最后更新**: 2026-05-01
+**最后更新**: 2026-06-24

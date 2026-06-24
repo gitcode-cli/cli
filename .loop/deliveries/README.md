@@ -26,14 +26,16 @@
 | [#262](issue-262.md) | bug | closed | — | — | low | — |
 | [#266](issue-266.md) | bug | merged | #273 | skipped | medium | 5/8 |
 
+| [#268](issue-268.md) | bug | merged | #274 | N/A | medium | — |
+| [#249](issue-249.md) | bug | closed | — | — | — | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 19 |
-| 已合并 | 14 |
-| 已关闭 | 5 |
-| 含代码改动 | 8 |
+| 总 issue | 21 |
+| 已合并 | 15 |
+| 已关闭 | 6 |
+| 含代码改动 | 9 |
 | docs-only | 8 |
 | risk/high | 2 |
 | 平均门禁 | 6.2/8 |

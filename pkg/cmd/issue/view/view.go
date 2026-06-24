@@ -139,10 +139,14 @@ func viewRun(opts *ViewOptions) error {
 	}
 
 	if opts.JSON {
-		if opts.Comments && issue.Comments > 0 {
-			comments, err := api.ListIssueCommentsAll(client, owner, repo, opts.Number, nil)
-			if err != nil {
-				return fmt.Errorf("failed to get comments: %w", err)
+		if opts.Comments {
+			comments := make([]api.IssueComment, 0)
+			if issue.Comments > 0 {
+				var err error
+				comments, err = api.ListIssueCommentsAll(client, owner, repo, opts.Number, nil)
+				if err != nil {
+					return fmt.Errorf("failed to get comments: %w", err)
+				}
 			}
 			return cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
 				"issue":    issue,

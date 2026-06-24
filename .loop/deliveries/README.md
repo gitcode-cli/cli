@@ -39,14 +39,15 @@
 | [#269](issue-269.md) | test | merged | #283 | N/A | medium | — |
 | [#243](issue-243.md) | process | closed | — | — | — | — |
 | [#146](issue-146.md) | bug | closed | — | — | — | — |
+| [#293](issue-293.md) | security | closed | — | — | high | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 32 |
+| 总 issue | 33 |
 | 已合并 | 24 |
-| 已关闭 | 8 |
+| 已关闭 | 9 |
 | 含代码改动 | 13 |
 | docs-only | 8 |
-| risk/high | 3 |
+| risk/high | 4 |
 | 平均门禁 | 6.2/8 |

@@ -1317,10 +1317,10 @@ gc release upload v1.0.0 app.zip -R infra-test/gctest1 --json
 ### release download - 下载资产
 
 ```bash
-# 下载 latest release 的所有资产到当前目录
+# 下载 latest release 的资产到当前目录（默认跳过 source archive）
 gc release download -R infra-test/gctest1
 
-# 下载指定 release 的所有资产到当前目录
+# 下载指定 release 的资产到当前目录
 gc release download v1.0.0 -R infra-test/gctest1
 
 # 下载到指定目录
@@ -1328,7 +1328,14 @@ gc release download v1.0.0 -R infra-test/gctest1 -o ./downloads/
 
 # 下载指定文件
 gc release download v1.0.0 app.zip -R infra-test/gctest1
+
+# 下载全部资产（含 source archive）
+gc release download v1.0.0 -R infra-test/gctest1 --all
 ```
+
+说明：
+- 默认过滤 source archive（`.zip`/`.tar.gz` 源码包），只下载二进制/ wheel 等发布资产。
+- 需要完整下载（包含 source archive）时显式传 `--all`。
 
 ### release edit - 编辑 Release
 

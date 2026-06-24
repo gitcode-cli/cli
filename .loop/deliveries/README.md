@@ -44,12 +44,13 @@
 | [#98](issue-98.md) | bug | closed | — | — | medium | — |
 | [#294](issue-294.md) | security | merged | #284 | N/A | high | — |
 | [#190](issue-190.md) | test | merged | #285 | N/A | low | — |
+| [#194](issue-194.md) | feat | merged | #286 | N/A | medium | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 37 |
-| 已合并 | 26 |
+| 总 issue | 38 |
+| 已合并 | 27 |
 | 已关闭 | 11 |
 | 含代码改动 | 13 |
 | docs-only | 8 |

@@ -4,21 +4,28 @@
 - **Type**: docs
 - **Status**: merged
 - **Loop**: fullflow-main
-- **PR**: #254
-- **Date**: 2026-06-24
+- **PR**: [#254](https://gitcode.com/gitcode-cli/cli/pulls/254)
+- **Branch**: docs/issue-276-2
+- **Started**: 2026-06-24 | **Merged**: 2026-06-24
 
-## State Transitions
-| From | To | When | Evidence |
-|------|----|------|----------|
-| status/triage | status/verified | 2026-06-24 | confirmed 3 lines missing --yes |
-| status/verified | status/in-progress | 2026-06-24 | branch docs/issue-276-2 |
-| status/in-progress | status/self-checked | 2026-06-24 | comment #176862928 |
-| status/self-checked | status/merged | 2026-06-24 | PR #254 merged |
+## Gate Compliance
+
+| # | Gate | Result | Evidence |
+|---|------|--------|----------|
+| 1 | 验证 | ✅ | issue close/reopen/pr close 的 --json 示例缺少 --yes |
+| 2 | 开发 | ✅ | branch docs/issue-276-2, 3 lines: `--json` → `--yes --json` |
+| 3 | 构建 | skipped | docs-only |
+| 4 | UT | skipped | docs-only |
+| 5 | Pre-commit | ✅ | 全部通过 |
+| 6 | 实际命令 | skipped | docs-only |
+| 7 | CI | skipped | docs-only |
+| 8 | 风险分级 | ✅ | risk/low |
+| + | 多角色评审 | ⚠️ | inline only (should have been 2-role docs+security per spec) |
+| + | 合并 | ✅ | PR #254 merged |
 
 ## Key Artifacts
-- PR: #254 (merged)
-- Fix: docs/COMMANDS.md — issue close/reopen/pr close --json 加 --yes
+- Fix: docs/COMMANDS.md — issue close/reopen/pr close JSON 示例加 --yes
 
 ## Notes
-- docs-only, skipped build/UT/CI per spec 5.3
-- Review done inline (not formal 4-agent) — flagged as gap
+- **首次 /loop 执行，漏掉了多角色评审** — 这是后来补 spec 5.3 门禁表的直接原因
+- Branch naming: docs/issue-276-2 (first attempt docs/issue-276 conflicted)

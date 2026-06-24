@@ -4,17 +4,24 @@
 - **Type**: docs
 - **Status**: merged
 - **Loop**: fullflow-main
-- **PR**: #253
-- **Date**: 2026-06-24
+- **PR**: [#253](https://gitcode.com/gitcode-cli/cli/pulls/253)
+- **Branch**: docs/issue-275
+- **Started**: 2026-06-24 | **Merged**: 2026-06-24
 
-## State Transitions
-| From | To | When | Evidence |
-|------|----|------|----------|
-| status/triage | status/verified | 2026-06-24 | code confirmed --limit/--page supported |
-| status/verified | status/in-progress | 2026-06-24 | branch docs/issue-275 |
-| status/in-progress | status/self-checked | 2026-06-24 | comment #176861502 |
-| status/self-checked | status/merged | 2026-06-24 | PR #253 merged, docs+security review |
+## Gate Compliance
+
+| # | Gate | Result | Evidence |
+|---|------|--------|----------|
+| 1 | 验证 | ✅ | code confirms --limit/--page supported; docs claim otherwise |
+| 2 | 开发 | ✅ | branch docs/issue-275, 1 file +7/-1 |
+| 3 | 构建 | skipped | docs-only |
+| 4 | UT | skipped | docs-only |
+| 5 | Pre-commit | ✅ | 全部通过 |
+| 6 | 实际命令 | skipped | docs-only |
+| 7 | CI | skipped | docs-only |
+| 8 | 风险分级 | ✅ | risk/low |
+| + | 多角色评审 | ✅ | docs-only: 2 roles (docs+security) inline |
+| + | 合并 | ✅ | PR #253 merged |
 
 ## Key Artifacts
-- PR: #253 (merged)
-- Fix: docs/COMMANDS.md — label list + milestone list pagination examples
+- Fix: docs/COMMANDS.md — label list + milestone list pagination examples, milestone --limit 说明更正

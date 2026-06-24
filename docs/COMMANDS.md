@@ -611,7 +611,7 @@ gc issue close 1
 gc issue close 1 -R infra-test/gctest1 --yes
 
 # 输出 JSON
-gc issue close 1 -R infra-test/gctest1 --json
+gc issue close 1 -R infra-test/gctest1 --yes --json
 ```
 
 说明：
@@ -672,7 +672,7 @@ gc issue reopen 1
 gc issue reopen 1 -R infra-test/gctest1 --yes
 
 # 输出 JSON
-gc issue reopen 1 -R infra-test/gctest1 --json
+gc issue reopen 1 -R infra-test/gctest1 --yes --json
 ```
 
 说明：
@@ -1079,7 +1079,7 @@ gc pr close 1 -R infra-test/gctest1
 gc pr close 1 -R infra-test/gctest1 --yes
 
 # 输出 JSON
-gc pr close 1 -R infra-test/gctest1 --json
+gc pr close 1 -R infra-test/gctest1 --yes --json
 ```
 
 说明：

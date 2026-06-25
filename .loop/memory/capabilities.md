@@ -1,5 +1,7 @@
 # gitcode-cli AI 开发规范 — 关键能力总结
 
+三层递进架构：**规范层**（`spec/`）定义门禁和流程作为唯一规则源，**运营层**（`.loop/`）通过 prompt 模板和交付记录将规则转为可执行循环，**适配层**（`.claude/`）以 hook 和 skills 将循环接入 Claude 运行时。
+
 | 能力 | 实现方式 | 关键文件 |
 |------|---------|---------|
 | **状态机驱动流程** | Issue/PR 6状态标签强制流转，每步需证据 | `spec/workflows/development-workflow.md` §2 |

@@ -25,25 +25,25 @@
 | [#263](issue-263.md) | bug | closed | — | — | low | — |
 | [#262](issue-262.md) | bug | closed | — | — | low | — |
 | [#266](issue-266.md) | bug | merged | #273 | skipped | medium | 5/8 |
-| [#268](issue-268.md) | bug | merged | #274 | N/A | medium | — |
+| [#268](issue-268.md) | bug | merged | #274 | N/A | N/A | — |
 | [#249](issue-249.md) | bug | closed | — | — | — | — |
-| [#267](issue-267.md) | bug | merged | #275 | N/A | medium | — |
+| [#267](issue-267.md) | bug | merged | #275 | N/A | ⚠️ | — |
 | [#301](issue-301.md) | bug | merged | #276 | N/A | low | — |
 | [#300](issue-300.md) | chore | merged | #277 | N/A | low | — |
 | [#292](issue-292.md) | chore | merged | #278 | N/A | low | — |
-| [#281](issue-281.md) | bug | merged | #279 | N/A | medium | — |
-| [#284](issue-284.md) | security | merged | #280 | N/A | medium | — |
-| [#283](issue-283.md) | security | merged | #281 | N/A | high | — |
-| [#270](issue-270.md) | bug | merged | #282 | N/A | medium | — |
-| [#269](issue-269.md) | test | merged | #283 | N/A | medium | — |
+| [#281](issue-281.md) | bug | merged | #279 | N/A | ⚠️ | — |
+| [#284](issue-284.md) | security | merged | #280 | N/A | ⚠️ | — |
+| [#283](issue-283.md) | security | merged | #281 | N/A | ⚠️ | — |
+| [#270](issue-270.md) | bug | merged | #282 | N/A | N/A | — |
+| [#269](issue-269.md) | test | merged | #283 | N/A | N/A | — |
 | [#243](issue-243.md) | process | closed | — | — | — | — |
 | [#146](issue-146.md) | bug | closed | — | — | — | — |
 | [#293](issue-293.md) | security | closed | — | — | high | — |
 | [#99](issue-99.md) | bug | closed | — | — | high | — |
 | [#98](issue-98.md) | bug | closed | — | — | medium | — |
-| [#294](issue-294.md) | security | merged | #284 | N/A | high | — |
-| [#190](issue-190.md) | test | merged | #285 | N/A | low | — |
-| [#194](issue-194.md) | feat | merged | #286 | N/A | medium | — |
+| [#294](issue-294.md) | security | merged | #284 | N/A | ⚠️ | — |
+| [#190](issue-190.md) | test | merged | #285 | N/A | ⚠️ | — |
+| [#194](issue-194.md) | feat | merged | #286 | N/A | ⚠️ | — |
 
 ## 统计
 
@@ -54,5 +54,5 @@
 | 已关闭 | 11 |
 | 含代码改动 | 13 |
 | docs-only | 8 |
-| risk/high | 6 |
+| risk/high | 4 |
 | 平均门禁 | 6.2/8 |

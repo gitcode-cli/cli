@@ -3,7 +3,7 @@
 ## Prompt
 
 ```
-/loop 30m 检查 gitcode-cli/cli 的 open PR，对每个非本人创建的 PR。
+/loop 30m 检查 gitcode-cli/cli 的 open PR，取一个非本人创建的 PR 处理。本次只处理一个，完成后停止，等待下次 Cron 触发，避免上下文膨胀。
 
 前置规则：所有涉及代码的操作必须在独立 git worktree 中执行，严禁污染主工作目录。worktree 用后即删。
 

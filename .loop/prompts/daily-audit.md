@@ -11,7 +11,11 @@ Agent 2 - 安全审查: 依据 spec/foundations/security.md
 Agent 3 - 测试审查: 依据 spec/foundations/testing-guide.md + spec/workflows/test-workflow.md
 Agent 4 - Agent友好: 依据 spec/foundations/agent-friendly-cli.md
 Agent 5 - 文档一致性: 依据 spec/governance/docs-governance.md
-Agent 6 - 架构审查: 依据 spec/foundations/command-template.md
+Agent 6 - 架构审查: 依据以下 spec 组合
+  - spec/foundations/command-template.md（Options 模式、命令结构）
+  - spec/foundations/coding-standards.md（命名规范、错误处理、包组织）
+  - spec/governance/docs-governance.md（文档分层，检查 import 跨层引用）
+  检查项: Options 结构一致性、函数/类型命名规范、API 契约、import 层级、跨包耦合度、接口隔离
 
 过滤规则:
 - 忽略纯 style nit（空格、命名偏好、注释语气）

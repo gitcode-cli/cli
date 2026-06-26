@@ -7,9 +7,11 @@
 
 1. 检查门禁证据（构建/UT/Pre-commit/作者自检/CI）
 2. 缺失门禁 → PR 评论列出缺失项 + 操作指引
-3. CI 由本 loop 负责拉起（提交人无 CI 权限）：
-   - 无论门禁是否齐全，先推送到 GitHub 镜像仓
-   - git push github <branch>
+3. CI 由本 loop 负责拉起（提交人无 CI 权限）。PR 通常来自个人 fork 仓：
+   - 推断 fork 地址：git@gitcode.com:<author>/cli.git
+   - git remote add fork-<pr> <url>; git fetch fork-<pr> <branch>
+   - git push github fork-<pr>/<branch>:refs/heads/<branch>
+   - git remote remove fork-<pr>
    - unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
    - gh workflow run ci.yml --ref <branch>
    - gh run watch <run-id>

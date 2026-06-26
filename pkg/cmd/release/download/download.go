@@ -49,7 +49,7 @@ func NewCmdDownload(f *cmdutil.Factory, runF func(*DownloadOptions) error) *cobr
 	}
 
 	cmd := &cobra.Command{
-		Use:   "download <tag> [asset]",
+		Use:   "download [<tag>] [asset]",
 		Short: "Download release assets",
 		Long: heredoc.Doc(`
 			Download assets from a release.

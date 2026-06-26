@@ -25,7 +25,6 @@
 | [#263](issue-263.md) | bug | closed | — | — | low | — |
 | [#262](issue-262.md) | bug | closed | — | — | low | — |
 | [#266](issue-266.md) | bug | merged | #273 | skipped | medium | 5/8 |
-
 | [#268](issue-268.md) | bug | merged | #274 | N/A | medium | — |
 | [#249](issue-249.md) | bug | closed | — | — | — | — |
 | [#267](issue-267.md) | bug | merged | #275 | N/A | medium | — |
@@ -45,6 +44,7 @@
 | [#294](issue-294.md) | security | merged | #284 | N/A | high | — |
 | [#190](issue-190.md) | test | merged | #285 | N/A | low | — |
 | [#194](issue-194.md) | feat | merged | #286 | N/A | medium | — |
+
 ## 统计
 
 | 维度 | 数据 |

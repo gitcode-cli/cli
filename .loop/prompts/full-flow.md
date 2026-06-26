@@ -3,7 +3,7 @@
 ## Prompt
 
 ```
-/loop 30m 从 status/triage 中取一个 issue，按 spec/workflows/development-workflow.md
+/loop 30m 在 git worktree 中从 status/triage 取一个 issue，按 spec/workflows/development-workflow.md 状态机推进到 merged。本次只处理一个，完成后停止，等待下次 Cron 触发，避免上下文膨胀导致后半段质量下降。
 状态机全流程推进到 merged。risk/low 自动合并，risk/high 暂停确认。
 前置规则：所有代码操作必须在独立 git worktree 中执行，用后即删，严禁污染主工作目录。
 禁止：在 main 开发、跳过验证、作者自检当独立评审。

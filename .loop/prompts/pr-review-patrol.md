@@ -15,14 +15,15 @@
    - unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
    - gh workflow run ci.yml --ref <branch>
    - gh run watch <run-id>
-   - 在 PR 评论反馈 CI 结果
+   - CI 失败时：抓日志 → 定位失败测试 → 判断根因(代码/预存/环境) → 修复方案 → PR 评论
+   - CI 全绿时：反馈 run URL + conclusion
 4. 门禁齐全 + CI 全绿 → 独立多角色评审（代码/安全/测试/文档）
 5. 已评审且无新 commit → 跳过
 6. 评审中如需修改代码，必须使用 git worktree 隔离，不得污染主工作目录
 7. 全部通过 → gc pr merge <N> --yes
 
 必须在 PR 评论区留下每次操作的证据。
-禁止: 修改他人代码、跳过评审直接合并、在主目录直接修改代码
+禁止: 修改他人代码、跳过评审直接合并、在主目录直接修改代码、仅报 CI 状态不分析根因
 ```
 
 ## 门禁检查清单

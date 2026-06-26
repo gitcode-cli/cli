@@ -3,7 +3,7 @@
 ## Prompt
 
 ```
-/loop 30m 检查 gitcode-cli/cli 的 open issue，对缺少 type/* scope/* status/* 标签的 issue 补全分类标签。
+/loop 30m 检查 gitcode-cli/cli 的 open issue，对缺少标签的补全分类标签。每次只处理一批未分类 issue，完成后停止，等待下次触发。
 每次批量操作后更新 .loop/memory/INDEX.md。如有 issue 交付，同步更新 .loop/deliveries/README.md 汇总表。
 ```
 

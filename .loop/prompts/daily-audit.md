@@ -3,7 +3,7 @@
 ## Prompt
 
 ```
-/loop 1d 在 git worktree 中审查 gitcode-cli/cli 的 main 最新代码。
+/loop 1d 在 git worktree 中审查 gitcode-cli/cli 的 main 最新代码。每次只执行一轮审查，完成后停止，等待下次触发。
 启动 6 个独立 Agent 并行审查不同维度，每个 Agent 输出结构化发现：
 
 Agent 1 - 代码质量: 依据 spec/foundations/coding-standards.md + code-quality-gates.md

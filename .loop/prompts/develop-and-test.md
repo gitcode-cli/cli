@@ -3,7 +3,7 @@
 ## Prompt
 
 ```
-/goal until go test ./... passes AND go build -o ./gc ./cmd/gc succeeds
+/goal until（在 git worktree 中执行）go test ./... passes AND go build -o ./gc ./cmd/gc succeeds
 AND at least one real command test passes against infra-test/*
 AND pre-commit hooks all pass
 完成后更新 .loop/deliveries/issue-<N>.md 和 .loop/deliveries/README.md 汇总表。

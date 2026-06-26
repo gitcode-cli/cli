@@ -5,6 +5,7 @@
 ```
 /loop 30m 从 status/triage 中取一个 issue，按 spec/workflows/development-workflow.md
 状态机全流程推进到 merged。risk/low 自动合并，risk/high 暂停确认。
+前置规则：所有代码操作必须在独立 git worktree 中执行，用后即删，严禁污染主工作目录。
 禁止：在 main 开发、跳过验证、作者自检当独立评审。
 必须在 Issue 评论和 PR 评论留下门禁证据：
   Issue comment: 验证记录 + 作者自检 9 项

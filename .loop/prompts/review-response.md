@@ -3,7 +3,7 @@
 ## Prompt
 
 ```
-/loop 处理 PR #<PR_NUMBER> 的 review 意见：
+/loop 在 git worktree 中处理 PR #<PR_NUMBER> 的 review 意见（用后即删）：
   - 获取最新 review comments
   - 逐条分析并修复
   - 修复后运行 go test ./... && go build ./... 验证

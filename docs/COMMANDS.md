@@ -82,6 +82,7 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 - `pr create`
 - `pr edit`
 - `pr merge`
+- `pr label`
 - `pr review`
 - `repo create`
 - `repo fork`
@@ -406,6 +407,38 @@ gc repo fork owner/repo --json
 - `repo fork` 现在会按传入的 `owner/repo` 执行 fork，不再使用硬编码仓库路径。
 - `--clone` 会在 fork 成功后将 fork 出来的仓库克隆到当前目录。
 - `--json` 只在 fork 成功后输出 fork 仓库对象；不能与 `--clone` 同时使用。
+
+### repo clone - 克隆仓库
+
+```bash
+# 克隆仓库到当前目录
+gc repo clone owner/repo
+
+# 克隆到指定目录
+gc repo clone owner/repo my-project
+
+# 使用 SSH 克隆
+gc repo clone owner/repo --git-protocol ssh
+
+# 使用 HTTPS 克隆
+gc repo clone owner/repo --git-protocol https
+
+# 浅克隆
+gc repo clone owner/repo --depth 1
+
+# 克隆并切换到指定分支
+gc repo clone owner/repo --branch develop
+
+# 递归克隆子模块
+gc repo clone owner/repo --recursive
+```
+
+说明：
+- 仓库可以指定为 `owner/repo` 格式或完整 URL（如 `https://gitcode.com/owner/repo`）。
+- 默认使用 SSH 协议（`git@gitcode.com:owner/repo.git`），除非 `--git-protocol https` 或已保存配置显式选择 HTTPS。
+- SSH 克隆需要本地 SSH key 有权限访问 `git@gitcode.com`。
+- `--depth` 创建浅克隆，减少下载量。
+- `--recursive` 克隆后自动初始化并更新子模块。
 
 ### repo delete - 删除仓库
 
@@ -1191,6 +1224,28 @@ gc pr edit 1 --milestone 5 -R infra-test/gctest1
 gc pr edit 1 --title "新标题" -R infra-test/gctest1 --json
 ```
 
+### pr label - 管理 PR 标签
+
+```bash
+# 添加标签
+gc pr label 123 --add bug,enhancement -R owner/repo
+
+# 移除标签
+gc pr label 123 --remove bug -R owner/repo
+
+# 列出 PR 标签
+gc pr label 123 --list -R owner/repo
+
+# JSON 输出
+gc pr label 123 --list -R owner/repo --json
+```
+
+说明：
+- `pr label` 支持添加（`--add`）、移除（`--remove`）、列出（`--list`）PR 标签。
+- `--add` 接受逗号分隔的标签名列表，`--remove` 一次移除一个标签。
+- `--json` 输出结构化标签数据，适合脚本和 AI 代理调用。
+- `-R` 在当前 Git 仓库目录执行时可省略，命令会自动推断目标仓库。
+
 ### pr test - 触发 PR 测试
 
 ```bash
@@ -1789,4 +1844,4 @@ gc issue --help
 
 ---
 
-**最后更新**: 2026-05-04
+**最后更新**: 2026-06-26

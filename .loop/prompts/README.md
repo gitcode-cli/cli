@@ -13,6 +13,7 @@
 | 9 | `batch-triage.md` | `/loop` | triage | triage | 5-10min |
 | 10 | `review-response.md` | `/loop` | ready-for-review | approved | 5-15min |
 | 11 | `pr-review-patrol.md` | `/loop` | — | merged | 10-20min |
+| 12 | `daily-audit.md` | `/loop` | — | — | 10-30min |
 
 ## 使用说明
 

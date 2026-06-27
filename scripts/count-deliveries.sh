@@ -21,7 +21,9 @@ closed = sum(1 for r in rows if '| closed |' in r)
 has_change = sum(1 for r in rows if re.search(r'\+[0-9]+/-[0-9]+', r))
 docs = sum(1 for r in rows if '| docs |' in r)
 high = sum(1 for r in rows if 'high |' in r)
-today = sum(1 for r in rows if '2026-06-27' in r)
+from datetime import datetime
+today_str = datetime.now().strftime('%Y-%m-%d')
+today = sum(1 for r in rows if today_str in r)
 
 # Gate average
 scores = [int(m) for r in rows for m in re.findall(r'(\d+)/8', r)]

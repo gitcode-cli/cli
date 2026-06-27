@@ -5,11 +5,12 @@
 
 set -uo pipefail
 
-LOCKFILE="/home/wpf/claude-code/vibe-coding/cli/.loop/run/full-flow.pid"
-LOGDIR="/home/wpf/claude-code/vibe-coding/cli/.loop/history"
-ISSUE_FILE="/home/wpf/claude-code/vibe-coding/cli/.loop/run/last-issue.txt"
-PROMPT_FILE="/home/wpf/claude-code/vibe-coding/cli/.loop/prompts/full-flow-subprocess.md"
-DELIVERIES_DIR="/home/wpf/claude-code/vibe-coding/cli/.loop/deliveries"
+PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+LOCKFILE="$PROJECT_ROOT/.loop/run/full-flow.pid"
+LOGDIR="$PROJECT_ROOT/.loop/history"
+ISSUE_FILE="$PROJECT_ROOT/.loop/run/last-issue.txt"
+PROMPT_FILE="$PROJECT_ROOT/.loop/prompts/full-flow-subprocess.md"
+DELIVERIES_DIR="$PROJECT_ROOT/.loop/deliveries"
 
 mkdir -p "$(dirname "$LOCKFILE")" "$LOGDIR" "$DELIVERIES_DIR"
 
@@ -35,7 +36,7 @@ TOKEN_FILE="$LOGDIR/$TS-full-flow.tokens.json"
 echo "[$(date -Iseconds)] START pid=$$" | tee "$LOGFILE"
 
 # --- Run ---
-cd /home/wpf/claude-code/vibe-coding/cli
+cd "$PROJECT_ROOT"
 unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
 
 # Capture stream-json for token parsing
@@ -46,11 +47,10 @@ cat "$PROMPT_FILE" | nohup timeout 1200 claude -p \
   --verbose \
   --output-format stream-json \
   --permission-mode bypassPermissions \
-  --add-dir /home/wpf/claude-code/vibe-coding/cli \
+  --add-dir "$PROJECT_ROOT" \
   > "$JSONL_FILE" 2>&1
 rc=$?
 
 # All post-processing is best-effort.
 # Pipe closes when claude -p exits → python3 readlines() blocks until EOF.
-python3 .loop/scripts/process_tokens.py "$JSONL_FILE" "$LOGFILE" "$TOKEN_FILE" "$DELIVERIES_DIR" >> "$LOGFILE" 2>&1 || true
-python3 .loop/scripts/process_tokens.py "$JSONL_FILE" "$LOGFILE" "$TOKEN_FILE" "$DELIVERIES_DIR" >> "$LOGFILE" 2>&1 || true
+python3 "$PROJECT_ROOT/.loop/scripts/process_tokens.py" "$JSONL_FILE" "$LOGFILE" "$TOKEN_FILE" "$DELIVERIES_DIR" >> "$LOGFILE" 2>&1 || true

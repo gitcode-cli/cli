@@ -41,3 +41,18 @@ Commit `dfb8b20` (refactor(loop): extract token processing to standalone Python 
 ## 结论
 
 Issue 在提交 dfb8b20 时已自动解决，无需额外代码变更。关闭并标记为 merged。
+
+## Token 消耗
+
+| 指标 | 值 |
+|------|-----|
+| 输入 tokens (cache miss) | 51,894 (52k) |
+| 输出 tokens | 11,010 (11k) |
+| 缓存命中 | 1,636,352 (1636k) |
+| 缓存写入 | 0 |
+| 总计 tokens | 62,904 (63k) |
+| 成本 (DeepSeek) | ¥0.2627 (~$0.0365) |
+| 耗时 | 188s |
+| 轮次 | 42 |
+
+> 计价: ¥3/M cache-miss + ¥0.025/M cache-hit + ¥6/M output

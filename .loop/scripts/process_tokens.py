@@ -144,8 +144,14 @@ def main():
         with open(log_file, 'a') as log:
             log.write(f'token data appended to {delivery_file}\n')
 
-    # Update README row
-    token_str = f'{total_k:.0f}k'
+    # Update README row — total includes cache
+    total_with_cache = total_in + total_out + cache_read
+    if total_with_cache >= 1_000_000:
+        total_str = f'{total_with_cache/1_000_000:.1f}M'
+    else:
+        total_str = f'{total_with_cache/1000:.0f}k'
+    cache_str = f'{cache_read/1_000_000:.1f}M' if cache_read >= 1_000_000 else f'{cache_read/1000:.0f}k'
+    token_str = f'{total_str}({cache_str} cache)'
     if os.path.exists(readme_file):
         with open(readme_file) as f:
             lines = f.readlines()

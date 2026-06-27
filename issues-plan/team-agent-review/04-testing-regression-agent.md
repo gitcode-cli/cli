@@ -37,7 +37,7 @@
 - `pkg/cmd/pr/merge`
 - `pkg/cmd/commit/`
 - `pkg/browser/`
-- `internal/config/`
+- `pkg/config/`
 
 ## 必答问题
 

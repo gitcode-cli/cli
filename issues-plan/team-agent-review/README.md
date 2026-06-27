@@ -53,7 +53,7 @@
 - `pkg/cmd/`
 - `pkg/cmdutil/`
 - `api/`
-- `internal/config/`
+- `pkg/config/`
 - `scripts/`
 - `docs/COMMANDS.md`
 - `spec/foundations/agent-friendly-cli.md`

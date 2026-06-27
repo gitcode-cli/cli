@@ -14,15 +14,15 @@
 
 ## 必看目录
 
-- `internal/config/`
+- `pkg/config/`
 - `pkg/cmdutil/`
 - `pkg/cmd/`
 - `api/`
 
 ## 必看文件
 
-- `internal/config/auth_config.go`
-- `internal/config/config.go`
+- `pkg/config/auth_config.go`
+- `pkg/config/config.go`
 - `pkg/cmdutil/auth.go`
 - `pkg/cmdutil/confirm.go`
 - `api/client.go`

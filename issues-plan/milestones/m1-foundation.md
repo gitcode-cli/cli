@@ -170,9 +170,9 @@ pkg/iostreams/color.go
 **文件**:
 
 ```
-internal/config/config.go
-internal/config/config_file.go
-internal/config/hosts_config.go
+pkg/config/config.go
+pkg/config/config_file.go
+pkg/config/hosts_config.go
 ```
 
 **验收标准**:

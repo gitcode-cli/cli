@@ -16,7 +16,7 @@
 - `pkg/cmd/`
 - `pkg/cmdutil/`
 - `api/`
-- `internal/config/`
+- `pkg/config/`
 
 ## 必看文件
 
@@ -25,7 +25,7 @@
 - `pkg/cmdutil/repo.go`
 - `pkg/cmdutil/auth.go`
 - `api/client.go`
-- `internal/config/auth_config.go`
+- `pkg/config/auth_config.go`
 
 ## 建议抽样命令族
 

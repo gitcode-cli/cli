@@ -1,6 +1,7 @@
 package download
 
 import (
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"os"
@@ -33,7 +34,7 @@ func TestDownloadRunUsesLatestReleaseWhenTagOmitted(t *testing.T) {
 	ioStreams, _, _, _ := iostreams.Test()
 	var gotPaths []string
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			path := req.URL.Path
 			if req.URL.RawQuery != "" {
 				path += "?" + req.URL.RawQuery
@@ -86,7 +87,7 @@ func TestDownloadRunLatestWithAllUsesBrowserDownloadURLForSourceArchives(t *test
 	ioStreams, _, _, _ := iostreams.Test()
 	var gotURLs []string
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			gotURLs = append(gotURLs, req.URL.String())
 
 			switch req.URL.String() {
@@ -183,7 +184,7 @@ func TestDownloadRunUsesConfiguredHostForReleaseAndAssetRequests(t *testing.T) {
 	ioStreams, _, _, _ := iostreams.Test()
 	var gotURLs []string
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			gotURLs = append(gotURLs, req.URL.String())
 			if got := req.Header.Get("Authorization"); got != "Bearer stored-token" {
 				t.Fatalf("Authorization = %q, want stored token", got)
@@ -236,7 +237,7 @@ func TestDownloadAssetUsesAuthorizationHeader(t *testing.T) {
 	var gotPath string
 	var gotAuth string
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			gotPath = req.URL.Path
 			if req.URL.RawQuery != "" {
 				gotPath += "?" + req.URL.RawQuery
@@ -283,7 +284,7 @@ func TestDownloadAssetFallsBackToAttachFilesEndpointWithoutBrowserDownloadURL(t 
 
 	var gotURL string
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			gotURL = req.URL.String()
 			return &http.Response{
 				StatusCode: http.StatusOK,
@@ -315,7 +316,7 @@ func TestDownloadAssetIgnoresNonArchiveBrowserDownloadURL(t *testing.T) {
 
 	var gotURL string
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			gotURL = req.URL.String()
 			return &http.Response{
 				StatusCode: http.StatusOK,
@@ -341,12 +342,6 @@ func TestDownloadAssetIgnoresNonArchiveBrowserDownloadURL(t *testing.T) {
 	if gotURL != wantURL {
 		t.Fatalf("download URL = %q, want %q", gotURL, wantURL)
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 // Security tests for path traversal prevention
@@ -458,7 +453,7 @@ func TestDownloadAssetRejectsPathTraversal(t *testing.T) {
 	cs := ioStreams.ColorScheme()
 
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(strings.NewReader("malicious-content")),
@@ -489,7 +484,7 @@ func TestDownloadAssetRejectsAbsolutePath(t *testing.T) {
 	cs := ioStreams.ColorScheme()
 
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(strings.NewReader("malicious-content")),
@@ -514,7 +509,7 @@ func TestDownloadAssetRejectsPathSeparator(t *testing.T) {
 	cs := ioStreams.ColorScheme()
 
 	httpClient := &http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(strings.NewReader("malicious-content")),

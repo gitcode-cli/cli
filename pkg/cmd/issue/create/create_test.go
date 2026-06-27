@@ -3,6 +3,7 @@ package create
 import (
 	"bytes"
 	"encoding/json"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"os"
@@ -83,7 +84,7 @@ func TestCreateRunJSONWritesCreatedIssue(t *testing.T) {
 		JSON:       true,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					if req.URL.Path != "/api/v5/repos/owner/repo/issues" {
 						t.Fatalf("unexpected request: %s", req.URL.Path)
 					}
@@ -117,7 +118,7 @@ func TestCreateRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
 					case "/api/v5/users/alice":
 						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
@@ -160,7 +161,7 @@ func TestCreateRunJSONSuppressesOutputWhenAssigneesAreNotApplied(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
 					case "/api/v5/users/alice":
 						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
@@ -205,7 +206,7 @@ func TestCreateRunUsesOwnerIssueCreateWhenAdvancedFieldsAreSet(t *testing.T) {
 		CustomFieldsJSON: `[{"id":"field","value":"demo"}]`,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					if req.URL.Path != "/api/v5/repos/owner/issues" {
 						t.Fatalf("request path = %s, want /api/v5/repos/owner/issues", req.URL.Path)
 					}
@@ -253,7 +254,7 @@ func TestCreateRunSkipsAssigneeResolutionForAdvancedOwnerPath(t *testing.T) {
 		TemplatePath: ".gitcode/ISSUE_TEMPLATE/feature.yaml",
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					if req.URL.Path == "/api/v5/users/alice" {
 						t.Fatal("advanced owner path should not resolve assignee IDs")
 					}
@@ -406,12 +407,6 @@ func TestGetCustomFields(t *testing.T) {
 			}
 		})
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func issueResponse(status int, body string) *http.Response {

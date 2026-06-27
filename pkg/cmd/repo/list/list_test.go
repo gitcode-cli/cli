@@ -1,6 +1,7 @@
 package list
 
 import (
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -47,7 +48,7 @@ func TestListRunUsesOrgEndpointForOwner(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					gotPath = req.URL.Path
 					if req.URL.RawQuery != "" {
 						gotPath += "?" + req.URL.RawQuery
@@ -78,7 +79,7 @@ func TestListRunUsesUserEndpointWithVisibility(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					gotPath = req.URL.Path
 					if req.URL.RawQuery != "" {
 						gotPath += "?" + req.URL.RawQuery
@@ -125,12 +126,6 @@ func TestResolveOutputFormat(t *testing.T) {
 			}
 		})
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func listTestResponse(status int, body string) *http.Response {

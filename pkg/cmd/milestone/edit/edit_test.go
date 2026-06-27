@@ -3,6 +3,7 @@ package edit
 import (
 	"bytes"
 	"encoding/json"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -94,7 +95,7 @@ func TestEditRunJSONWritesUpdatedMilestone(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					if req.URL.Path != "/api/v5/repos/owner/repo/milestones/5" {
 						t.Fatalf("unexpected request: %s", req.URL.Path)
 					}
@@ -234,12 +235,6 @@ func TestEditRun_AuthError(t *testing.T) {
 	if !strings.Contains(err.Error(), "not authenticated") {
 		t.Errorf("Unexpected error message: %v", err)
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func milestoneResponse(status int, body string) *http.Response {

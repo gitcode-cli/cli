@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -54,7 +55,7 @@ func TestEditRunUsesPatchEndpoint(t *testing.T) {
 		BaseRepo: func() (string, error) { return "owner/repo", nil },
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					if req.Method != http.MethodPatch {
 						t.Fatalf("method = %s", req.Method)
 					}
@@ -157,12 +158,6 @@ func TestGetBody(t *testing.T) {
 			}
 		})
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func jsonResponse(body string) *http.Response {

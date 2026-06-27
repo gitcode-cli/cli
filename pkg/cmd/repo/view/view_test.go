@@ -2,6 +2,7 @@ package view
 
 import (
 	"bytes"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -99,7 +100,7 @@ func TestViewRunUsesDetectedRepo(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
 	f := cmdutil.TestFactory()
-	transport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+	transport := testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 		if req.URL.Path != "/api/v5/repos/owner/repo" {
 			t.Fatalf("request path = %q, want %q", req.URL.Path, "/api/v5/repos/owner/repo")
 		}
@@ -133,10 +134,4 @@ func TestViewRunUsesDetectedRepo(t *testing.T) {
 	if !strings.Contains(output.String(), "owner/repo") {
 		t.Fatalf("output = %q, want repository name", output.String())
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req)
 }

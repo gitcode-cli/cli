@@ -2,6 +2,7 @@ package edit
 
 import (
 	"fmt"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -118,7 +119,7 @@ func TestEditRunUsesFormEncodedLabels(t *testing.T) {
 	opts := &EditOptions{
 		IO: ioStreams,
 		HttpClient: func() (*http.Client, error) {
-			return &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 				gotPath = req.URL.Path
 				gotContentType = req.Header.Get("Content-Type")
 				body, err := io.ReadAll(req.Body)
@@ -208,10 +209,4 @@ func TestParseRepo(t *testing.T) {
 			}
 		})
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }

@@ -48,14 +48,15 @@
 | [#304](issue-304.md) | docs | merged | #288 | skipped | low | 8/8 | — |
 | [#337](issue-337.md) | bug | merged | #289 | ⚠️ | medium | 7/8 | — |
 | [#344](issue-344.md) | refactor | merged | #290 | ⚠️ | low | 8/8 | — |
+| [#343](issue-343.md) | refactor | merged | #291 | ✅ | medium | 8/8 | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 42 |
-| 已合并 | 31 |
+| 总 issue | 43 |
+| 已合并 | 32 |
 | 已关闭 | 11 |
-| 含代码改动 | 14 |
+| 含代码改动 | 15 |
 | docs-only | 9 |
 | risk/high | 4 |
 | 平均门禁 | 6.2/8 |

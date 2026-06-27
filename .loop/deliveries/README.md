@@ -47,13 +47,14 @@
 
 | [#305](issue-305.md) | bug | merged | #287 | N/A | low | — |
 | [#304](issue-304.md) | docs | merged | #288 | skipped | low | 8/8 |
-| [#337](issue-337.md) | bug | merged | #289 | ❌ | medium | 7/8 |
+| [#337](issue-337.md) | bug | merged | #289 | ⚠️ | medium | 7/8 |
+| [#344](issue-344.md) | refactor | merged | #290 | ⚠️ | low | 8/8 |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 41 |
-| 已合并 | 30 |
+| 总 issue | 42 |
+| 已合并 | 31 |
 | 已关闭 | 11 |
 | 含代码改动 | 14 |
 | docs-only | 9 |

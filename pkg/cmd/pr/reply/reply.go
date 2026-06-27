@@ -20,7 +20,7 @@ type ReplyOptions struct {
 
 	// Arguments
 	Repository   string
-	PRNumber     int
+	Number       int
 	DiscussionID string
 
 	// Flags
@@ -56,7 +56,7 @@ func NewCmdReply(f *cmdutil.Factory, runF func(*ReplyOptions) error) *cobra.Comm
 			if err != nil {
 				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %s", args[0]))
 			}
-			opts.PRNumber = number
+			opts.Number = number
 
 			if opts.DiscussionID == "" {
 				return cmdutil.NewUsageError("discussion ID is required. Use --discussion flag")
@@ -106,7 +106,7 @@ func replyRun(opts *ReplyOptions) error {
 		Body: opts.Body,
 	}
 
-	result, err := api.ReplyPRComment(client, owner, repo, opts.PRNumber, opts.DiscussionID, replyOpts)
+	result, err := api.ReplyPRComment(client, owner, repo, opts.Number, opts.DiscussionID, replyOpts)
 	if err != nil {
 		return fmt.Errorf("failed to reply to comment: %w", err)
 	}

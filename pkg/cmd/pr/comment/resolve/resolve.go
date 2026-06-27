@@ -20,7 +20,7 @@ type ResolveOptions struct {
 	BaseRepo   func() (string, error)
 
 	Repository   string
-	PRNumber     int
+	Number       int
 	DiscussionID string
 	Resolved     bool
 }
@@ -52,7 +52,7 @@ func NewCmdResolve(f *cmdutil.Factory, runF func(*ResolveOptions) error) *cobra.
 			if err != nil {
 				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %s", args[0]))
 			}
-			opts.PRNumber = num
+			opts.Number = num
 			opts.DiscussionID = args[1]
 
 			if runF != nil {
@@ -94,7 +94,7 @@ func NewCmdUnresolve(f *cmdutil.Factory, runF func(*ResolveOptions) error) *cobr
 			if err != nil {
 				return cmdutil.NewUsageError(fmt.Sprintf("invalid PR number: %s", args[0]))
 			}
-			opts.PRNumber = num
+			opts.Number = num
 			opts.DiscussionID = args[1]
 
 			if runF != nil {
@@ -134,7 +134,7 @@ func resolveRun(opts *ResolveOptions) error {
 	resolveOpts := &api.ResolvePRCommentOptions{
 		Resolved: opts.Resolved,
 	}
-	if err := api.ResolvePRComment(client, owner, repo, opts.PRNumber, opts.DiscussionID, resolveOpts); err != nil {
+	if err := api.ResolvePRComment(client, owner, repo, opts.Number, opts.DiscussionID, resolveOpts); err != nil {
 		return fmt.Errorf("failed to update comment resolution: %w", err)
 	}
 

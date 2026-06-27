@@ -75,8 +75,8 @@ func TestNewCmdResolve(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if gotOpts.PRNumber != tt.wantPRNum {
-				t.Errorf("PRNumber = %d, want %d", gotOpts.PRNumber, tt.wantPRNum)
+			if gotOpts.Number != tt.wantPRNum {
+				t.Errorf("Number = %d, want %d", gotOpts.Number, tt.wantPRNum)
 			}
 			if gotOpts.DiscussionID != tt.wantDiscID {
 				t.Errorf("DiscussionID = %q, want %q", gotOpts.DiscussionID, tt.wantDiscID)
@@ -146,8 +146,8 @@ func TestNewCmdUnresolve(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if gotOpts.PRNumber != tt.wantPRNum {
-				t.Errorf("PRNumber = %d, want %d", gotOpts.PRNumber, tt.wantPRNum)
+			if gotOpts.Number != tt.wantPRNum {
+				t.Errorf("Number = %d, want %d", gotOpts.Number, tt.wantPRNum)
 			}
 			if gotOpts.DiscussionID != tt.wantDiscID {
 				t.Errorf("DiscussionID = %q, want %q", gotOpts.DiscussionID, tt.wantDiscID)
@@ -166,7 +166,7 @@ func TestResolveRunMissingRepo(t *testing.T) {
 		IO:           f.IOStreams,
 		HttpClient:   f.HttpClient,
 		BaseRepo:     func() (string, error) { return "", nil },
-		PRNumber:     123,
+		Number:       123,
 		DiscussionID: "d1",
 		Resolved:     true,
 	}

@@ -15,6 +15,38 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
+// ReadBody resolves the body text from --body and --body-file flags.
+// body and bodyFile are the raw flag values; stdin is used when bodyFile == "-".
+// It returns an error when both body and bodyFile are set.
+func ReadBody(body, bodyFile string, stdin io.Reader) (string, error) {
+	if body != "" && bodyFile != "" {
+		return "", fmt.Errorf("cannot use both --body and --body-file")
+	}
+
+	if body != "" {
+		return body, nil
+	}
+
+	if bodyFile != "" {
+		if bodyFile == "-" {
+			bodyText, err := ReadTextFromFlag(stdin, "--body-file")
+			if err != nil {
+				return "", fmt.Errorf("failed to read from stdin: %w", err)
+			}
+			return strings.TrimSpace(bodyText), nil
+		}
+
+		// Read from file
+		content, err := ReadTextFile(bodyFile)
+		if err != nil {
+			return "", fmt.Errorf("failed to read file %s: %w", bodyFile, err)
+		}
+		return strings.TrimSpace(content), nil
+	}
+
+	return "", nil
+}
+
 var utf8BOM = []byte{0xef, 0xbb, 0xbf}
 var utf16LEBOM = []byte{0xff, 0xfe}
 var utf16BEBOM = []byte{0xfe, 0xff}

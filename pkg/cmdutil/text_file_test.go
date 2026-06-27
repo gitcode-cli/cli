@@ -97,6 +97,68 @@ func TestIsLikelyLossyPowerShellStdinNonWindows(t *testing.T) {
 	}
 }
 
+func TestReadBodyReturnsEmptyWhenNeitherSet(t *testing.T) {
+	got, err := ReadBody("", "", nil)
+	if err != nil {
+		t.Fatalf("ReadBody() error = %v", err)
+	}
+	if got != "" {
+		t.Fatalf("ReadBody() = %q, want empty", got)
+	}
+}
+
+func TestReadBodyReturnsBodyWhenSet(t *testing.T) {
+	got, err := ReadBody("hello world", "", nil)
+	if err != nil {
+		t.Fatalf("ReadBody() error = %v", err)
+	}
+	if got != "hello world" {
+		t.Fatalf("ReadBody() = %q, want %q", got, "hello world")
+	}
+}
+
+func TestReadBodyReturnsErrorWhenBothSet(t *testing.T) {
+	_, err := ReadBody("body", "file.md", nil)
+	if err == nil {
+		t.Fatal("ReadBody() expected error when both body and bodyFile set, got nil")
+	}
+}
+
+func TestReadBodyReadsFromStdinWhenBodyFileIsDash(t *testing.T) {
+	got, err := ReadBody("", "-", strings.NewReader("  from stdin\n"))
+	if err != nil {
+		t.Fatalf("ReadBody() error = %v", err)
+	}
+	if got != "from stdin" {
+		t.Fatalf("ReadBody() = %q, want %q", got, "from stdin")
+	}
+}
+
+func TestReadBodyReadsFromFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "body.md")
+	if err := os.WriteFile(path, []byte("  file content\n"), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	got, err := ReadBody("", path, nil)
+	if err != nil {
+		t.Fatalf("ReadBody() error = %v", err)
+	}
+	if got != "file content" {
+		t.Fatalf("ReadBody() = %q, want %q", got, "file content")
+	}
+}
+
+func TestReadBodyReturnsErrorOnMissingFile(t *testing.T) {
+	_, err := ReadBody("", "/nonexistent/path/body.md", nil)
+	if err == nil {
+		t.Fatal("ReadBody() expected error for nonexistent file, got nil")
+	}
+	if !strings.Contains(err.Error(), "failed to read file") {
+		t.Fatalf("ReadBody() error = %q, want to contain %q", err.Error(), "failed to read file")
+	}
+}
+
 func TestNewLossyPowerShellStdinErrorIncludesFlagAndExamples(t *testing.T) {
 	err := newLossyPowerShellStdinError("--comment-file")
 	if !errors.Is(err, ErrLossyPowerShellStdin) {

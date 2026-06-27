@@ -282,13 +282,31 @@ m = re.search(r'ISSUE_NUM=(\d+)', content)
 
 ---
 
-### 22. ISSUE_NUM 竞态
+### 22. Token 注入 100% 失败——`"$TOKEN_FILE"` bash 引号截断
 
-**现象**: ISSUE_NUM=351 出现在 JSONL 但 post-process 报告 "no issue num"。
+**现象**: Post-process 报告 "no issue num or token data, skipping delivery update"。Token `.json` 文件从未被创建。所有交付需手动注入 token 数据。
 
-**根因**: 从 `.log` 文本提取的中间产物不可靠（Python 提取步骤静默失败），而非真正的文件竞态。
+**初步误判**: 以为是从 `.log` 文本提取 ISSUE_NUM 的竞态条件。
 
-**方案**: 改为直接从 JSONL（原始流）搜索 ISSUE_NUM，`.log` 仅作 fallback。
+**真正根因**: 脚本中 `python3 -c "..."` 内部使用了 Python 双引号 `"$TOKEN_FILE"`。在 bash 的 `"..."` 字符串中，内层 `"` 被 bash 解析为 `-c` 参数的结束符，导致整段 Python 代码被截断、静默失败。
+
+```bash
+# 错误 — bash 看到 " 就认为 -c 参数结束
+echo "$RESULT" | python3 -c "
+    with open("$TOKEN_FILE", "w") as f:  # ← 这个 " 终止了 -c
+        json.dump({...}, f)
+" >> log
+
+# 正确 — Python 单引号，bash 不截断
+echo "$RESULT" | python3 -c "
+    with open('$TOKEN_FILE', 'w') as f:  # ← ' ' 对 bash 透明
+        json.dump({...}, f)
+" >> log
+```
+
+**方案**: 将 Python 代码中的所有路径引用改为单引号 `'$VAR'`。bash 在 `"..."` 内部仍然展开 `$VAR`，但 `'` 不会截断 bash 字符串。
+
+**影响**: 此 bug 从 Loop 系统第一天就存在，导致 100% 的交付都需要手动注入 token 数据，直到 2026-06-27 13:50 修复。
 
 ---
 
@@ -354,34 +372,36 @@ git diff <merge_sha>~1..<merge_sha> --stat
 | 9 | 门禁 | CI 修复未验证 | ⚠️ | 等待新 PR 触发 |
 | 10 | Token | 子进程 Token 无法获取 | ✅ | stream-json → post-process |
 | 11 | Token | Anthropic 计价不匹配 | ✅ | DeepSeek 费率 |
-| 12 | Token | `grep -oP` 兼容性 | ✅ | Python regex + JSONL |
+| 12 | Token | `grep -oP` 兼容性 | ✅ | Python regex + JSONL 直搜 |
 | 13 | Token | Token 消耗持续增长 | ✅ | prompt 精简 + docs-only 跳审 |
-| 14 | 交付 | Post-process 偶发失败 | ✅ | `set +e` best-effort |
-| 15 | 交付 | 文件随 worktree 丢失 | ⚠️ | prompt 要求补写 |
-| 16 | 交付 | README 表格被 GitCode 截断 | ⚠️ | 待拆为独立 Token 表 |
-| 17 | 交付 | 统计需手动更新 | ✅ | `count-deliveries.sh` |
-| 18 | 交付 | ISSUE_NUM 竞态 | ✅ | 从 JSONL 直搜 |
+| 14 | Token | `"$TOKEN_FILE"` bash 截断 | ✅ | Python 单引号 `'$VAR'` |
+| 15 | 交付 | Post-process 偶发失败 | ✅ | `set +e` best-effort |
+| 16 | 交付 | 文件随 worktree 丢失 | ⚠️ | prompt 要求补写 |
+| 17 | 交付 | README 表格被 GitCode 截断 | ⚠️ | 待拆为独立 Token 表 |
+| 18 | 交付 | 统计需手动更新 | ✅ | `count-deliveries.sh` |
 | 19 | 交付 | exit code 非零 | ✅ | `set +e` 已验证 |
 | 20 | PR | 孤儿 PR | ✅ | prompt 优先 rescue |
 | 21 | PR | 子进程违规改主目录 | ✅ | prompt 强调 worktree |
 | 22 | 数据 | 代码变更统计缺失 | ✅ | git merge diff 回填 |
 | 23 | 数据 | 交付时间缺失 | ✅ | git merge %ci |
 | 24 | 数据 | 成本列缺失 | ✅ | DeepSeek ¥ 列 + 总成本统计 |
+| 25 | Token | Token 注入 100% 失败 | ✅ | bash 引号 → Python 单引号 |
 
 ### 运行指标
 
 | 指标 | 值 |
 |------|-----|
-| 总交付 | 54 issues |
-| 已合并 | 43 |
-| 含代码改动 | 40 |
-| Token 总消耗 | 2.0M |
-| 总成本 (DeepSeek) | ¥8.99 |
-| 今日交付 (6/27) | 13 |
-| 平均门禁 | 7.0/8 |
-| 平均成本/交付 | ¥0.69 |
-| 平均 Token/交付 | 154k |
-| exit code 0 率 | 100% (since fix) |
+| 总交付 | 55 issues |
+| 已合并 | 44 |
+| 含代码改动 | 41 |
+| Token 总消耗 | 2.1M |
+| 总成本 (DeepSeek) | ¥9.35 |
+| 今日交付 (6/27) | 15 |
+| 平均门禁 | 6.7/8 |
+| 平均成本/交付 | ¥0.62 |
+| 平均 Token/交付 | 144k |
+| exit code 0 率 | 100% (3 consecutive) |
+| 精简 prompt 后 Token | **70k** (from 369k) |
 
 ### 仍开放
 

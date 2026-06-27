@@ -6,6 +6,7 @@
 
 | Issue | 类型 | 状态 | PR | CI | 风险 | 门禁 | Tokens |
 |-------|------|------|----|----|:--:|:----:|--------|
+| [#328](issue-328.md) | bug | merged | #297 | ✅ | medium | 8/8 | — |
 | [#298](issue-298.md) | bug | merged | #252 | ✅ | low | 8/8 | — |
 | [#302](issue-302.md) | bug | merged | #252 | ✅ | low | 8/8 | — |
 | [#291](issue-291.md) | docs | closed | — | — | — | — | — |

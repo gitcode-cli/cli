@@ -54,42 +54,72 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 
 当前版本已开始收口面向 AI 代理和脚本的 CLI 契约：
 
-- 高频只读命令和高频写路径结果逐步支持 `--json`
+- 只读命令和写路径结果支持 `--json`
 - 删除类命令支持 `--dry-run`
 - 非交互环境下删除命令未显式传 `--yes` 会直接失败，不再隐式等待输入
 - 可通过 `gc schema` 查询命令树和单命令元数据（不含 `help` 和 `completion`）
 
-当前已支持 `--json` 的高频只读命令：
+当前已支持 `--json` 的只读命令：
 
-- `repo view`
-- `repo list`
-- `repo log`
-- `repo branch view`
+- `auth status`
+- `auth token`
+- `commit comments list`
+- `commit comments list-by-sha`
+- `commit comments view`
+- `commit view`
+- `help`
+- `issue comments`
 - `issue list`
+- `issue prs`
+- `issue relations`
 - `issue view`
-- `pr list`
-- `pr view`
-- `pr issues`
-- `release list`
-- `release view`
 - `label list`
 - `milestone list`
+- `milestone view`
+- `pr comments`
+- `pr diff`
+- `pr issues`
+- `pr list`
+- `pr view`
+- `precommit check`
+- `release list`
+- `release view`
+- `repo branch view`
+- `repo list`
+- `repo log`
+- `repo stats`
+- `repo view`
+- `version`
 
-当前已支持 `--json` 的高频写路径命令：
+当前已支持 `--json` 的写路径命令：
 
+- `issue close`
+- `issue comment`
 - `issue create`
 - `issue edit`
+- `issue label`
+- `issue reopen`
+- `label create`
+- `label delete`
+- `milestone create`
+- `milestone edit`
+- `pr close`
+- `pr comment`
 - `pr create`
 - `pr edit`
-- `pr merge`
 - `pr label`
+- `pr merge`
+- `pr ready`
+- `pr reopen`
 - `pr review`
-- `repo create`
-- `repo fork`
+- `pr sync`
 - `release create`
 - `release edit`
 - `release upload`
-- `milestone edit`
+- `repo create`
+- `repo delete`
+- `repo fork`
+- `repo sync`
 
 其中 `issue list` 额外支持：
 

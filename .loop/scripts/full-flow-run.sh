@@ -49,9 +49,11 @@ cat "$PROMPT_FILE" | nohup timeout 1200 claude -p \
   --add-dir /home/wpf/claude-code/vibe-coding/cli \
   > "$JSONL_FILE" 2>&1
 rc=$?
-set -e
 
-# All post-processing is best-effort; don't fail the script
+# Brief pause: ensure JSONL fully flushed before parsing
+sleep 2
+
+# All post-processing is best-effort
 set +e
 python3 -c "
 import json, sys

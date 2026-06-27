@@ -214,3 +214,16 @@ func Test() (*IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
 		isTerminal: func(io.Writer) bool { return false },
 	}, in, out, errOut
 }
+
+// TestTTY returns IOStreams suitable for testing with TTY enabled (IsStdoutTTY returns true).
+func TestTTY() (*IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
+	in := &bytes.Buffer{}
+	out := &bytes.Buffer{}
+	errOut := &bytes.Buffer{}
+	return &IOStreams{
+		In:         in,
+		Out:        out,
+		ErrOut:     errOut,
+		isTerminal: func(io.Writer) bool { return true },
+	}, in, out, errOut
+}

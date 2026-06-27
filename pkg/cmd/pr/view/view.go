@@ -127,7 +127,13 @@ func viewRun(opts *ViewOptions) error {
 	// Open in browser if --web flag is set
 	if opts.Web {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", pr.HTMLURL)
-		return browser.Open(pr.HTMLURL)
+		if err := browser.Open(pr.HTMLURL); err != nil {
+			if opts.IO.IsStdoutTTY() {
+				return err
+			}
+			fmt.Fprintf(opts.IO.ErrOut, "Failed to open browser: %v\n", err)
+		}
+		return nil
 	}
 	if err := enrichPRStats(client, owner, repo, pr); err != nil {
 		fmt.Fprintf(opts.IO.ErrOut, "%s Failed to enrich PR stats: %v\n", cs.Yellow("!"), err)

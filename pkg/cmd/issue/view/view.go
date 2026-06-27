@@ -135,7 +135,13 @@ func viewRun(opts *ViewOptions) error {
 	// Open in browser if --web flag is set
 	if opts.Web {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", issue.HTMLURL)
-		return browser.Open(issue.HTMLURL)
+		if err := browser.Open(issue.HTMLURL); err != nil {
+			if opts.IO.IsStdoutTTY() {
+				return err
+			}
+			fmt.Fprintf(opts.IO.ErrOut, "Failed to open browser: %v\n", err)
+		}
+		return nil
 	}
 
 	if opts.JSON {

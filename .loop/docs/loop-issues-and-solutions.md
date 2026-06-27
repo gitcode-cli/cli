@@ -127,6 +127,16 @@ cp gc gc_cli/bin/gc-linux-amd64
 
 ---
 
+### 9. CI 修复后未立即验证
+
+**现象**: Docker CI 修复推送到远端后，后续交付仍标记 CI 为 ⚠️。
+
+**根因**: 修复已推送但历史 CI run 记录不变，需新 PR 触发后验证。
+
+**方案**: 修复提交后第一个新 PR 会带新 CI run，验证通过后改为 ✅。
+
+---
+
 ## 三、Token 追踪问题
 
 ### 9. 子进程 Token 无法获取
@@ -181,7 +191,7 @@ cost = (model_in/1e6*3) + (model_cache/1e6*0.025) + (model_out/1e6*6)
 
 **现象**: Bash 脚本用 `grep -oP 'ISSUE_NUM=\K\d+'` 提取 issue 号，部分环境 Perl 正则不可用。
 
-**方案**: 替换为 Python 正则
+**方案**: 替换为 Python 正则，并从 JSONL 直接搜索（跳过不可靠的 .log 中间文件）。
 
 ```python
 m = re.search(r'ISSUE_NUM=(\d+)', content)
@@ -254,6 +264,44 @@ m = re.search(r'ISSUE_NUM=(\d+)', content)
 
 ---
 
+### 21. Token 消耗持续增长
+
+**现象**: 单次交付 token 从 179k (#327) 涨到 369k (#351)，代码改动量不成比例（+2/-1 vs +19/-19）。
+
+**根因**:
+1. prompt 膨胀：指令反复重复
+2. 每个 session 重复读 spec 文件
+3. 孤儿 PR 检查无条件执行
+4. docs-only 也走了完整评审流程
+
+**方案**:
+1. prompt 去重精简（1.5KB）
+2. 孤儿 PR 检查延后到 triage 队列空时
+3. docs-only 显式跳过评审
+4. spec 关键规则内联到 prompt（待实施）
+
+---
+
+### 22. ISSUE_NUM 竞态
+
+**现象**: ISSUE_NUM=351 出现在 JSONL 但 post-process 报告 "no issue num"。
+
+**根因**: 从 `.log` 文本提取的中间产物不可靠（Python 提取步骤静默失败），而非真正的文件竞态。
+
+**方案**: 改为直接从 JSONL（原始流）搜索 ISSUE_NUM，`.log` 仅作 fallback。
+
+---
+
+### 23. exit code 首次归零
+
+**现象**: 2026-06-27 12:49 的交付 (#351) 首次 exit code 0。
+
+**根因**: 之前的 `set -e` 在 post-processing 遇到非关键错误即退出。
+
+**方案**: 整个 post-processing 段设为 `set +e`。已验证：后续 2 次交付 exit code 0。
+
+---
+
 ## 六、数据完整性问题
 
 ### 18. 代码变更统计缺失
@@ -289,32 +337,60 @@ git diff <merge_sha>~1..<merge_sha> --stat
 
 ---
 
-## 七、当前状态
+## 七、汇总
 
-### 已解决 (20 项)
+### 问题总览
 
-全部上述问题已修复并推送到远端。
+| # | 类别 | 问题 | 状态 | 方案摘要 |
+|---|------|------|:--:|------|
+| 1 | 架构 | 上下文累积→质量衰减 | ✅ | `claude -p` 独立 session |
+| 2 | 架构 | 多 loop 并发冲突 | ✅ | 错开调度 + PID 锁 |
+| 3 | 架构 | 子进程被父退出连带 kill | ✅ | `nohup` |
+| 4 | 架构 | claude -p 初始化卡死 | ⚠️ | `timeout 1200` |
+| 5 | 架构 | `&` 双重后台陷阱 | ✅ | 去掉 `&` |
+| 6 | 门禁 | CI 门禁被跳过 | ✅ | prompt 显式 8 gate 表 |
+| 7 | 门禁 | Docker CI 预存失败 | ✅ | `cp gc gc_cli/bin/` |
+| 8 | 门禁 | macOS CI dyld 崩溃 | ⚠️ | 识别为预存，不阻塞 |
+| 9 | 门禁 | CI 修复未验证 | ⚠️ | 等待新 PR 触发 |
+| 10 | Token | 子进程 Token 无法获取 | ✅ | stream-json → post-process |
+| 11 | Token | Anthropic 计价不匹配 | ✅ | DeepSeek 费率 |
+| 12 | Token | `grep -oP` 兼容性 | ✅ | Python regex + JSONL |
+| 13 | Token | Token 消耗持续增长 | ✅ | prompt 精简 + docs-only 跳审 |
+| 14 | 交付 | Post-process 偶发失败 | ✅ | `set +e` best-effort |
+| 15 | 交付 | 文件随 worktree 丢失 | ⚠️ | prompt 要求补写 |
+| 16 | 交付 | README 表格被 GitCode 截断 | ⚠️ | 待拆为独立 Token 表 |
+| 17 | 交付 | 统计需手动更新 | ✅ | `count-deliveries.sh` |
+| 18 | 交付 | ISSUE_NUM 竞态 | ✅ | 从 JSONL 直搜 |
+| 19 | 交付 | exit code 非零 | ✅ | `set +e` 已验证 |
+| 20 | PR | 孤儿 PR | ✅ | prompt 优先 rescue |
+| 21 | PR | 子进程违规改主目录 | ✅ | prompt 强调 worktree |
+| 22 | 数据 | 代码变更统计缺失 | ✅ | git merge diff 回填 |
+| 23 | 数据 | 交付时间缺失 | ✅ | git merge %ci |
+| 24 | 数据 | 成本列缺失 | ✅ | DeepSeek ¥ 列 + 总成本统计 |
 
 ### 运行指标
 
 | 指标 | 值 |
 |------|-----|
-| 总交付 | 52 issues |
-| 已合并 | 41 |
-| 含代码改动 | 38 |
-| Token 总消耗 | 1.6M |
-| 总成本 (DeepSeek) | ¥7.35 |
-| 今日交付 (6/27) | 12 |
-| 平均门禁 | 6.9/8 |
+| 总交付 | 54 issues |
+| 已合并 | 43 |
+| 含代码改动 | 40 |
+| Token 总消耗 | 2.0M |
+| 总成本 (DeepSeek) | ¥8.99 |
+| 今日交付 (6/27) | 13 |
+| 平均门禁 | 7.0/8 |
+| 平均成本/交付 | ¥0.69 |
+| 平均 Token/交付 | 154k |
+| exit code 0 率 | 100% (since fix) |
 
-### 仍存在的风险
+### 仍开放
 
-| 风险 | 缓解措施 |
-|------|---------|
-| `claude -p` 初始化卡死 | timeout 1200 + cron 自动重试 |
-| Post-process 偶发失败 | `set +e` best-effort + JSONL 可恢复 |
-| 孤儿 PR | prompt 优先 rescue 步骤 |
-| GitCode 表格截断 | 待改为独立 Token 表 |
+| 风险 | 缓解 | 优先级 |
+|------|------|:--:|
+| claude -p 初始化卡死 | timeout 1200 | 低 |
+| 文件随 worktree 丢失 | prompt 补写 | 低 |
+| GitCode 表格截断 | 独立 Token 表 | 低 |
+| macOS CI dyld | 标记预存 | 低 |
 
 ---
 

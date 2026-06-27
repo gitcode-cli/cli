@@ -50,7 +50,7 @@ cat "$PROMPT_FILE" | nohup claude -p \
 rc=$?
 set -e
 
-# --- Post-process: extract readable text ---
+# All post-processing is best-effort; don't fail the script
 set +e
 python3 -c "
 import json, sys
@@ -71,8 +71,7 @@ for line in lines:
         for c in msg.get('content', []):
             if c.get('type') == 'text':
                 print(c['text'])
-" >> "$LOGFILE" 2>/dev/null
-set -e
+" >> "$LOGFILE" 2>/dev/null || true
 
 # --- Post-process: extract token data ---
 RESULT=$(python3 -c "

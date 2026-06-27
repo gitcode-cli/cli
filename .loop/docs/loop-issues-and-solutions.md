@@ -391,24 +391,27 @@ git diff <merge_sha>~1..<merge_sha> --stat
 
 | 指标 | 值 |
 |------|-----|
-| 总交付 | 55 issues |
-| 已合并 | 44 |
-| 含代码改动 | 41 |
-| Token 总消耗 | 2.1M |
-| 总成本 (DeepSeek) | ¥9.35 |
-| 今日交付 (6/27) | 15 |
-| 平均门禁 | 6.7/8 |
-| 平均成本/交付 | ¥0.62 |
-| 平均 Token/交付 | 144k |
-| exit code 0 率 | 100% (3 consecutive) |
-| 精简 prompt 后 Token | **70k** (from 369k) |
+| 总交付 | 62 issues |
+| 已合并 | 51 |
+| 已关闭 | 11 |
+| 含代码改动 | 48 |
+| docs-only | 11 |
+| risk/high | 4 |
+| Token 总消耗 | 56.5M |
+| 总成本 (DeepSeek) | ¥11.17 |
+| 今日交付 (6/27) | 22 |
+| 平均门禁 | 6.8/8 |
+| 平均成本/交付 | ¥0.22 |
+| 平均 Token/交付 | 1.1M |
+| exit code 0 率 | 100% (post-refactor) |
+| 完整性 | 交付↔README 0 error (62/62 matched) |
 
 ### 仍开放
 
 | 风险 | 缓解 | 优先级 |
 |------|------|:--:|
 | claude -p 初始化卡死 | timeout 1200 | 低 |
-| 文件随 worktree 丢失 | prompt 补写 | 低 |
+| 文件随 worktree 丢失 | process_tokens.py 自动补建 + check-integrity.sh 检测 | 低 |
 | GitCode 表格截断 | 独立 Token 表 | 低 |
 | macOS CI dyld | 标记预存 | 低 |
 
@@ -420,6 +423,8 @@ git diff <merge_sha>~1..<merge_sha> --stat
 |------|------|
 | `.loop/scripts/full-flow-run.sh` | 编排器: PID 锁 + nohup + timeout + post-process |
 | `.loop/prompts/full-flow-subprocess.md` | 子进程 prompt: 孤儿 PR rescue + 8 gate + CI + token |
+| `.loop/scripts/check-integrity.sh` | 交付完整性校验 (5 段诊断) |
+| `.loop/scripts/process_tokens.py` | Token 提取 + 交付文件注入 + 统计刷新 |
 | `scripts/count-deliveries.sh` | 自动刷新 README 统计 |
 | `.loop/deliveries/README.md` | 交付汇总表 (11 列) |
 | `.loop/deliveries/issue-N.md` | 单 issue 交付记录 |

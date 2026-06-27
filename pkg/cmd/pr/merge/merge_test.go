@@ -3,11 +3,14 @@ package merge
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 
+	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -196,6 +199,67 @@ type mergeRoundTripFunc func(*http.Request) (*http.Response, error)
 
 func (fn mergeRoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return fn(req)
+}
+
+func TestWrapMergeError(t *testing.T) {
+	tests := []struct {
+		name       string
+		err        error
+		wantCode   int
+		wantPrefix string
+	}{
+		{
+			name:       "JSON 409 APIError → ExitConflict",
+			err:        &api.APIError{StatusCode: 409, Message: "merge conflict"},
+			wantCode:   cmdutil.ExitConflict,
+			wantPrefix: "merge conflict:",
+		},
+		{
+			name:       "non-JSON 409 fallback → ExitConflict",
+			err:        fmt.Errorf("API error: 409 Conflict"),
+			wantCode:   cmdutil.ExitConflict,
+			wantPrefix: "merge conflict:",
+		},
+		{
+			name:       "non-409 APIError → generic error",
+			err:        &api.APIError{StatusCode: 500, Message: "internal error"},
+			wantCode:   cmdutil.ExitError,
+			wantPrefix: "failed to merge PR:",
+		},
+		{
+			name:       "generic error → generic error",
+			err:        fmt.Errorf("network timeout"),
+			wantCode:   cmdutil.ExitError,
+			wantPrefix: "failed to merge PR:",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := wrapMergeError(tt.err)
+			if got == nil {
+				t.Fatal("wrapMergeError() = nil, want error")
+			}
+			if code := cmdutil.ExitCode(got); code != tt.wantCode {
+				t.Errorf("ExitCode() = %d, want %d", code, tt.wantCode)
+			}
+			if !strings.HasPrefix(got.Error(), tt.wantPrefix) {
+				t.Errorf("error = %q, want prefix %q", got.Error(), tt.wantPrefix)
+			}
+		})
+	}
+}
+
+func TestWrapMergeError_NotWrapped(t *testing.T) {
+	// Verify that wrapMergeError errors are unwrappable to CLIError
+	conflictErr := wrapMergeError(&api.APIError{StatusCode: 409, Message: "conflict"})
+	var cliErr *cmdutil.CLIError
+	if !errors.As(conflictErr, &cliErr) {
+		t.Fatal("wrapMergeError did not produce a CLIError")
+	}
+	if cliErr.Code != cmdutil.ExitConflict {
+		t.Errorf("CLIError.Code = %d, want %d", cliErr.Code, cmdutil.ExitConflict)
+	}
 }
 
 func mergeResponse(status int, body string) *http.Response {

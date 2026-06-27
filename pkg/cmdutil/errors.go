@@ -124,7 +124,7 @@ func ExitCode(err error) int {
 	}
 
 	var cliErr *CLIError
-	if errors.As(err, &cliErr) {
+	if errors.As(err, &cliErr) && cliErr != nil {
 		if cliErr.Code > 0 {
 			return cliErr.Code
 		}

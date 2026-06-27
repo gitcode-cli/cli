@@ -49,14 +49,16 @@
 | [#337](issue-337.md) | bug | merged | #289 | ⚠️ | medium | 7/8 | — |
 | [#344](issue-344.md) | refactor | merged | #290 | ⚠️ | low | 8/8 | — |
 | [#343](issue-343.md) | refactor | merged | #291 | ✅ | medium | 8/8 | — |
+| [#350](issue-350.md) | refactor | merged | #292 | skipped | low | 5/8 | — | 83k |
+| [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 43 |
-| 已合并 | 32 |
+| 总 issue | 45 |
+| 已合并 | 34 |
 | 已关闭 | 11 |
 | 含代码改动 | 15 |
-| docs-only | 9 |
+| docs-only | 10 |
 | risk/high | 4 |
 | 平均门禁 | 6.2/8 |

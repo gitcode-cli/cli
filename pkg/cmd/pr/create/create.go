@@ -195,7 +195,10 @@ func createRun(opts *CreateOptions) error {
 	if opts.Web {
 		fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", pr.HTMLURL)
 		if err := opts.OpenBrowser(pr.HTMLURL); err != nil {
-			return fmt.Errorf("failed to open browser: %w", err)
+			if opts.IO.IsStdoutTTY() {
+				return fmt.Errorf("failed to open browser: %w", err)
+			}
+			fmt.Fprintf(opts.IO.ErrOut, "Failed to open browser: %v\n", err)
 		}
 	}
 	return nil

@@ -14,6 +14,7 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 func TestNewCmdCreate(t *testing.T) {
@@ -808,5 +809,85 @@ func TestNewCmdCreate_LabelsFlag(t *testing.T) {
 	err := cmd.Execute()
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
+	}
+}
+
+func TestCreateRunBrowserFailureNonTTY(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ios, _, _, errBuf := iostreams.Test()
+	f := cmdutil.TestFactory()
+
+	opts := &CreateOptions{
+		IO:         ios,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "test PR",
+		Body:       "test body",
+		Head:       "feature-branch",
+		Web:        true,
+		Branch: func() (string, error) {
+			return "feature-branch", nil
+		},
+		ExecGitCommand: func(name string, args ...string) (string, error) {
+			return "commit title\n\ncommit body", nil
+		},
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			return &api.PullRequest{
+				Number:  1,
+				HTMLURL: "https://gitcode.com/owner/repo/merge_requests/1",
+			}, nil
+		},
+		OpenBrowser: func(url string) error {
+			return fmt.Errorf("browser not available")
+		},
+	}
+
+	err := createRun(opts)
+	if err != nil {
+		t.Fatalf("createRun() error = %v, want nil in non-TTY mode", err)
+	}
+	if !strings.Contains(errBuf.String(), "Failed to open browser") {
+		t.Fatalf("expected warning on stderr, got %q", errBuf.String())
+	}
+}
+
+func TestCreateRunBrowserFailureTTY(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ios, _, _, _ := iostreams.TestTTY()
+	f := cmdutil.TestFactory()
+
+	opts := &CreateOptions{
+		IO:         ios,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		Title:      "test PR",
+		Body:       "test body",
+		Head:       "feature-branch",
+		Web:        true,
+		Branch: func() (string, error) {
+			return "feature-branch", nil
+		},
+		ExecGitCommand: func(name string, args ...string) (string, error) {
+			return "commit title\n\ncommit body", nil
+		},
+		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
+			return &api.PullRequest{
+				Number:  1,
+				HTMLURL: "https://gitcode.com/owner/repo/merge_requests/1",
+			}, nil
+		},
+		OpenBrowser: func(url string) error {
+			return fmt.Errorf("browser not available")
+		},
+	}
+
+	err := createRun(opts)
+	if err == nil {
+		t.Fatalf("createRun() error = nil, want error in TTY mode")
+	}
+	if !strings.Contains(err.Error(), "failed to open browser") {
+		t.Fatalf("expected browser error, got %v", err)
 	}
 }

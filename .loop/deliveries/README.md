@@ -52,7 +52,7 @@
 | [#350](issue-350.md) | refactor | merged | #292 | skipped | low | 5/8 | +136/-1 | 83k |
 | [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | — | 179k |
 | [#352](issue-352.md) | test | merged | #295 | ✅ | low | 8/8 | +224/-1 | 260k |
-| [#329](issue-329.md) | refactor | merged | #296 | ✅ | medium | 8/8 | — | — |
+| [#329](issue-329.md) | refactor | merged | #296 | ✅ | medium | 8/8 | +96/-51 | 204k |
 | [#328](issue-328.md) | refactor | merged | #297 | ⚠️ | low | 8/8 | — | 147k |
 | [#347](issue-347.md) | refactor | merged | #293 | ✅ | low | 8/8 | — | — |
 ## 统计

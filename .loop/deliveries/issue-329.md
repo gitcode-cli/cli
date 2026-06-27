@@ -51,3 +51,17 @@
 | `pkg/cmdutil/text_file_test.go` | +62 行: 新增 6 个单元测试 |
 | `pkg/cmd/issue/create/create.go` | -26/+2 行: getBody → cmdutil.ReadBody |
 | `pkg/cmd/pr/create/create.go` | -26/+2 行: getBody → cmdutil.ReadBody |
+
+## Token 消耗
+
+| 指标 | 值 |
+|------|-----|
+| 输入 tokens (cache miss) | 160,834 (161k) |
+| 输出 tokens | 43,690 (44k) |
+| 缓存命中 | 5,151,616 (5.2M) |
+| 总计 tokens | 204,524 (205k) |
+| 成本 (DeepSeek) | ¥0.8734 (~$0.1213) |
+| 耗时 | — (data lost) |
+| 轮次 | — (data lost) |
+
+> 计价: ¥3/M cache-miss + ¥0.025/M cache-hit + ¥6/M output

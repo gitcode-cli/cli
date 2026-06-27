@@ -170,7 +170,8 @@ docker compose up gc
 认证 token 通过环境变量传入：
 
 ```bash
-GC_TOKEN=your_token make docker-run
+# 使用 export 而非内联赋值，避免 token 被记录到 shell history
+export GC_TOKEN=your_token && make docker-run
 ```
 
 更多用法参见 Makefile 和 `docker-compose.yml`。

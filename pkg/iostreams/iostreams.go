@@ -202,32 +202,6 @@ func CanPromptForInput() bool {
 	return IsInputTTY() && os.Getenv("GC_TEST_DISABLE_PROMPT") == ""
 }
 
-// CaptureOutput captures stdout and stderr for testing
-func CaptureOutput(f func() error) (stdout, stderr string, err error) {
-	oldOut := os.Stdout
-	oldErr := os.Stderr
-
-	rOut, wOut, _ := os.Pipe()
-	rErr, wErr, _ := os.Pipe()
-	os.Stdout = wOut
-	os.Stderr = wErr
-
-	err = f()
-
-	wOut.Close()
-	wErr.Close()
-	os.Stdout = oldOut
-	os.Stderr = oldErr
-
-	var bufOut, bufErr bytes.Buffer
-	_, _ = io.Copy(&bufOut, rOut)
-	_, _ = io.Copy(&bufErr, rErr)
-	rOut.Close()
-	rErr.Close()
-
-	return bufOut.String(), bufErr.String(), err
-}
-
 // Test returns IOStreams suitable for testing
 func Test() (*IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
 	in := &bytes.Buffer{}

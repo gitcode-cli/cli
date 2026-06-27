@@ -158,18 +158,50 @@ def main():
         with open(readme_file) as f:
             lines = f.readlines()
         target = f'| [#{issue_num}](issue-{issue_num}.md) |'
+        matches = []
         for i, line in enumerate(lines):
             if target in line:
-                cols = [c.strip() for c in line.split('|') if c.strip()]
-                # Update token column
-                if len(cols) >= 9:
-                    cols[-1] = token_str
-                lines[i] = '| ' + ' | '.join(cols) + ' |\n'
-                break
-        with open(readme_file, 'w') as f:
-            f.writelines(lines)
-        with open(log_file, 'a') as log:
-            log.write(f'README row updated with token={token_str}\n')
+                # Check it's a table row (starts with |), not a reference link
+                stripped = line.strip()
+                if stripped.startswith('|') and stripped.endswith('|'):
+                    matches.append(i)
+        if matches:
+            # Keep the last match (most recent), dedup by removing earlier ones
+            keep_idx = matches[-1]
+            stale_idxs = matches[:-1]
+            # Remove stale rows (iterate reversed to preserve indices)
+            for idx in reversed(stale_idxs):
+                del lines[idx]
+                # Adjust keep_idx if we deleted a row before it
+                if idx < keep_idx:
+                    keep_idx -= 1
+            # Update token column on the kept row
+            cols = [c.strip() for c in lines[keep_idx].split('|') if c.strip()]
+            if len(cols) >= 9:
+                cols[-1] = token_str
+            lines[keep_idx] = '| ' + ' | '.join(cols) + ' |\n'
+            with open(readme_file, 'w') as f:
+                f.writelines(lines)
+            with open(log_file, 'a') as log:
+                if stale_idxs:
+                    log.write(f'README dedup: removed {len(stale_idxs)} stale row(s) for #{issue_num}, updated token={token_str}\n')
+                else:
+                    log.write(f'README row updated with token={token_str}\n')
+            else:
+                # Row not found — insert new row before ## 统计
+                new_row = f'| [#{issue_num}](issue-{issue_num}.md) | — | merged | — | — | — | — | — | {token_str} | ¥{cost_rmb} | — |\n'
+                for j, l in enumerate(lines):
+                    if l.startswith('## 统计'):
+                        lines.insert(j, new_row)
+                        break
+                with open(readme_file, 'w') as f:
+                    f.writelines(lines)
+                with open(log_file, 'a') as log:
+                    log.write(f'README new row added for #{issue_num}\n')
+
+        else:
+            with open(log_file, 'a') as log:
+                log.write(f'no README row found for #{issue_num}\n')
 
     # Refresh stats
     subprocess.run(['bash', 'scripts/count-deliveries.sh'], cwd='/home/wpf/claude-code/vibe-coding/cli')

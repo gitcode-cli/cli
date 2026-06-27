@@ -154,13 +154,33 @@ gc version
 
 Windows 和 macOS 用户建议使用上方 wheel 包；wheel 内置 Linux、macOS 和 Windows 二进制，并同时提供 `gc` 与 `gitcode` 两个命令入口。
 
+### Docker 镜像
+
+仓库已提供 `Dockerfile`、`docker-compose.yml` 和 Makefile 目标：
+
+```bash
+# 构建并运行
+make docker-build
+make docker-run
+
+# 或使用 docker compose
+docker compose up gc
+```
+
+认证 token 通过环境变量传入：
+
+```bash
+GC_TOKEN=your_token make docker-run
+```
+
+更多用法参见 Makefile 和 `docker-compose.yml`。
+
 ### 规划中的安装方式
 
 以下安装方式正在开发中：
 
 - [ ] Homebrew (macOS/Linux)
 - [ ] Scoop (Windows)
-- [ ] Docker 镜像
 
 ## 快速开始
 

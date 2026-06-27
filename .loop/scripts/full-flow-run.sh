@@ -118,17 +118,31 @@ for m in models:
 
 # Write token JSON for delivery integration
 with open('$TOKEN_FILE', 'w') as f:
-    json.dump({
-        'input_tokens': total_in,
-        'output_tokens': total_out,
-        'total_tokens': total,
-        'cache_read_input_tokens': cache_read,
-        'cache_creation_input_tokens': cache_create,
-        'cost_usd': cost,
-        'duration_ms': dur_ms,
-        'num_turns': turns,
-        'models': {m: {'inputTokens': v.get('inputTokens',0), 'outputTokens': v.get('outputTokens',0), 'cacheReadInputTokens': v.get('cacheReadInputTokens',0), 'costUSD': v.get('costUSD',0)} for m, v in mu.items()}
-    }, f, indent=2)
+    # Calculate DeepSeek cost (RMB per million tokens)
+    deepseek_cost_rmb = 0.0
+    for m, v in mu.items():
+        model_in = v.get("inputTokens", 0)
+        model_cache = v.get("cacheReadInputTokens", 0)
+        model_out = v.get("outputTokens", 0)
+        deepseek_cost_rmb += (model_in / 1_000_000) * 3.0
+        deepseek_cost_rmb += (model_cache / 1_000_000) * 0.025
+        deepseek_cost_rmb += (model_out / 1_000_000) * 6.0
+    deepseek_cost_usd = round(deepseek_cost_rmb / 7.2, 4)
+    deepseek_cost_rmb = round(deepseek_cost_rmb, 4)
+
+    with open("$TOKEN_FILE", "w") as f:
+        json.dump({
+            "input_tokens": total_in,
+            "cache_miss_tokens": total_in,
+            "cache_read_input_tokens": cache_read,
+            "output_tokens": total_out,
+            "total_tokens": total,
+            "cost_rmb": deepseek_cost_rmb,
+            "cost_usd": deepseek_cost_usd,
+            "duration_ms": dur_ms,
+            "num_turns": turns,
+            "pricing": "DeepSeek: ¥3/M cache-miss, ¥0.025/M cache-hit, ¥6/M output",
+        }, f, indent=2)
 " >> "$LOGFILE"
 else
     echo "---" >> "$LOGFILE"
@@ -152,6 +166,8 @@ in_k = t['input_tokens']/1000
 out_k = t['output_tokens']/1000
 total_k = t['total_tokens']/1000
 dur = f\"{t['duration_ms']/1000:.0f}s\"
+cost_rmb = t.get("cost_rmb", 0)
+cost_usd = t.get("cost_usd", 0)
 print(f\"\"\"
 ## Token 消耗
 
@@ -162,7 +178,7 @@ print(f\"\"\"
 | 缓存命中 | {cache_read:,} ({cache_read/1000:.0f}k) |
 | 缓存写入 | {cache_create:,} ({cache_create/1000:.0f}k) |
 | 总计 tokens | {t['total_tokens']:,} ({total_k:.0f}k) |
-| 成本 | \${t['cost_usd']:.4f} |
+| 成本 (DeepSeek) | ¥{cost_rmb} (~\${cost_usd}) |
 | 耗时 | {dur} |
 | 轮次 | {t['num_turns']} |
 \"\"\")

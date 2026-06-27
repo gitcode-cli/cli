@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -519,7 +520,7 @@ func UpdateIssueComment(client *Client, owner, repo string, commentID string, op
 
 // DeleteIssueComment deletes a comment on an issue
 func DeleteIssueComment(client *Client, owner, repo string, commentID int64) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/issues/comments/" + itoa(int(commentID)))
+	return client.Delete("/repos/" + owner + "/" + repo + "/issues/comments/" + strconv.FormatInt(commentID, 10))
 }
 
 // LabelListOptions represents options for listing repository labels

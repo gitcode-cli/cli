@@ -10,6 +10,16 @@
             "command": "bash -c 'read cmd; if echo \"$cmd\" | grep -q \"git push origin\"; then ref=$(echo \"$cmd\" | grep -oP \"git push origin \\K\\S+\" | head -1); [ -n \"$ref\" ] && git push github $ref 2>/dev/null; fi'"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'read -r i; f=$(echo \"$i\" | jq -r \".tool_input.file_path // .tool_response.filePath // empty\" 2>/dev/null); [ -n \"$f\" ] && echo \"$f\" | grep -q \"\\.go$\" && (CG=$(which codegraph 2>/dev/null || echo $HOME/.local/codegraph/bin/codegraph); [ -x \"$CG\" ] && cd \"$(git rev-parse --show-toplevel 2>/dev/null || echo .)\" && \"$CG\" sync . 2>/dev/null) || true'",
+            "statusMessage": "codegraph: syncing index..."
+          }
+        ]
       }
     ]
   }

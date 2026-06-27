@@ -4,57 +4,57 @@
 
 ## 汇总
 
-| Issue | 类型 | 状态 | PR | CI | 风险 | 门禁 | 变更 | Tokens |
-|-------|------|------|----|----|:--:|:----:|------|--------|
-| [#298](issue-298.md) | bug | merged | #252 | ✅ | low | 8/8 | +88/-1 | — |
-| [#302](issue-302.md) | bug | merged | #252 | ✅ | low | 8/8 | — | — |
-| [#291](issue-291.md) | docs | closed | — | — | — | — | — | — |
-| [#275](issue-275.md) | docs | merged | #253 | skipped | low | 5/8 | +7/-1 | — |
-| [#276](issue-276.md) | docs | merged | #254 | skipped | low | 4/8 | +3/-3 | — |
-| [#271](issue-271.md) | bug | merged | #255 | ✅ | medium | 8/8 | +158/-20 | — |
-| [#251](issue-251.md) | bug | closed | — | — | — | — | — | — |
-| [#274](issue-274.md) | bug | merged | #257 | ✅ | medium | 8/8 | — | — |
-| [#273](issue-273.md) | bug | merged | #258 | ✅ | medium | 8/8 | +21/-4 | — |
-| [#280](issue-280.md) | docs | merged | #265 | skipped | low | 4/8 | +9/-2 | — |
-| [#279](issue-279.md) | docs | merged | #268 | skipped | low | 5/8 | +7/-4 | — |
-| [#256](issue-256.md) | bug | merged | #260 | ⚠️ | high | 8/8 | +6/-0 | — |
-| [#272](issue-272.md) | bug | merged | #264 | ✅ | high | 8/8 | +7/-7 | — |
-| [#278](issue-278.md) | docs | merged | #271 | skipped | low | 4/8 | +10/-3 | — |
-| [#277](issue-277.md) | docs | merged | #272 | skipped | low | 4/8 | +1/-1 | — |
-| [#261](issue-261.md) | docs | closed | — | — | low | — | — | — |
-| [#263](issue-263.md) | bug | closed | — | — | low | — | — | — |
-| [#262](issue-262.md) | bug | closed | — | — | low | — | — | — |
-| [#266](issue-266.md) | bug | merged | #273 | skipped | medium | 5/8 | +18/-0 | — |
-| [#268](issue-268.md) | bug | merged | #274 | N/A | N/A | — | +14/-14 | — |
-| [#249](issue-249.md) | bug | closed | — | — | — | — | — | — |
-| [#267](issue-267.md) | bug | merged | #275 | N/A | ⚠️ | — | +30/-0 | — |
-| [#301](issue-301.md) | bug | merged | #276 | N/A | low | — | +78/-0 | — |
-| [#300](issue-300.md) | chore | merged | #277 | N/A | low | — | +71/-69 | — |
-| [#292](issue-292.md) | chore | merged | #278 | N/A | low | — | +17/-0 | — |
-| [#281](issue-281.md) | bug | merged | #279 | N/A | ⚠️ | — | +23/-0 | — |
-| [#284](issue-284.md) | security | merged | #280 | N/A | ⚠️ | — | +7/-0 | — |
-| [#283](issue-283.md) | security | merged | #281 | N/A | ⚠️ | — | +4/-0 | — |
-| [#270](issue-270.md) | bug | merged | #282 | N/A | N/A | — | +8/-0 | — |
-| [#269](issue-269.md) | test | merged | #283 | N/A | N/A | — | +10/-0 | — |
-| [#243](issue-243.md) | process | closed | — | — | — | — | — | — |
-| [#146](issue-146.md) | bug | closed | — | — | — | — | — | — |
-| [#293](issue-293.md) | security | closed | — | — | high | — | — | — |
-| [#99](issue-99.md) | bug | closed | — | — | high | — | — | — |
-| [#98](issue-98.md) | bug | closed | — | — | medium | — | — | — |
-| [#294](issue-294.md) | security | merged | #284 | N/A | ⚠️ | — | +7/-1 | — |
-| [#190](issue-190.md) | test | merged | #285 | N/A | ⚠️ | — | +49/-0 | — |
-| [#194](issue-194.md) | feat | merged | #286 | N/A | ⚠️ | — | +315/-0 | — |
-| [#305](issue-305.md) | bug | merged | #287 | N/A | low | — | +1/-1 | — |
-| [#304](issue-304.md) | docs | merged | #288 | skipped | low | 8/8 | — | — |
-| [#337](issue-337.md) | bug | merged | #289 | ⚠️ | medium | 7/8 | +11/-11 | — |
-| [#344](issue-344.md) | refactor | merged | #290 | ⚠️ | low | 8/8 | +2/-34 | 110k |
-| [#343](issue-343.md) | refactor | merged | #291 | ✅ | medium | 8/8 | +15/-15 | 110k |
-| [#350](issue-350.md) | refactor | merged | #292 | skipped | low | 5/8 | +136/-1 | 83k |
-| [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | +2/-1 | 179k |
-| [#352](issue-352.md) | test | merged | #295 | ✅ | low | 8/8 | +224/-1 | 260k |
-| [#329](issue-329.md) | refactor | merged | #296 | ✅ | medium | 8/8 | +96/-51 | 204k |
-| [#328](issue-328.md) | refactor | merged | #297 | ⚠️ | low | 8/8 | +0/-26 | 147k |
-| [#347](issue-347.md) | refactor | merged | #293 | ✅ | low | 8/8 | +88/-155 | 183k |
+| Issue | 类型 | 状态 | PR | CI | 风险 | 门禁 | 变更 | Tokens | 成本 | 完成时间 |
+|-------|------|------|----|----|:--:|:----:|------|--------|------|----------|
+| [#298](issue-298.md) | bug | merged | #252 | ✅ | low | 8/8 | +88/-1 | — | — | — |
+| [#302](issue-302.md) | bug | merged | #252 | ✅ | low | 8/8 | — | — | — | — |
+| [#291](issue-291.md) | docs | closed | — | — | — | — | — | — | — | — |
+| [#275](issue-275.md) | docs | merged | #253 | skipped | low | 5/8 | +7/-1 | — | — | 2026-06-24 11:34 |
+| [#276](issue-276.md) | docs | merged | #254 | skipped | low | 4/8 | +3/-3 | — | — | 2026-06-24 11:38 |
+| [#271](issue-271.md) | bug | merged | #255 | ✅ | medium | 8/8 | +158/-20 | — | — | 2026-06-24 11:53 |
+| [#251](issue-251.md) | bug | closed | — | — | — | — | — | — | — | — |
+| [#274](issue-274.md) | bug | merged | #257 | ✅ | medium | 8/8 | — | — | — | — |
+| [#273](issue-273.md) | bug | merged | #258 | ✅ | medium | 8/8 | +21/-4 | — | — | 2026-06-24 12:41 |
+| [#280](issue-280.md) | docs | merged | #265 | skipped | low | 4/8 | +9/-2 | — | — | 2026-06-24 14:06 |
+| [#279](issue-279.md) | docs | merged | #268 | skipped | low | 5/8 | +7/-4 | — | — | 2026-06-24 14:46 |
+| [#256](issue-256.md) | bug | merged | #260 | ⚠️ | high | 8/8 | +6/-0 | — | — | 2026-06-24 14:55 |
+| [#272](issue-272.md) | bug | merged | #264 | ✅ | high | 8/8 | +7/-7 | — | — | 2026-06-24 14:56 |
+| [#278](issue-278.md) | docs | merged | #271 | skipped | low | 4/8 | +10/-3 | — | — | 2026-06-24 15:25 |
+| [#277](issue-277.md) | docs | merged | #272 | skipped | low | 4/8 | +1/-1 | — | — | 2026-06-24 15:32 |
+| [#261](issue-261.md) | docs | closed | — | — | low | — | — | — | — | — |
+| [#263](issue-263.md) | bug | closed | — | — | low | — | — | — | — | — |
+| [#262](issue-262.md) | bug | closed | — | — | low | — | — | — | — | — |
+| [#266](issue-266.md) | bug | merged | #273 | skipped | medium | 5/8 | +18/-0 | — | — | 2026-06-24 16:32 |
+| [#268](issue-268.md) | bug | merged | #274 | N/A | N/A | — | +14/-14 | — | — | 2026-06-24 17:12 |
+| [#249](issue-249.md) | bug | closed | — | — | — | — | — | — | — | — |
+| [#267](issue-267.md) | bug | merged | #275 | N/A | ⚠️ | — | +30/-0 | — | — | 2026-06-24 18:42 |
+| [#301](issue-301.md) | bug | merged | #276 | N/A | low | — | +78/-0 | — | — | 2026-06-24 19:42 |
+| [#300](issue-300.md) | chore | merged | #277 | N/A | low | — | +71/-69 | — | — | 2026-06-24 20:11 |
+| [#292](issue-292.md) | chore | merged | #278 | N/A | low | — | +17/-0 | — | — | 2026-06-24 20:41 |
+| [#281](issue-281.md) | bug | merged | #279 | N/A | ⚠️ | — | +23/-0 | — | — | 2026-06-24 21:13 |
+| [#284](issue-284.md) | security | merged | #280 | N/A | ⚠️ | — | +7/-0 | — | — | 2026-06-24 21:42 |
+| [#283](issue-283.md) | security | merged | #281 | N/A | ⚠️ | — | +4/-0 | — | — | 2026-06-24 22:12 |
+| [#270](issue-270.md) | bug | merged | #282 | N/A | N/A | — | +8/-0 | — | — | 2026-06-24 23:12 |
+| [#269](issue-269.md) | test | merged | #283 | N/A | N/A | — | +10/-0 | — | — | 2026-06-25 00:12 |
+| [#243](issue-243.md) | process | closed | — | — | — | — | — | — | — | — |
+| [#146](issue-146.md) | bug | closed | — | — | — | — | — | — | — | — |
+| [#293](issue-293.md) | security | closed | — | — | high | — | — | — | — | — |
+| [#99](issue-99.md) | bug | closed | — | — | high | — | — | — | — | — |
+| [#98](issue-98.md) | bug | closed | — | — | medium | — | — | — | — | — |
+| [#294](issue-294.md) | security | merged | #284 | N/A | ⚠️ | — | +7/-1 | — | — | 2026-06-25 05:41 |
+| [#190](issue-190.md) | test | merged | #285 | N/A | ⚠️ | — | +49/-0 | — | — | 2026-06-25 06:13 |
+| [#194](issue-194.md) | feat | merged | #286 | N/A | ⚠️ | — | +315/-0 | — | — | 2026-06-25 07:42 |
+| [#305](issue-305.md) | bug | merged | #287 | N/A | low | — | +1/-1 | — | — | 2026-06-26 16:12 |
+| [#304](issue-304.md) | docs | merged | #288 | skipped | low | 8/8 | — | — | — | 2026-06-26 16:44 |
+| [#337](issue-337.md) | bug | merged | #289 | ⚠️ | medium | 7/8 | +11/-11 | — | — | 2026-06-27 09:19 |
+| [#344](issue-344.md) | refactor | merged | #290 | ⚠️ | low | 8/8 | +2/-34 | 110k | ¥0.5012 | 2026-06-27 09:26 |
+| [#343](issue-343.md) | refactor | merged | #291 | ✅ | medium | 8/8 | +15/-15 | 110k | ¥0.5012 | 2026-06-27 09:43 |
+| [#350](issue-350.md) | refactor | merged | #292 | skipped | low | 5/8 | +136/-1 | 83k | ¥0.5000 | 2026-06-27 09:46 |
+| [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | +2/-1 | 179k | ¥0.8267 | 2026-06-27 09:53 |
+| [#352](issue-352.md) | test | merged | #295 | ✅ | low | 8/8 | +224/-1 | 260k | ¥1.1879 | 2026-06-27 10:11 |
+| [#329](issue-329.md) | refactor | merged | #296 | ✅ | medium | 8/8 | +96/-51 | 204k | ¥0.8734 | 2026-06-27 10:40 |
+| [#328](issue-328.md) | refactor | merged | #297 | ⚠️ | low | 8/8 | +0/-26 | 147k | ¥0.7122 | 2026-06-27 10:54 |
+| [#347](issue-347.md) | refactor | merged | #293 | ✅ | low | 8/8 | +88/-155 | 183k | ¥0.7325 | 2026-06-27 11:00 |
 ## 统计
 
 | 维度 | 数据 |

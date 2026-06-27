@@ -187,21 +187,17 @@ def main():
                     log.write(f'README dedup: removed {len(stale_idxs)} stale row(s) for #{issue_num}, updated token={token_str}\n')
                 else:
                     log.write(f'README row updated with token={token_str}\n')
-            else:
-                # Row not found — insert new row before ## 统计
-                new_row = f'| [#{issue_num}](issue-{issue_num}.md) | — | merged | — | — | — | — | — | {token_str} | ¥{cost_rmb} | — |\n'
-                for j, l in enumerate(lines):
-                    if l.startswith('## 统计'):
-                        lines.insert(j, new_row)
-                        break
-                with open(readme_file, 'w') as f:
-                    f.writelines(lines)
-                with open(log_file, 'a') as log:
-                    log.write(f'README new row added for #{issue_num}\n')
-
         else:
+            # Row not found — insert new row before ## 统计
+            new_row = f'| [#{issue_num}](issue-{issue_num}.md) | — | merged | — | — | — | — | — | {token_str} | ¥{cost_rmb} | — |\n'
+            for j, l in enumerate(lines):
+                if l.startswith('## 统计'):
+                    lines.insert(j, new_row)
+                    break
+            with open(readme_file, 'w') as f:
+                f.writelines(lines)
             with open(log_file, 'a') as log:
-                log.write(f'no README row found for #{issue_num}\n')
+                log.write(f'README new row added for #{issue_num}\n')
 
     # Refresh stats
     subprocess.run(['bash', 'scripts/count-deliveries.sh'], cwd='/home/wpf/claude-code/vibe-coding/cli')

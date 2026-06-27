@@ -149,6 +149,16 @@ func TestReadBodyReadsFromFile(t *testing.T) {
 	}
 }
 
+func TestReadBodyReturnsErrorOnMissingFile(t *testing.T) {
+	_, err := ReadBody("", "/nonexistent/path/body.md", nil)
+	if err == nil {
+		t.Fatal("ReadBody() expected error for nonexistent file, got nil")
+	}
+	if !strings.Contains(err.Error(), "failed to read file") {
+		t.Fatalf("ReadBody() error = %q, want to contain %q", err.Error(), "failed to read file")
+	}
+}
+
 func TestNewLossyPowerShellStdinErrorIncludesFlagAndExamples(t *testing.T) {
 	err := newLossyPowerShellStdinError("--comment-file")
 	if !errors.Is(err, ErrLossyPowerShellStdin) {

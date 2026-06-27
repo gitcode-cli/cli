@@ -2,6 +2,7 @@ package list
 
 import (
 	"encoding/json"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"slices"
@@ -87,7 +88,7 @@ func TestListRunPaginatesUntilLimit(t *testing.T) {
 		IO: ioStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					gotPath := req.URL.Path
 					if req.URL.RawQuery != "" {
 						gotPath += "?" + req.URL.RawQuery
@@ -144,7 +145,7 @@ func TestListRunFiltersByCommitMessage(t *testing.T) {
 		IO: ioStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					gotPaths = append(gotPaths, req.URL.Path)
 					switch req.URL.Path {
 					case "/api/v5/repos/owner/repo/pulls":
@@ -208,7 +209,7 @@ func TestListRunBuildsFullQuery(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					gotPath = req.URL.Path
 					if req.URL.RawQuery != "" {
 						gotPath += "?" + req.URL.RawQuery
@@ -253,7 +254,7 @@ func TestListRunUsesBaseRepoAndConfiguredHost(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					gotHost = req.URL.Host
 					gotPath = req.URL.Path
 					return listTestResponse(http.StatusOK, `[]`), nil
@@ -306,12 +307,6 @@ func TestResolveOutputFormat(t *testing.T) {
 			}
 		})
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func listTestResponse(status int, body string) *http.Response {

@@ -1,6 +1,7 @@
 package list
 
 import (
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -59,7 +60,7 @@ func TestListRunMarksOnlyFirstPublishedReleaseAsLatest(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						StatusCode: http.StatusOK,
 						Status:     http.StatusText(http.StatusOK),
@@ -103,7 +104,7 @@ func TestListRunSortsByPublishedAtDescending(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					// API returns releases in creation order (oldest first),
 					// which is the default GitCode API behavior that causes #256.
 					return &http.Response{
@@ -161,7 +162,7 @@ func TestListRunSortReleasesByDateHandlesNilPublishedAt(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					// v0.2.3 has no published_at (should fall back to created_at)
 					return &http.Response{
 						StatusCode: http.StatusOK,
@@ -204,7 +205,7 @@ func TestListRunSortReleasesByDateAllNilPublishedAt(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					// All releases have no published_at — must fall back to created_at.
 					return &http.Response{
 						StatusCode: http.StatusOK,
@@ -258,7 +259,7 @@ func TestListRunSortReleasesByDatePublishedAtPriority(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					// v1.0.0 was created first but published last (backport release).
 					// v2.0.0 was created later but published first.
 					// PublishedAt must take priority over CreatedAt for sorting.
@@ -310,7 +311,7 @@ func TestListRunUsesBaseRepoWhenRepoOmitted(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					gotPath = req.URL.Path
 					return &http.Response{
 						StatusCode: http.StatusOK,
@@ -332,10 +333,4 @@ func TestListRunUsesBaseRepoWhenRepoOmitted(t *testing.T) {
 	if gotPath != "/api/v5/repos/owner/repo/releases" {
 		t.Fatalf("request path = %q, want /api/v5/repos/owner/repo/releases", gotPath)
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }

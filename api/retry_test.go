@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"testing"
@@ -26,7 +27,7 @@ func TestDefaultRetryConfig(t *testing.T) {
 
 func TestRetryMiddleware_Success(t *testing.T) {
 	callCount := 0
-	mockTransport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+	mockTransport := testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 		callCount++
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil
 	})
@@ -50,7 +51,7 @@ func TestRetryMiddleware_Success(t *testing.T) {
 
 func TestRetryMiddleware_ServerError(t *testing.T) {
 	callCount := 0
-	mockTransport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+	mockTransport := testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 		callCount++
 		if callCount < 3 {
 			return &http.Response{StatusCode: 500, Body: io.NopCloser(bytes.NewReader(nil))}, nil
@@ -77,7 +78,7 @@ func TestRetryMiddleware_ServerError(t *testing.T) {
 
 func TestRetryMiddleware_RateLimit(t *testing.T) {
 	callCount := 0
-	mockTransport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+	mockTransport := testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 		callCount++
 		if callCount == 1 {
 			resp := &http.Response{
@@ -109,7 +110,7 @@ func TestRetryMiddleware_RateLimit(t *testing.T) {
 
 func TestRetryMiddleware_NoRetryOn401(t *testing.T) {
 	callCount := 0
-	mockTransport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+	mockTransport := testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 		callCount++
 		return &http.Response{StatusCode: 401, Body: io.NopCloser(bytes.NewReader(nil))}, nil
 	})
@@ -133,7 +134,7 @@ func TestRetryMiddleware_NoRetryOn401(t *testing.T) {
 
 func TestRetryMiddleware_Exhausted(t *testing.T) {
 	callCount := 0
-	mockTransport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+	mockTransport := testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 		callCount++
 		return &http.Response{StatusCode: 500, Body: io.NopCloser(bytes.NewReader(nil))}, nil
 	})

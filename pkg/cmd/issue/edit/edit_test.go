@@ -3,6 +3,7 @@ package edit
 import (
 	"bytes"
 	"encoding/json"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -104,7 +105,7 @@ func TestEditRunJSONWritesUpdatedIssue(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					if req.URL.Path != "/api/v5/repos/owner/issues/12" {
 						t.Fatalf("unexpected request: %s", req.URL.Path)
 					}
@@ -191,7 +192,7 @@ func TestEditRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
 					case "/api/v5/users/alice":
 						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
@@ -232,7 +233,7 @@ func TestEditRunJSONSuppressesOutputWhenAssigneesAreNotApplied(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
 					case "/api/v5/users/alice":
 						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
@@ -261,12 +262,6 @@ func TestEditRunJSONSuppressesOutputWhenAssigneesAreNotApplied(t *testing.T) {
 	if out := f.IOStreams.Out.(*bytes.Buffer).String(); out != "" {
 		t.Fatalf("stdout = %q, want empty JSON output on failed verification", out)
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func issueResponse(status int, body string) *http.Response {

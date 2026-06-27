@@ -2,6 +2,7 @@ package login
 
 import (
 	"bytes"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -55,7 +56,7 @@ func TestLoginWithWebOpensBrowser(t *testing.T) {
 		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						StatusCode: http.StatusOK,
 						Header:     make(http.Header),
@@ -96,7 +97,7 @@ func TestLoginWithTokenRejectsMalformedHost(t *testing.T) {
 		Token:    "test-token",
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					t.Fatalf("unexpected request to %s", req.URL.String())
 					return nil, nil
 				}),
@@ -162,12 +163,6 @@ func TestNewCmdLoginRejectsRemovedTokenFlag(t *testing.T) {
 	if !strings.Contains(err.Error(), "unknown flag: --token") {
 		t.Fatalf("Execute() error = %q", err.Error())
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func ioNopCloser(body string) *readCloser {

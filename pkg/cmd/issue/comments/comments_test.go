@@ -2,6 +2,7 @@ package comments
 
 import (
 	"encoding/json"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -60,7 +61,7 @@ func TestCommentsRunFormatsTextOutput(t *testing.T) {
 		BaseRepo: func() (string, error) { return "owner/repo", nil },
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					if got := req.URL.RawQuery; got != "order=desc&page=1&per_page=100&since=2024-01-01T00%3A00%3A00%2B08%3A00" {
 						t.Fatalf("RawQuery = %q", got)
 					}
@@ -99,7 +100,7 @@ func TestCommentsRunJSONOutput(t *testing.T) {
 		BaseRepo: func() (string, error) { return "owner/repo", nil },
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					return jsonResponse(`[{"id":"1","body":"json body","user":{"login":"tester"},"created_at":"2026-03-22T19:05:07+08:00"}]`), nil
 				}),
 			}, nil
@@ -160,12 +161,6 @@ func TestFormatID(t *testing.T) {
 			}
 		})
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func jsonResponse(body string) *http.Response {

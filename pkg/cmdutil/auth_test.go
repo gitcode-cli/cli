@@ -1,6 +1,7 @@
 package cmdutil
 
 import (
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -16,7 +17,7 @@ func TestAuthenticatedClientRejectsEnvTokenForCustomHost(t *testing.T) {
 	t.Setenv("GITCODE_TOKEN", "")
 
 	_, err := AuthenticatedClient(&http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			t.Fatalf("unexpected request to %s", req.URL.String())
 			return nil, nil
 		}),
@@ -41,7 +42,7 @@ func TestAuthenticatedClientUsesStoredTokenForCustomHost(t *testing.T) {
 	}
 
 	client, err := AuthenticatedClient(&http.Client{
-		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			if req.URL.Host != "api.enterprise.example.com" {
 				t.Fatalf("request host = %q, want api.enterprise.example.com", req.URL.Host)
 			}
@@ -76,10 +77,4 @@ func TestAuthenticatedClientRejectsMalformedHost(t *testing.T) {
 	if !strings.Contains(err.Error(), "invalid host") {
 		t.Fatalf("AuthenticatedClient() error = %q, want invalid host", err.Error())
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }

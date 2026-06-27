@@ -2,6 +2,7 @@ package relations
 
 import (
 	"encoding/json"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -15,7 +16,7 @@ func TestRelationsRunText(t *testing.T) {
 		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
 					case "/api/v5/repos/owner/repo/issues":
 						return jsonResponse(`[
@@ -64,7 +65,7 @@ func TestRelationsRunJSON(t *testing.T) {
 		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
 					case "/api/v5/repos/owner/repo/issues":
 						return jsonResponse(`[{"number":"7","title":"Issue Seven","state":"open","html_url":"https://example.test/issues/7"}]`), nil
@@ -116,12 +117,6 @@ func TestRelationsRunValidation(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "invalid state") {
 		t.Fatalf("relationsRun() error = %v, want invalid state error", err)
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func jsonResponse(body string) *http.Response {

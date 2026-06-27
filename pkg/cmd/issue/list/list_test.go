@@ -1,6 +1,7 @@
 package list
 
 import (
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -254,7 +255,7 @@ func TestListRunAllowsTemplateOutputForEmptyResults(t *testing.T) {
 	opts := &ListOptions{
 		IO: ioStreams,
 		HttpClient: func() (*http.Client, error) {
-			return &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Status:     http.StatusText(http.StatusOK),
@@ -275,10 +276,4 @@ func TestListRunAllowsTemplateOutputForEmptyResults(t *testing.T) {
 	if got := stdout.String(); got != "0 issues" {
 		t.Fatalf("stdout = %q, want %q", got, "0 issues")
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }

@@ -1,6 +1,7 @@
 package status
 
 import (
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -44,7 +45,7 @@ func TestStatusRunUsesStoredToken(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						StatusCode: http.StatusOK,
 						Header:     make(http.Header),
@@ -89,7 +90,7 @@ func TestStatusRunWithHostnameUsesStoredTokenInsteadOfEnvOverride(t *testing.T) 
 		HostnameSet: true,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					auth := req.Header.Get("Authorization")
 					if auth != "Bearer stored-token" {
 						t.Fatalf("Authorization = %q, want %q", auth, "Bearer stored-token")
@@ -134,7 +135,7 @@ func TestStatusRunDefaultCustomHostUsesStoredTokenInsteadOfEnvOverride(t *testin
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					if req.URL.Host != "api.other.example.com" {
 						t.Fatalf("request host = %q, want api.other.example.com", req.URL.Host)
 					}
@@ -173,7 +174,7 @@ func TestStatusRunRejectsMalformedDefaultHost(t *testing.T) {
 		IO: f.IOStreams,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					t.Fatalf("unexpected request to %s", req.URL.String())
 					return nil, nil
 				}),
@@ -207,7 +208,7 @@ func TestStatusRunShowTokenDisplaysFullToken(t *testing.T) {
 		ShowToken: true,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
-				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						StatusCode: http.StatusOK,
 						Header:     make(http.Header),
@@ -227,12 +228,6 @@ func TestStatusRunShowTokenDisplaysFullToken(t *testing.T) {
 	if !strings.Contains(out.String(), "Token: secret-token") {
 		t.Fatalf("output = %q", out.String())
 	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func ioNopCloser(body string) *readCloser {

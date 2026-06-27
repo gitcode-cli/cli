@@ -1,6 +1,7 @@
 package api
 
 import (
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
@@ -203,14 +204,8 @@ func TestNewClientMapsGitCodeHostToAPIHost(t *testing.T) {
 
 func newAuthTestClient(fn func(*http.Request) (*http.Response, error)) *Client {
 	return NewClientFromHTTP(&http.Client{
-		Transport: roundTripFunc(fn),
+		Transport: testutil.NewRoundTripFunc(fn),
 	})
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
 }
 
 func authTestResponse(status int, body string) *http.Response {

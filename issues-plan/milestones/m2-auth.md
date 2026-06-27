@@ -26,8 +26,8 @@
 
 ```
 pkg/cmd/auth/login/login.go
-internal/authflow/oauth.go
-internal/authflow/device_flow.go
+（历史设计）internal/authflow/oauth.go — 已移除，对应逻辑已迁入 pkg/cmd/auth/
+（历史设计）internal/authflow/device_flow.go — 已移除，对应逻辑已迁入 pkg/cmd/auth/
 ```
 
 **认证流程**:
@@ -77,7 +77,7 @@ $ gc auth login
 
 ```
 pkg/cmd/auth/login/login.go
-internal/authflow/token.go
+（历史设计）internal/authflow/token.go — 已移除，对应逻辑已迁入 pkg/cmd/auth/
 ```
 
 **验收标准**:
@@ -262,7 +262,7 @@ ghp_xxxxxxxxxxxxxxxxxxxx
 
 ```
 pkg/cmd/auth/switch/switch.go
-internal/config/hosts_config.go
+pkg/config/hosts_config.go
 ```
 
 **验收标准**:
@@ -361,7 +361,7 @@ AUTH-008 (环境变量) → AUTH-004 (Status)
 
 ```bash
 go test ./pkg/cmd/auth/... -v
-go test ./internal/authflow/... -v
+# （历史设计）go test ./internal/authflow/... -v — 已移除，对应测试已迁入 pkg/cmd/auth/
 go test ./internal/keyring/... -v
 ```
 

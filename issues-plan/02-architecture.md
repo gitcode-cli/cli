@@ -160,7 +160,7 @@ client.Transport = RetryMiddleware(client.Transport, 3)
 用于不同的认证方式。
 
 ```go
-// internal/authflow/strategy.go
+// （历史设计）internal/authflow/strategy.go — 已移除，对应逻辑已迁移至 pkg/cmd/auth/
 type AuthStrategy interface {
     Authenticate() (token string, username string, error)
 }

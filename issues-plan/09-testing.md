@@ -118,7 +118,7 @@ type MockFactory struct {
 
 func NewMockFactory() *MockFactory
 
-// internal/prompter/prompter_mock.go
+// （历史设计）internal/prompter/prompter_mock.go — 已移除
 type MockPrompter struct {
     ConfirmFunc  func(string, bool) (bool, error)
     InputFunc    func(string, string) (string, error)
@@ -307,9 +307,9 @@ test-matrix:
 | 模块 | 目标覆盖率 |
 |------|-----------|
 | `pkg/cmd/` | 80% |
-| `internal/config/` | 90% |
+| `pkg/config/` | 90% |
 | `api/` | 85% |
-| `internal/authflow/` | 80% |
+| `internal/authflow/`（历史设计，已移除） | 80% |
 | `pkg/iostreams/` | 70% |
 
 ---

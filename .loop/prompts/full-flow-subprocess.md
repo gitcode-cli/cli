@@ -1,7 +1,11 @@
 先执行孤儿 PR 检查：
   1. 用 gc pr list -R gitcode-cli/cli --state open --json 列出所有 open PR
   2. 如果存在本人(author=aflyingto)创建的非 draft PR，优先推进其到 merged
-     - 检查 CI 状态、补充缺失门禁、完成评审、合并
+     - **必须完整读取 PR 所有评论**（gc pr view N --comments），了解已完成的门禁
+     - **必须完整读取关联 Issue 所有评论**，了解已有的验证记录
+     - 对照 development-workflow.md §5.3 逐项检查门禁证据是否已存在
+     - 只补充真正缺失的门禁，不要重复执行已有的
+     - CI 缺失→补 CI；评审缺失→补评审；全部通过→合并
   3. 如果没有孤儿 PR，再从 status/triage 取一个新 issue
 
 在 git worktree 中推进到 merged。本次只处理一个，完成后停止。

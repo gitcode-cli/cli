@@ -129,7 +129,7 @@ for m in models:
 	deepseek_cost_usd = round(deepseek_cost_rmb / 7.2, 4)
 	deepseek_cost_rmb = round(deepseek_cost_rmb, 4)
 
-	with open("$TOKEN_FILE", "w") as f:
+	with open('$TOKEN_FILE', 'w') as f:
 	    json.dump({
 	        "input_tokens": total_in,
 	        "cache_miss_tokens": total_in,

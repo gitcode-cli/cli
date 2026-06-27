@@ -100,6 +100,8 @@ mu = d.get('modelUsage', {})
 total_in = u.get('input_tokens', 0)
 total_out = u.get('output_tokens', 0)
 total = total_in + total_out
+cache_read = u.get("cache_read_input_tokens", 0)
+cache_create = u.get("cache_creation_input_tokens", 0)
 cost = d.get('total_cost_usd', 0)
 dur_ms = d.get('duration_ms', 0)
 turns = d.get('num_turns', 0)
@@ -110,7 +112,7 @@ for m, v in mu.items():
     models.append(f\"{m}: in={v.get('inputTokens',0)} out={v.get('outputTokens',0)} cost=\${v.get('costUSD',0):.4f}\")
 
 print(f'---')
-print(f'TOKENS:  in={total_in}  out={total_out}  total={total}  cost=\${cost:.4f}  duration={dur_ms}ms  turns={turns}')
+print(f'TOKENS:  in={total_in}  out={total_out}  total={total}  cache_read={cache_read}  cache_create={cache_create}  cost=\${cost:.4f}  duration={dur_ms}ms  turns={turns}')
 for m in models:
     print(f'  {m}')
 
@@ -120,10 +122,12 @@ with open('$TOKEN_FILE', 'w') as f:
         'input_tokens': total_in,
         'output_tokens': total_out,
         'total_tokens': total,
+        'cache_read_input_tokens': cache_read,
+        'cache_creation_input_tokens': cache_create,
         'cost_usd': cost,
         'duration_ms': dur_ms,
         'num_turns': turns,
-        'models': {m: {'inputTokens': v.get('inputTokens',0), 'outputTokens': v.get('outputTokens',0), 'costUSD': v.get('costUSD',0)} for m, v in mu.items()}
+        'models': {m: {'inputTokens': v.get('inputTokens',0), 'outputTokens': v.get('outputTokens',0), 'cacheReadInputTokens': v.get('cacheReadInputTokens',0), 'costUSD': v.get('costUSD',0)} for m, v in mu.items()}
     }, f, indent=2)
 " >> "$LOGFILE"
 else
@@ -155,6 +159,8 @@ print(f\"\"\"
 |------|-----|
 | 输入 tokens | {t['input_tokens']:,} ({in_k:.0f}k) |
 | 输出 tokens | {t['output_tokens']:,} ({out_k:.0f}k) |
+| 缓存命中 | {cache_read:,} ({cache_read/1000:.0f}k) |
+| 缓存写入 | {cache_create:,} ({cache_create/1000:.0f}k) |
 | 总计 tokens | {t['total_tokens']:,} ({total_k:.0f}k) |
 | 成本 | \${t['cost_usd']:.4f} |
 | 耗时 | {dur} |

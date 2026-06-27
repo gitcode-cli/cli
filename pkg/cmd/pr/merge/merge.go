@@ -2,6 +2,7 @@
 package merge
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -135,7 +136,7 @@ func mergeRun(opts *MergeOptions) error {
 		MergeMethod: opts.MergeMethod,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to merge PR: %w", err)
+		return wrapMergeError(err)
 	}
 
 	// Delete branch if requested
@@ -190,4 +191,23 @@ func deleteBranchTarget(pr *api.PullRequest, enabled bool) (string, string, stri
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+// wrapMergeError wraps a merge error with explicit conflict classification,
+// matching the behavior of pr sync. This ensures consistent exit codes for
+// merge conflicts regardless of whether the API returns JSON or non-JSON 409.
+func wrapMergeError(err error) error {
+	var apiErr *api.APIError
+	if errors.As(err, &apiErr) {
+		if apiErr.StatusCode == 409 {
+			return cmdutil.NewConflictError(fmt.Sprintf("merge conflict: %v", err))
+		}
+		return fmt.Errorf("failed to merge PR: %w", err)
+	}
+	// Non-APIError fallback: non-JSON 409 from api/client.go:125
+	// Error format: "API error: 409 Conflict"
+	if strings.Contains(err.Error(), "API error:") && strings.Contains(err.Error(), "409") {
+		return cmdutil.NewConflictError(fmt.Sprintf("merge conflict: %v", err))
+	}
+	return fmt.Errorf("failed to merge PR: %w", err)
 }

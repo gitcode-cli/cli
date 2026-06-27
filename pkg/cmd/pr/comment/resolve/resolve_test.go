@@ -60,8 +60,8 @@ func TestNewCmdResolve(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := cmdutil.TestFactory()
-			var gotOpts *resolveOptions
-			cmd := NewCmdResolve(f, func(opts *resolveOptions) error {
+			var gotOpts *ResolveOptions
+			cmd := NewCmdResolve(f, func(opts *ResolveOptions) error {
 				gotOpts = opts
 				return nil
 			})
@@ -131,8 +131,8 @@ func TestNewCmdUnresolve(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := cmdutil.TestFactory()
-			var gotOpts *resolveOptions
-			cmd := NewCmdUnresolve(f, func(opts *resolveOptions) error {
+			var gotOpts *ResolveOptions
+			cmd := NewCmdUnresolve(f, func(opts *ResolveOptions) error {
 				gotOpts = opts
 				return nil
 			})
@@ -162,7 +162,7 @@ func TestNewCmdUnresolve(t *testing.T) {
 func TestResolveRunMissingRepo(t *testing.T) {
 	t.Setenv("GC_TOKEN", "dummy-token")
 	f := cmdutil.TestFactory()
-	opts := &resolveOptions{
+	opts := &ResolveOptions{
 		IO:           f.IOStreams,
 		HttpClient:   f.HttpClient,
 		BaseRepo:     func() (string, error) { return "", nil },

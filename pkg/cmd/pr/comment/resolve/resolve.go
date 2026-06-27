@@ -14,7 +14,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
-type resolveOptions struct {
+type ResolveOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
 	BaseRepo   func() (string, error)
@@ -26,8 +26,8 @@ type resolveOptions struct {
 }
 
 // NewCmdResolve creates the resolve command
-func NewCmdResolve(f *cmdutil.Factory, runF func(*resolveOptions) error) *cobra.Command {
-	opts := &resolveOptions{
+func NewCmdResolve(f *cmdutil.Factory, runF func(*ResolveOptions) error) *cobra.Command {
+	opts := &ResolveOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
 		BaseRepo:   f.BaseRepo,
@@ -68,8 +68,8 @@ func NewCmdResolve(f *cmdutil.Factory, runF func(*resolveOptions) error) *cobra.
 }
 
 // NewCmdUnresolve creates the unresolve command
-func NewCmdUnresolve(f *cmdutil.Factory, runF func(*resolveOptions) error) *cobra.Command {
-	opts := &resolveOptions{
+func NewCmdUnresolve(f *cmdutil.Factory, runF func(*ResolveOptions) error) *cobra.Command {
+	opts := &ResolveOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
 		BaseRepo:   f.BaseRepo,
@@ -109,7 +109,7 @@ func NewCmdUnresolve(f *cmdutil.Factory, runF func(*resolveOptions) error) *cobr
 	return cmd
 }
 
-func resolveRun(opts *resolveOptions) error {
+func resolveRun(opts *ResolveOptions) error {
 	cs := opts.IO.ColorScheme()
 
 	httpClient, err := opts.HttpClient()

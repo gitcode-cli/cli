@@ -1,22 +1,17 @@
-#378 security: README Docker 示例使用内联 GC_TOKEN=value 模式 | 2026-06-27
-PR: #306 | risk: low | docs-only
-Gates: G5(✅) G8(✅) | CI: skipped (docs-only)
-Commit: worktree-issue-378
+# Issue #378 — Delivery Record
 
-## 处置说明
-
-README.md:173 将内联 `GC_TOKEN=your_token make docker-run` 改为 `export GC_TOKEN=your_token && make docker-run`，避免 token 被记录到 shell history。
-
-同时添加注释 `# 使用 export 而非内联赋值，避免 token 被记录到 shell history`，明确说明安全原因。
 
 ## Token 消耗
 
 | 指标 | 值 |
 |------|-----|
-| 输入 tokens (cache miss) | — |
-| 输出 tokens | — |
-| 缓存命中 | — |
-| 缓存写入 | — |
-| 总计 tokens | — |
-| 成本 | — |
-| 耗时 | — |
+| 输入 tokens (cache miss) | 46,633 (47k) |
+| 输出 tokens | 14,160 (14k) |
+| 缓存命中 | 2,297,088 (2297k) |
+| 缓存写入 | 0 |
+| 总计 tokens | 60,793 (61k) |
+| 成本 (DeepSeek) | ¥0.2823 (~$0.0392) |
+| 耗时 | 264s |
+| 轮次 | 74 |
+
+> 计价: ¥3/M cache-miss + ¥0.025/M cache-hit + ¥6/M output

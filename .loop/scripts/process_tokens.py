@@ -137,12 +137,14 @@ def main():
 > 计价: ¥3/M cache-miss + ¥0.025/M cache-hit + ¥6/M output
 """
 
-    # Append to delivery file
-    if os.path.exists(delivery_file):
-        with open(delivery_file, 'a') as f:
-            f.write(token_block)
-        with open(log_file, 'a') as log:
-            log.write(f'token data appended to {delivery_file}\n')
+    # Write to delivery file (create if missing — subprocess may have lost it in worktree)
+    if not os.path.exists(delivery_file):
+        with open(delivery_file, 'w') as f:
+            f.write(f'# Issue #{issue_num} — Delivery Record\n\n')
+    with open(delivery_file, 'a') as f:
+        f.write(token_block)
+    with open(log_file, 'a') as log:
+        log.write(f'token data written to {delivery_file}\n')
 
     # Update README row — total includes cache
     total_with_cache = total_in + total_out + cache_read

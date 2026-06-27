@@ -1,4 +1,10 @@
-在 git worktree 中从 status/triage 取一个 issue，按 spec/workflows/development-workflow.md 状态机推进到 merged。本次只处理一个，完成后停止。
+先执行孤儿 PR 检查：
+  1. 用 gc pr list -R gitcode-cli/cli --state open --json 列出所有 open PR
+  2. 如果存在本人(author=aflyingto)创建的非 draft PR，优先推进其到 merged
+     - 检查 CI 状态、补充缺失门禁、完成评审、合并
+  3. 如果没有孤儿 PR，再从 status/triage 取一个新 issue
+
+在 git worktree 中推进到 merged。本次只处理一个，完成后停止。
 
 状态机全流程推进到 merged。risk/low 自动合并，risk/high 暂停确认。
 

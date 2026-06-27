@@ -39,9 +39,10 @@ cd /home/wpf/claude-code/vibe-coding/cli
 unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
 
 # Capture stream-json for token parsing
-# Use nohup to survive parent shell exit
+# timeout: kill hung sessions after 20min (normal delivery: 10-13min)
+# nohup: survive parent shell exit
 set +e
-cat "$PROMPT_FILE" | nohup claude -p \
+cat "$PROMPT_FILE" | nohup timeout 1200 claude -p \
   --verbose \
   --output-format stream-json \
   --permission-mode bypassPermissions \

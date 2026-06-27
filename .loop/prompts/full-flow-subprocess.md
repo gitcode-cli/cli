@@ -36,4 +36,7 @@ CI 执行步骤（代码改动必须）：
   .loop/deliveries/issue-N.md — 完整状态流转 + 8 gate 表 + PR/CI 证据链接
   .loop/deliveries/README.md — 更新对应行（CI 列：有 run URL 才填 ✅）
 
+所有操作完成后，在输出末尾打印一行机器可读标记：
+ISSUE_NUM=<N>
+
 注意：从状态机第一个步骤开始，逐步推进。每步留下证据。不要跳过任何门禁。CI 未跑就写 ✅ 算违规。

@@ -1,14 +1,17 @@
 #!/bin/bash
 # Full-flow delivery loop — independent context via claude -p
 # PID-locked; each tick is a fresh Claude session.
+# Token tracking via stream-json output.
 
 set -uo pipefail
 
 LOCKFILE="/home/wpf/claude-code/vibe-coding/cli/.loop/run/full-flow.pid"
 LOGDIR="/home/wpf/claude-code/vibe-coding/cli/.loop/history"
+ISSUE_FILE="/home/wpf/claude-code/vibe-coding/cli/.loop/run/last-issue.txt"
 PROMPT_FILE="/home/wpf/claude-code/vibe-coding/cli/.loop/prompts/full-flow-subprocess.md"
+DELIVERIES_DIR="/home/wpf/claude-code/vibe-coding/cli/.loop/deliveries"
 
-mkdir -p "$(dirname "$LOCKFILE")" "$LOGDIR"
+mkdir -p "$(dirname "$LOCKFILE")" "$LOGDIR" "$DELIVERIES_DIR"
 
 # --- PID lock ---
 if [ -f "$LOCKFILE" ]; then
@@ -26,19 +29,181 @@ trap cleanup EXIT INT TERM
 # --- Logging ---
 TS=$(date +%Y-%m-%d-%H%M%S)
 LOGFILE="$LOGDIR/$TS-full-flow.log"
+JSONL_FILE="$LOGDIR/$TS-full-flow.jsonl"
+TOKEN_FILE="$LOGDIR/$TS-full-flow.tokens.json"
+
 echo "[$(date -Iseconds)] START pid=$$" | tee "$LOGFILE"
 
 # --- Run ---
 cd /home/wpf/claude-code/vibe-coding/cli
 unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
 
-# claude -p: prompt via stdin pipe, may exit non-zero on tool failures
+# Capture stream-json for token parsing
 set +e
-cat "$PROMPT_FILE" | claude -p \
+claude -p \
+  --verbose \
+  --output-format stream-json \
   --permission-mode bypassPermissions \
   --add-dir /home/wpf/claude-code/vibe-coding/cli \
-  >> "$LOGFILE" 2>&1
+  < "$PROMPT_FILE" \
+  > "$JSONL_FILE" 2>&1
 rc=$?
 set -e
 
+# --- Post-process: extract readable text ---
+python3 -c "
+import json, sys
+
+with open('$JSONL_FILE') as f:
+    lines = f.readlines()
+
+for line in lines:
+    line = line.strip()
+    if not line or not line.startswith('{'):
+        continue
+    try:
+        d = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    if d.get('type') == 'assistant':
+        msg = d.get('message', {})
+        for c in msg.get('content', []):
+            if c.get('type') == 'text':
+                print(c['text'])
+" >> "$LOGFILE"
+
+# --- Post-process: extract token data ---
+RESULT=$(python3 -c "
+import json
+with open('$JSONL_FILE') as f:
+    for line in f:
+        line = line.strip()
+        if not line or not line.startswith('{'):
+            continue
+        try:
+            d = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if d.get('type') == 'result':
+            last_result = line
+print(last_result)
+" 2>/dev/null)
+
+if [ -n "$RESULT" ]; then
+    echo "$RESULT" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+u = d.get('usage', {})
+mu = d.get('modelUsage', {})
+total_in = u.get('input_tokens', 0)
+total_out = u.get('output_tokens', 0)
+total = total_in + total_out
+cost = d.get('total_cost_usd', 0)
+dur_ms = d.get('duration_ms', 0)
+turns = d.get('num_turns', 0)
+
+# Find per-model breakdown
+models = []
+for m, v in mu.items():
+    models.append(f\"{m}: in={v.get('inputTokens',0)} out={v.get('outputTokens',0)} cost=\${v.get('costUSD',0):.4f}\")
+
+print(f'---')
+print(f'TOKENS:  in={total_in}  out={total_out}  total={total}  cost=\${cost:.4f}  duration={dur_ms}ms  turns={turns}')
+for m in models:
+    print(f'  {m}')
+
+# Write token JSON for delivery integration
+with open('$TOKEN_FILE', 'w') as f:
+    json.dump({
+        'input_tokens': total_in,
+        'output_tokens': total_out,
+        'total_tokens': total,
+        'cost_usd': cost,
+        'duration_ms': dur_ms,
+        'num_turns': turns,
+        'models': {m: {'inputTokens': v.get('inputTokens',0), 'outputTokens': v.get('outputTokens',0), 'costUSD': v.get('costUSD',0)} for m, v in mu.items()}
+    }, f, indent=2)
+" >> "$LOGFILE"
+else
+    echo "---" >> "$LOGFILE"
+    echo "WARNING: no result object found in stream-json output" >> "$LOGFILE"
+fi
+
 echo "[$(date -Iseconds)] DONE rc=$rc" | tee -a "$LOGFILE"
+
+# --- Post-process: inject token data into delivery files ---
+ISSUE_NUM=$(grep -oP 'ISSUE_NUM=\K\d+' "$LOGFILE" | tail -1)
+if [ -n "$ISSUE_NUM" ] && [ -f "$TOKEN_FILE" ]; then
+    DELIVERY_FILE="$DELIVERIES_DIR/issue-$ISSUE_NUM.md"
+    README_FILE="$DELIVERIES_DIR/README.md"
+
+    # Build token summary block
+    TOKEN_BLOCK=$(python3 -c "
+import json
+with open('$TOKEN_FILE') as f:
+    t = json.load(f)
+in_k = t['input_tokens']/1000
+out_k = t['output_tokens']/1000
+total_k = t['total_tokens']/1000
+dur = f\"{t['duration_ms']/1000:.0f}s\"
+print(f\"\"\"
+## Token 消耗
+
+| 指标 | 值 |
+|------|-----|
+| 输入 tokens | {t['input_tokens']:,} ({in_k:.0f}k) |
+| 输出 tokens | {t['output_tokens']:,} ({out_k:.0f}k) |
+| 总计 tokens | {t['total_tokens']:,} ({total_k:.0f}k) |
+| 成本 | \${t['cost_usd']:.4f} |
+| 耗时 | {dur} |
+| 轮次 | {t['num_turns']} |
+\"\"\")
+")
+
+    # Append to delivery file
+    if [ -f "$DELIVERY_FILE" ]; then
+        echo "$TOKEN_BLOCK" >> "$DELIVERY_FILE"
+        echo "[$(date -Iseconds)] token data appended to $DELIVERY_FILE" | tee -a "$LOGFILE"
+    fi
+
+    # Update README row: inject token count into a new "tokens" column
+    TOKEN_STR=$(python3 -c "
+import json
+t = json.load(open('$TOKEN_FILE'))
+tk = t['total_tokens']
+if tk >= 1_000_000:
+    print(f'{tk/1_000_000:.1f}M')
+elif tk >= 1_000:
+    print(f'{tk/1000:.0f}k')
+else:
+    print(str(tk))
+")
+    README_FILE="$DELIVERIES_DIR/README.md"
+    if [ -f "$README_FILE" ]; then
+        python3 -c "
+import sys
+
+with open('$README_FILE') as f:
+    lines = f.readlines()
+
+target = '| [#$ISSUE_NUM](issue-$ISSUE_NUM.md) |'
+new_lines = []
+for line in lines:
+    if target in line:
+        # Strip trailing newline, append token column, re-add newline
+        line = line.rstrip('\n')
+        if line.endswith('|'):
+            line = line + ' $TOKEN_STR |'
+        else:
+            line = line + ' $TOKEN_STR |'
+        line = line + '\n'
+    new_lines.append(line)
+
+with open('$README_FILE', 'w') as f:
+    f.writelines(new_lines)
+"
+        echo "[$(date -Iseconds)] README row updated with token=$TOKEN_STR" | tee -a "$LOGFILE"
+    fi
+else
+    echo "[$(date -Iseconds)] no issue num or token data, skipping delivery update" | tee -a "$LOGFILE"
+fi

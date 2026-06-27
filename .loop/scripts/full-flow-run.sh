@@ -39,18 +39,19 @@ cd /home/wpf/claude-code/vibe-coding/cli
 unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
 
 # Capture stream-json for token parsing
+# Use cat pipe instead of stdin redirect — more reliable in background scripts
 set +e
-claude -p \
+cat "$PROMPT_FILE" | claude -p \
   --verbose \
   --output-format stream-json \
   --permission-mode bypassPermissions \
   --add-dir /home/wpf/claude-code/vibe-coding/cli \
-  < "$PROMPT_FILE" \
   > "$JSONL_FILE" 2>&1
 rc=$?
 set -e
 
 # --- Post-process: extract readable text ---
+set +e
 python3 -c "
 import json, sys
 
@@ -70,7 +71,8 @@ for line in lines:
         for c in msg.get('content', []):
             if c.get('type') == 'text':
                 print(c['text'])
-" >> "$LOGFILE"
+" >> "$LOGFILE" 2>/dev/null
+set -e
 
 # --- Post-process: extract token data ---
 RESULT=$(python3 -c "

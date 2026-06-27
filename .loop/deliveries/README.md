@@ -47,14 +47,14 @@
 | [#305](issue-305.md) | bug | merged | #287 | N/A | low | — | +1/-1 | — |
 | [#304](issue-304.md) | docs | merged | #288 | skipped | low | 8/8 | — | — |
 | [#337](issue-337.md) | bug | merged | #289 | ⚠️ | medium | 7/8 | +11/-11 | — |
-| [#344](issue-344.md) | refactor | merged | #290 | ⚠️ | low | 8/8 | — | — |
-| [#343](issue-343.md) | refactor | merged | #291 | ✅ | medium | 8/8 | +15/-15 | — |
+| [#344](issue-344.md) | refactor | merged | #290 | ⚠️ | low | 8/8 | +2/-34 | 110k |
+| [#343](issue-343.md) | refactor | merged | #291 | ✅ | medium | 8/8 | +15/-15 | 110k |
 | [#350](issue-350.md) | refactor | merged | #292 | skipped | low | 5/8 | +136/-1 | 83k |
-| [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | — | 179k |
+| [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | +2/-1 | 179k |
 | [#352](issue-352.md) | test | merged | #295 | ✅ | low | 8/8 | +224/-1 | 260k |
 | [#329](issue-329.md) | refactor | merged | #296 | ✅ | medium | 8/8 | +96/-51 | 204k |
-| [#328](issue-328.md) | refactor | merged | #297 | ⚠️ | low | 8/8 | — | 147k |
-| [#347](issue-347.md) | refactor | merged | #293 | ✅ | low | 8/8 | — | — |
+| [#328](issue-328.md) | refactor | merged | #297 | ⚠️ | low | 8/8 | +0/-26 | 147k |
+| [#347](issue-347.md) | refactor | merged | #293 | ✅ | low | 8/8 | +88/-155 | 183k |
 ## 统计
 
 | 维度 | 数据 |

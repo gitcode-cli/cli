@@ -64,7 +64,7 @@
 | [#371](issue-371.md) | docs | merged | #302 | ✅ | low | 5/8 | +19/-19 | 3.6M(3.5M cache) | ¥0.36 | 2026-06-27 13:12 |
 | [#366](issue-366.md) | bug | merged | #304 | ✅ | low | 8/8 | +44/-14 | 2.0M(1.9M cache) | ¥0.3049 | 2026-06-27 14:10 |
 | [#385](issue-385.md) | refactor | merged | dfb8b20 | skipped | low | 2/2 | +0/-200 | 1.6M(1.5M cache) | ¥0.2308 | 2026-06-27 15:09 |
-| [#381](issue-381.md) | refactor | merged | dfb8b20 | N/A | low | N/A | N/A | 1.7M(1.6M cache) | ¥0.2627 | 63k |
+| [#381](issue-381.md) | refactor | merged | — | — | low | — | +199/-206 | 1.7M(1.6M cache) | ¥0.2627 | 2026-06-27 14:44 |
 | [#370](issue-370.md) | — | merged | #303 | — | — | — | — | — | — | — |
 | [#384](issue-384.md) | — | merged | #? | — | — | — | — | 2.2M(2.2M cache) | ¥0.2863 | — |
 ## 统计

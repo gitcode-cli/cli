@@ -151,6 +151,9 @@ fi
 
 echo "[$(date -Iseconds)] DONE rc=$rc" | tee -a "$LOGFILE"
 
+# Auto-refresh stats
+bash scripts/count-deliveries.sh >> "$LOGFILE" 2>&1 || true
+
 # --- Post-process: inject token data into delivery files ---
 ISSUE_NUM=$(python3 -c "import re; f=open('$LOGFILE'); m=re.search(r'ISSUE_NUM=(\d+)', f.read()); print(m.group(1) if m else '')" 2>/dev/null)
 if [ -n "$ISSUE_NUM" ] && [ -f "$TOKEN_FILE" ]; then

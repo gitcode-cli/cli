@@ -1,42 +1,58 @@
 #!/usr/bin/env bash
-# Update statistics in .loop/deliveries/README.md from its summary table.
+# Auto-generate statistics for .loop/deliveries/README.md from its summary table.
 set -euo pipefail
 
 README=".loop/deliveries/README.md"
+[ -f "$README" ] || { echo "ERROR: $README not found"; exit 1; }
 
-# Parse only the summary table (stop at ## 统计)
-TABLE=$(sed '/^## 统计/q' "$README")
+python3 << 'PYEOF'
+import re, os
 
-total=$(echo "$TABLE" | grep -cE '^\| \[#' || true)
-merged=$(echo "$TABLE" | grep -cE '^\| \[#[0-9]+\].*\| merged \|' || true)
-closed=$(echo "$TABLE" | grep -cE '^\| \[#[0-9]+\].*\| closed \|' || true)
-code=$(echo "$TABLE" | grep -cE '^\| \[#[0-9]+\].*\| bug \| merged \|' || true)
-docs=$(echo "$TABLE" | grep -cE '^\| \[#[0-9]+\].*\| docs \|' || true)
-high=$(echo "$TABLE" | grep -cE 'high \|' || true)
+readme = os.environ.get('README', '.loop/deliveries/README.md')
+with open(readme) as f:
+    content = f.read()
 
-scores=$(echo "$TABLE" | grep -oE '[0-9]+/8' | sed 's|/8||' | tr '\n' ' ')
-if [ -n "$scores" ]; then
-  sum=0; count=0
-  for s in $scores; do sum=$((sum + s)); count=$((count + 1)); done
-  avg=$(echo "scale=1; $sum / $count" | bc)
-else
-  avg="N/A"
-fi
+rows = re.findall(r'^\| \[\#.*\|$', content, re.MULTILINE)
 
-# Replace everything after "## 统计" with new stats
-tmp=$(mktemp)
-awk -v stats="\
-| 维度 | 数据 |
+# Counts
+total = len(rows)
+merged = sum(1 for r in rows if '| merged |' in r)
+closed = sum(1 for r in rows if '| closed |' in r)
+has_change = sum(1 for r in rows if re.search(r'\+[0-9]+/-[0-9]+', r))
+docs = sum(1 for r in rows if '| docs |' in r)
+high = sum(1 for r in rows if 'high |' in r)
+today = sum(1 for r in rows if '2026-06-27' in r)
+
+# Gate average
+scores = [int(m) for r in rows for m in re.findall(r'(\d+)/8', r)]
+avg = f"{sum(scores)/len(scores):.1f}" if scores else "N/A"
+
+# Token total
+token_k = sum(int(m) for r in rows for m in re.findall(r'(\d+)k', r))
+token_total = f"{token_k/1000:.1f}M" if token_k >= 1000 else f"{token_k}k"
+
+# Cost total
+costs = [float(m) for r in rows for m in re.findall(r'¥([\d.]+)', r)]
+cost_total = f"¥{sum(costs):.2f}" if costs else "¥0"
+
+stats = f"""| 维度 | 数据 |
 |------|------|
-| 总 issue | $total |
-| 已合并 | $merged |
-| 已关闭 | $closed |
-| 含代码改动 | $code |
-| docs-only | $docs |
-| risk/high | $high |
-| 平均门禁 | ${avg}/8 |" '
-/^## 统计/ { print; print ""; print stats; exit }
-{ print }
-' "$README" > "$tmp" && mv "$tmp" "$README"
+| 总 issue | {total} |
+| 已合并 | {merged} |
+| 已关闭 | {closed} |
+| 含代码改动 | {has_change} |
+| docs-only | {docs} |
+| risk/high | {high} |
+| 平均门禁 | {avg}/8 |
+| Token 总消耗 | {token_total} |
+| 总成本 | {cost_total} |
+| 今日交付 | {today} |"""
 
-echo "Stats written to $README"
+idx = content.find('## 统计')
+if idx >= 0:
+    content = content[:idx] + '## 统计\n\n' + stats + '\n'
+
+with open(readme, 'w') as f:
+    f.write(content)
+print(stats)
+PYEOF

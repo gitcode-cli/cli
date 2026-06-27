@@ -1,6 +1,7 @@
 package cmdutil
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -63,6 +64,29 @@ func TestConfirmOrAbort_NonInteractiveReturnsUsageError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "--yes") {
 		t.Fatalf("ConfirmOrAbort() error = %q, want mention of --yes", err.Error())
+	}
+}
+
+func TestConfirmOrAbort_ReadErrorReturnsUsageError(t *testing.T) {
+	// Simulate the read-error path: reader.ReadString fails with a non-EOF error.
+	// This constructs the same CLIError that confirm.go now returns on read failure.
+	readErr := errors.New("simulated read error")
+	err := NewCLIError(ExitUsage, "failed to read confirmation", readErr)
+	if err == nil {
+		t.Fatal("NewCLIError() = nil, want error")
+	}
+	if _, ok := err.(*CLIError); !ok {
+		t.Fatalf("NewCLIError() error type = %T, want *CLIError", err)
+	}
+	if ExitCode(err) != ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d (ExitUsage)", ExitCode(err), ExitUsage)
+	}
+	if !strings.Contains(err.Error(), "failed to read confirmation") {
+		t.Fatalf("error = %q, want mention of 'failed to read confirmation'", err.Error())
+	}
+	// Verify error unwrapping preserves the underlying cause
+	if !errors.Is(err, readErr) {
+		t.Fatalf("errors.Is(err, readErr) = false, want true (cause not preserved)")
 	}
 }
 

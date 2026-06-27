@@ -118,7 +118,7 @@ import (
     "github.com/spf13/cobra"
     "github.com/spf13/viper"
 
-    "gitcode.com/gitcode-cli/cli/internal/config"
+    "gitcode.com/gitcode-cli/cli/pkg/config"
     "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 ```
@@ -205,8 +205,8 @@ pkg/cmd/xxx/          # 命令实现
 ├── xxx_test.go       # 单元测试
 └── subcommand.go     # 子命令（如有）
 
+pkg/config/           # 配置管理
 internal/             # 内部包
-├── config/           # 配置管理
 ├── authflow/         # 认证流程
 └── prompter/         # 交互提示
 

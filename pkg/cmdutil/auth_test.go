@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"gitcode.com/gitcode-cli/cli/internal/config"
+	"gitcode.com/gitcode-cli/cli/pkg/config"
 )
 
 func TestAuthenticatedClientRejectsEnvTokenForCustomHost(t *testing.T) {

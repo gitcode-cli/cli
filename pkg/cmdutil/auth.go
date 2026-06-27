@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"gitcode.com/gitcode-cli/cli/api"
-	"gitcode.com/gitcode-cli/cli/internal/config"
+	"gitcode.com/gitcode-cli/cli/pkg/config"
 )
 
 // EnvToken returns the active token from supported environment variables.

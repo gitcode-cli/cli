@@ -10,8 +10,8 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/api"
 	"gitcode.com/gitcode-cli/cli/git"
-	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 

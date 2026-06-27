@@ -155,7 +155,24 @@ echo "[$(date -Iseconds)] DONE rc=$rc" | tee -a "$LOGFILE"
 bash scripts/count-deliveries.sh >> "$LOGFILE" 2>&1 || true
 
 # --- Post-process: inject token data into delivery files ---
-ISSUE_NUM=$(python3 -c "import re; f=open('$LOGFILE'); m=re.search(r'ISSUE_NUM=(\d+)', f.read()); print(m.group(1) if m else '')" 2>/dev/null)
+# Search JSONL (raw stream) first, fall back to log
+ISSUE_NUM=$(python3 -c "
+import re
+# Try JSONL first (more reliable)
+try:
+    with open('$JSONL_FILE') as f:
+        content = f.read()
+    m = re.search(r'ISSUE_NUM=(\d+)', content)
+    if m: print(m.group(1)); exit()
+except: pass
+# Fall back to log
+try:
+    with open('$LOGFILE') as f:
+        content = f.read()
+    m = re.search(r'ISSUE_NUM=(\d+)', content)
+    if m: print(m.group(1))
+except: pass
+" 2>/dev/null)
 if [ -n "$ISSUE_NUM" ] && [ -f "$TOKEN_FILE" ]; then
     DELIVERY_FILE="$DELIVERIES_DIR/issue-$ISSUE_NUM.md"
     README_FILE="$DELIVERIES_DIR/README.md"

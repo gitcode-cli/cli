@@ -13,9 +13,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
-	"gitcode.com/gitcode-cli/cli/internal/config"
 	"gitcode.com/gitcode-cli/cli/pkg/browser"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 

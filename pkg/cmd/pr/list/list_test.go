@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"gitcode.com/gitcode-cli/cli/internal/config"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 	"gitcode.com/gitcode-cli/cli/pkg/output"
 )

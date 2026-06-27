@@ -8,7 +8,7 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/api"
 	gitpkg "gitcode.com/gitcode-cli/cli/git"
-	"gitcode.com/gitcode-cli/cli/internal/config"
+	"gitcode.com/gitcode-cli/cli/pkg/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 

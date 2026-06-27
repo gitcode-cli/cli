@@ -204,27 +204,25 @@ func downloadAsset(asset api.ReleaseAsset, outputDir string, httpClient *http.Cl
 		return fmt.Errorf("download failed: %s", resp.Status)
 	}
 
-	// Reject symlink targets to prevent writing through symlinks
-	if fi, err := os.Lstat(outputPath); err == nil {
-		if fi.Mode()&os.ModeSymlink != 0 {
-			return fmt.Errorf("refusing to overwrite symlink: %s", outputPath)
-		}
-	}
-
-	// Create file
-	file, err := os.Create(outputPath)
+	// Write to a temp file first, then atomically rename to target.
+	// This avoids the TOCTOU race between Lstat and Create on the output path.
+	tmpFile, err := os.CreateTemp(filepath.Dir(outputPath), filepath.Base(outputPath)+".tmp-*")
 	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
+		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer file.Close()
+	tmpPath := tmpFile.Name()
+	defer os.Remove(tmpPath)
 
 	// Copy content
-	written, err := io.Copy(file, resp.Body)
+	written, err := io.Copy(tmpFile, resp.Body)
+	tmpFile.Close()
 	if err != nil {
-		// Clean up incomplete file on failure
-		file.Close()
-		os.Remove(outputPath)
 		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	// Atomic rename to final destination
+	if err := os.Rename(tmpPath, outputPath); err != nil {
+		return fmt.Errorf("failed to finalize file: %w", err)
 	}
 
 	fmt.Fprintf(out, "%s Downloaded %s (%s)\n", cs.Green("✓"), asset.Name, formatSize(int(written)))

@@ -170,6 +170,9 @@ func resolveGitProtocol(opts *CloneOptions) (string, error) {
 func parseRepoURL(repo, protocol string) (string, error) {
 	// Already a URL
 	if strings.HasPrefix(repo, "http://") || strings.HasPrefix(repo, "https://") || strings.HasPrefix(repo, "git@") {
+		if strings.HasPrefix(repo, "http://") {
+			fmt.Fprintf(os.Stderr, "warning: cloning over HTTP (unencrypted). Consider using HTTPS or SSH.\n")
+		}
 		return repo, nil
 	}
 

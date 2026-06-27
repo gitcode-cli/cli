@@ -9,8 +9,9 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/config"
 )
 
-// EnvToken returns the active token from supported environment variables.
-func EnvToken() string {
+// DefaultToken returns the active token, checking environment variables first,
+// then falling back to the configured token file.
+func DefaultToken() string {
 	if token := os.Getenv("GC_TOKEN"); token != "" {
 		return token
 	}

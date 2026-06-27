@@ -154,6 +154,40 @@ def main():
         total_str = f'{total_with_cache/1000:.0f}k'
     cache_str = f'{cache_read/1_000_000:.1f}M' if cache_read >= 1_000_000 else f'{cache_read/1000:.0f}k'
     token_str = f'{total_str}({cache_str} cache)'
+    cost_str = f'¥{cost_rmb}'
+
+    # Look up git stats for this issue
+    pr_str = '—'
+    change_str = '—'
+    time_str = '—'
+    try:
+        sha_result = subprocess.run(
+            ['git', 'log', 'origin/main', '--merges', '--format=%H|%ci|%s', '--since=2026-06-26'],
+            capture_output=True, text=True, cwd='/home/wpf/claude-code/vibe-coding/cli'
+        )
+        for line in sha_result.stdout.strip().split('\n'):
+            if not line or f'issue-{issue_num}' not in line.lower():
+                continue
+            parts = line.split('|', 2)
+            sha = parts[0]
+            time_str = parts[1][:16] if len(parts) > 1 else '—'
+            msg = parts[2] if len(parts) > 2 else ''
+            pr_match = re.search(r'!(\d+)', msg)
+            if pr_match:
+                pr_str = f'#{pr_match.group(1)}'
+            diff_result = subprocess.run(
+                ['git', 'diff', f'{sha}~1..{sha}', '--stat'],
+                capture_output=True, text=True, cwd='/home/wpf/claude-code/vibe-coding/cli'
+            )
+            m = re.search(r'(\d+)\s+files?\s+changed(?:,\s+(\d+)\s+insertions?\(\+\))?(?:,\s+(\d+)\s+deletions?\(-\))?', diff_result.stdout)
+            if m:
+                adds = int(m.group(2)) if m.group(2) else 0
+                dels = int(m.group(3)) if m.group(3) else 0
+                change_str = f'+{adds}/-{dels}'
+            break
+    except Exception:
+        pass
+
     if os.path.exists(readme_file):
         with open(readme_file) as f:
             lines = f.readlines()
@@ -175,10 +209,14 @@ def main():
                 # Adjust keep_idx if we deleted a row before it
                 if idx < keep_idx:
                     keep_idx -= 1
-            # Update token column on the kept row
+            # Update token/cost/time/change columns on the kept row
             cols = [c.strip() for c in lines[keep_idx].split('|') if c.strip()]
-            if len(cols) >= 9:
-                cols[-1] = token_str
+            if len(cols) >= 11:
+                cols[-5] = token_str     # tokens
+                cols[-4] = change_str    # change
+                cols[-2] = cost_str      # cost
+                cols[-1] = time_str      # time
+                if pr_str != '—': cols[-8] = pr_str  # PR
             lines[keep_idx] = '| ' + ' | '.join(cols) + ' |\n'
             with open(readme_file, 'w') as f:
                 f.writelines(lines)
@@ -189,7 +227,7 @@ def main():
                     log.write(f'README row updated with token={token_str}\n')
         else:
             # Row not found — insert new row before ## 统计
-            new_row = f'| [#{issue_num}](issue-{issue_num}.md) | — | merged | — | — | — | — | — | {token_str} | ¥{cost_rmb} | — |\n'
+            new_row = f'| [#{issue_num}](issue-{issue_num}.md) | — | merged | {pr_str} | — | — | — | {change_str} | {token_str} | {cost_str} | {time_str} |\n'
             for j, l in enumerate(lines):
                 if l.startswith('## 统计'):
                     lines.insert(j, new_row)

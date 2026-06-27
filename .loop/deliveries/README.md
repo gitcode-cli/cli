@@ -46,14 +46,16 @@
 | [#194](issue-194.md) | feat | merged | #286 | N/A | ⚠️ | — |
 
 | [#305](issue-305.md) | bug | merged | #287 | N/A | low | — |
+| [#304](issue-304.md) | docs | merged | #288 | skipped | low | 8/8 |
+| [#337](issue-337.md) | bug | merged | #289 | ❌ | medium | 7/8 |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 39 |
-| 已合并 | 28 |
+| 总 issue | 41 |
+| 已合并 | 30 |
 | 已关闭 | 11 |
 | 含代码改动 | 14 |
-| docs-only | 8 |
+| docs-only | 9 |
 | risk/high | 4 |
 | 平均门禁 | 6.2/8 |

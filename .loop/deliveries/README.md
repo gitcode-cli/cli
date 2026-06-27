@@ -51,15 +51,16 @@
 | [#343](issue-343.md) | refactor | merged | #291 | ✅ | medium | 8/8 | — |
 | [#350](issue-350.md) | refactor | merged | #292 | skipped | low | 5/8 | — | 83k |
 | [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | — | 179k |
-| [#352](issue-352.md) | test | merged | #295 | ⚠️ | medium | 8/8 | — | — |
+| [#352](issue-352.md) | test | merged | #295 | ✅ | low | 8/8 | — | 260k |
+| [#329](issue-329.md) | refactor | merged | #296 | ✅ | medium | 8/8 | — | — |
 ## 统计
 
 | 维度 | 数据 |
 |------|------|
-| 总 issue | 46 |
-| 已合并 | 35 |
+| 总 issue | 47 |
+| 已合并 | 36 |
 | 已关闭 | 11 |
-| 含代码改动 | 16 |
+| 含代码改动 | 17 |
 | docs-only | 10 |
 | risk/high | 4 |
 | 平均门禁 | 6.2/8 |

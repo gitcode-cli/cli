@@ -48,3 +48,17 @@ Removed unused `CaptureOutput` function from `pkg/iostreams/iostreams.go` (26 li
 
 **Completed**: 2026-06-27 10:54
 **Risk**: risk/medium → auto-merged
+
+## Token 消耗
+
+| 指标 | 值 |
+|------|-----|
+| 输入 tokens (cache miss) | 108,899 (109k) |
+| 输出 tokens | 37,934 (38k) |
+| 缓存命中 | 6,316,672 (6.3M) |
+| 总计 tokens | 146,833 (147k) |
+| 成本 (DeepSeek) | ¥0.7122 (~$0.0989) |
+| 耗时 | 770s |
+| 轮次 | 152 |
+
+> 计价: ¥3/M cache-miss + ¥0.025/M cache-hit + ¥6/M output

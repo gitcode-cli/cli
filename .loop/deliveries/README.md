@@ -54,6 +54,7 @@
 | [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | — | 179k |
 | [#352](issue-352.md) | test | merged | #295 | ✅ | low | 8/8 | — | 260k |
 | [#329](issue-329.md) | refactor | merged | #296 | ✅ | medium | 8/8 | — | — |
+| [#328](issue-328.md) | refactor | merged | #297 | ⚠️ | low | 8/8 | — | 147k |
 ## 统计
 
 | 维度 | 数据 |

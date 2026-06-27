@@ -62,3 +62,14 @@
 - [Issue Triage 记录](https://gitcode.com/gitcode-cli/cli/issues/327#note_177406044)
 - [Issue 验证记录](https://gitcode.com/gitcode-cli/cli/issues/327#note_177406109)
 - [Issue 完成报告](https://gitcode.com/gitcode-cli/cli/issues/327#note_177407738)
+
+## Token 消耗
+
+| 指标 | 值 |
+|------|-----|
+| 输入 tokens | 70,616 (71k) |
+| 输出 tokens | 26,394 (26k) |
+| 总计 tokens | 97,010 (97k) |
+| 成本 | $5.0354 |
+| 耗时 | 608s |
+| 轮次 | 131 |

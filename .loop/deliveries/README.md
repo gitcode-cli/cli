@@ -50,7 +50,7 @@
 | [#344](issue-344.md) | refactor | merged | #290 | ⚠️ | low | 8/8 | — |
 | [#343](issue-343.md) | refactor | merged | #291 | ✅ | medium | 8/8 | — |
 | [#350](issue-350.md) | refactor | merged | #292 | skipped | low | 5/8 | — | 83k |
-| [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | — |
+| [#327](issue-327.md) | bug | merged | #294 | ✅ | medium | 8/8 | — | 97k |
 ## 统计
 
 | 维度 | 数据 |

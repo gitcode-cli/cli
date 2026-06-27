@@ -39,9 +39,9 @@ cd /home/wpf/claude-code/vibe-coding/cli
 unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
 
 # Capture stream-json for token parsing
-# Use cat pipe instead of stdin redirect — more reliable in background scripts
+# Use nohup to survive parent shell exit
 set +e
-cat "$PROMPT_FILE" | claude -p \
+cat "$PROMPT_FILE" | nohup claude -p \
   --verbose \
   --output-format stream-json \
   --permission-mode bypassPermissions \

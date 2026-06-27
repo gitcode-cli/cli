@@ -6,7 +6,6 @@
 
 | Issue | 类型 | 状态 | PR | CI | 风险 | 门禁 | Tokens |
 |-------|------|------|----|----|:--:|:----:|--------|
-| [#328](issue-328.md) | bug | merged | #297 | ✅ | medium | 8/8 | — |
 | [#298](issue-298.md) | bug | merged | #252 | ✅ | low | 8/8 | — |
 | [#302](issue-302.md) | bug | merged | #252 | ✅ | low | 8/8 | — |
 | [#291](issue-291.md) | docs | closed | — | — | — | — | — |
@@ -55,6 +54,7 @@
 | [#352](issue-352.md) | test | merged | #295 | ✅ | low | 8/8 | — | 260k |
 | [#329](issue-329.md) | refactor | merged | #296 | ✅ | medium | 8/8 | — | — |
 | [#328](issue-328.md) | refactor | merged | #297 | ⚠️ | low | 8/8 | — | 147k |
+| [#347](issue-347.md) | refactor | merged | #293 | ✅ | low | 8/8 | — | — |
 ## 统计
 
 | 维度 | 数据 |

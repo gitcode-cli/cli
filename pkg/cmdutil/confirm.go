@@ -38,7 +38,7 @@ func ConfirmOrAbort(opts ConfirmOptions) error {
 		if err == io.EOF {
 			return NewUsageError("confirmation required in non-interactive mode; rerun with --yes")
 		}
-		return NewCLIError(ExitUsage, fmt.Sprintf("failed to read confirmation: %s", err), err)
+		return NewCLIError(ExitUsage, "failed to read confirmation", err)
 	}
 	if strings.TrimSpace(input) != opts.Expected {
 		return NewUsageError("confirmation did not match expected value")

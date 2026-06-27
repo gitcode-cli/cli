@@ -71,7 +71,7 @@ func TestConfirmOrAbort_ReadErrorReturnsUsageError(t *testing.T) {
 	// Simulate the read-error path: reader.ReadString fails with a non-EOF error.
 	// This constructs the same CLIError that confirm.go now returns on read failure.
 	readErr := errors.New("simulated read error")
-	err := NewCLIError(ExitUsage, "failed to read confirmation: simulated read error", readErr)
+	err := NewCLIError(ExitUsage, "failed to read confirmation", readErr)
 	if err == nil {
 		t.Fatal("NewCLIError() = nil, want error")
 	}

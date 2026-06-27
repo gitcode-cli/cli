@@ -1,52 +1,35 @@
-先执行孤儿 PR 检查：
-  1. 用 gc pr list -R gitcode-cli/cli --state open --json 列出所有 open PR
-  2. 如果存在本人(author=aflyingto)创建的非 draft PR，优先推进其到 merged
-     - **必须完整读取 PR 所有评论**（gc pr view N --comments），了解已完成的门禁
-     - **必须完整读取关联 Issue 所有评论**，了解已有的验证记录
-     - 对照 development-workflow.md §5.3 逐项检查门禁证据是否已存在
-     - 只补充真正缺失的门禁，不要重复执行已有的
-     - CI 缺失→补 CI；评审缺失→补评审；全部通过→合并
-  3. 如果没有孤儿 PR，再从 status/triage 取一个新 issue
+从 status/triage 取一个 issue，推进到 merged。每次只处理一个。
 
-在 git worktree 中推进到 merged。本次只处理一个，完成后停止。
+## 前置
+- 独立 git worktree（`.claude/worktrees/issue-N-<ts>`），用后即删
+- 禁止在 main 开发、跳过验证、作者自检当独立评审
 
-状态机全流程推进到 merged。risk/low 自动合并，risk/high 暂停确认。
+## 流程
+1. 取 issue（`gc issue list -R gitcode-cli/cli --state opened --label status/triage --limit 5`），选最小 scope；若 triage 空→孤儿 PR 检查
+2. 判定 docs-only 还是代码改动，走对应分支
+3. 状态机: triage→verified→in-progress→draft→self-checked→ready→approved→merged
+   risk/low 自动合，risk/high 暂停
 
-前置规则：所有代码操作必须在独立 git worktree 中执行，worktree 名称必须包含 issue 号和当前时间戳确保唯一（如 .claude/worktrees/issue-N-timestamp），用后即删。严禁污染主工作目录。
+## 门禁
+| # | 门禁 | docs-only | 代码改动 |
+|---|------|:--:|------|
+| 1 | 实现 | — | 修复 |
+| 2 | 测试 | 跳过 | go test ./... 全通过 |
+| 3 | 构建 | 跳过 | go build 成功 |
+| 4 | UT | 跳过 | 全通过 |
+| 5 | Pre-commit | 必须 | 必须 |
+| 6 | 命令验证 | 跳过 | infra-test/* 至少一条 |
+| 7 | CI | 跳过 | gh CLI 触发 GitHub Actions，等待全绿，PR 附 run URL |
+| 8 | 风险分级 | 必须 | classify-change-risk.py |
 
-禁止：在 main 开发、跳过验证、作者自检当独立评审。
+## 证据
+- Issue: 验证记录 + 自检 9 项（含 CI URL）
+- PR: 评审结论 + CI URL + gate 表
+- docs-only 跳过评审；其余路径必须多角色独立评审
+- CI 未跑写 ✅ 算违规
 
-8 项门禁逐一执行，docs-only 以外的门禁不得跳过：
+## 交付
+创建 `.loop/deliveries/issue-N.md`，更新 README。末尾输出 `ISSUE_NUM=<N>`。
 
-| # | 门禁 | 要求 |
-|---|------|------|
-| 1 | 开发实现 | 修复或实现 |
-| 2 | 测试 | docs-only 跳过；代码改动必须 go test ./... 全部通过 |
-| 3 | 本地构建 | docs-only 跳过；代码改动必须 go build -o ./gc ./cmd/gc 成功 |
-| 4 | 单元测试 | docs-only 跳过；代码改动全部通过 |
-| 5 | Pre-commit | 全部 hooks 通过，不得跳过 |
-| 6 | 实际命令验证 | docs-only 跳过；代码改动必须在 infra-test/* 仓库执行至少一条 |
-| 7 | 远端 CI | docs-only 跳过；代码改动必须用 gh CLI 触发 GitHub Actions CI 并等待全部 Job 通过，PR 评论中附 run URL |
-| 8 | 风险分级 | classify-change-risk.py，risk/low 自动合并，risk/high 暂停 |
-
-CI 执行步骤（代码改动必须）：
-  unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
-  git push github <branch>                    # 推到 GitHub 镜像仓
-  gh run list -R gitcode-cli/cli -b <branch> --json url,databaseId,conclusion
-  等待全部 Job 完成
-  如果失败→分析根因→修复→推送→重新触发，直到全绿
-
-提交前检查 spec/workflows/development-workflow.md §5.3 确认无遗漏。
-
-必须在 Issue 评论和 PR 评论留下门禁证据：
-  Issue comment: 验证记录 + 作者自检 9 项（含 CI run URL）
-  PR comment: 多角色评审结论 + CI run URL + 8 gate 完成表
-
-每处理完一个 issue，更新 .loop/ 目录：
-  .loop/deliveries/issue-N.md — 完整状态流转 + 8 gate 表 + PR/CI 证据链接
-  .loop/deliveries/README.md — 更新对应行（CI 列：有 run URL 才填 ✅）
-
-所有操作完成后，在输出末尾打印一行机器可读标记：
-ISSUE_NUM=<N>
-
-注意：从状态机第一个步骤开始，逐步推进。每步留下证据。不要跳过任何门禁。CI 未跑就写 ✅ 算违规。
+## 孤儿 PR（仅 triage 为空时）
+`gc pr list --state open --json`，找本人非 draft PR→完整读评论→对照 §5.3 补缺失→合并。

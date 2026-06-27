@@ -228,6 +228,9 @@ gc auth token
 
 # 输出指定主机的已存储 token
 gc auth token --hostname gitcode.com
+
+# 输出 JSON
+gc auth token --json
 ```
 
 说明：
@@ -481,6 +484,9 @@ gc repo delete owner/repo --dry-run
 
 # 非交互执行
 gc repo delete owner/repo --yes
+
+# 输出 JSON
+gc repo delete owner/repo --yes --json
 ```
 
 说明：
@@ -809,6 +815,10 @@ gc issue label 1 --remove bug -R infra-test/gctest1
 
 # 列出标签
 gc issue label 1 --list -R infra-test/gctest1
+
+# 输出 JSON
+gc issue label 1 --add bug -R infra-test/gctest1 --json
+gc issue label 1 --list -R infra-test/gctest1 --json
 ```
 
 ### issue prs - 查看 Issue 关联的 PRs
@@ -1095,6 +1105,9 @@ gc pr reply 1 -d <discussion_id> -b "回复内容" -R owner/repo
 ```bash
 # 查看 PR 差异
 gc pr diff 1 -R infra-test/gctest1
+
+# 输出 JSON
+gc pr diff 1 -R infra-test/gctest1 --json
 ```
 
 ### pr checkout - 检出 PR 分支
@@ -1576,6 +1589,9 @@ gc label list -R infra-test/gctest1 --json
 ```bash
 # 创建标签
 gc label create "bug" -R infra-test/gctest1 --color "#ff0000" --description "Bug report"
+
+# 输出 JSON
+gc label create "bug" -R infra-test/gctest1 --color "#ff0000" --description "Bug report" --json
 ```
 
 ### label delete - 删除标签
@@ -1589,6 +1605,9 @@ gc label delete bug -R infra-test/gctest1 --dry-run
 
 # 非交互执行
 gc label delete bug -R infra-test/gctest1 --yes
+
+# 输出 JSON
+gc label delete bug -R infra-test/gctest1 --yes --json
 ```
 
 ---
@@ -1616,6 +1635,9 @@ gc milestone list -R infra-test/gctest1 --json
 ```bash
 # 创建里程碑
 gc milestone create "v1.0" -R infra-test/gctest1 --description "First release"
+
+# 输出 JSON
+gc milestone create "v1.0" -R infra-test/gctest1 --description "First release" --json
 ```
 
 ### milestone view - 查看里程碑
@@ -1744,6 +1766,9 @@ gc precommit check --json
 
 ```bash
 gc version
+
+# 输出 JSON
+gc version --json
 ```
 
 Command-name note:
@@ -1778,6 +1803,11 @@ gc help --topic issues
 - `--search` 按关键词搜索命令名称、路径、描述和别名
 - `--topics` 列出所有已定义的主题分类
 - `--topic` 显示指定主题下的所有命令
+
+```bash
+# 输出 JSON
+gc help --json
+```
 
 ### schema - 命令元数据
 

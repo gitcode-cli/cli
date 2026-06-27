@@ -1,6 +1,6 @@
 # Issue #366 — Delivery Record
 - **Issue**: [#366](https://gitcode.com/gitcode-cli/cli/issues/366)
-- **PR**: [#0](https://gitcode.com/gitcode-cli/cli/pulls/0)
+- **PR**: [#304](https://gitcode.com/gitcode-cli/cli/pulls/304)
 - **变更**: +44/-14
 - **完成时间**: —
 

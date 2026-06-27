@@ -29,6 +29,26 @@
 
 12. **`git commit --amend` 前置条件** — pre-commit hook 失败后不能直接 amend，需先 `git add` 修复文件再 commit
 
+## Bash + Python 交互
+
+13. **`"$VAR"` 在 bash heredoc 内截断 Python 代码** — bash 在 `"..."` 内将 `"` 解析为字符串结束符。Python 路径引用必须用单引号 `'$VAR'`。此 bug 导致 loop token 注入 100% 失败，从第一天起就存在，直到 6/27 修复。见 #373。
+
+14. **内联 Python 只适合 5 行以内** — heredoc 内的 `python3 -c` 面临三重陷阱：bash 引号截断、tab/空格混用、跨块变量不可见。超过 5 行就应提取为独立 `.py` 文件。见 dfb8b20 重构（260→60 行脚本）。
+
+## 脚本可靠性
+
+15. **`sleep N` 不是竞态修复** — 管道关闭即文件完整，`readlines()` 本身阻塞到 EOF。固定延迟在慢 FS/大输出下不可靠，正常场景下浪费时间。见 #383。
+
+16. **统计正则必须匹配实际数据格式** — `count-deliveries.sh` 的 `(\d+)k` 只匹配整数 k 值，`4.7M`、`1.5M(1.5M cache)` 全部漏掉。应解析目标列而非全文扫描，支持 k/M 双后缀 + 小数。
+
+17. **硬编码日期随时间退化** — `--since=2026-06-26` 一周后就开始漏数据。用 `datetime.now() - timedelta(days=60)` 动态计算。
+
+## Loop 运维
+
+18. **stale PID 文件阻断 cron** — 进程被 kill 后 `trap cleanup` 可能未执行（SIGKILL），PID 文件残留导致下次 cron tick 误判 SKIP。应在启动时做 liveness 检查（`kill -0`）——已有此逻辑，但需确认 trap 覆盖 SIGKILL 场景。
+
+19. **已修复的 issue 要及时关闭** — #373 #375 在 dfb8b20 合入 main 后仍 open 数天，污染 issue 列表。修复代码合入后应立即验证并关闭对应 issue。
+
 ---
 
-**最后更新**: 2026-06-24
+**最后更新**: 2026-06-27

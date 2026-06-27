@@ -32,4 +32,4 @@
 创建 `.loop/deliveries/issue-N.md`，更新 README。末尾输出 `ISSUE_NUM=<N>`。
 
 ## 孤儿 PR（仅 triage 为空时）
-`gc pr list --state open --json`，找本人非 draft PR→完整读评论→对照 §5.3 补缺失→合并。
+`gc pr list --state open --json`，找本人非 draft PR→完整读评论→对照 spec/workflows/development-workflow.md §5.3 补缺失→合并。

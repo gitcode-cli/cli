@@ -205,13 +205,13 @@ func TestParseRepo(t *testing.T) {
 
 func TestReplyOptions(t *testing.T) {
 	opts := &ReplyOptions{
-		PRNumber:     123,
+		Number:       123,
 		DiscussionID: "test-discussion",
 		Body:         "test body",
 	}
 
-	if opts.PRNumber != 123 {
-		t.Errorf("PRNumber = %d, want 123", opts.PRNumber)
+	if opts.Number != 123 {
+		t.Errorf("Number = %d, want 123", opts.Number)
 	}
 	if opts.DiscussionID != "test-discussion" {
 		t.Errorf("DiscussionID = %s, want test-discussion", opts.DiscussionID)

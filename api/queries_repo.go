@@ -203,7 +203,7 @@ func GetCommitStatistics(client *Client, owner, repo string, opts *CommitStatsOp
 		}
 	}
 	if len(params) > 0 {
-		path += "?" + stringsJoin(params, "&")
+		path += "?" + strings.Join(params, "&")
 	}
 
 	var stats CommitStatistics
@@ -212,17 +212,6 @@ func GetCommitStatistics(client *Client, owner, repo string, opts *CommitStatsOp
 		return nil, err
 	}
 	return &stats, nil
-}
-
-func stringsJoin(s []string, sep string) string {
-	result := ""
-	for i, v := range s {
-		if i > 0 {
-			result += sep
-		}
-		result += v
-	}
-	return result
 }
 
 func buildRepoListPath(base string, opts *RepoListOptions) string {

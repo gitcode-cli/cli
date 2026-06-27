@@ -492,26 +492,5 @@ func BuildURL(base string, params map[string]string) string {
 
 func replacePath(urlStr, key, value string) string {
 	placeholder := "{" + key + "}"
-	return replaceAll(urlStr, placeholder, url.PathEscape(value))
-}
-
-func replaceAll(s, old, new string) string {
-	result := ""
-	for {
-		idx := findString(s, old)
-		if idx == -1 {
-			return result + s
-		}
-		result += s[:idx] + new
-		s = s[idx+len(old):]
-	}
-}
-
-func findString(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
+	return strings.ReplaceAll(urlStr, placeholder, url.PathEscape(value))
 }

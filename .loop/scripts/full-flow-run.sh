@@ -50,10 +50,7 @@ cat "$PROMPT_FILE" | nohup timeout 1200 claude -p \
   > "$JSONL_FILE" 2>&1
 rc=$?
 
-# Brief pause: ensure JSONL fully flushed before parsing
-sleep 2
-
-# All post-processing is best-effort
-
-# All post-processing: delegate to process_tokens.py
+# All post-processing is best-effort.
+# Pipe closes when claude -p exits → python3 readlines() blocks until EOF.
+python3 .loop/scripts/process_tokens.py "$JSONL_FILE" "$LOGFILE" "$TOKEN_FILE" "$DELIVERIES_DIR" >> "$LOGFILE" 2>&1 || true
 python3 .loop/scripts/process_tokens.py "$JSONL_FILE" "$LOGFILE" "$TOKEN_FILE" "$DELIVERIES_DIR" >> "$LOGFILE" 2>&1 || true

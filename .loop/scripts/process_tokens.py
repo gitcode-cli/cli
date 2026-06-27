@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Process claude -p stream-json output: extract readable text, token data, and inject into delivery files."""
 import json, re, sys, os, subprocess
+from datetime import datetime, timedelta, timezone
 
 def main():
     jsonl_file = sys.argv[1]
@@ -160,9 +161,10 @@ def main():
     pr_str = '—'
     change_str = '—'
     time_str = '—'
+    since_date = (datetime.now(timezone.utc) - timedelta(days=60)).strftime('%Y-%m-%d')
     try:
         sha_result = subprocess.run(
-            ['git', 'log', 'origin/main', '--merges', '--format=%H|%ci|%s', '--since=2026-06-26'],
+            ['git', 'log', 'origin/main', '--merges', '--format=%H|%ci|%s', f'--since={since_date}'],
             capture_output=True, text=True, cwd='/home/wpf/claude-code/vibe-coding/cli'
         )
         for line in sha_result.stdout.strip().split('\n'):

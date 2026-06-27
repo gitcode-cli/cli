@@ -27,9 +27,28 @@ today = sum(1 for r in rows if '2026-06-27' in r)
 scores = [int(m) for r in rows for m in re.findall(r'(\d+)/8', r)]
 avg = f"{sum(scores)/len(scores):.1f}" if scores else "N/A"
 
-# Token total
-token_k = sum(int(m) for r in rows for m in re.findall(r'(\d+)k', r))
-token_total = f"{token_k/1000:.1f}M" if token_k >= 1000 else f"{token_k}k"
+# Token total — parse "4.7M(4.6M cache)", "260k", "—", etc.
+token_raw = 0
+for r in rows:
+    cols = [c.strip() for c in r.split('|') if c.strip()]
+    if len(cols) < 9:
+        continue
+    tok = cols[8]  # Tokens column (0-indexed: 8 of 11)
+    if tok == '—' or not tok:
+        continue
+    # Extract the main number before any parenthetical: "4.7M(4.6M cache)" → "4.7M"
+    main = tok.split('(')[0].strip()
+    m = re.match(r'([\d.]+)\s*(k|M)', main)
+    if m:
+        val = float(m.group(1))
+        unit = m.group(2)
+        token_raw += int(val * 1_000_000) if unit == 'M' else int(val * 1_000)
+if token_raw >= 1_000_000:
+    token_total = f"{token_raw/1_000_000:.1f}M"
+elif token_raw >= 1_000:
+    token_total = f"{token_raw/1_000:.0f}k"
+else:
+    token_total = str(token_raw)
 
 # Cost total
 costs = [float(m) for r in rows for m in re.findall(r'¥([\d.]+)', r)]

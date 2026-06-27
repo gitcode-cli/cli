@@ -44,3 +44,18 @@
 |------|:----:|------|
 | `.loop/deliveries/README.md` | -1 | 删除 stale 重复行 |
 | `.loop/scripts/process_tokens.py` | +9/-13 | 去重逻辑 + 行插入 fallback |
+
+## Token 消耗
+
+| 指标 | 值 |
+|------|-----|
+| 输入 tokens (cache miss) | 74,822 (75k) |
+| 输出 tokens | 27,858 (28k) |
+| 缓存命中 | 4,561,280 (4561k) |
+| 缓存写入 | 0 |
+| 总计 tokens | 102,680 (103k) |
+| 成本 (DeepSeek) | ¥0.5056 (~$0.0702) |
+| 耗时 | 659s |
+| 轮次 | 92 |
+
+> 计价: ¥3/M cache-miss + ¥0.025/M cache-hit + ¥6/M output

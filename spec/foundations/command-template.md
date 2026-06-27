@@ -273,6 +273,141 @@ func TestNewCmdXxx(t *testing.T) {
 }
 ```
 
+## Function Injection for Testability
+
+本项目的命令构造函数统一接受可选的 `runF func(*Options) error` 参数，这是一个**函数注入（Function Injection）**模式，目的是让测试代码可以在不依赖真实网络、认证、文件系统等外部状态的情况下验证命令行为。
+
+### 为什么不用接口 Mock？
+
+Go 中常见的 mock 方式需要先定义接口，再生成 mock 实现。函数注入更轻量：
+
+- 不需要额外的接口定义
+- 不需要 mock 生成工具
+- 测试代码可以直接在闭包中定制行为
+- 新增可注入点只需在 Options 结构体中增加一个函数字段
+
+### 主要模式：runF 注入
+
+每个命令的 `NewCmd*` 构造函数都接受可选的 `runF` 参数：
+
+```go
+func NewCmdXxx(f *cmdutil.Factory, runF func(*XxxOptions) error) *cobra.Command {
+    opts := &XxxOptions{
+        IO:         f.IOStreams,
+        HttpClient: f.HttpClient,
+    }
+
+    cmd := &cobra.Command{
+        // ...
+        RunE: func(cmd *cobra.Command, args []string) error {
+            if runF != nil {
+                return runF(opts)
+            }
+            return xxxRun(opts)
+        },
+    }
+    // ...
+}
+```
+
+测试代码通过注入自定义 `runF` 跳过复杂的外部依赖：
+
+```go
+// 基础参数验证测试：不需要真实 API 调用
+cmd := NewCmdXxx(f, func(opts *XxxOptions) error {
+    // 验证 opts 的字段已正确解析
+    if opts.Repository != "owner/repo" {
+        t.Errorf("expected owner/repo, got %s", opts.Repository)
+    }
+    return nil
+})
+cmd.SetArgs([]string{"-R", "owner/repo"})
+err := cmd.Execute()
+// err 为 nil 表示参数解析和验证通过
+```
+
+```go
+// 错误路径测试：模拟 API 调用失败
+cmd := NewCmdXxx(f, func(opts *XxxOptions) error {
+    return fmt.Errorf("simulated API error")
+})
+cmd.SetArgs([]string{"-R", "owner/repo"})
+err := cmd.Execute()
+// 验证错误传播正确
+```
+
+### 辅助模式：行为函数注入
+
+当命令依赖特定行为函数（如仓库名解析、文件操作等），可以在 Options 结构体中直接注入函数字段：
+
+```go
+type ForkOptions struct {
+    IO         *iostreams.IOStreams
+    HttpClient func() (*http.Client, error)
+    Config     func() (cmdutil.Config, error)
+
+    // 可注入的行为函数
+    ParseRepo func(string) (*git.Repo, error)
+}
+```
+
+构造函数在初始化时设置默认行为，测试可以替换：
+
+```go
+func NewCmdFork(f *cmdutil.Factory, runF func(*ForkOptions) error) *cobra.Command {
+    opts := &ForkOptions{
+        IO:         f.IOStreams,
+        HttpClient: f.HttpClient,
+        Config:     f.Config,
+        ParseRepo:  git.ParseRepo, // 默认实现
+    }
+    // ...
+}
+```
+
+测试中注入 mock 行为：
+
+```go
+cmd := NewCmdFork(f, func(opts *ForkOptions) error {
+    // 使用注入的 ParseRepo 验证行为
+    repo, err := opts.ParseRepo("owner/repo")
+    // ...
+    return nil
+})
+// 也可以直接替换 ParseRepo：
+// opts.ParseRepo = func(s string) (*git.Repo, error) { ... }
+```
+
+### 何时增加函数注入点
+
+遵循以下原则：
+
+| 场景 | 做法 |
+|------|------|
+| 命令依赖外部 API 调用 | 已有 `runF` 模式覆盖，不需要额外注入 |
+| 命令依赖特定工具函数（解析、转换、文件 I/O） | 在 Options 中增加函数字段，提供默认实现 |
+| 行为函数在 2+ 测试中需要替换 | 应在 Options 中暴露为可注入函数 |
+| 仅在一个测试中需要特殊行为 | 优先在 `runF` 闭包中内联处理 |
+
+### 与 cmdutil.TestFactory 配合
+
+测试中通常使用 `cmdutil.TestFactory()` 创建轻量的 Factory：
+
+```go
+func TestNewCmdXxx(t *testing.T) {
+    f := cmdutil.TestFactory()
+    cmd := NewCmdXxx(f, func(opts *XxxOptions) error {
+        return nil
+    })
+    cmd.SetArgs([]string{"--json"})
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("unexpected error: %v", err)
+    }
+}
+```
+
+`TestFactory()` 返回的 Factory 提供内存中的 IOStreams 和可用的 HttpClient，无需真实配置文件或认证 token。
+
 ---
 
-**最后更新**: 2026-03-26
+**最后更新**: 2026-06-27

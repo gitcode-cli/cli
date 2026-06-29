@@ -33,6 +33,13 @@ builds:
       - -X main.version={{.Version}}
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
+    overrides:
+      - goos: darwin
+        ldflags:
+          - -w
+          - -X main.version={{.Version}}
+          - -X main.commit={{.Commit}}
+          - -X main.date={{.Date}}
 
 archives:
   - id: default

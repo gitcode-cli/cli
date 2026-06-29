@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/url"
 	"sort"
 	"strings"
@@ -349,10 +350,7 @@ func UploadReleaseAssetByTag(client *Client, owner, repo, tag, filename string, 
 }
 
 // ErrNoReleaseID is returned when the GitCode API omits release IDs.
-var ErrNoReleaseID = fmtError("release id was not returned by GitCode API")
-
-// ErrInvalidReleaseID is returned when release ID is invalid
-var ErrInvalidReleaseID = fmtError("invalid release ID")
+var ErrNoReleaseID = errors.New("release id was not returned by GitCode API")
 
 func fmtError(msg string) error {
 	return &releaseError{msg: msg}

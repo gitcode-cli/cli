@@ -118,6 +118,7 @@ pager: less
 ### 实现方式
 
 ```go
+// （历史设计 — pkg/ 替代 internal/，2026-06 起对外暴露）
 // internal/keyring/keyring.go
 
 // 存储服务名

@@ -27,7 +27,7 @@
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                            服务层 (internal/)                            │
+│                         服务层 (pkg/，原 internal/)                       │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐   │
 │  │    config    │ │   authflow   │ │   prompter   │ │   browser    │   │
 │  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘   │
@@ -180,6 +180,7 @@ type OAuthDeviceFlowStrategy struct {
 用于灵活配置。
 
 ```go
+// （历史设计 — 原 internal/tableprinter/，现 pkg/tableprinter/）
 // internal/tableprinter/table_printer.go
 type TableOption func(*TablePrinter)
 
@@ -316,6 +317,7 @@ type Extension interface {
 ### 5.2 API 版本兼容
 
 ```go
+// （历史设计 — 原 internal/gcinstance/，现 pkg/gcinstance/）
 // internal/gcinstance/host.go
 type APIVersion string
 

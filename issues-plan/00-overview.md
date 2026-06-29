@@ -40,7 +40,7 @@
 gitcode-cli/
 ├── cmd/gc/                    # 主程序入口
 │   └── main.go
-├── internal/                  # 内部模块（不对外暴露）
+├── pkg/                       # 原 internal/，2026-06 起对外开放
 │   ├── config/               # 配置管理
 │   ├── gtcmd/                # CLI 主逻辑
 │   ├── authflow/             # 认证流程

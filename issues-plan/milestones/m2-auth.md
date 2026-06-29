@@ -113,6 +113,7 @@ gc auth login --token "your-token"
 **文件**:
 
 ```
+<!-- 历史设计 — internal/ 已迁移至 pkg/，见 pkg/keyring/ -->
 internal/keyring/keyring.go
 internal/keyring/keyring_darwin.go
 internal/keyring/keyring_linux.go
@@ -361,8 +362,9 @@ AUTH-008 (环境变量) → AUTH-004 (Status)
 
 ```bash
 go test ./pkg/cmd/auth/... -v
-# （历史设计）go test ./internal/authflow/... -v — 已移除，对应测试已迁入 pkg/cmd/auth/
-go test ./internal/keyring/... -v
+# （历史设计）以下 internal/ 路径已迁移至 pkg/:
+# go test ./internal/authflow/... -v
+# go test ./internal/keyring/... -v
 ```
 
 ### 集成测试

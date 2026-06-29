@@ -53,7 +53,7 @@ gitcode-cli/
 │           └── clone/
 │               ├── clone.go
 │               └── clone_test.go
-├── internal/
+├── pkg/     <!-- 原 internal/，2026-06 已迁移 -->
 │   └── config/
 │       ├── config.go
 │       └── config_test.go

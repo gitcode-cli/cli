@@ -22,6 +22,9 @@ type CloneOptions struct {
 	HttpClient func() (*http.Client, error)
 	Config     func() (config.Config, error)
 
+	// GitClone executes the git clone command. Injected by tests.
+	GitClone func(gitArgs []string, opts *CloneOptions) error
+
 	// Arguments
 	Repository string
 	Directory  string
@@ -39,6 +42,7 @@ func NewCmdClone(f *cmdutil.Factory, runF func(*CloneOptions) error) *cobra.Comm
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
 		Config:     f.Config,
+		GitClone:   execGitClone,
 	}
 
 	cmd := &cobra.Command{
@@ -136,6 +140,18 @@ func cloneRun(opts *CloneOptions) error {
 	}
 
 	// Execute git clone
+	if opts.GitClone == nil {
+		opts.GitClone = execGitClone
+	}
+	if err := opts.GitClone(gitArgs, opts); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(opts.IO.Out, "%s Cloned repository %s\n", cs.Green("✓"), opts.Repository)
+	return nil
+}
+
+func execGitClone(gitArgs []string, opts *CloneOptions) error {
 	gitCmd := exec.Command("git", gitArgs...)
 	gitCmd.Stdin = os.Stdin
 	gitCmd.Stdout = opts.IO.Out
@@ -144,8 +160,6 @@ func cloneRun(opts *CloneOptions) error {
 	if err := gitCmd.Run(); err != nil {
 		return fmt.Errorf("failed to clone repository: %w", err)
 	}
-
-	fmt.Fprintf(opts.IO.Out, "%s Cloned repository %s\n", cs.Green("✓"), opts.Repository)
 	return nil
 }
 

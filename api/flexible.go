@@ -43,8 +43,25 @@ func (fn FlexibleNumber) String() string {
 	return string(fn)
 }
 
-// Int returns the integer representation, or 0 on parse failure.
-func (fn FlexibleNumber) Int() int {
-	n, _ := strconv.Atoi(string(fn))
+// Int returns the integer representation, or an error on parse failure.
+func (fn FlexibleNumber) Int() (int, error) {
+	if fn == "" {
+		return 0, nil
+	}
+	n, err := strconv.Atoi(string(fn))
+	if err != nil {
+		return 0, fmt.Errorf("FlexibleNumber.Int: cannot parse %q as int: %w", string(fn), err)
+	}
+	return n, nil
+}
+
+// MustInt returns the integer representation, or 0 on parse failure.
+// Prefer Int() for new code; MustInt() is a convenience for callers
+// that have already validated the value or tolerate zero-on-error.
+func (fn FlexibleNumber) MustInt() int {
+	n, err := strconv.Atoi(string(fn))
+	if err != nil {
+		return 0
+	}
 	return n
 }

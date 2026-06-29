@@ -50,8 +50,12 @@ func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Clone body for potential retries
 	var bodyBytes []byte
 	if req.Body != nil && req.GetBody == nil {
-		bodyBytes, _ = io.ReadAll(req.Body)
+		var err error
+		bodyBytes, err = io.ReadAll(req.Body)
 		req.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read request body for retry: %w", err)
+		}
 		req.GetBody = func() (io.ReadCloser, error) {
 			return io.NopCloser(bytes.NewReader(bodyBytes)), nil
 		}

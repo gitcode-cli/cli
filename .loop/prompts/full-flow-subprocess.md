@@ -15,20 +15,20 @@ Phase 9: 多角色评审 → Phase 10: Merge
 
 ## Phase 0: 需求分析
 读到 issue 后、写任何代码前，按 `docs/superpowers/specs/analysis.md` 模板输出需求分析：
-- 问题定义、影响范围、根因推断、成功标准、约束条件
-- 写入 Issue comment（标题 `## 需求分析`）
+- 写入 `.loop/deliveries/issue-N-analysis.md`
+- Issue comment 只贴文件路径索引（如 `## 需求分析 → .loop/deliveries/issue-N-analysis.md`）
 - 在当前窗口打印交付总结
 
 ## Phase 1: 方案设计
 基于需求分析，按 `docs/superpowers/specs/design.md` 模板输出方案设计：
-- ≥2 个方案对比表（含优缺点）、推荐方案及理由、关键决策、风险与缓解
-- 写入 Issue comment（标题 `## 方案设计`）
+- 写入 `.loop/deliveries/issue-N-design.md`
+- Issue comment 只贴文件路径索引
 - 在当前窗口打印交付总结
 
 ## Phase 2: 开发计划
 基于选定方案，按 `docs/superpowers/specs/plan.md` 模板输出开发计划：
-- 文件清单（文件/操作/行数）、执行顺序（含每步验证方式）、测试策略
-- 写入 Issue comment（标题 `## 开发计划`）
+- 写入 `.loop/deliveries/issue-N-plan.md`
+- Issue comment 只贴文件路径索引
 - 在当前窗口打印交付总结
 
 ## Phase 3: 取 Issue
@@ -71,7 +71,7 @@ Phase 9: 多角色评审 → Phase 10: Merge
 ```
 
 ## 证据
-- Issue: 需求分析 + 方案设计 + 开发计划 + 验证记录 + 自检 9 项（含 CI URL）
+- Issue: 验证记录 + 自检 9 项（含 CI URL）+ 三文档索引（analysis/design/plan 文件路径）
 - PR: 评审结论 + CI URL + gate 表
 - CI 未跑写 ✅ 算违规；CI 问题必须修复，无论是否本次修改引入
 

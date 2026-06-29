@@ -190,13 +190,16 @@ func TestSyncRunNoChanges(t *testing.T) {
 	t.Cleanup(func() { _ = os.Setenv("GC_TOKEN", oldToken) })
 	_ = os.Setenv("GC_TOKEN", "token")
 
-	originalGitRun := gitRun
-	gitRun = func(env map[string]string, args ...string) (string, error) {
-		cloneEnv = env
-		cloneArgs = append([]string{}, args...)
-		return "", nil
+	// Replace package-level gitRun override with opts.GitRun — empty dir signals the clone call
+	savedGitRun := opts.GitRun
+	opts.GitRun = func(dir string, env map[string]string, args ...string) (string, error) {
+		if dir == "" && len(args) > 0 && args[0] == "clone" {
+			cloneEnv = env
+			cloneArgs = append([]string{}, args...)
+			return "", nil
+		}
+		return savedGitRun(dir, env, args...)
 	}
-	t.Cleanup(func() { gitRun = originalGitRun })
 
 	if err := syncRun(opts); err != nil {
 		t.Fatalf("syncRun() error = %v", err)
@@ -286,9 +289,13 @@ func TestSyncRunBuildsPRURLWhenCreateResponseOmitsHTMLURL(t *testing.T) {
 	t.Cleanup(func() { _ = os.Setenv("GC_TOKEN", oldToken) })
 	_ = os.Setenv("GC_TOKEN", "token")
 
-	originalGitRun := gitRun
-	gitRun = func(env map[string]string, args ...string) (string, error) { return "", nil }
-	t.Cleanup(func() { gitRun = originalGitRun })
+	savedGitRun := opts.GitRun
+	opts.GitRun = func(dir string, env map[string]string, args ...string) (string, error) {
+		if dir == "" && len(args) > 0 && args[0] == "clone" {
+			return "", nil
+		}
+		return savedGitRun(dir, env, args...)
+	}
 
 	if err := syncRun(opts); err != nil {
 		t.Fatalf("syncRun() error = %v", err)
@@ -368,9 +375,13 @@ func TestSyncRunRequiresConfirmationBeforePush(t *testing.T) {
 		CommitMsg:  "sync: docs -> target/mirror",
 	}
 
-	originalGitRun := gitRun
-	gitRun = func(env map[string]string, args ...string) (string, error) { return "", nil }
-	t.Cleanup(func() { gitRun = originalGitRun })
+	savedGitRun := opts.GitRun
+	opts.GitRun = func(dir string, env map[string]string, args ...string) (string, error) {
+		if dir == "" && len(args) > 0 && args[0] == "clone" {
+			return "", nil
+		}
+		return savedGitRun(dir, env, args...)
+	}
 
 	err := syncRun(opts)
 	if err == nil || !strings.Contains(err.Error(), "confirmation required") {

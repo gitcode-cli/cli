@@ -35,3 +35,18 @@ Per docs-governance.md §6.1, added Docker references to 3 entry documents:
 - Pre-commit: 10/10 pass
 - `grep -i docker` confirms references in all 3 files
 - Classifier: `risk=low` for all 3 files (documentation assets)
+
+## Token 消耗
+
+| 指标 | 值 |
+|------|-----|
+| 输入 tokens (cache miss) | 63,871 (64k) |
+| 输出 tokens | 24,220 (24k) |
+| 缓存命中 | 5,105,152 (5105k) |
+| 缓存写入 | 0 |
+| 总计 tokens | 88,091 (88k) |
+| 成本 (DeepSeek) | ¥0.4682 (~$0.065) |
+| 耗时 | 402s |
+| 轮次 | 106 |
+
+> 计价: ¥3/M cache-miss + ¥0.025/M cache-hit + ¥6/M output

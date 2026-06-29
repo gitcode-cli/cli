@@ -73,3 +73,6 @@ secrets.yml
 .loop/history/
 .loop/memory/INDEX.md
 .loop/memory/*-session.md
+
+# Claude Code skills - installed from external source, not committed
+.claude/skills/

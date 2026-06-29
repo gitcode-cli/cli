@@ -65,7 +65,7 @@ AI 必须逐项执行，每项完成后留下证据：
 | 4 | UT | 跳过 | 必须 | `go test ./...` 全部通过 |
 | 5 | Pre-commit | 必须 | 必须 | 所有 hooks 通过 |
 | 6 | 实际命令 | 跳过 | 必须 | `./gc <cmd> -R infra-test/gctest1` |
-| 7 | CI | 跳过 | 必须 | `gh run list` 全绿 + run URL |
+| 7 | CI | 跳过 | 必须 | `gh run list` 全绿 + run URL。CI 问题必须修复，无论是否本次修改引入 |
 | 8 | 风险分级 | 必须 | 必须 | `scripts/classify-change-risk.py` |
 | + | 多角色评审 | 2 角色 | 4 角色 | Agent 结论汇总到 PR |
 | + | 合并 | 自动 | 自动* | risk/low 自动，risk/high 暂停 |

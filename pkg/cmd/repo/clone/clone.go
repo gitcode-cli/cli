@@ -3,8 +3,8 @@ package clone
 
 import (
 	"fmt"
+	"io"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -118,7 +118,7 @@ func cloneRun(opts *CloneOptions) error {
 		return err
 	}
 
-	repoURL, err := parseRepoURL(opts.Repository, protocol)
+	repoURL, err := parseRepoURL(opts.Repository, protocol, opts.IO.ErrOut)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func cloneRun(opts *CloneOptions) error {
 
 func execGitClone(gitArgs []string, opts *CloneOptions) error {
 	gitCmd := exec.Command("git", gitArgs...)
-	gitCmd.Stdin = os.Stdin
+	gitCmd.Stdin = opts.IO.In
 	gitCmd.Stdout = opts.IO.Out
 	gitCmd.Stderr = opts.IO.ErrOut
 
@@ -181,11 +181,11 @@ func resolveGitProtocol(opts *CloneOptions) (string, error) {
 	return protocol, nil
 }
 
-func parseRepoURL(repo, protocol string) (string, error) {
+func parseRepoURL(repo, protocol string, errOut io.Writer) (string, error) {
 	// Already a URL
 	if strings.HasPrefix(repo, "http://") || strings.HasPrefix(repo, "https://") || strings.HasPrefix(repo, "git@") {
 		if strings.HasPrefix(repo, "http://") {
-			fmt.Fprintf(os.Stderr, "warning: cloning over HTTP (unencrypted). Consider using HTTPS or SSH.\n")
+			fmt.Fprintf(errOut, "warning: cloning over HTTP (unencrypted). Consider using HTTPS or SSH.\n")
 		}
 		return repo, nil
 	}

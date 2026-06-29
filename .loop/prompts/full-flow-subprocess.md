@@ -47,7 +47,7 @@ Phase 9: 多角色评审 → Phase 10: Merge
 | 4 | UT | 跳过 | 全通过 |
 | 5 | Pre-commit | 必须 | 必须 |
 | 6 | 命令验证 | 跳过 | infra-test/* 至少一条 |
-| 7 | CI | 跳过 | gh CLI 触发 GitHub Actions，等待全绿，PR 附 run URL |
+| 7 | CI | 跳过 | gh CLI 触发 GitHub Actions，等待全绿，PR 附 run URL。CI 问题必须修复，无论是否本次修改引入 |
 | 8 | 风险分级 | 必须 | classify-change-risk.py |
 
 ## Phase 7-10: 安全审查 → 自检 → 评审 → Merge
@@ -73,7 +73,7 @@ Phase 9: 多角色评审 → Phase 10: Merge
 ## 证据
 - Issue: 需求分析 + 方案设计 + 开发计划 + 验证记录 + 自检 9 项（含 CI URL）
 - PR: 评审结论 + CI URL + gate 表
-- CI 未跑写 ✅ 算违规
+- CI 未跑写 ✅ 算违规；CI 问题必须修复，无论是否本次修改引入
 
 ## 交付
 创建 `.loop/deliveries/issue-N.md`（含 Phase 0-2 文档的 Issue comment ID 引用），更新 README。末尾输出 `ISSUE_NUM=<N>`。

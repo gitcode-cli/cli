@@ -58,3 +58,18 @@ Added `GitClone` function field to `CloneOptions` following project Pattern B (f
 - `gofmt -l`: No formatting issues
 - Pre-commit: 10/10 pass
 - `classify-change-risk.py`: risk=medium
+
+## Token 消耗
+
+| 指标 | 值 |
+|------|-----|
+| 输入 tokens (cache miss) | 69,480 (69k) |
+| 输出 tokens | 28,264 (28k) |
+| 缓存命中 | 5,812,736 (5813k) |
+| 缓存写入 | 0 |
+| 总计 tokens | 97,744 (98k) |
+| 成本 (DeepSeek) | ¥0.817 (~$0.1135) |
+| 耗时 | 853s |
+| 轮次 | 105 |
+
+> 计价: ¥3/M cache-miss + ¥0.025/M cache-hit + ¥6/M output

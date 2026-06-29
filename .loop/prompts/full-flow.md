@@ -92,3 +92,103 @@ AI 必须逐项执行 `spec/workflows/development-workflow.md` §5.3，每项完
 - 更新"当前活跃 Issue"列表
 - 如有新发现，追加到"经验教训"
 - 更新"待办"项
+
+## 演示输出规范
+
+### 强制 Phase 总结框
+
+AI 必须在 **每个 Phase 结束** 时输出结构化总结框，不得跳过任何 Phase：
+
+```
+┌─ Phase N/10: <阶段名> ───────────────────────────────────────┐
+│ Issue:  #<N>  <标题>                                         │
+│ 状态:   ✅/⚠️/❌                                              │
+│ 产物:   <具体产出物>                                          │
+│ 链接:   Issue: https://gitcode.com/gitcode-cli/cli/issues/<N> │
+│         PR:    https://gitcode.com/gitcode-cli/cli/pulls/<N>  │
+│         Doc:   .loop/deliveries/issue-<N>-<type>.md           │
+│ 关键发现: <一句话>                                            │
+│ 下一步: Phase N+1: <名称>                                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Gate 7 (CI) 强制要求
+
+**CI 问题必须修复，无论是否本次修改引入。**
+
+CI 结果必须用结构化表格展示每个 Job：
+
+```
+┌─ Gate 7: CI ───────────────────────────────────────────────────┐
+│ Run:  #<id>  URL: https://github.com/gitcode-cli/cli/actions/runs/<id> │
+│ | Job                  | 状态 | 说明                           │
+│ | Build (macOS)        |  ❌  | dyld: missing LC_UUID          │
+│ | Build (ubuntu)       |  ✅  |                                │
+│ 通过: N/8  失败: M                                              │
+│ 结论: ❌ 有失败项，必须修复后再 merge                            │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+- CI 有失败项时，Phase 6 不得标记为完成
+- 修复 CI 的 PR 需单独创建并关联原 Issue
+- CI 因环境不可达无法执行时（如 GitHub 镜像仓不可达），须在自检中明确记录
+
+### Issue 边界
+
+- 每次 /loop 触发 **只处理 1 个 Issue**
+- Phase 10 Merge 完成后 **立即停止**
+- 不得在未收到下次触发或用户显式指令的情况下开始新 Issue
+- 孤儿 PR 模式同样只处理 1 个
+
+### 开场模板
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  全流程交付开始                                              ║
+║  Issue:  #<N> — <标题>                                      ║
+║  类型:   <type>  |  风险: <risk>  |  范围: <scope>          ║
+║  工作区: .claude/worktrees/issue-<N>-<slug>                 ║
+║  时间:   <timestamp>                                        ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+### 收尾模板
+
+Phase 10 完成后输出：
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  全流程交付完成                                              ║
+║  Issue:  #<N> → ✅ merged                                   ║
+║  PR:     !<N> → ✅ merged                                   ║
+║  文件:   N files, +N/-M                                      ║
+║  门禁:   8/8 (例外项: <列出并说明>)                           ║
+║                                                              ║
+║  ## 本次交付链接                                              ║
+║  | 资源     | 链接                                          | ║
+║  | Issue    | https://gitcode.com/.../issues/<N>            | ║
+║  | PR       | https://gitcode.com/.../pulls/<N>             | ║
+║  | 需求分析 | .loop/deliveries/issue-<N>-analysis.md        | ║
+║  | CI Run   | https://github.com/.../actions/runs/<id>      | ║
+║                                                              ║
+║  ISSUE_NUM=<N>                                               ║
+║  📊 面板: .loop/deliveries/issue-<N>-dashboard.md            ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+### 交付合规审计
+
+每次交付完成后自检：
+
+```
+□ 1. 每个 Phase 都有总结框 (10/10)
+□ 2. 每个 Phase 包含 Issue URL + PR URL
+□ 3. Gate 7 CI 用结构化表格展示了每个 Job
+□ 4. CI 失败项已修复，非跳过
+□ 5. 一次触发只处理了 1 个 Issue
+□ 6. 收尾有链接汇总表
+□ 7. Dashboard 文件已创建
+□ 8. .loop/deliveries/issue-N.md 已写入
+
+未通过项: <列出>
+```

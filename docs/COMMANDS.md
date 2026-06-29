@@ -50,6 +50,20 @@ CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comm
 - 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view/log/branch view`，以及 `pr list/view/issues`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等"作用于当前仓库"的安全只读场景。
 - 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
+
+### Docker 使用
+
+仓库提供了 Docker 镜像构建与运行支持：
+
+```bash
+make docker-build
+make docker-run
+docker compose up gc
+```
+
+认证 token 通过环境变量传入：`export GC_TOKEN=your_token && make docker-run`。
+更多用法参见 [README.md](../README.md) 和 `docker-compose.yml`。
+
 ### Agent-Friendly CLI 能力
 
 当前版本已开始收口面向 AI 代理和脚本的 CLI 契约：

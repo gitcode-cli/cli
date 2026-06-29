@@ -3,7 +3,7 @@
 ## Prompt
 
 ~~~
-/loop 30m 在 git worktree 中从 status/triage 取一个 issue，推进到 merged。每次只处理一个。
+/loop 2h 在 git worktree 中从 status/triage 取一个 issue，推进到 merged。每次只处理一个。
 
 ## 流程概览
 Phase 0: 需求分析 → Phase 1: 方案设计 → Phase 2: 开发计划 →

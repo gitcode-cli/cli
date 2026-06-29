@@ -39,6 +39,8 @@ Phase 9: 多角色评审 → Phase 10: Merge
 
 ## Phase 6: 开发实现（8 门禁）
 
+按 `spec/workflows/development-workflow.md` §5.3 执行：
+
 | # | 门禁 | docs-only | 代码改动 |
 |---|------|:--:|------|
 | 1 | 实现 | — | 修复 |

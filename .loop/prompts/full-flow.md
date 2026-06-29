@@ -35,7 +35,7 @@ gc pr list --state open --json，找本人非 draft PR→补缺失→合并。
 
 ## 门禁清单
 
-AI 必须逐项执行，每项完成后留下证据：
+AI 必须逐项执行 `spec/workflows/development-workflow.md` §5.3，每项完成后留下证据：
 
 | # | 门禁 | docs-only | 代码改动 | 证据 |
 |---|------|:--:|:--:|------|

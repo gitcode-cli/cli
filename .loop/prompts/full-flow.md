@@ -1,9 +1,8 @@
-# /loop 全流程交付
+# 全流程交付
 
-## Prompt
+## 任务
 
-~~~
-/loop 2h 在 git worktree 中从 status/triage 取一个 issue，推进到 merged。每次只处理一个。
+在 git worktree 中从 status/triage 取一个 issue，推进到 merged。每次只处理一个。
 
 ## 流程概览
 Phase 0: 需求分析 → Phase 1: 方案设计 → Phase 2: 开发计划 →
@@ -23,15 +22,6 @@ Issue comment 只贴文件路径索引，不贴全文。
 risk/low 自动合，risk/high 暂停。
 8 门禁按 spec/workflows/development-workflow.md §5.3 执行。
 
-## 每步交付总结
-每个 Phase 完成后打印:
-┌─ Phase N/10: <阶段名> ────────────────────┐
-│ 状态: ✅/❌/⚠️                               │
-│ 产物: <comment/label/PR/commit>             │
-│ 关键发现: <一句话>                           │
-│ 下一步: Phase N+1: <名称>                   │
-└────────────────────────────────────────────┘
-
 ## 证据
 - Issue: 验证记录 + 自检 9 项(含 CI URL) + 三文档索引
 - PR: 多角色评审结论 + CI URL + gate 表
@@ -42,14 +32,6 @@ risk/low 自动合，risk/high 暂停。
 
 ## 孤儿 PR（triage 为空时）
 gc pr list --state open --json，找本人非 draft PR→补缺失→合并。
-~~~
-
-## 设置方式
-
-1. 替换间隔（推荐 30m）
-2. 确认 `docs/superpowers/specs/` 下 analysis/design/plan 模板已是最新
-3. 确认 `spec/workflows/development-workflow.md` §5.3 门禁表已是最新版本
-4. 启动后写入 `.loop/registry/active.yaml`
 
 ## 门禁清单
 
@@ -110,7 +92,3 @@ AI 必须逐项执行，每项完成后留下证据：
 - 更新"当前活跃 Issue"列表
 - 如有新发现，追加到"经验教训"
 - 更新"待办"项
-
-### 会话结束
-- 写 `memory/YYYY-MM-DD-session.md` 记录本会话摘要
-- 标记 `registry/active.yaml` 中的 loop 为 lost

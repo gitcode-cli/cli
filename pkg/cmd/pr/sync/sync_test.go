@@ -182,17 +182,16 @@ func TestSyncCommitsPreservesCommitBoundaries(t *testing.T) {
 	}
 
 	var calls [][]string
-	originalGitRunInDirWithEnv := gitRunInDirWithEnv
-	gitRunInDirWithEnv = func(dir string, env map[string]string, args ...string) (string, error) {
+
+	gitRunInDir := func(dir string, env map[string]string, args ...string) (string, error) {
 		if dir != "/tmp/workdir" {
-			t.Fatalf("gitRunInDirWithEnv dir = %q, want /tmp/workdir", dir)
+			t.Fatalf("gitRunInDir dir = %q, want /tmp/workdir", dir)
 		}
 		calls = append(calls, append([]string(nil), args...))
 		return "", nil
 	}
-	t.Cleanup(func() { gitRunInDirWithEnv = originalGitRunInDirWithEnv })
 
-	commitsSynced, conflictError := syncCommits("/tmp/workdir", commits)
+	commitsSynced, conflictError := syncCommits(gitRunInDir, "/tmp/workdir", commits)
 	if conflictError != "" {
 		t.Fatalf("syncCommits() unexpected conflict error = %q", conflictError)
 	}
@@ -216,17 +215,16 @@ func TestSyncCommitsReportsActualCountOnConflict(t *testing.T) {
 	}
 
 	var calls [][]string
-	originalGitRunInDirWithEnv := gitRunInDirWithEnv
-	gitRunInDirWithEnv = func(dir string, env map[string]string, args ...string) (string, error) {
+
+	gitRunInDir := func(dir string, env map[string]string, args ...string) (string, error) {
 		calls = append(calls, append([]string(nil), args...))
 		if len(args) == 3 && args[0] == "cherry-pick" && args[2] == commits[1].SHA {
 			return "", errors.New("conflict")
 		}
 		return "", nil
 	}
-	t.Cleanup(func() { gitRunInDirWithEnv = originalGitRunInDirWithEnv })
 
-	commitsSynced, conflictError := syncCommits("/tmp/workdir", commits)
+	commitsSynced, conflictError := syncCommits(gitRunInDir, "/tmp/workdir", commits)
 	if commitsSynced != 1 {
 		t.Fatalf("syncCommits() commitsSynced = %d, want 1", commitsSynced)
 	}
@@ -299,19 +297,13 @@ func TestSyncRunRequiresConfirmationBeforePush(t *testing.T) {
 		TargetRepo: "infra-test/target",
 	}
 
-	originalGitRunWithEnv := gitRunWithEnv
-	originalGitRunInDirWithEnv := gitRunInDirWithEnv
-	gitRunWithEnv = func(env map[string]string, args ...string) (string, error) { return "", nil }
-	gitRunInDirWithEnv = func(dir string, env map[string]string, args ...string) (string, error) {
+	opts.GitRun = func(env map[string]string, args ...string) (string, error) { return "", nil }
+	opts.GitRunInDir = func(dir string, env map[string]string, args ...string) (string, error) {
 		if len(args) > 0 && args[0] == "push" {
 			pushCalled = true
 		}
 		return "", nil
 	}
-	t.Cleanup(func() {
-		gitRunWithEnv = originalGitRunWithEnv
-		gitRunInDirWithEnv = originalGitRunInDirWithEnv
-	})
 
 	err := syncRun(opts)
 	if err == nil || !strings.Contains(err.Error(), "confirmation required") {

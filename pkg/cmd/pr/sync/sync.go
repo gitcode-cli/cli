@@ -19,10 +19,6 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
-// Package-level variables for testing
-var gitRunWithEnv = gitpkg.RunWithEnv
-var gitRunInDirWithEnv = gitpkg.RunInDirWithEnv
-
 type SyncResult struct {
 	SourcePR      string `json:"source_pr"`
 	SourcePRURL   string `json:"source_pr_url"`
@@ -42,6 +38,8 @@ type SyncOptions struct {
 	ListPRCommits func(*api.Client, string, string, int) ([]api.Commit, error)
 	GetRepo       func(*api.Client, string, string) (*api.Repository, error)
 	CreatePR      func(*api.Client, string, string, *api.CreatePROptions) (*api.PullRequest, error)
+	GitRun        func(map[string]string, ...string) (string, error)
+	GitRunInDir   func(string, map[string]string, ...string) (string, error)
 	MkdirTemp     func(string, string) (string, error)
 	RemoveAll     func(string) error
 
@@ -64,6 +62,8 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 		ListPRCommits: api.ListPRCommits,
 		GetRepo:       api.GetRepo,
 		CreatePR:      api.CreatePullRequest,
+		GitRun:        gitpkg.RunWithEnv,
+		GitRunInDir:   gitpkg.RunInDirWithEnv,
 		MkdirTemp:     os.MkdirTemp,
 		RemoveAll:     os.RemoveAll,
 	}
@@ -245,24 +245,24 @@ func syncRun(opts *SyncOptions) error {
 	defer func() { _ = opts.RemoveAll(workDir) }()
 
 	// Clone target repository
-	if _, err := gitRunWithEnv(nil, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
+	if _, err := opts.GitRun(nil, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
 		return sshGitError("failed to clone target repository", err)
 	}
 
 	// Fetch source repository to get commits
-	if _, err := gitRunInDirWithEnv(workDir, nil, "remote", "add", "source", repositoryGitURL(sourcePR.Owner, sourcePR.Repo)); err != nil {
+	if _, err := opts.GitRunInDir(workDir, nil, "remote", "add", "source", repositoryGitURL(sourcePR.Owner, sourcePR.Repo)); err != nil {
 		return fmt.Errorf("failed to add source remote: %w", err)
 	}
-	if _, err := gitRunInDirWithEnv(workDir, nil, "fetch", "source"); err != nil {
+	if _, err := opts.GitRunInDir(workDir, nil, "fetch", "source"); err != nil {
 		return sshGitError("failed to fetch source repository", err)
 	}
 
 	// Create sync branch based on target base branch
-	if _, err := gitRunInDirWithEnv(workDir, nil, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
+	if _, err := opts.GitRunInDir(workDir, nil, "checkout", "-B", syncBranch, "origin/"+baseBranch); err != nil {
 		return fmt.Errorf("failed to create sync branch: %w", err)
 	}
 
-	commitsSynced, conflictError := syncCommits(workDir, commits)
+	commitsSynced, conflictError := syncCommits(opts.GitRunInDir, workDir, commits)
 
 	result := SyncResult{
 		SourcePR:      fmt.Sprintf("%s/%s#%d", sourcePR.Owner, sourcePR.Repo, sourcePR.Number),
@@ -292,7 +292,7 @@ func syncRun(opts *SyncOptions) error {
 	}
 
 	// Push sync branch
-	if _, err := gitRunInDirWithEnv(workDir, nil, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
+	if _, err := opts.GitRunInDir(workDir, nil, "push", "--force-with-lease", "-u", "origin", syncBranch); err != nil {
 		return sshGitError("failed to push sync branch", err)
 	}
 
@@ -362,11 +362,11 @@ func buildSyncBody(pr *api.PullRequest, sourcePR *PRRef, targetRepo string) stri
 	return body
 }
 
-func syncCommits(workDir string, commits []api.Commit) (int, string) {
+func syncCommits(gitRunInDir func(string, map[string]string, ...string) (string, error), workDir string, commits []api.Commit) (int, string) {
 	commitsSynced := 0
 	for _, commit := range commits {
-		if _, err := gitRunInDirWithEnv(workDir, nil, "cherry-pick", "-x", commit.SHA); err != nil {
-			_, _ = gitRunInDirWithEnv(workDir, nil, "cherry-pick", "--abort")
+		if _, err := gitRunInDir(workDir, nil, "cherry-pick", "-x", commit.SHA); err != nil {
+			_, _ = gitRunInDir(workDir, nil, "cherry-pick", "--abort")
 			return commitsSynced, fmt.Sprintf("cherry-pick conflict on commit %s: %s", shortSHA(commit.SHA), commit.Message)
 		}
 		commitsSynced++

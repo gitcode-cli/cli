@@ -93,7 +93,7 @@ docker-push:
 	docker push $(DOCKER_IMAGE):$(VERSION)
 
 docker-run:
-	docker run --rm -it $(DOCKER_IMAGE):$(DOCKER_TAG)
+	docker run --rm -it -e GC_TOKEN $(DOCKER_IMAGE):$(DOCKER_TAG)
 
 docker-all:
 	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_IMAGE):$(DOCKER_TAG) .

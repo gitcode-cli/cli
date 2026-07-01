@@ -60,7 +60,8 @@
 ### 2.3 API 客户端
 
 - `api/client.go`：`Client` 封装 HTTP 调用、token 注入、host 解析
-- `api/http_client.go`：带重试的 HTTP 客户端（`DefaultRetryConfig`、`ParseTimeoutFromEnv`、`IsDebugEnabled`）
+- `api/http_client.go`：HTTP 客户端工厂（`ParseTimeoutFromEnv`、`IsDebugEnabled`、`NewHTTPClientWithRetry`）
+- `api/retry.go`：HTTP 重试中间件（`RetryConfig`、`DefaultRetryConfig`、`RetryMiddleware`）
 - `api/queries_*.go`：按领域分组的查询函数（issue、pr、repo、commit、release、label_milestone、user）
 - `api/flexible.go`：灵活字段解析
 - `api/time.go`：时间解析与格式化
@@ -75,7 +76,8 @@
 | `docs/AI-GUIDE.md` | 外部项目通过 AI 使用 `gc` 的说明，不定义本仓库内部流程 |
 | `README.md`、`AGENTS.md`、`CLAUDE.md` | 入口导航，非规则源 |
 | `issues-plan/PROGRESS.md` | 阶段说明，可能滞后 |
-| `.ai/skills/`、`.codex/skills/`、`.claude/skills/` | AI 共享 skill 与客户端适配层 |
+| `.codex/skills/` | Codex 适配层（仍纳入仓库追踪） |
+| `.ai/skills/`、`.claude/skills/` | 历史共享 skill 与客户端适配层（已在 commit `a0264be`、`7287d85` 停止仓库追踪，改为用户级 `~/.claude/skills/`） |
 
 冲突时优先级见 [spec/governance/source-of-truth-matrix.md](./spec/governance/source-of-truth-matrix.md)：`spec/` > `docs/COMMANDS.md` > 远端平台事实/`origin/main` > CI 运行结果 > `.ai/skills/*` > 入口文档。
 
@@ -93,7 +95,9 @@ make build-all      # linux/darwin/windows 多平台
 make clean          # 清理 bin/、dist/、coverage
 ```
 
-版本信息：`go build` 从 `debug.ReadBuildInfo()` 自动取 git commit/time；`make build` 通过 `-ldflags` 注入 `main.version`、`main.commit`、`main.date`。macOS 不使用 `-s` ldflag 以保留 `LC_UUID`（见 commit `3b66a04`）。
+版本信息：`go build` 从 `debug.ReadBuildInfo()` 自动取 git commit/time；`make build` 通过 `-ldflags` 注入 `main.version`、`main.commit`、`main.date`。
+
+**macOS 注意**：`Makefile` 的 `LDFLAGS` 始终使用 `-s -w`，未做 macOS 适配。`-s` 会剥离符号表导致 macOS dyld 找不到 `LC_UUID`，使 `bin/gc version` 崩溃。macOS 构建请使用 `scripts/build.sh` 或 CI 工作流（见 commit `3b66a04`），它们在 Darwin 上只用 `-w`。
 
 ### 3.2 测试与检查
 
@@ -293,13 +297,11 @@ gh run view <run-id> --log --job=<job-id>
 当前仓库内的 Codex 项目级入口是：
 
 - `AGENTS.md`
+- `.codex/skills/` Codex 适配层（仍纳入仓库追踪）
 
-当前仓库已引入：
+历史曾引入 `.ai/skills/` 与 `.claude/skills/` 作为共享 skill 真相源与客户端适配层，但自 commit `a0264be`、`7287d85` 起已停止仓库追踪，改为用户级 `~/.claude/skills/`（worktree-safe）。
 
-- `.ai/skills/` 共享 skill 真相源
-- `.codex/skills/` Codex 适配层
-
-Codex 仍应先以 `spec/` 和本文件为主要入口，再进入共享源或适配层。
+Codex 应先以 `spec/` 和本文件为主要入口。
 
 ## 11. 常用入口
 

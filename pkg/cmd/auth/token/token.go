@@ -31,6 +31,9 @@ type TokenOptions struct {
 	JSON        bool
 }
 
+// tokenWarning is the security warning printed to stderr before displaying the token.
+const tokenWarning = "Warning: displaying authentication token. Do not share this output."
+
 // NewCmdToken creates the token command
 func NewCmdToken(f *cmdutil.Factory, runF func(*TokenOptions) error) *cobra.Command {
 	opts := &TokenOptions{
@@ -98,18 +101,18 @@ func tokenRun(opts *TokenOptions) error {
 		return cmdutil.NewAuthError("no authentication token found")
 	}
 
+	fmt.Fprintln(opts.IO.ErrOut, tokenWarning)
+
 	if opts.JSON {
 		info := TokenInfo{
 			Hostname: opts.Hostname,
 			Token:    token,
 			Source:   source,
 		}
-		fmt.Fprintln(opts.IO.ErrOut, "Warning: displaying authentication token. Do not share this output.")
 		return cmdutil.WriteJSON(opts.IO.Out, info)
 	}
 
 	// Print token to stdout (for piping)
-	fmt.Fprintln(opts.IO.ErrOut, "Warning: displaying authentication token. Do not share this output.")
 	fmt.Fprintln(opts.IO.Out, token)
 
 	return nil

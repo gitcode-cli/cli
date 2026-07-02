@@ -88,6 +88,7 @@
 - 输出当前活动 token
 - 与 `auth status` 看到的来源保持一致
 - 显式传 `--hostname` 时，输出目标主机已存储 token，不再被通用环境变量覆盖
+- 输出 token 前会向 stderr 输出安全警告，可用 `2>/dev/null` 屏蔽
 
 ### auth logout
 

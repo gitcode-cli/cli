@@ -20,7 +20,9 @@ func TestTokenRunUsesStoredToken(t *testing.T) {
 
 	f := cmdutil.TestFactory()
 	out := &strings.Builder{}
+	errOut := &strings.Builder{}
 	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
 
 	opts := &TokenOptions{
 		IO:         f.IOStreams,
@@ -35,6 +37,12 @@ func TestTokenRunUsesStoredToken(t *testing.T) {
 	}
 	if strings.TrimSpace(out.String()) != "stored-token" {
 		t.Fatalf("output = %q", out.String())
+	}
+	if strings.Contains(out.String(), "Warning:") {
+		t.Fatalf("stdout must not contain warning, got: %q", out.String())
+	}
+	if !strings.Contains(errOut.String(), "Warning: displaying authentication token") {
+		t.Fatalf("stderr should contain token warning, got: %q", errOut.String())
 	}
 }
 
@@ -122,5 +130,78 @@ func TestTokenRunRejectsMalformedDefaultHost(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "invalid host") {
 		t.Fatalf("tokenRun() error = %q, want invalid host", err.Error())
+	}
+}
+
+func TestTokenRunJSONOutputsWarningToStderr(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	cfg := config.New()
+	if _, err := cfg.Authentication().Login("gitcode.com", "tester", "stored-token", "https", false); err != nil {
+		t.Fatalf("Login() error = %v", err)
+	}
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &TokenOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		JSON:       true,
+		Config: func() (config.Config, error) {
+			return config.New(), nil
+		},
+	}
+
+	if err := tokenRun(opts); err != nil {
+		t.Fatalf("tokenRun() error = %v", err)
+	}
+	if !strings.Contains(errOut.String(), "Warning: displaying authentication token") {
+		t.Fatalf("stderr should contain token warning in JSON mode, got: %q", errOut.String())
+	}
+	if !strings.Contains(out.String(), "stored-token") {
+		t.Fatalf("stdout should contain token in JSON output, got: %q", out.String())
+	}
+	if strings.Contains(out.String(), "Warning:") {
+		t.Fatalf("stdout must not contain warning, got: %q", out.String())
+	}
+}
+
+func TestTokenRunNoTokenReturnsErrorWithoutWarning(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &TokenOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Config: func() (config.Config, error) {
+			return config.New(), nil
+		},
+	}
+
+	err := tokenRun(opts)
+	if err == nil {
+		t.Fatal("tokenRun() error = nil, want auth error")
+	}
+	if !strings.Contains(err.Error(), "no authentication token found") {
+		t.Fatalf("tokenRun() error = %q, want auth error", err.Error())
+	}
+	if errOut.String() != "" {
+		t.Fatalf("stderr should be empty when no token found, got: %q", errOut.String())
+	}
+	if out.String() != "" {
+		t.Fatalf("stdout should be empty when no token found, got: %q", out.String())
 	}
 }

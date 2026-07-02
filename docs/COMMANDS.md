@@ -250,6 +250,7 @@ gc auth token --json
 说明：
 - `auth token` 输出当前实际生效的 token，解析顺序与 `auth status` 一致。
 - 显式传 `--hostname` 时，会读取该主机已存储的 token，不再被通用环境变量覆盖。
+- token 输出到 stdout 供脚本 piping 使用，同时向 stderr 输出安全警告提醒不要共享此输出。可用 `2>/dev/null` 屏蔽警告。
 
 ### auth logout - 登出
 

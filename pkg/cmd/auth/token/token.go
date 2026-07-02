@@ -46,6 +46,7 @@ func NewCmdToken(f *cmdutil.Factory, runF func(*TokenOptions) error) *cobra.Comm
 			Print the authentication token for the current session.
 
 			The token is printed to stdout for use in scripts or piping.
+			A warning is printed to stderr reminding you not to share the output.
 			If no token is found, returns an error.
 		`),
 		Example: heredoc.Doc(`
@@ -103,10 +104,12 @@ func tokenRun(opts *TokenOptions) error {
 			Token:    token,
 			Source:   source,
 		}
+		fmt.Fprintln(opts.IO.ErrOut, "Warning: displaying authentication token. Do not share this output.")
 		return cmdutil.WriteJSON(opts.IO.Out, info)
 	}
 
 	// Print token to stdout (for piping)
+	fmt.Fprintln(opts.IO.ErrOut, "Warning: displaying authentication token. Do not share this output.")
 	fmt.Fprintln(opts.IO.Out, token)
 
 	return nil

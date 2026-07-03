@@ -152,6 +152,9 @@ func statusRun(opts *StatusOptions) error {
 	status.GitProtocol = cfg.GitProtocol(opts.Hostname).Value
 
 	if opts.ShowToken {
+		if err := cmdutil.ConfirmTokenDisclosure(opts.IO, opts.Hostname); err != nil {
+			return err
+		}
 		status.Token = token
 	}
 

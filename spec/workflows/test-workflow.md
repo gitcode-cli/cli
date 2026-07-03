@@ -59,8 +59,8 @@ go tool cover -html=coverage.out
 ### 测试前准备
 
 ```bash
-# 1. 设置 Token
-export GC_TOKEN=your_token
+# 1. 完成认证
+gc auth login
 
 # 2. 验证认证状态
 ./gc auth status

@@ -229,10 +229,7 @@ func TestCommentRunWithMockHTTP(t *testing.T) {
 	// Create mock HTTP client
 	f := cmdutil.TestFactory()
 
-	// Set environment token
-	oldToken := os.Getenv("GC_TOKEN")
-	t.Cleanup(func() { _ = os.Setenv("GC_TOKEN", oldToken) })
-	_ = os.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GC_TOKEN", "test-token")
 
 	opts := &CommentOptions{
 		IO:         f.IOStreams,

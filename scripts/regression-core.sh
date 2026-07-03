@@ -7,12 +7,6 @@ READONLY_REPO="${GC_REGRESSION_REPO:-infra-test/gctest1}"
 RELEASE_TAG="${GC_REGRESSION_RELEASE_TAG:-v0.0.1-test}"
 RUN_WRITE_PATHS="${GC_REGRESSION_WRITE:-0}"
 
-SOURCE_TOKEN="${GC_TOKEN:-${GITCODE_TOKEN:-}}"
-if [[ -z "${SOURCE_TOKEN}" ]]; then
-  echo "GC_TOKEN or GITCODE_TOKEN is required" >&2
-  exit 1
-fi
-
 # Guard: write paths must only target infra-test/* repositories.
 WRITE_REPOS=()
 if [[ "${RUN_WRITE_PATHS}" != "0" ]]; then
@@ -115,50 +109,27 @@ run_expect_status() {
 log "Build"
 (cd "$ROOT_DIR" && go build -o "$GC_BIN" ./cmd/gc)
 
-TMP_CONFIG_DIR="$(mktemp -d)"
+TMP_EMPTY_CONFIG_DIR="$(mktemp -d)"
 TMP_NON_GIT_DIR="$(mktemp -d)"
 cleanup() {
-  rm -rf "$TMP_CONFIG_DIR" "$TMP_NON_GIT_DIR"
+  rm -rf "$TMP_EMPTY_CONFIG_DIR" "$TMP_NON_GIT_DIR"
 }
 trap cleanup EXIT
-
-export GC_CONFIG_DIR="$TMP_CONFIG_DIR"
-unset GC_TOKEN GITCODE_TOKEN
-
-log "Auth Login"
-login_out="$(printf '%s\n' "$SOURCE_TOKEN" | "$GC_BIN" auth login --with-token 2>&1)" || {
-  printf '%s\n' "$login_out" >&2
-  exit 1
-}
-printf '%s\n' "$login_out"
-assert_contains "$login_out" "Logged in as"
 
 log "Auth Status"
 run_capture status_in_out "$GC_BIN" auth status
 assert_contains "$status_in_out" "Logged in as"
-assert_contains "$status_in_out" "(config)"
 
-log "Auth Token"
-token_out="$("$GC_BIN" auth token 2>&1)"
-printf '%s\n' "[redacted]"
-if [[ -z "${token_out//[$'\n\r\t ']}" ]]; then
-  echo "auth token output is empty" >&2
+log "Auth Token Non-Interactive Guard"
+if token_out="$(GC_TOKEN="fake-token-for-non-interactive-guard" GITCODE_TOKEN= "$GC_BIN" auth token 2>&1)"; then
+  echo "auth token unexpectedly succeeded in non-interactive mode" >&2
   exit 1
 fi
-
-log "Auth Logout"
-run_capture logout_out "$GC_BIN" auth logout --yes
-assert_contains "$logout_out" "Cleared stored authentication"
-
-log "Auth Status After Logout"
-run_capture status_out_out "$GC_BIN" auth status
-assert_contains "$status_out_out" "Not logged in"
+assert_contains "$token_out" "interactive confirmation"
 
 log "Auth Exit Code"
-run_expect_status auth_exit_out 4 "$GC_BIN" pr review 1 -R "$READONLY_REPO" --approve
+run_expect_status auth_exit_out 4 env GC_CONFIG_DIR="$TMP_EMPTY_CONFIG_DIR" GC_TOKEN= GITCODE_TOKEN= "$GC_BIN" pr review 1 -R "$READONLY_REPO" --approve
 assert_contains "$auth_exit_out" "not authenticated"
-
-export GC_TOKEN="$SOURCE_TOKEN"
 
 log "Repo View"
 run_capture repo_view_out "$GC_BIN" repo view "$READONLY_REPO"

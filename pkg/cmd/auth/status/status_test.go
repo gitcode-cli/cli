@@ -8,6 +8,7 @@ import (
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/config"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 func TestNewCmdStatus(t *testing.T) {
@@ -200,6 +201,9 @@ func TestStatusRunShowTokenDisplaysFullToken(t *testing.T) {
 	t.Setenv("GITCODE_TOKEN", "")
 
 	f := cmdutil.TestFactory()
+	io, in, _, _ := iostreams.TestTTY()
+	f.IOStreams = io
+	in.WriteString("gitcode.com\n")
 	out := &strings.Builder{}
 	f.IOStreams.Out = out
 
@@ -227,6 +231,48 @@ func TestStatusRunShowTokenDisplaysFullToken(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "Token: secret-token") {
 		t.Fatalf("output = %q", out.String())
+	}
+}
+
+func TestStatusRunShowTokenRequiresConfirmationInNonInteractiveMode(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "secret-token")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &StatusOptions{
+		IO:        f.IOStreams,
+		ShowToken: true,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"login":"tester"}`),
+					}, nil
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) {
+			return config.New(), nil
+		},
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want confirmation error")
+	}
+	if !strings.Contains(err.Error(), "interactive confirmation") {
+		t.Fatalf("statusRun() error = %q, want interactive confirmation hint", err.Error())
+	}
+	if strings.Contains(out.String(), "secret-token") || strings.Contains(errOut.String(), "secret-token") {
+		t.Fatalf("token leaked without confirmation; stdout=%q stderr=%q", out.String(), errOut.String())
 	}
 }
 

@@ -221,7 +221,7 @@ gc auth status
 # 查看指定主机的持久化认证状态
 gc auth status --hostname gitcode.com
 
-# 显示完整 token（谨慎使用）
+# 显示完整 token（人工确认后临时查看）
 gc auth status --show-token
 
 # 输出 JSON
@@ -250,7 +250,8 @@ gc auth token --json
 说明：
 - `auth token` 输出当前实际生效的 token，解析顺序与 `auth status` 一致。
 - 显式传 `--hostname` 时，会读取该主机已存储的 token，不再被通用环境变量覆盖。
-- token 输出到 stdout 供脚本 piping 使用，同时向 stderr 输出安全警告提醒不要共享此输出。可用 `2>/dev/null` 屏蔽警告。
+- token 输出到 stdout，同时向 stderr 输出安全警告提醒不要共享此输出；禁止把该命令作为脚本 piping、日志采集或 AI 代理取 token 入口。
+- `auth token` 和 `auth status --show-token` 必须在交互式 TTY 中按提示输入 hostname 确认；非交互环境一律拒绝输出完整 token，没有 `--yes` 绕过。
 
 ### auth logout - 登出
 

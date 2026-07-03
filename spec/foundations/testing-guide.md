@@ -133,8 +133,8 @@ func TestXxxCommand(t *testing.T) {
 ### 测试前准备
 
 ```bash
-# 设置 Token
-export GC_TOKEN=your_token
+# 完成认证
+gc auth login
 
 # 验证认证状态
 ./gc auth status

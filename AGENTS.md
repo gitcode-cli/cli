@@ -200,7 +200,7 @@ gh run view <run-id> --log --job=<job-id>
 - 命令行为变更必须至少做一个真实命令验证，且**只能使用 `infra-test/*` 仓库**（首选 `infra-test/gctest1`）
 - 禁止使用个人仓库、其他组织仓库或 `gitcode-cli/cli` 自身测试
 - 优先执行核心回归脚本：`./scripts/regression-core.sh`
-- 真实命令验证前需 `export GC_TOKEN=...` 并 `./gc auth status` 验证认证
+- 真实命令验证前需先完成认证（如人工 `gc auth login` 或自行管理的环境变量），并用 `./gc auth status` 验证；脚本和 AI 代理不得读取、打印或转存真实 token
 - Mock/Stub 通过接口实现，参考 `pkg/testutil/roundtrip.go`
 
 回归矩阵与最小稳定回归集见 [docs/REGRESSION.md](./docs/REGRESSION.md)。
@@ -211,6 +211,7 @@ gh run view <run-id> --log --job=<job-id>
 
 - 禁止硬编码 token/密钥；通过环境变量或本地配置管理认证
 - Token 优先级：`GC_TOKEN` > `GITCODE_TOKEN` > 本地配置（`~/.config/gc/auth.json`）；环境变量始终覆盖本地配置
+- AI 代理不得调用 `gitcode auth token`、`gitcode auth status --show-token`、读取 `~/.config/gc/auth.json` 或打印 `GC_TOKEN` / `GITCODE_TOKEN`；完整 token 只能由人工在交互式 TTY 中输入 hostname 确认后显示
 - 禁止提交：`*.pem`、`*.key`、`*.p12`、`*.pfx`、`id_rsa*`、`id_ed*`、`.env*`、`*.secret`、`credentials.json`、`token.txt`、`*.token`、`secrets.y*ml`
 - 提交前自检：无硬编码凭证、无敏感文件被追踪、测试与文档不含真实凭证
 - CI/CD 使用 Secrets；PyPI 发布使用 Trusted Publishing（OIDC）

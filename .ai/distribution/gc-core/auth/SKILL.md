@@ -1,6 +1,6 @@
 ---
 name: gc-auth
-description: GitCode CLI authentication operations — login, logout, status, and token management.
+description: GitCode CLI authentication operations — login, logout, status, and token source checks.
 ---
 
 # gc-auth
@@ -29,8 +29,8 @@ echo "YOUR_TOKEN" | gc auth login --with-token
 # 查看认证状态
 gc auth status
 
-# 显示当前生效 token
-gc auth token
+# 查看当前认证状态和 token 来源
+gc auth status
 
 # 清理本地登录状态
 gc auth logout
@@ -41,6 +41,7 @@ gc auth logout
 - 环境变量优先于本地登录配置
 - `gc auth logout` 只清理本地配置，不会自动取消环境变量
 - 在共享机器或 CI 环境中，优先使用环境变量
+- AI 代理不得调用 `gc auth token` 或 `gc auth status --show-token`；完整 token 只能由人工在交互式 TTY 中输入 hostname 确认后显示
 - Windows PowerShell 中可将示例里的 `gc` 改为 `gitcode`，避免 `gc` 被内置 `Get-Content` 别名覆盖
 
 ## 常见提醒

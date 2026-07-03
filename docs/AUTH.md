@@ -81,14 +81,16 @@
 - 按统一优先级解析当前活动 token
 - 显示 token 来源：`GC_TOKEN`、`GITCODE_TOKEN` 或 `config`
 - 显式传 `--hostname` 时，按目标主机读取本地已存储 token，不再被通用环境变量覆盖
-- 传 `--show-token` 时会输出完整 token，仅建议在脚本或受控终端中使用
+- 传 `--show-token` 时会输出完整 token，仅建议由人工在受控终端中临时使用，禁止作为脚本取 token 入口
+- `--show-token` 必须在交互式 TTY 中按提示输入 hostname 确认；非交互环境一律拒绝输出完整 token，没有 `--yes` 绕过
 
 ### auth token
 
 - 输出当前活动 token
 - 与 `auth status` 看到的来源保持一致
 - 显式传 `--hostname` 时，输出目标主机已存储 token，不再被通用环境变量覆盖
-- 输出 token 前会向 stderr 输出安全警告，可用 `2>/dev/null` 屏蔽
+- 输出 token 前会向 stderr 输出安全警告；不要在日志、截图、脚本管道或 AI 代理上下文中暴露该输出
+- 必须在交互式 TTY 中按提示输入 hostname 确认；非交互环境一律拒绝输出完整 token，没有 `--yes` 绕过
 
 ### auth logout
 

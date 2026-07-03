@@ -6,6 +6,7 @@ import (
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/config"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 func TestTokenRunUsesStoredToken(t *testing.T) {
@@ -19,6 +20,9 @@ func TestTokenRunUsesStoredToken(t *testing.T) {
 	}
 
 	f := cmdutil.TestFactory()
+	io, in, _, _ := iostreams.TestTTY()
+	f.IOStreams = io
+	in.WriteString("gitcode.com\n")
 	out := &strings.Builder{}
 	errOut := &strings.Builder{}
 	f.IOStreams.Out = out
@@ -57,6 +61,9 @@ func TestTokenRunWithHostnameUsesStoredTokenInsteadOfEnvOverride(t *testing.T) {
 	}
 
 	f := cmdutil.TestFactory()
+	io, in, _, _ := iostreams.TestTTY()
+	f.IOStreams = io
+	in.WriteString("other.example.com\n")
 	out := &strings.Builder{}
 	f.IOStreams.Out = out
 
@@ -90,6 +97,9 @@ func TestTokenRunDefaultCustomHostUsesStoredTokenInsteadOfEnvOverride(t *testing
 	}
 
 	f := cmdutil.TestFactory()
+	io, in, _, _ := iostreams.TestTTY()
+	f.IOStreams = io
+	in.WriteString("other.example.com\n")
 	out := &strings.Builder{}
 	f.IOStreams.Out = out
 
@@ -144,6 +154,9 @@ func TestTokenRunJSONOutputsWarningToStderr(t *testing.T) {
 	}
 
 	f := cmdutil.TestFactory()
+	io, in, _, _ := iostreams.TestTTY()
+	f.IOStreams = io
+	in.WriteString("gitcode.com\n")
 	out := &strings.Builder{}
 	errOut := &strings.Builder{}
 	f.IOStreams.Out = out
@@ -203,5 +216,41 @@ func TestTokenRunNoTokenReturnsErrorWithoutWarning(t *testing.T) {
 	}
 	if out.String() != "" {
 		t.Fatalf("stdout should be empty when no token found, got: %q", out.String())
+	}
+}
+
+func TestTokenRunRequiresConfirmationInNonInteractiveMode(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	cfg := config.New()
+	if _, err := cfg.Authentication().Login("gitcode.com", "tester", "stored-token", "https", false); err != nil {
+		t.Fatalf("Login() error = %v", err)
+	}
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &TokenOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Config: func() (config.Config, error) {
+			return config.New(), nil
+		},
+	}
+
+	err := tokenRun(opts)
+	if err == nil {
+		t.Fatal("tokenRun() error = nil, want confirmation error")
+	}
+	if !strings.Contains(err.Error(), "interactive confirmation") {
+		t.Fatalf("tokenRun() error = %q, want interactive confirmation hint", err.Error())
+	}
+	if strings.Contains(out.String(), "stored-token") || strings.Contains(errOut.String(), "stored-token") {
+		t.Fatalf("token leaked without confirmation; stdout=%q stderr=%q", out.String(), errOut.String())
 	}
 }

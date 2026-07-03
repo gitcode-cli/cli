@@ -16,6 +16,7 @@
 3. **本地配置存储**：`gc auth login` 会将 token 写入本地配置目录，文件权限应限制为当前用户可读写
 4. **环境变量优先**：若同时存在环境变量和本地配置，环境变量优先
 5. **禁止 URL 传递**：认证信息必须通过 `Authorization: Bearer <token>` 请求头传递，不能拼接到 query string
+6. **显示 Token 必须人工确认**：`auth token` 和 `auth status --show-token` 会输出完整 token，必须在交互式 TTY 中输入 hostname 确认；非交互环境一律拒绝，AI 代理默认不得调用这些命令
 
 ### 禁止提交的内容
 

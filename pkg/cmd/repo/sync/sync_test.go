@@ -186,9 +186,7 @@ func TestSyncRunNoChanges(t *testing.T) {
 		TargetDir:  "mirror",
 	}
 
-	oldToken := os.Getenv("GC_TOKEN")
-	t.Cleanup(func() { _ = os.Setenv("GC_TOKEN", oldToken) })
-	_ = os.Setenv("GC_TOKEN", "token")
+	t.Setenv("GC_TOKEN", "token")
 
 	// Replace package-level gitRun override with opts.GitRun — empty dir signals the clone call
 	savedGitRun := opts.GitRun
@@ -285,9 +283,7 @@ func TestSyncRunBuildsPRURLWhenCreateResponseOmitsHTMLURL(t *testing.T) {
 		JSON:       true,
 	}
 
-	oldToken := os.Getenv("GC_TOKEN")
-	t.Cleanup(func() { _ = os.Setenv("GC_TOKEN", oldToken) })
-	_ = os.Setenv("GC_TOKEN", "token")
+	t.Setenv("GC_TOKEN", "token")
 
 	savedGitRun := opts.GitRun
 	opts.GitRun = func(dir string, env map[string]string, args ...string) (string, error) {

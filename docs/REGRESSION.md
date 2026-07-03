@@ -15,9 +15,11 @@
 ## 前置条件
 
 ```bash
-export GC_TOKEN=your_token
 go build -o ./gc ./cmd/gc
+./gc auth status
 ```
+
+回归脚本不会读取、导出或管道传递真实 `GC_TOKEN` / `GITCODE_TOKEN`。请提前通过 `gc auth login` 或自行管理的环境完成认证，并只用 `gc auth status` 验证认证状态。
 
 测试仓库限制：
 - 只使用 `infra-test/gctest1` 或 `infra-test` 组织下仓库
@@ -28,30 +30,27 @@ go build -o ./gc ./cmd/gc
 
 `./scripts/regression-core.sh` 默认执行稳定的读路径、agent-friendly 契约检查和错误路径：
 
-1. `auth login --with-token`
-2. `auth status`
-3. `auth token`
-4. `auth logout`
-5. `auth status` 登出后状态
-6. 无认证 `pr review --approve` 错误路径，期望退出码 `4`
-7. `repo view`
-8. `repo view --json`
-9. `issue list --limit 1`
-10. `issue list --json`
-11. `issue view <list 返回的首个 issue>`
-12. `issue view --json`
-13. `pr list --json`
-14. `pr list --paginate --per-page 1 --limit 1 --json`
-15. `repo log --limit 1 --json`
-16. `gc api repos/<repo>`
-17. `release list --json`
-18. `release delete <tag> --dry-run`
-19. 非 Git 目录下的 `repo view` 错误路径，期望退出码 `2`
-20. 不存在 commit 的 `commit view` 错误路径，期望退出码 `3`
+1. `auth status`
+2. `auth token` 非交互保护（仅使用 fake token）
+3. 无认证 `pr review --approve` 错误路径，期望退出码 `4`
+4. `repo view`
+5. `repo view --json`
+6. `issue list --limit 1`
+7. `issue list --json`
+8. `issue view <list 返回的首个 issue>`
+9. `issue view --json`
+10. `pr list --json`
+11. `pr list --paginate --per-page 1 --limit 1 --json`
+12. `repo log --limit 1 --json`
+13. `gc api repos/<repo>`
+14. `release list --json`
+15. `release delete <tag> --dry-run`
+16. 非 Git 目录下的 `repo view` 错误路径，期望退出码 `2`
+17. 不存在 commit 的 `commit view` 错误路径，期望退出码 `3`
 
 说明：
-- 脚本会使用临时 `GC_CONFIG_DIR`，避免污染本地长期配置。
-- 登录阶段会把环境变量 token 写入临时配置，然后取消环境变量覆盖，以验证 config-backed auth 流程。
+- 脚本不会读取真实 token，不会执行 `auth login --with-token`，也不会执行 `auth logout`。
+- 无认证错误路径会使用临时空 `GC_CONFIG_DIR` 和空环境变量执行单条命令，避免污染本地长期配置。
 - `release delete` 的 dry-run 默认使用 `GC_REGRESSION_RELEASE_TAG`，未显式设置时默认取 `v0.0.1-test`。
 
 ## 可选写路径

@@ -17,6 +17,7 @@ type IOStreams struct {
 
 	colorEnabled bool
 	isTerminal   func(io.Writer) bool
+	isInputTTY   func(io.Reader) bool
 	pager        string
 	pagerCmd     *exec.Cmd
 }
@@ -30,6 +31,7 @@ func System() *IOStreams {
 
 		colorEnabled: !isColorDisabled(),
 		isTerminal:   isTerminal,
+		isInputTTY:   isInputTerminal,
 		pager:        os.Getenv("PAGER"),
 	}
 }
@@ -161,14 +163,24 @@ func isTerminal(w io.Writer) bool {
 	return false
 }
 
-// IsStdinTTY returns true if stdin is a terminal
-func (s *IOStreams) IsStdinTTY() bool {
-	if f, ok := s.In.(*os.File); ok {
+func isInputTerminal(r io.Reader) bool {
+	if f, ok := r.(*os.File); ok {
 		fi, err := f.Stat()
 		if err != nil {
 			return false
 		}
 		return (fi.Mode() & os.ModeCharDevice) != 0
+	}
+	return false
+}
+
+// IsStdinTTY returns true if stdin is a terminal
+func (s *IOStreams) IsStdinTTY() bool {
+	if s == nil {
+		return false
+	}
+	if s.isInputTTY != nil {
+		return s.isInputTTY(s.In)
 	}
 	return false
 }
@@ -212,6 +224,7 @@ func Test() (*IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
 		Out:        out,
 		ErrOut:     errOut,
 		isTerminal: func(io.Writer) bool { return false },
+		isInputTTY: func(io.Reader) bool { return false },
 	}, in, out, errOut
 }
 
@@ -225,5 +238,6 @@ func TestTTY() (*IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
 		Out:        out,
 		ErrOut:     errOut,
 		isTerminal: func(io.Writer) bool { return true },
+		isInputTTY: func(io.Reader) bool { return true },
 	}, in, out, errOut
 }

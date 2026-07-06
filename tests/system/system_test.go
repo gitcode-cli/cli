@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -61,6 +62,7 @@ func TestWriteScripts(t *testing.T) {
 func systemCmds() map[string]func(ts *testscript.TestScript, neg bool, args []string) {
 	return map[string]func(ts *testscript.TestScript, neg bool, args []string){
 		"defer-close-issue": cmdDeferCloseIssue,
+		"json-assert":       cmdJSONAssert,
 		"json-ok":           cmdJSONOK,
 		"require-infra":     cmdRequireInfra,
 		"stdout2env":        cmdStdout2Env,
@@ -161,13 +163,17 @@ func homeEnvName() string {
 }
 
 func cmdRequireInfra(ts *testscript.TestScript, neg bool, args []string) {
-	if neg {
-		ts.Fatalf("unsupported: ! require-infra")
-	}
 	if len(args) != 1 {
 		ts.Fatalf("usage: require-infra repo")
 	}
-	if err := validateInfraRepo("repo", args[0]); err != nil {
+	err := validateInfraRepo("repo", args[0])
+	if neg {
+		if err == nil {
+			ts.Fatalf("%q unexpectedly passed infra-test validation", args[0])
+		}
+		return
+	}
+	if err != nil {
 		ts.Fatalf("%v", err)
 	}
 }
@@ -187,6 +193,176 @@ func cmdJSONOK(ts *testscript.TestScript, neg bool, args []string) {
 	if err != nil {
 		ts.Fatalf("%s is not valid JSON: %v", args[0], err)
 	}
+}
+
+func cmdJSONAssert(ts *testscript.TestScript, neg bool, args []string) {
+	if len(args) != 3 {
+		ts.Fatalf("usage: json-assert file path type")
+	}
+
+	value, err := parseJSONFile(ts, args[0])
+	if err != nil {
+		ts.Fatalf("%s is not valid JSON: %v", args[0], err)
+	}
+	actual, ok, err := lookupJSONPath(value, args[1])
+	if err != nil {
+		ts.Fatalf("invalid JSON path %q: %v", args[1], err)
+	}
+	matches := ok && jsonTypeMatches(actual, args[2])
+	if neg {
+		if matches {
+			ts.Fatalf("%s %s unexpectedly matched type %s", args[0], args[1], args[2])
+		}
+		return
+	}
+	if !ok {
+		ts.Fatalf("%s %s is missing", args[0], args[1])
+	}
+	if !matches {
+		ts.Fatalf("%s %s has type %s, want %s", args[0], args[1], jsonType(actual), args[2])
+	}
+}
+
+func parseJSONFile(ts *testscript.TestScript, file string) (any, error) {
+	var value any
+	err := json.Unmarshal([]byte(ts.ReadFile(file)), &value)
+	return value, err
+}
+
+func lookupJSONPath(value any, path string) (any, bool, error) {
+	if path == "." || path == "" {
+		return value, true, nil
+	}
+	for path != "" {
+		switch {
+		case strings.HasPrefix(path, "."):
+			path = path[1:]
+			key, rest := nextJSONKey(path)
+			if key == "" {
+				return nil, false, fmt.Errorf("empty object key")
+			}
+			object, ok := value.(map[string]any)
+			if !ok {
+				return nil, false, nil
+			}
+			value, ok = object[key]
+			if !ok {
+				return nil, false, nil
+			}
+			path = rest
+		case strings.HasPrefix(path, "["):
+			end := strings.Index(path, "]")
+			if end < 0 {
+				return nil, false, fmt.Errorf("missing closing ]")
+			}
+			index, err := parseJSONIndex(path[1:end])
+			if err != nil {
+				return nil, false, err
+			}
+			array, ok := value.([]any)
+			if !ok || index < 0 || index >= len(array) {
+				return nil, false, nil
+			}
+			value = array[index]
+			path = path[end+1:]
+		default:
+			key, rest := nextJSONKey(path)
+			if key == "" {
+				return nil, false, fmt.Errorf("empty object key")
+			}
+			object, ok := value.(map[string]any)
+			if !ok {
+				return nil, false, nil
+			}
+			value, ok = object[key]
+			if !ok {
+				return nil, false, nil
+			}
+			path = rest
+		}
+	}
+	return value, true, nil
+}
+
+func nextJSONKey(path string) (string, string) {
+	nextDot := strings.Index(path, ".")
+	nextBracket := strings.Index(path, "[")
+	next := -1
+	switch {
+	case nextDot >= 0 && nextBracket >= 0:
+		next = minInt(nextDot, nextBracket)
+	case nextDot >= 0:
+		next = nextDot
+	case nextBracket >= 0:
+		next = nextBracket
+	}
+	if next < 0 {
+		return path, ""
+	}
+	return path[:next], path[next:]
+}
+
+func parseJSONIndex(value string) (int, error) {
+	index, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, fmt.Errorf("invalid array index %q", value)
+	}
+	return index, nil
+}
+
+func jsonTypeMatches(value any, want string) bool {
+	switch want {
+	case "present":
+		return true
+	case "string":
+		_, ok := value.(string)
+		return ok
+	case "nonempty-string":
+		text, ok := value.(string)
+		return ok && text != ""
+	case "number":
+		_, ok := value.(float64)
+		return ok
+	case "bool":
+		_, ok := value.(bool)
+		return ok
+	case "object":
+		_, ok := value.(map[string]any)
+		return ok
+	case "array":
+		_, ok := value.([]any)
+		return ok
+	case "null":
+		return value == nil
+	default:
+		return false
+	}
+}
+
+func jsonType(value any) string {
+	switch value.(type) {
+	case string:
+		return "string"
+	case float64:
+		return "number"
+	case bool:
+		return "bool"
+	case map[string]any:
+		return "object"
+	case []any:
+		return "array"
+	case nil:
+		return "null"
+	default:
+		return fmt.Sprintf("%T", value)
+	}
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func cmdStdout2Env(ts *testscript.TestScript, neg bool, args []string) {

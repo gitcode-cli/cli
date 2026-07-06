@@ -4,6 +4,11 @@ exec $GC_BIN repo view $SYSTEM_REPO
 
 exec $GC_BIN repo view $SYSTEM_REPO --json
 json-ok stdout
+json-assert stdout . object
+json-assert stdout id present
+json-assert stdout name nonempty-string
 
 exec $GC_BIN repo log -R $SYSTEM_REPO --limit 1 --json
 json-ok stdout
+json-assert stdout . array
+json-assert stdout [0] object

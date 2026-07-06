@@ -68,6 +68,10 @@ Cases live under:
 - `tests/system/cases/read/`
 - `tests/system/cases/write/`
 
+The testscript suite provides contract helpers including `json-ok`,
+`json-assert`, `stdout2env`, and `require-infra`. Use `json-assert` for key
+field/type checks whenever a command supports `--json`.
+
 ## 默认回归集
 
 `./scripts/regression-core.sh` 默认执行稳定的读路径、agent-friendly 契约检查和错误路径：

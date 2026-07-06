@@ -32,6 +32,18 @@ Script cases live under:
 - `tests/system/testdata/read/*.txtar`
 - `tests/system/testdata/write/*.txtar`
 
+Custom testscript commands:
+
+- `require-infra <repo>`: fail unless the repository is `infra-test/*`.
+- `json-ok <file>`: assert that a file, usually `stdout`, is valid JSON.
+- `json-assert <file> <path> <type>`: assert JSON field presence and type.
+- `stdout2env <name> <regexp>`: capture one stdout regexp group into an env var.
+- `defer-close-issue <number>`: close a created write-test issue during cleanup.
+
+Supported `json-assert` types are `present`, `string`, `nonempty-string`,
+`number`, `bool`, `object`, `array`, and `null`. Paths support object keys and
+array indexes, for example `number`, `[0].title`, or `user.login`.
+
 ## Read-Only Suite
 
 The legacy shell runner remains available for direct command-line smoke runs:

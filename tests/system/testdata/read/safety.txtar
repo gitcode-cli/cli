@@ -1,0 +1,5 @@
+require-infra infra-test/gctest1
+! require-infra gitcode-cli/cli
+! require-infra personal/repo
+! require-infra infra-test/
+! require-infra infra-test/nested/repo

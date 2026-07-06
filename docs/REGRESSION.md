@@ -4,6 +4,7 @@
 
 ```bash
 ./scripts/regression-core.sh
+go test -tags=system ./tests/system
 ./tests/system/run.sh --read
 ```
 
@@ -33,6 +34,13 @@ go build -o ./gc ./cmd/gc
 
 `tests/system/` is the structured real-command test suite. It enforces the same repository boundary for read and write cases: every repository target must be `infra-test/*`.
 
+The primary runner is Go testscript, guarded by the `system` build tag:
+
+```bash
+go test -tags=system ./tests/system
+make system-test
+```
+
 Default read-only suite:
 
 ```bash
@@ -43,6 +51,8 @@ Explicit write suite:
 
 ```bash
 ./tests/system/run.sh --write --write-repo infra-test/gctest1
+GC_SYSTEM_WRITE=1 go test -tags=system ./tests/system -run TestWriteScripts
+make system-test-write
 ```
 
 PR write-path cases require a prepared test branch:
@@ -53,6 +63,8 @@ GC_SYSTEM_PR_HEAD=test-branch ./tests/system/run.sh --write --write-repo infra-t
 
 Cases live under:
 
+- `tests/system/testdata/read/`
+- `tests/system/testdata/write/`
 - `tests/system/cases/read/`
 - `tests/system/cases/write/`
 

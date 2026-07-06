@@ -1,0 +1,12 @@
+require-infra $SYSTEM_REPO
+
+exec $GC_BIN issue list -R $SYSTEM_REPO --limit 1
+
+exec $GC_BIN issue list -R $SYSTEM_REPO --limit 1 --json
+json-ok stdout
+stdout2env ISSUE_NUMBER '"number":[ ]*"?([0-9]+)"?'
+
+exec $GC_BIN issue view $ISSUE_NUMBER -R $SYSTEM_REPO
+
+exec $GC_BIN issue view $ISSUE_NUMBER -R $SYSTEM_REPO --json
+json-ok stdout

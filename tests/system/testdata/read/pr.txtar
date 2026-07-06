@@ -1,0 +1,11 @@
+require-infra $SYSTEM_REPO
+
+exec $GC_BIN pr list -R $SYSTEM_REPO --limit 1 --json
+json-ok stdout
+stdout2env PR_NUMBER '"number":[ ]*"?([0-9]+)"?'
+
+exec $GC_BIN pr view $PR_NUMBER -R $SYSTEM_REPO --json
+json-ok stdout
+
+exec $GC_BIN pr list -R $SYSTEM_REPO --paginate --per-page 1 --limit 1 --json
+json-ok stdout

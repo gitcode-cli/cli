@@ -39,6 +39,8 @@ Custom testscript commands:
 - `json-assert <file> <path> <type>`: assert JSON field presence and type.
 - `stdout2env <name> <regexp>`: capture one stdout regexp group into an env var.
 - `defer-close-issue <number>`: close a created write-test issue during cleanup.
+- `defer-delete-label <name>`: delete a created write-test label during cleanup.
+- `unique-name <name> <prefix>`: create a process/test scoped resource name.
 
 Supported `json-assert` types are `present`, `string`, `nonempty-string`,
 `number`, `bool`, `object`, `array`, and `null`. Paths support object keys and

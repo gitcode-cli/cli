@@ -84,3 +84,10 @@ func TestJSONTypeMatches(t *testing.T) {
 		}
 	}
 }
+
+func TestUniqueNameShape(t *testing.T) {
+	name := uniqueName("system-test-label", "label-lifecycle", 1234)
+	if name != "system-test-label-label-lifecycle-1234" {
+		t.Fatalf("uniqueName returned %q", name)
+	}
+}

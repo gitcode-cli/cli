@@ -61,11 +61,13 @@ func TestWriteScripts(t *testing.T) {
 
 func systemCmds() map[string]func(ts *testscript.TestScript, neg bool, args []string) {
 	return map[string]func(ts *testscript.TestScript, neg bool, args []string){
-		"defer-close-issue": cmdDeferCloseIssue,
-		"json-assert":       cmdJSONAssert,
-		"json-ok":           cmdJSONOK,
-		"require-infra":     cmdRequireInfra,
-		"stdout2env":        cmdStdout2Env,
+		"defer-delete-label": cmdDeferDeleteLabel,
+		"defer-close-issue":  cmdDeferCloseIssue,
+		"json-assert":        cmdJSONAssert,
+		"json-ok":            cmdJSONOK,
+		"require-infra":      cmdRequireInfra,
+		"stdout2env":         cmdStdout2Env,
+		"unique-name":        cmdUniqueName,
 	}
 }
 
@@ -394,4 +396,33 @@ func cmdDeferCloseIssue(ts *testscript.TestScript, neg bool, args []string) {
 	ts.Defer(func() {
 		_ = exec.Command(gcBin, "issue", "close", issueNumber, "-R", writeRepo, "--yes").Run()
 	})
+}
+
+func cmdDeferDeleteLabel(ts *testscript.TestScript, neg bool, args []string) {
+	if neg {
+		ts.Fatalf("unsupported: ! defer-delete-label")
+	}
+	if len(args) != 1 {
+		ts.Fatalf("usage: defer-delete-label label-name")
+	}
+	labelName := args[0]
+	gcBin := ts.Getenv("GC_BIN")
+	writeRepo := ts.Getenv("WRITE_REPO")
+	ts.Defer(func() {
+		_ = exec.Command(gcBin, "label", "delete", labelName, "-R", writeRepo, "--yes").Run()
+	})
+}
+
+func cmdUniqueName(ts *testscript.TestScript, neg bool, args []string) {
+	if neg {
+		ts.Fatalf("unsupported: ! unique-name")
+	}
+	if len(args) != 2 {
+		ts.Fatalf("usage: unique-name VAR prefix")
+	}
+	ts.Setenv(args[0], uniqueName(args[1], ts.Name(), os.Getpid()))
+}
+
+func uniqueName(prefix, testName string, pid int) string {
+	return fmt.Sprintf("%s-%s-%d", prefix, testName, pid)
 }

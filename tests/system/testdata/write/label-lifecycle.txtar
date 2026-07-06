@@ -1,0 +1,18 @@
+require-infra $WRITE_REPO
+unique-name LABEL_NAME system-test-label
+
+exec $GC_BIN label create $LABEL_NAME -R $WRITE_REPO --color '#3366cc' --description 'Created by tests/system testscript; safe to delete.' --json
+json-ok stdout
+json-assert stdout . object
+json-assert stdout name nonempty-string
+json-assert stdout color string
+defer-delete-label $LABEL_NAME
+
+exec $GC_BIN label list -R $WRITE_REPO --json
+json-ok stdout
+json-assert stdout . array
+stdout $LABEL_NAME
+
+exec $GC_BIN label delete $LABEL_NAME -R $WRITE_REPO --yes --json
+json-ok stdout
+json-assert stdout . object

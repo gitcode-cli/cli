@@ -4,7 +4,10 @@
 
 ```bash
 ./scripts/regression-core.sh
+./tests/system/run.sh --read
 ```
+
+`scripts/regression-core.sh` 是历史最小冒烟回归入口。新增、补充或扩展真实命令行系统测试时，优先放入 `tests/system/`。
 
 ## 目标
 
@@ -25,6 +28,33 @@ go build -o ./gc ./cmd/gc
 - 只使用 `infra-test/gctest1` 或 `infra-test` 组织下仓库
 - 不使用 `gitcode-cli/cli`
 - 不使用个人仓库
+
+## System Test Suite
+
+`tests/system/` is the structured real-command test suite. It enforces the same repository boundary for read and write cases: every repository target must be `infra-test/*`.
+
+Default read-only suite:
+
+```bash
+./tests/system/run.sh --read
+```
+
+Explicit write suite:
+
+```bash
+./tests/system/run.sh --write --write-repo infra-test/gctest1
+```
+
+PR write-path cases require a prepared test branch:
+
+```bash
+GC_SYSTEM_PR_HEAD=test-branch ./tests/system/run.sh --write --write-repo infra-test/gctest1
+```
+
+Cases live under:
+
+- `tests/system/cases/read/`
+- `tests/system/cases/write/`
 
 ## 默认回归集
 

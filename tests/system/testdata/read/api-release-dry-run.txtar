@@ -2,9 +2,12 @@ require-infra $SYSTEM_REPO
 
 exec $GC_BIN api repos/$SYSTEM_REPO
 json-ok stdout
+json-assert stdout . object
+json-assert stdout id present
 
 exec $GC_BIN release list -R $SYSTEM_REPO --json
 json-ok stdout
+json-assert stdout . array
 
 exec $GC_BIN release delete v0.0.1-test -R $SYSTEM_REPO --dry-run
 

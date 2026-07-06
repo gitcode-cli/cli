@@ -7,6 +7,10 @@ defer-close-issue $ISSUE_NUMBER
 
 exec $GC_BIN issue view $ISSUE_NUMBER -R $WRITE_REPO --json
 json-ok stdout
+json-assert stdout . object
+json-assert stdout number present
+json-assert stdout title string
+json-assert stdout state nonempty-string
 
 exec $GC_BIN issue close $ISSUE_NUMBER -R $WRITE_REPO --yes
 stdout 'Closed'

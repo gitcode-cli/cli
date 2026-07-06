@@ -1,0 +1,10 @@
+require-infra $SYSTEM_REPO
+
+mkdir not-a-repo
+cd not-a-repo
+! exec $GC_BIN repo view
+cd ..
+
+! exec $GC_BIN commit view definitely-missing-sha-for-system-test -R $SYSTEM_REPO
+
+! exec $GC_BIN issue view not-a-number -R $SYSTEM_REPO

@@ -77,6 +77,7 @@ go build -o ./gc ./cmd/gc
 
 # 2. 优先执行核心回归脚本
 ./scripts/regression-core.sh
+go test -tags=system ./tests/system
 ./tests/system/run.sh --read
 
 # 3. 执行 issue/feature 相关补充测试（示例）

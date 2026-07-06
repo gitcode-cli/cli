@@ -1,0 +1,9 @@
+require-infra $SYSTEM_REPO
+
+exec $GC_BIN repo view $SYSTEM_REPO
+
+exec $GC_BIN repo view $SYSTEM_REPO --json
+json-ok stdout
+
+exec $GC_BIN repo log -R $SYSTEM_REPO --limit 1 --json
+json-ok stdout

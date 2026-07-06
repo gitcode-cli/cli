@@ -1,0 +1,14 @@
+require-infra $SYSTEM_REPO
+
+exec $GC_BIN auth status
+
+env GC_TOKEN=fake-token-for-system-test
+env GITCODE_TOKEN=
+! exec $GC_BIN auth token
+stderr 'interactive terminal|confirmation'
+
+mkdir empty-config
+env GC_CONFIG_DIR=$WORK/empty-config
+env GC_TOKEN=
+env GITCODE_TOKEN=
+! exec $GC_BIN pr review 1 -R $SYSTEM_REPO --approve

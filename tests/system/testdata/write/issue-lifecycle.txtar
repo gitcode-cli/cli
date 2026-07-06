@@ -1,0 +1,12 @@
+require-infra $WRITE_REPO
+
+exec $GC_BIN issue create -R $WRITE_REPO --title 'System Test testscript' --body 'Created by tests/system testscript; safe to close.'
+stdout '#[0-9]+'
+stdout2env ISSUE_NUMBER '#([0-9]+)'
+defer-close-issue $ISSUE_NUMBER
+
+exec $GC_BIN issue view $ISSUE_NUMBER -R $WRITE_REPO --json
+json-ok stdout
+
+exec $GC_BIN issue close $ISSUE_NUMBER -R $WRITE_REPO --yes
+stdout 'Closed'

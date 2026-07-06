@@ -21,7 +21,7 @@ GOTEST := $(GOCMD) test
 GOGET := $(GOCMD) get
 GOMOD := $(GOCMD) mod
 
-.PHONY: all build build-all clean test install fmt lint help
+.PHONY: all build build-all clean test system-test system-test-write install fmt lint help
 .PHONY: docker docker-build docker-push docker-run
 .PHONY: release release-local release-snapshot
 .PHONY: completions validate-ai-template validate-ai-record validate-ai-templates
@@ -52,6 +52,12 @@ run:
 
 test:
 	$(GOTEST) -v -race -coverprofile=coverage.out ./...
+
+system-test:
+	$(GOTEST) -tags=system ./tests/system
+
+system-test-write:
+	GC_SYSTEM_WRITE=1 $(GOTEST) -tags=system ./tests/system -run TestWriteScripts
 
 test-coverage: test
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
@@ -160,6 +166,8 @@ help:
 	@echo "  make build-all      Build binaries for all platforms"
 	@echo "  make run            Run the application"
 	@echo "  make test           Run tests"
+	@echo "  make system-test    Run read-only real-command system tests"
+	@echo "  make system-test-write Run opt-in write-path system tests"
 	@echo "  make test-coverage  Run tests with coverage report"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make install        Install to /usr/local/bin"

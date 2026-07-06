@@ -150,6 +150,7 @@ gc auth login
 2. **优先执行核心回归脚本**
    ```bash
    ./scripts/regression-core.sh
+   go test -tags=system ./tests/system
    ./tests/system/run.sh --read
    ```
 
@@ -170,7 +171,7 @@ gc auth login
 
 ### 核心回归矩阵
 
-优先使用 [docs/REGRESSION.md](../../docs/REGRESSION.md) 和 `./tests/system/run.sh --read` 执行结构化真实命令系统测试；`./scripts/regression-core.sh` 保留为最小冒烟回归入口。
+优先使用 [docs/REGRESSION.md](../../docs/REGRESSION.md) 和 `go test -tags=system ./tests/system` 执行结构化真实命令系统测试；`./tests/system/run.sh --read` 保留为直接 shell 入口，`./scripts/regression-core.sh` 保留为最小冒烟回归入口。
 
 默认覆盖：
 - `auth login/status/token/logout`

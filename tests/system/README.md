@@ -5,7 +5,36 @@
 All repository targets, including read and write tests, must be under
 `infra-test/*`. The runner rejects any other repository before running cases.
 
+## Testscript Suite
+
+The primary suite is a Go `testscript` runner, similar to GitHub CLI's
+acceptance-test style. It is guarded by the `system` build tag, so normal
+`go test ./...` does not run remote tests.
+
+Read-only system tests:
+
+```bash
+go test -tags=system ./tests/system
+# or
+make system-test
+```
+
+Write-path system tests are opt-in:
+
+```bash
+GC_SYSTEM_WRITE=1 go test -tags=system ./tests/system -run TestWriteScripts
+# or
+make system-test-write
+```
+
+Script cases live under:
+
+- `tests/system/testdata/read/*.txtar`
+- `tests/system/testdata/write/*.txtar`
+
 ## Read-Only Suite
+
+The legacy shell runner remains available for direct command-line smoke runs:
 
 ```bash
 tests/system/run.sh --read

@@ -134,6 +134,8 @@ CI 在以下情况下**自动触发**（无需人工或 AI 手动操作）：
 
 触发配置：`.github/workflows/ci.yml` 中的 `on: pull_request: branches: [main]`
 
+日常 CI 工作流显式使用最小 `GITHUB_TOKEN` 权限：`permissions: contents: read`。发布工作流需要写 release/tag 时，按 `release.yml` 的发布权限单独管理，不继承日常 CI 权限。
+
 ### 3.2 查看 CI 结果
 
 ```bash

@@ -1,0 +1,71 @@
+## 方案设计: Issue #400
+
+### 方案
+新增 `secureWriteFile` 包级私有函数，替代 `writeAuthState`/`writeConfigState` 中的裸 `os.WriteFile`，提供两点加固：
+
+| 加固点 | 机制 | 防护威胁 |
+|--------|------|----------|
+| 拒绝符号链接 | `os.Lstat` 检测 `ModeSymlink`，是 symlink 则报错 | 凭证重定向攻击（auth.json 被替换为指向他处的软链，写入覆盖目标/泄露内容） |
+| 写后强制 chmod | `os.WriteFile` 后显式 `os.Chmod(path, perm)` | umask 宽松导致新建文件权限过宽 + 既有文件权限未收紧 |
+
+### 实现位置
+`pkg/config/config.go:270-281`：
+```go
+func secureWriteFile(path string, data []byte, perm os.FileMode) error {
+	if li, err := os.Lstat(path); err == nil && li.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("refusing to write to symlink: %s", path)
+	}
+	if err := os.WriteFile(path, data, perm); err != nil {
+		return err
+	}
+	return os.Chmod(path, perm)
+}
+```
+
+### 调用点
+| 位置 | 原 | 修复后 |
+|------|----|----|
+| auth_config.go:277 (writeAuthState) | `os.WriteFile(c.authStatePath(), data, 0o600)` | `secureWriteFile(c.authStatePath(), data, 0o600)` |
+| config.go:269 (writeConfigState) | `os.WriteFile(c.configStatePath(), data, 0o600)` | `secureWriteFile(c.configStatePath(), data, 0o600)` |
+
+### 与已合入安全改动的关系
+| Issue/PR | 防护方向 | 关系 |
+|----------|----------|------|
+| #317 (PR !336) warn before printing auth token | 读路径 — token 输出 stdout | 正交 |
+| #358 (PR !335) validate URL scheme in browser.Open | URL scheme 注入 | 正交 |
+| !343 require interactive token disclosure (75acec0) | 读路径 — token 交互式确认 | 正交 |
+| #400 (本 issue) secureWriteFile | 写路径 — 凭证文件落盘 | 与上述无重叠 |
+
+### 风险
+- **symlink 误伤**：若用户合法地用 symlink 管理 auth.json（如 dotfiles 管理），新行为会拒绝写入。但 auth.json 含敏感凭证，不应作为 symlink 暴露，拒绝是安全正确的。错误信息明确提示 "refusing to write to symlink"，用户可删除 symlink 后重试。
+- **Windows 兼容**：symlink 语义与 Unix 不同，权限模型不同。测试用 `runtime.GOOS == "windows"` t.Skip；生产代码 `os.Lstat` 在 Windows 上对 symlink 检测行为一致（reparse point），`os.Chmod` 在 Windows 上基本 no-op，不影响。
+- **既有文件覆盖**：`secureWriteFile` 仍用 `os.WriteFile`（覆盖写），symlink 检测在写前，不会泄露旧内容。
+
+### 系统测试限制
+自动化系统测试在当前架构下不可行：
+- `writeConfigState` 无 CLI 命令入口（`pkg/cmd/` 下无 `config` 命令，无人调用 `cfg.Set()`/`cfg.Write()`）
+- `writeAuthState` 经 `gc auth login --with-token` 触发，但 `login.go:137` 在写前强制 `api.VerifyToken`（需真实 token + 网络），项目规则禁止 AI/脚本向 stdin 提供真实 token
+
+因此采用「UT 充分覆盖 + 人工真实命令验证」策略。
+
+## 人工真实命令验证清单（TTY 执行，AI 不参与 token 输入）
+```bash
+# 前置：./gc auth status 确认认证可用；token 须与 infra-test 关联，不得用个人/生产 token
+
+# 场景1：symlink 拒绝
+mkdir -p ~/.config/gc
+target=$(mktemp)
+ln -sf "$target" ~/.config/gc/auth.json
+echo "<真实token>" | ./gc auth login --with-token --hostname gitcode.com
+# 期望：失败，stderr 含 "refusing to write to symlink"
+cat "$target"   # 应为空（未被写入）
+
+# 场景2：权限硬化
+rm -f ~/.config/gc/auth.json
+touch ~/.config/gc/auth.json && chmod 644 ~/.config/gc/auth.json
+echo "<真实token>" | ./gc auth login --with-token --hostname gitcode.com
+# 期望：成功（✓ Logged in as ...）
+stat -c '%a' ~/.config/gc/auth.json   # Linux: 600；macOS: stat -f '%Lp'
+
+# 清理：用正常方式重新 login 恢复认证状态
+```

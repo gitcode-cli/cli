@@ -1,0 +1,29 @@
+## 作者自检
+
+- 作者主体标识: AI (glm-5.2 via opencode)
+- 根因或实现理由: `os.WriteFile` 受进程 umask 影响（宽松 umask 下凭证文件可能 0666），对既有文件不收紧权限，且无法阻断 symlink 重定向攻击。新增 `secureWriteFile` 封装三步（Lstat 拒 symlink → WriteFile → Chmod 硬化权限），替换 `writeAuthState`/`writeConfigState` 中的裸 `os.WriteFile`。
+- 主要修改: 3 文件 — config.go 新增 secureWriteFile + writeConfigState 替换；auth_config.go writeAuthState 替换；auth_config_test.go 新增 3 UT + 清理 strings import
+  - `pkg/config/config.go`: 新增 `secureWriteFile(path, data, perm)` 函数（+14/-1）；`writeConfigState` 调用替换
+  - `pkg/config/auth_config.go`: `writeAuthState` 调用替换为 `secureWriteFile`（+1/-1）
+  - `pkg/config/auth_config_test.go`: 新增 3 个 UT（拒 symlink / 权限硬化 / 新建文件权限）；清理遗留 `strings` import
+- 影响范围: `pkg/config` 包内 `writeAuthState`（`gc auth login` 写认证状态）与 `writeConfigState`（内部写配置状态）两条写入路径；不改变任何命令的对外行为。
+- 单元测试: ✅ 3 个新增 UT 全绿
+  - `TestSecureWriteFileRejectsSymlink` — symlink 拒绝，target 未被写入
+  - `TestSecureWriteFileHardensPermissions` — 既有 0644 文件写后变 0600
+  - `TestSecureWriteFileCreatesNewFileWithRestrictedPermissions` — 新建文件权限 0600
+  - `pkg/config` 全包 12 passed，`-race` 通过
+- 构建: ✅ `go build ./...` 全包通过；`go vet ./...` 无问题；`go vet -tags=system ./tests/system/` 系统测试代码编译通过
+- 实际命令验证: ⏩ 跳过（用户指示）— 架构限制：`writeConfigState` 无 CLI 入口；`writeAuthState` 经 `gc auth login --with-token` 但需 API 验证真实 token，规则禁止 AI 提供。待人工在 PR 评审时于 TTY 补做（清单见 issue-400-design.md）。
+- 安全审查: ✅
+  - 无硬编码 token/secret
+  - UT 用 `"untouched"`/`"old"`/`"new"`/`"payload"` 假数据，无真实凭证
+  - `secureWriteFile` 错误信息只含 path，不含 token
+  - 设计文档人工验证清单用 `<真实token>` 占位符
+  - 全程未调用 `gc auth token`/`gc auth status --show-token`，未读 `~/.config/gc/auth.json`，未打印 `GC_TOKEN`/`GITCODE_TOKEN`
+  - 改动方向是收紧凭证文件权限，降低而非引入 token 泄露风险
+- 文档同步: ✅ 设计文档 4 份（analysis/design/plan/record）已补到 `.loop/deliveries/`；命令行为不变，`docs/COMMANDS.md`/`README.md` 无需改；`spec/foundations/security.md` 已有凭证文件 0600 约束，本改动是落实而非变更规范。
+- 风险: **high**（`classify-change-risk.py --base origin/main` → risk=high，代码触及 auth/token/config 高风险关键词，属安全改动）。按规范 high 风险独立 AI 评审后仍需人工最终确认。
+- 未覆盖项: 真实命令验证（步骤 6）待人工补；CI 验证（步骤 7）待 PR 推送触发
+  - 真实命令验证（步骤 6）— 待人工在 PR 评审时补
+  - CI 验证（步骤 7）— 待 PR 推送触发
+- 自检结论: 可进入 ready-for-review（high 风险，需独立 AI 评审 + 人工最终确认；真实命令验证作为评审前置项由人工补做）

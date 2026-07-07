@@ -274,7 +274,7 @@ func (c *config) writeAuthState(state *authState) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(c.authStatePath(), data, 0o600)
+	return secureWriteFile(c.authStatePath(), data, 0o600)
 }
 
 func (s *authState) host(hostname string) *hostState {

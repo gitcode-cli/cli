@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -223,5 +224,87 @@ func TestNormalizeTrustedHost(t *testing.T) {
 				t.Fatalf("NormalizeTrustedHost() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestSecureWriteFileRejectsSymlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlink semantics differ on Windows")
+	}
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target")
+	if err := os.WriteFile(target, []byte("untouched"), 0o600); err != nil {
+		t.Fatalf("WriteFile(target) error = %v", err)
+	}
+	link := filepath.Join(dir, "link")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatalf("Symlink() error = %v", err)
+	}
+
+	err := secureWriteFile(link, []byte("payload"), 0o600)
+	if err == nil {
+		t.Fatal("secureWriteFile() error = nil, want symlink rejection")
+	}
+	if !strings.Contains(err.Error(), "symlink") {
+		t.Fatalf("secureWriteFile() error = %q, want mention of symlink", err.Error())
+	}
+
+	got, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("ReadFile(target) error = %v", err)
+	}
+	if string(got) != "untouched" {
+		t.Fatalf("target content = %q, want unchanged", got)
+	}
+}
+
+func TestSecureWriteFileHardensPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix permissions not supported on Windows")
+	}
+	dir := t.TempDir()
+	path := filepath.Join(dir, "file")
+	if err := os.WriteFile(path, []byte("old"), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	if err := secureWriteFile(path, []byte("new"), 0o600); err != nil {
+		t.Fatalf("secureWriteFile() error = %v", err)
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("Stat() error = %v", err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("permissions = %o, want 0600", info.Mode().Perm())
+	}
+
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+	if string(got) != "new" {
+		t.Fatalf("content = %q, want new", got)
+	}
+}
+
+func TestSecureWriteFileCreatesNewFileWithRestrictedPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix permissions not supported on Windows")
+	}
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fresh")
+
+	if err := secureWriteFile(path, []byte("payload"), 0o600); err != nil {
+		t.Fatalf("secureWriteFile() error = %v", err)
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("Stat() error = %v", err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("permissions = %o, want 0600", info.Mode().Perm())
 	}
 }

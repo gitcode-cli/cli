@@ -126,8 +126,11 @@ func Clone(repo *Repo, dir string, depth int) error {
 	if depth > 0 {
 		args = append(args, "--depth", fmt.Sprintf("%d", depth))
 	}
-	args = append(args, repo.GitURL("https"))
+	args = append(args, "--", repo.GitURL("https"))
 	if dir != "" {
+		if err := ValidateDir(dir); err != nil {
+			return fmt.Errorf("invalid clone directory: %w", err)
+		}
 		args = append(args, dir)
 	}
 
@@ -141,8 +144,11 @@ func CloneWithProtocol(repo *Repo, dir string, protocol string, depth int) error
 	if depth > 0 {
 		args = append(args, "--depth", fmt.Sprintf("%d", depth))
 	}
-	args = append(args, repo.GitURL(protocol))
+	args = append(args, "--", repo.GitURL(protocol))
 	if dir != "" {
+		if err := ValidateDir(dir); err != nil {
+			return fmt.Errorf("invalid clone directory: %w", err)
+		}
 		args = append(args, dir)
 	}
 

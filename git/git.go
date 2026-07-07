@@ -152,6 +152,32 @@ func ValidateRef(ref string) error {
 	return nil
 }
 
+// dirPattern matches directory names that are safe as git command arguments.
+// Directory names may contain any printable character (including spaces and
+// non-ASCII) but must not start with "-" and must not contain control chars.
+var dirPattern = regexp.MustCompile(`^[^-][^\x00-\x1f\x7f]*$`)
+
+// ErrInvalidDir is returned when a directory argument fails validation.
+var ErrInvalidDir = fmt.Errorf("invalid directory")
+
+// ValidateDir validates that a directory argument is safe for use as a git
+// command argument (e.g. the target directory of "git clone"). It rejects:
+//   - Empty strings
+//   - Strings starting with "-" (prevent option injection)
+//   - Strings containing control characters
+func ValidateDir(dir string) error {
+	if dir == "" {
+		return fmt.Errorf("%w: directory must not be empty", ErrInvalidDir)
+	}
+	if strings.HasPrefix(dir, "-") {
+		return fmt.Errorf("%w: directory must not start with '-': %q", ErrInvalidDir, dir)
+	}
+	if !dirPattern.MatchString(dir) {
+		return fmt.Errorf("%w: directory contains control characters: %q", ErrInvalidDir, dir)
+	}
+	return nil
+}
+
 // ValidateFetchURL validates a git fetch/push URL. It rejects:
 //   - Empty strings
 //   - URLs starting with "-" (prevent option injection via dash-prefixed host)

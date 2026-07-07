@@ -346,6 +346,126 @@ func TestCloneRunInvalidBranch(t *testing.T) {
 	}
 }
 
+func TestCloneRunRejectsOptionInjectionDirectory(t *testing.T) {
+	injections := []string{
+		"--config=/tmp/evil",
+		"--template=/tmp/malicious",
+		"--upload-pack=/tmp/evil",
+		"-c core.gitProxy=evil",
+		"--separate-git-dir=/tmp/evil",
+	}
+
+	for _, inj := range injections {
+		t.Run(inj, func(t *testing.T) {
+			io, _, _, _ := iostreams.Test()
+
+			opts := &CloneOptions{
+				IO:         io,
+				Repository: "owner/repo",
+				Directory:  inj,
+				GitClone: func(gitArgs []string, opts *CloneOptions) error {
+					t.Errorf("GitClone should not be called for injection attempt %q, args=%v", inj, gitArgs)
+					return nil
+				},
+			}
+
+			err := cloneRun(opts)
+			if err == nil {
+				t.Fatalf("cloneRun() expected error for injection directory %q, got nil", inj)
+			}
+		})
+	}
+}
+
+func TestCloneRunUsesSeparatorForDirectory(t *testing.T) {
+	var capturedArgs []string
+	io, _, _, _ := iostreams.Test()
+
+	opts := &CloneOptions{
+		IO:          io,
+		Repository:  "owner/repo",
+		Directory:   "my-project",
+		GitProtocol: "https",
+		GitClone: func(gitArgs []string, opts *CloneOptions) error {
+			capturedArgs = append([]string{}, gitArgs...)
+			return nil
+		},
+	}
+
+	err := cloneRun(opts)
+	if err != nil {
+		t.Fatalf("cloneRun() error = %v", err)
+	}
+
+	// Verify "--" separator is present before the repository URL
+	foundSep := false
+	foundDir := false
+	for i, arg := range capturedArgs {
+		if arg == "--" {
+			foundSep = true
+			// Directory should appear after "--"
+			for j := i + 1; j < len(capturedArgs); j++ {
+				if capturedArgs[j] == "my-project" {
+					foundDir = true
+					break
+				}
+			}
+			break
+		}
+	}
+	if !foundSep {
+		t.Errorf("cloneRun() args = %v, want \"--\" separator", capturedArgs)
+	}
+	if !foundDir {
+		t.Errorf("cloneRun() args = %v, want directory \"my-project\" after \"--\"", capturedArgs)
+	}
+}
+
+func TestCloneRunAcceptsValidDirectory(t *testing.T) {
+	validDirs := []string{
+		"my-project",
+		"subdir/my-project",
+		"my project",
+		"我的项目",
+		"./subdir/repo",
+	}
+
+	for _, dir := range validDirs {
+		t.Run(dir, func(t *testing.T) {
+			var capturedArgs []string
+			io, _, _, _ := iostreams.Test()
+
+			opts := &CloneOptions{
+				IO:          io,
+				Repository:  "owner/repo",
+				Directory:   dir,
+				GitProtocol: "https",
+				GitClone: func(gitArgs []string, opts *CloneOptions) error {
+					capturedArgs = append([]string{}, gitArgs...)
+					return nil
+				},
+			}
+
+			err := cloneRun(opts)
+			if err != nil {
+				t.Fatalf("cloneRun() unexpected error for directory %q: %v", dir, err)
+			}
+
+			// Verify directory appears in args
+			found := false
+			for _, arg := range capturedArgs {
+				if arg == dir {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("cloneRun() args = %v, want directory %q in args", capturedArgs, dir)
+			}
+		})
+	}
+}
+
 type cloneConfig struct {
 	protocol string
 }

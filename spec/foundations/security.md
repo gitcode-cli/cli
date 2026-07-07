@@ -105,6 +105,32 @@ token.txt
 secrets.yaml
 ```
 
+### 提交前密钥扫描（pre-commit + pre-push）
+
+仓库通过 `.pre-commit-config.yaml` 配置自动化密钥扫描，分两个阶段执行：
+
+| 阶段 | 触发时机 | 执行的 hook |
+|------|----------|-------------|
+| pre-commit | `git commit` | 全部 hook（gofmt + 语法校验 + 私钥检测 + gitleaks + 大文件 + 空白/换行） |
+| pre-push | `git push` | 安全子集：`gitleaks` + `detect-private-key` + `check-added-large-files` |
+
+**密钥扫描能力**：
+- `detect-private-key` — 检测私钥**文件**（SSH/PEM/RSA 等）
+- `gitleaks` — 扫描源码/文档/配置中的 **token/密钥字符串**（补充 detect-private-key 只检文件的缺口，覆盖 `GC_TOKEN`/`glpat-`/`gho_`/AWS key 等模式）
+
+**安装**（首次或 clone 后）：
+
+```bash
+pre-commit install --hook-type pre-commit --hook-type pre-push
+```
+
+或用 `gc precommit check` 检测工具是否安装 + hook 是否初始化。
+
+**注意**：
+- pre-push hook 需单独安装（默认 `pre-commit install` 只装 pre-commit）
+- 未安装 pre-push 时，`stages: [pre-push]` 的 hook 不生效，push 前密钥扫描缺失
+- gitleaks 规则更新后运行 `pre-commit autoupdate` 同步版本
+
 ## 测试安全
 
 ### 测试仓库限制

@@ -171,3 +171,26 @@ func TestValidateRef_RejectsGitOptions(t *testing.T) {
 		})
 	}
 }
+
+func TestRemoteURLRejectsOptionInjection(t *testing.T) {
+	tests := []struct {
+		name   string
+		remote string
+	}{
+		{name: "option injection", remote: "--upload-pack=/tmp/evil"},
+		{name: "dash prefix", remote: "-bogus"},
+		{name: "empty", remote: ""},
+		{name: "shell metacharacter", remote: "origin;rm -rf /"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := RemoteURL(tt.remote)
+			if err == nil {
+				t.Fatalf("RemoteURL(%q) error = nil, want rejection", tt.remote)
+			}
+			if !strings.Contains(err.Error(), "invalid remote name") {
+				t.Fatalf("RemoteURL(%q) error = %v, want 'invalid remote name'", tt.remote, err)
+			}
+		})
+	}
+}

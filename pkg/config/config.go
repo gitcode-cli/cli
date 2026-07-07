@@ -261,11 +261,14 @@ func (c *config) writeConfigState(state *configState) error {
 	if err := os.MkdirAll(c.configDir, 0o700); err != nil {
 		return err
 	}
+	if err := os.Chmod(c.configDir, 0o700); err != nil {
+		return err
+	}
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(c.configStatePath(), data, 0o600)
+	return secureWriteFile(c.configStatePath(), data, 0o600)
 }
 
 func (s *configState) host(hostname string) map[string]string {

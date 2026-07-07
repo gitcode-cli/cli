@@ -1,6 +1,8 @@
 package git
 
 import (
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 )
@@ -192,5 +194,34 @@ func TestRemoteURLRejectsOptionInjection(t *testing.T) {
 				t.Fatalf("RemoteURL(%q) error = %v, want 'invalid remote name'", tt.remote, err)
 			}
 		})
+	}
+}
+
+func TestRemoteURLReturnsURLForValidRemote(t *testing.T) {
+	dir := t.TempDir()
+	for _, args := range [][]string{
+		{"init"},
+		{"remote", "add", "origin", "https://example.com/repo.git"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+	}
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer os.Chdir(origDir)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	got, err := RemoteURL("origin")
+	if err != nil {
+		t.Fatalf("RemoteURL(origin) error = %v, want nil", err)
+	}
+	if want := "https://example.com/repo.git"; got != want {
+		t.Fatalf("RemoteURL(origin) = %q, want %q", got, want)
 	}
 }

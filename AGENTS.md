@@ -293,6 +293,7 @@ gh run view <run-id> --log --job=<job-id>
 - 遇到规范未覆盖的情况，必须先向用户确认，不得自由发挥
 - 发现规范之间有冲突，必须先向用户报告，以用户确认为准
 - MEMORY.md（如存在）是会话级记忆摘要，如果与 spec/ 冲突，以 spec/ 为准
+- 遇到网络问题（TLS timeout / handshake failed 等）优先多次重试标准工具（gh/git）；多次重试仍失败必须报告用户由人工解决，不得自行绕过（如改用 curl+token、切换下载源、换工具等）；严禁提取 `gh auth token` 走 curl/脚本调 API（token 会泄露到进程列表/命令历史/日志，gh 已封装认证）
 
 ## 10. Codex 入口边界
 

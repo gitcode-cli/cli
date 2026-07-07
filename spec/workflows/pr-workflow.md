@@ -123,6 +123,27 @@ Refs #23" \
 
 创建后先补 `status/draft`，不要一开始就当作 ready for review。
 
+### Issue 关联
+
+PR body 必须含 `Closes #XXX`（或 `Fixes #XXX` / `Resolves #XXX`）关联对应 issue：
+
+- **PR body 的 `Closes #XXX` 是 GitCode 识别的唯一来源** — PR merge 后 GitCode 自动关闭关联 issue
+- **commit message 的 `Closes #XXX` 不被 GitCode 识别为自动关闭**（实测：#400 commit message 含 `Closes #400` 但 issue 未自动关闭，需手动 close；#357 改用 PR body `Closes #357` 后 merge 即自动关闭）
+- 用 `Refs #XXX` 仅引用不关闭，适用于非修复型 PR（如重构、文档）
+
+示例：
+
+```bash
+gc pr create --title "fix: ..." --body-file pr-self-check.md
+```
+
+PR body（self-check）末尾含：
+
+```
+**关联 Issue**: #400
+**Closes #400**
+```
+
 ## 6. 作者自检
 
 作者自检是必需步骤，但不等同于多角色评审。

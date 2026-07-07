@@ -12,3 +12,8 @@
 - 风险:
 - 未覆盖项:
 - 自检结论: 可进入 ready-for-review / 仍需继续修改
+
+---
+
+**关联 Issue**: #XXX
+**Closes #XXX**

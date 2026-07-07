@@ -98,7 +98,10 @@ func cloneRun(opts *CloneOptions) error {
 	// because its inputs (repository URL, --branch, directory) are user-supplied,
 	// not server-controlled. A user who can inject arguments into their own git
 	// clone command could simply run git directly instead.
-	// We do validate --branch via git.ValidateRef for consistency with pr checkout.
+	// We do validate --branch via git.ValidateRef and --directory via
+	// git.ValidateDir for consistency with pr checkout and to reject accidental
+	// option-like values. A "--" separator is also inserted before the repository
+	// URL so that both the URL and the directory are treated as positional args.
 
 	// Validate depth
 	if opts.Depth < 0 {
@@ -134,8 +137,11 @@ func cloneRun(opts *CloneOptions) error {
 	if opts.Recursive {
 		gitArgs = append(gitArgs, "--recursive")
 	}
-	gitArgs = append(gitArgs, repoURL)
+	gitArgs = append(gitArgs, "--", repoURL)
 	if opts.Directory != "" {
+		if err := gitpkg.ValidateDir(opts.Directory); err != nil {
+			return cmdutil.NewUsageError(fmt.Sprintf("invalid directory: %v", err))
+		}
 		gitArgs = append(gitArgs, opts.Directory)
 	}
 

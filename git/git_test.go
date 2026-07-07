@@ -174,6 +174,72 @@ func TestValidateRef_RejectsGitOptions(t *testing.T) {
 	}
 }
 
+func TestValidateDir(t *testing.T) {
+	tests := []struct {
+		name    string
+		dir     string
+		wantErr bool
+		errMsg  string
+	}{
+		{"valid simple dir", "my-project", false, ""},
+		{"valid dir with slash", "subdir/my-project", false, ""},
+		{"valid dir with dots", "my.project", false, ""},
+		{"valid dir with underscore", "my_project", false, ""},
+		{"valid dir with space", "my project", false, ""},
+		{"valid dir with non-ascii", "我的项目", false, ""},
+		{"valid single char", "a", false, ""},
+		{"valid relative path", "./subdir/repo", false, ""},
+		{"empty dir", "", true, "must not be empty"},
+		{"dash prefix", "-f", true, "must not start with '-'"},
+		{"double dash prefix", "--config=/tmp/evil", true, "must not start with '-'"},
+		{"option-like with value", "--template=/tmp/malicious", true, "must not start with '-'"},
+		{"single dash", "-", true, "must not start with '-'"},
+		{"newline in dir", "project\nname", true, "control characters"},
+		{"null byte in dir", "project\x00name", true, "control characters"},
+		{"tab in dir", "project\tname", true, "control characters"},
+		{"delete char in dir", "project\x7fname", true, "control characters"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateDir(tt.dir)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("ValidateDir(%q) expected error, got nil", tt.dir)
+					return
+				}
+				if tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("ValidateDir(%q) error = %v, want containing %q", tt.dir, err, tt.errMsg)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ValidateDir(%q) unexpected error: %v", tt.dir, err)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateDir_RejectsGitOptions(t *testing.T) {
+	// Various git clone option injection attempts via directory argument
+	injections := []string{
+		"--config=/tmp/evil",
+		"--template=/tmp/malicious",
+		"--upload-pack=/tmp/evil",
+		"-c core.gitProxy=evil",
+		"--separate-git-dir=/tmp/evil",
+	}
+
+	for _, inj := range injections {
+		t.Run(inj, func(t *testing.T) {
+			err := ValidateDir(inj)
+			if err == nil {
+				t.Errorf("ValidateDir(%q) should reject git option injection", inj)
+			}
+		})
+	}
+}
+
 func TestRemoteURLRejectsOptionInjection(t *testing.T) {
 	tests := []struct {
 		name   string

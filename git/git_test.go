@@ -1,6 +1,8 @@
 package git
 
 import (
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 )
@@ -169,5 +171,57 @@ func TestValidateRef_RejectsGitOptions(t *testing.T) {
 				t.Errorf("ValidateRef(%q) should reject git option injection", inj)
 			}
 		})
+	}
+}
+
+func TestRemoteURLRejectsOptionInjection(t *testing.T) {
+	tests := []struct {
+		name   string
+		remote string
+	}{
+		{name: "option injection", remote: "--upload-pack=/tmp/evil"},
+		{name: "dash prefix", remote: "-bogus"},
+		{name: "empty", remote: ""},
+		{name: "shell metacharacter", remote: "origin;rm -rf /"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := RemoteURL(tt.remote)
+			if err == nil {
+				t.Fatalf("RemoteURL(%q) error = nil, want rejection", tt.remote)
+			}
+			if !strings.Contains(err.Error(), "invalid remote name") {
+				t.Fatalf("RemoteURL(%q) error = %v, want 'invalid remote name'", tt.remote, err)
+			}
+		})
+	}
+}
+
+func TestRemoteURLReturnsURLForValidRemote(t *testing.T) {
+	dir := t.TempDir()
+	for _, args := range [][]string{
+		{"init"},
+		{"remote", "add", "origin", "https://example.com/repo.git"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+	}
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer os.Chdir(origDir)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	got, err := RemoteURL("origin")
+	if err != nil {
+		t.Fatalf("RemoteURL(origin) error = %v, want nil", err)
+	}
+	if want := "https://example.com/repo.git"; got != want {
+		t.Fatalf("RemoteURL(origin) = %q, want %q", got, want)
 	}
 }

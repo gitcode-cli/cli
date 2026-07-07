@@ -59,7 +59,10 @@ func Remotes() ([]string, error) {
 
 // RemoteURL returns the URL of a remote
 func RemoteURL(name string) (string, error) {
-	output, err := exec.Command("git", "remote", "get-url", name).Output()
+	if err := ValidateRef(name); err != nil {
+		return "", fmt.Errorf("invalid remote name: %w", err)
+	}
+	output, err := exec.Command("git", "remote", "get-url", "--", name).Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get remote URL: %w", err)
 	}

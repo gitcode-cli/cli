@@ -2,6 +2,9 @@ package api
 
 import (
 	"bytes"
+	"context"
+	"errors"
+	"fmt"
 	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
@@ -180,6 +183,32 @@ func TestShouldRetryOnStatus(t *testing.T) {
 		if got != tt.expected {
 			t.Errorf("shouldRetryOnStatus(%d) = %v, want %v", tt.code, got, tt.expected)
 		}
+	}
+}
+
+func TestShouldRetryOnErrorWrappedContext(t *testing.T) {
+	rt := &retryTransport{cfg: DefaultRetryConfig()}
+
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{name: "nil", err: nil, expected: false},
+		{name: "bare context.Canceled", err: context.Canceled, expected: false},
+		{name: "bare context.DeadlineExceeded", err: context.DeadlineExceeded, expected: false},
+		{name: "wrapped context.Canceled", err: fmt.Errorf("request failed: %w", context.Canceled), expected: false},
+		{name: "wrapped context.DeadlineExceeded", err: fmt.Errorf("request failed: %w", context.DeadlineExceeded), expected: false},
+		{name: "other network error", err: errors.New("connection refused"), expected: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := rt.shouldRetryOnError(tt.err)
+			if got != tt.expected {
+				t.Errorf("shouldRetryOnError(%v) = %v, want %v", tt.err, got, tt.expected)
+			}
+		})
 	}
 }
 

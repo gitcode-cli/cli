@@ -26,14 +26,14 @@ repos:
         language: system
         types: [go]
       - id: gitleaks
-        name: gitleaks (workspace)
+        name: gitleaks (workspace, incl gitignored)
         entry: gitleaks detect --source . --no-git --no-banner --redact=100 --verbose
         language: system
         pass_filenames: false
-        stages: [pre-commit]
+        stages: [pre-commit, pre-push]
       - id: gitleaks-history
         name: gitleaks (git history)
         entry: gitleaks detect --source . --no-banner --redact=100 --verbose
         language: system
         pass_filenames: false
-        stages: [pre-push]
+        stages: [pre-commit, pre-push]

@@ -308,3 +308,16 @@ func TestSecureWriteFileCreatesNewFileWithRestrictedPermissions(t *testing.T) {
 		t.Fatalf("permissions = %o, want 0600", info.Mode().Perm())
 	}
 }
+
+func TestSecureWriteFileRejectsDirectory(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "subdir")
+	if err := os.Mkdir(target, 0o700); err != nil {
+		t.Fatalf("Mkdir() error = %v", err)
+	}
+
+	err := secureWriteFile(target, []byte("payload"), 0o600)
+	if err == nil {
+		t.Fatal("secureWriteFile() error = nil, want failure when path is a directory")
+	}
+}

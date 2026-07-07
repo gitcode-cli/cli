@@ -62,6 +62,16 @@ echo "YOUR_TOKEN" | gc auth login --with-token
 ~/.config/gc/auth.json
 ```
 
+### 凭证文件落盘约束
+
+写入凭证文件（`auth.json`）与配置状态文件（`config.json`）时必须满足：
+
+1. **文件权限 0600** - 凭证文件落盘权限必须为 `0600`，不得依赖 `umask`；对既有文件也必须显式 `Chmod` 收紧（`os.WriteFile` 受 umask 影响且不收紧既有文件权限，必须额外 `Chmod`）
+2. **目录权限 0700** - 配置目录 `~/.config/gc/` 权限必须为 `0700`，创建后显式 `Chmod` 收紧
+3. **拒绝符号链接** - 写入路径若为符号链接必须拒绝，防止凭证重定向攻击（攻击者将 `auth.json` 替换为指向他处的软链，CLI 写入时覆盖目标或泄露内容）
+4. **原子检测** - Unix 实现必须用 `O_NOFOLLOW` 原子打开 + fd `fchmod`，消除 `Lstat`→`WriteFile` 的 TOCTOU 竞态窗口；Windows 无 `O_NOFOLLOW`，保留 `Lstat` 检测（依赖 ACL 模型缓解）
+5. **威胁模型假设** - 依赖目录 `0700` 防止跨用户父目录/硬链接攻击；同用户攻击者本可读凭证文件，不在防护范围；父目录组件为符号链接的彻底防护需 `openat2(RESOLVE_NO_SYMLINKS)`，非跨平台，不纳入
+
 ### 获取 Token
 1. 登录 [GitCode](https://gitcode.com)
 2. 进入 设置 → 私人令牌

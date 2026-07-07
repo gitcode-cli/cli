@@ -4,7 +4,7 @@
 - Risk: risk/medium
 - Scope: scope/credential-storage
 - Milestone: M1: Security Hardening
-- Status: in-progress
+- Status: self-checked
 
 ## Design Artifacts
 - 需求分析: .loop/deliveries/issue-400-analysis.md
@@ -16,11 +16,17 @@
 |------|----|------|----------|
 | status/triage | status/verified | 2026-06-29 | 安全审查 Agent 2 确认 |
 | status/verified | status/in-progress | 2026-07-06 | worktree bugfix/issue-400 开发，secureWriteFile 实现 + UT 完成 |
+| status/in-progress | status/self-checked | 2026-07-07 | 作者自检完成（PR !345 + GitHub #18），CI success；多角色评审发现 2 changes-requested，已修复（O_NOFOLLOW 原子打开 + spec 补凭证文件约束 + 目录 Chmod + 边界 UT） |
 
 ## Key Artifacts
 - 分支: bugfix/issue-400
-- 改动: 3 files（config.go, auth_config.go, auth_config_test.go）
+- 提交: 9065e04 (8 files, +301/-2)
 - 同步主干: 2026-07-06 fast-forward 14 提交至 origin/main e65eb38，零冲突
+- PR (GitCode): !345 — https://gitcode.com/gitcode-cli/cli/merge_requests/345
+- PR (GitHub 镜像仓, 触发 CI): #18 — https://github.com/gitcode-cli/cli/pull/18
+- CI Run: 28837606503 — https://github.com/gitcode-cli/cli/actions/runs/28837606503
+  - conclusion: **success**
+  - 8 Job 全过: Test(ubuntu/macos-14/windows) ✓, Lint ✓, Build(ubuntu/macos-14/windows) ✓, Docker ✓
 
 ## Gates Summary
 | # | Gate | Result |
@@ -32,7 +38,7 @@
 | 4 | UT | ✅ 12 passed（含 3 新增 secureWriteFile 测试），-race 通过 |
 | 5 | Lint | ✅ golangci-lint v2.12.2（CI 配置 --disable=errcheck --disable=staticcheck）0 issues；gofmt/vet 全绿 |
 | 6 | 实际命令 | ⏩ 跳过（用户指示）— 待人工在 PR 评审时补：symlink 拒绝 + 权限硬化，清单见 issue-400-design.md |
-| 7 | CI | ⏳ 待 PR 提交 |
+| 7 | CI | ✅ run 28837606503, conclusion=success, 8 Job 全过（Test 跨平台/Lint/Build 跨平台/Docker） |
 | 8 | 风险分级 | ✅ classify-change-risk → **risk=high**（代码触及 auth/token/config 高风险关键词，属安全改动；按规范 high 风险需人工最终确认） |
 | + | 合并 | ⏳ 待 PR（high 风险，独立 AI 评审后仍需人工最终确认） |
 

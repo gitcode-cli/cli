@@ -269,6 +269,9 @@ func (c *config) writeAuthState(state *authState) error {
 	if err := os.MkdirAll(c.configDir, 0o700); err != nil {
 		return err
 	}
+	if err := os.Chmod(c.configDir, 0o700); err != nil {
+		return err
+	}
 
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {

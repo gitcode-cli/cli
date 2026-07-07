@@ -4,7 +4,6 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -262,25 +261,14 @@ func (c *config) writeConfigState(state *configState) error {
 	if err := os.MkdirAll(c.configDir, 0o700); err != nil {
 		return err
 	}
+	if err := os.Chmod(c.configDir, 0o700); err != nil {
+		return err
+	}
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
 		return err
 	}
 	return secureWriteFile(c.configStatePath(), data, 0o600)
-}
-
-// secureWriteFile writes data to path with explicit permission hardening.
-// It rejects symlink targets to prevent credential redirection attacks,
-// and calls os.Chmod after writing to tighten permissions on pre-existing
-// files that os.WriteFile would otherwise leave unchanged.
-func secureWriteFile(path string, data []byte, perm os.FileMode) error {
-	if li, err := os.Lstat(path); err == nil && li.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("refusing to write to symlink: %s", path)
-	}
-	if err := os.WriteFile(path, data, perm); err != nil {
-		return err
-	}
-	return os.Chmod(path, perm)
 }
 
 func (s *configState) host(hostname string) map[string]string {

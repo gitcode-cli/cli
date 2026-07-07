@@ -43,6 +43,7 @@
 3. **环境变量优先** - 若同时存在环境变量和本地配置，环境变量优先
 4. **禁止提交** - Token 绝对不能提交到版本控制系统
 5. **显示 Token 必须人工确认** - `auth token` 和 `auth status --show-token` 会输出完整 token，必须在交互式 TTY 中输入 hostname 确认；非交互环境一律拒绝，AI 代理默认不得调用这些命令
+6. **禁止提取 token 走 curl/脚本** - AI 代理不得提取 `gh auth token` 走 curl/脚本调 API（token 会泄露到进程列表/命令历史/日志）；gh 已封装认证，网络问题用 gh 多次重试，多次重试失败报告人工解决，不自行绕过
 
 ### Token 获取方式
 

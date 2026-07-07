@@ -3,6 +3,8 @@ package api
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -137,7 +139,7 @@ func (t *retryTransport) shouldRetryOnError(err error) bool {
 	}
 
 	// Don't retry on context cancellation
-	if err.Error() == "context canceled" || err.Error() == "context deadline exceeded" {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return false
 	}
 

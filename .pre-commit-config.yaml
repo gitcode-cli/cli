@@ -36,4 +36,4 @@ repos:
         entry: gitleaks detect --source . --no-banner --redact=100 --verbose
         language: system
         pass_filenames: false
-        stages: [pre-commit, pre-push]
+        stages: [pre-push]

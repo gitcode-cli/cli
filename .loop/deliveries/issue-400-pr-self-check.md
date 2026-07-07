@@ -24,7 +24,7 @@
   - 全程未调用 `gc auth token`/`gc auth status --show-token`，未读 `~/.config/gc/auth.json`，未打印 `GC_TOKEN`/`GITCODE_TOKEN`
   - 改动方向是收紧凭证文件权限 + 消除 TOCTOU，降低而非引入 token 泄露风险
   - 威胁模型假设已文档化（issue-400-design.md）：依赖 configDir 0700 防父目录/硬链接，不防同用户；Windows 保留 Lstat 是平台限制
-- 文档同步: ✅ 设计文档 4 份（analysis/design/plan/record）已补到 `.loop/deliveries/`；本 PR 同步在 `spec/foundations/security.md` Token 管理章节新增"凭证文件落盘约束"（0600/0700/拒 symlink/O_NOFOLLOW/威胁模型）；命令行为不变，`docs/COMMANDS.md`/`README.md` 无需改。
+- 文档同步: ✅ 设计文档 4 份已补；本 PR 同步在 `spec/foundations/security.md` 新增"凭证文件落盘约束"，在 `docs/AUTH.md` 持久化边界章节加 symlink 拒绝说明（消除"行为不变"与设计文档的定性矛盾）；`docs/COMMANDS.md`/`README.md` 无需改。
 - 风险: **high**（`classify-change-risk.py --base origin/main` → risk=high，代码触及 auth/token/config 高风险关键词，属安全改动）。按规范 high 风险独立 AI 评审后仍需人工最终确认。
 - 未覆盖项: 真实命令验证（步骤 6）待人工在 PR 评审时补
 - 自检结论: changes-requested 已修复（O_NOFOLLOW + spec 补约束 + 目录 Chmod + 边界 UT），可进入第二轮评审 → ready-for-review（high 风险，需独立 AI 评审 + 人工最终确认；真实命令验证作为评审前置项由人工补做）

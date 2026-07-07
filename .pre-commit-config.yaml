@@ -1,3 +1,4 @@
+default_stages: [pre-commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -13,7 +14,9 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=512]
+        stages: [pre-commit, pre-push]
       - id: detect-private-key
+        stages: [pre-commit, pre-push]
 
   - repo: local
     hooks:
@@ -22,3 +25,15 @@ repos:
         entry: gofmt -w
         language: system
         types: [go]
+      - id: gitleaks
+        name: gitleaks (workspace, incl gitignored)
+        entry: gitleaks detect --source . --no-git --no-banner --redact=100 --verbose
+        language: system
+        pass_filenames: false
+        stages: [pre-commit, pre-push]
+      - id: gitleaks-history
+        name: gitleaks (git history)
+        entry: gitleaks detect --source . --no-banner --redact=100 --verbose
+        language: system
+        pass_filenames: false
+        stages: [pre-commit, pre-push]

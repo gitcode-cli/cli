@@ -24,6 +24,9 @@ func ReadBody(body, bodyFile string, stdin io.Reader) (string, error) {
 	}
 
 	if body != "" {
+		if err := ScanContentForSecrets(body); err != nil {
+			return "", err
+		}
 		return body, nil
 	}
 
@@ -61,7 +64,11 @@ func ReadTextFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return DecodeUserText(content), nil
+	text := DecodeUserText(content)
+	if err := ScanContentForSecrets(text); err != nil {
+		return "", err
+	}
+	return text, nil
 }
 
 // ReadText reads user-provided text from a stream.
@@ -84,6 +91,9 @@ func ReadTextFromFlag(r io.Reader, flagName string) (string, error) {
 	text := DecodeUserText(content)
 	if isLikelyLossyPowerShellStdin(content, text, runtime.GOOS, os.Getenv("GITCODE_CLI_ALLOW_LOSSY_STDIN") != "") {
 		return "", newLossyPowerShellStdinError(flagName)
+	}
+	if err := ScanContentForSecrets(text); err != nil {
+		return "", err
 	}
 	return text, nil
 }

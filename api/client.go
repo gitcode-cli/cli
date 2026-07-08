@@ -122,7 +122,7 @@ func (c *Client) REST(method, path string, body interface{}, response interface{
 			apiErr.StatusCode = resp.StatusCode
 			return &apiErr
 		}
-		return fmt.Errorf("API error: %s", resp.Status)
+		return &APIError{StatusCode: resp.StatusCode, Message: resp.Status}
 	}
 
 	// Parse response
@@ -182,7 +182,7 @@ func (c *Client) RawREST(method, endpoint string, body io.Reader, headers map[st
 			apiErr.StatusCode = resp.StatusCode
 			return nil, &apiErr
 		}
-		return nil, fmt.Errorf("API error: %s", resp.Status)
+		return nil, &APIError{StatusCode: resp.StatusCode, Message: resp.Status}
 	}
 
 	return &RawResponse{
@@ -248,7 +248,7 @@ func (c *Client) GetText(path string) (string, error) {
 			apiErr.StatusCode = resp.StatusCode
 			return "", &apiErr
 		}
-		return "", fmt.Errorf("API error: %s", resp.Status)
+		return "", &APIError{StatusCode: resp.StatusCode, Message: resp.Status}
 	}
 
 	return string(respBody), nil
@@ -293,7 +293,7 @@ func (c *Client) PostForm(path string, formValues url.Values, response interface
 			apiErr.StatusCode = resp.StatusCode
 			return &apiErr
 		}
-		return fmt.Errorf("API error: %s", resp.Status)
+		return &APIError{StatusCode: resp.StatusCode, Message: resp.Status}
 	}
 
 	if response != nil && len(respBody) > 0 {
@@ -358,7 +358,7 @@ func (c *Client) PatchForm(path string, formValues url.Values, response interfac
 			apiErr.StatusCode = resp.StatusCode
 			return &apiErr
 		}
-		return fmt.Errorf("API error: %s", resp.Status)
+		return &APIError{StatusCode: resp.StatusCode, Message: resp.Status}
 	}
 
 	// Parse response
@@ -447,7 +447,7 @@ func (c *Client) UploadAsset(path, filename string, content []byte, contentType 
 			apiErr.StatusCode = resp.StatusCode
 			return nil, &apiErr
 		}
-		return nil, fmt.Errorf("upload failed: %s", resp.Status)
+		return nil, &APIError{StatusCode: resp.StatusCode, Message: resp.Status}
 	}
 
 	// Parse response

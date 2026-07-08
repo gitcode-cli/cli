@@ -82,6 +82,11 @@ func run(opts *Options) error {
 	if err != nil {
 		return err
 	}
+	if body != nil {
+		if rc, ok := body.(io.Closer); ok {
+			defer rc.Close()
+		}
+	}
 	headers, err := parseHeaders(opts.Headers)
 	if err != nil {
 		return err
@@ -116,17 +121,17 @@ func readInput(opts *Options) (io.Reader, error) {
 		return nil, nil
 	}
 	if opts.Input == "-" {
-		data, err := io.ReadAll(opts.IO.In)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read stdin: %w", err)
-		}
-		return bytes.NewReader(data), nil
+		// Stream stdin directly without buffering it into memory.
+		return io.NopCloser(opts.IO.In), nil
 	}
-	data, err := os.ReadFile(opts.Input)
+	// Stream the file directly as the request body instead of reading it
+	// fully into memory; this mirrors `gh api --input` (openUserFile) and
+	// avoids unbounded memory use for large inputs.
+	f, err := os.Open(opts.Input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read input file: %w", err)
+		return nil, fmt.Errorf("failed to open input file: %w", err)
 	}
-	return bytes.NewReader(data), nil
+	return f, nil
 }
 
 func parseHeaders(values []string) (map[string]string, error) {

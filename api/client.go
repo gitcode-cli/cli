@@ -467,7 +467,7 @@ func decodeAPIError(respBody []byte, statusCode int, status string) error {
 		apiErr.StatusCode = statusCode
 		return &apiErr
 	}
-	return fmt.Errorf("API error: %s", status)
+	return &APIError{StatusCode: statusCode, Message: status}
 }
 
 // BuildURL builds a URL with path parameters

@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -248,7 +249,7 @@ func TestDecodeAPIError(t *testing.T) {
 			statusCode: 502,
 			status:     "502 Bad Gateway",
 			wantMsg:    "502 Bad Gateway",
-			wantAPIErr: false,
+			wantAPIErr: true,
 		},
 		{
 			name:       "JSON but no error fields",
@@ -256,7 +257,7 @@ func TestDecodeAPIError(t *testing.T) {
 			statusCode: 400,
 			status:     "400 Bad Request",
 			wantMsg:    "400 Bad Request",
-			wantAPIErr: false,
+			wantAPIErr: true,
 		},
 		{
 			name:       "multiple error fields",
@@ -379,5 +380,94 @@ func TestUploadToURL_TruncatesLongErrorBody(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), strings.Repeat("x", 1024)) {
 		t.Errorf("error leaked full response body (len=%d)", len(err.Error()))
+	}
+}
+
+func TestREST_NonJSONErrorReturnsAPIErrorWithStatusCode(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+	}{
+		{"404 not found", 404},
+		{"401 unauthorized", 401},
+		{"403 forbidden", 403},
+		{"409 conflict", 409},
+		{"500 server error", 500},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: tt.statusCode,
+						Status:     fmt.Sprintf("%d %s", tt.statusCode, tt.name),
+						Header:     make(http.Header),
+						Body:       io.NopCloser(bytes.NewReader(nil)),
+					}, nil
+				}),
+			}
+			c := &Client{httpClient: mockClient}
+			err := c.REST("GET", "/repos/test", nil, nil)
+			if err == nil {
+				t.Fatal("REST() error = nil, want error")
+			}
+			var apiErr *APIError
+			if !errors.As(err, &apiErr) {
+				t.Fatalf("REST() error type = %T, want *APIError", err)
+			}
+			if apiErr.StatusCode != tt.statusCode {
+				t.Errorf("StatusCode = %d, want %d", apiErr.StatusCode, tt.statusCode)
+			}
+		})
+	}
+}
+
+func TestGetText_NonJSONErrorReturnsAPIError(t *testing.T) {
+	mockClient := &http.Client{
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: 404,
+				Status:     "404 Not Found",
+				Header:     make(http.Header),
+				Body:       io.NopCloser(bytes.NewReader([]byte("plain text body"))),
+			}, nil
+		}),
+	}
+	c := &Client{httpClient: mockClient}
+	_, err := c.GetText("/repos/test/contents")
+	if err == nil {
+		t.Fatal("GetText() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("GetText() error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != 404 {
+		t.Errorf("StatusCode = %d, want 404", apiErr.StatusCode)
+	}
+}
+
+func TestUploadAsset_NonJSONErrorReturnsAPIError(t *testing.T) {
+	mockClient := &http.Client{
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: 500,
+				Status:     "500 Internal Server Error",
+				Header:     make(http.Header),
+				Body:       io.NopCloser(bytes.NewReader([]byte("oops"))),
+			}, nil
+		}),
+	}
+	c := &Client{httpClient: mockClient}
+	_, err := c.UploadAsset("/repos/o/r/releases/1/assets", "f.txt", []byte("data"), "text/plain")
+	if err == nil {
+		t.Fatal("UploadAsset() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("UploadAsset() error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != 500 {
+		t.Errorf("StatusCode = %d, want 500", apiErr.StatusCode)
 	}
 }

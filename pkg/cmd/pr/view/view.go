@@ -135,8 +135,11 @@ func viewRun(opts *ViewOptions) error {
 		}
 		return nil
 	}
-	if err := enrichPRStats(client, owner, repo, pr); err != nil {
-		fmt.Fprintf(opts.IO.ErrOut, "%s Failed to enrich PR stats: %v\n", cs.Yellow("!"), err)
+	// Enrichment failure is non-fatal for rendering but signals incomplete data
+	// so agents cannot mistake exit code 0 for full PR data.
+	enrichErr := enrichPRStats(client, owner, repo, pr)
+	if enrichErr != nil {
+		fmt.Fprintf(opts.IO.ErrOut, "%s Failed to enrich PR stats: %v\n", cs.Yellow("!"), enrichErr)
 	}
 
 	if opts.JSON {
@@ -145,12 +148,19 @@ func viewRun(opts *ViewOptions) error {
 			if err != nil {
 				return fmt.Errorf("failed to get comments: %w", err)
 			}
-			return cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
+			if err := cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
 				"pull_request": pr,
 				"comments":     comments,
-			})
+			}); err != nil {
+				return err
+			}
+		} else if err := cmdutil.WriteJSON(opts.IO.Out, pr); err != nil {
+			return err
 		}
-		return cmdutil.WriteJSON(opts.IO.Out, pr)
+		if enrichErr != nil {
+			return fmt.Errorf("PR data incomplete: %w", enrichErr)
+		}
+		return nil
 	}
 
 	if err := renderPRDetails(opts.IO.Out, cs, pr, timeFormat, now); err != nil {
@@ -161,11 +171,17 @@ func viewRun(opts *ViewOptions) error {
 		comments, err := api.ListPRComments(client, owner, repo, opts.Number)
 		if err != nil {
 			fmt.Fprintf(opts.IO.ErrOut, "%s Failed to get comments: %v\n", cs.Yellow("!"), err)
+			if enrichErr == nil {
+				enrichErr = fmt.Errorf("failed to get comments: %w", err)
+			}
 		} else if err := renderPRComments(opts.IO.Out, comments, timeFormat, now); err != nil {
 			return err
 		}
 	}
 
+	if enrichErr != nil {
+		return fmt.Errorf("PR data incomplete: %w", enrichErr)
+	}
 	return nil
 }
 

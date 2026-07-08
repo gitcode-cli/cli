@@ -235,6 +235,8 @@ gitcode.com
   ✓ Git operations protocol: https
 ```
 
+未认证或 token 无效/过期时，诊断信息输出到 stderr，退出码为 `4`（`ExitAuth`）。`--json` 模式下 JSON 仍写入 stdout（`logged_in:false` 或 `token_valid:false`），退出码同样为 `4`，便于 AI 代理仅凭退出码判断认证状态。
+
 ### auth token - 显示 Token
 
 ```bash

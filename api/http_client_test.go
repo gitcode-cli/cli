@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -100,6 +102,9 @@ func TestNewHTTPClient(t *testing.T) {
 
 	if client.Timeout != timeout {
 		t.Errorf("client.Timeout = %v, want %v", client.Timeout, timeout)
+	}
+	if client.CheckRedirect == nil {
+		t.Error("client.CheckRedirect is nil, want SafeCheckRedirect")
 	}
 }
 
@@ -206,5 +211,49 @@ func TestNewDownloadHTTPClientWithEnvTimeout_ZeroValue(t *testing.T) {
 	// Should use DownloadTimeout on zero value
 	if client.Timeout != DownloadTimeout {
 		t.Errorf("client.Timeout = %v, want %v (DownloadTimeout)", client.Timeout, DownloadTimeout)
+	}
+}
+
+func TestSafeCheckRedirect_SameHostKeepsAuth(t *testing.T) {
+	origReq, _ := http.NewRequest("GET", "https://api.gitcode.com/api/v5/repos", nil)
+	origReq.Header.Set("Authorization", "Bearer secret")
+
+	newReq, _ := http.NewRequest("GET", "https://api.gitcode.com/api/v5/repos/redirected", nil)
+	newReq.Header.Set("Authorization", "Bearer secret")
+
+	via := []*http.Request{origReq}
+	if err := SafeCheckRedirect(newReq, via); err != nil {
+		t.Fatalf("SafeCheckRedirect returned error: %v", err)
+	}
+	if got := newReq.Header.Get("Authorization"); got != "Bearer secret" {
+		t.Errorf("Authorization = %q, want %q (same host must keep header)", got, "Bearer secret")
+	}
+}
+
+func TestSafeCheckRedirect_CrossHostStripsAuth(t *testing.T) {
+	origReq, _ := http.NewRequest("GET", "https://api.gitcode.com/api/v5/repos", nil)
+	origReq.Header.Set("Authorization", "Bearer secret")
+
+	newReq, _ := http.NewRequest("GET", "https://evil.example.com/steal", nil)
+	newReq.Header.Set("Authorization", "Bearer secret")
+
+	via := []*http.Request{origReq}
+	if err := SafeCheckRedirect(newReq, via); err != nil {
+		t.Fatalf("SafeCheckRedirect returned error: %v", err)
+	}
+	if got := newReq.Header.Get("Authorization"); got != "" {
+		t.Errorf("Authorization = %q, want empty (cross host must strip header)", got)
+	}
+}
+
+func TestSafeCheckRedirect_MaxRedirects(t *testing.T) {
+	via := make([]*http.Request, maxRedirects)
+	for i := range via {
+		via[i] = &http.Request{URL: &url.URL{Host: "api.gitcode.com"}}
+	}
+	newReq := &http.Request{URL: &url.URL{Host: "api.gitcode.com"}}
+	err := SafeCheckRedirect(newReq, via)
+	if err == nil {
+		t.Fatal("SafeCheckRedirect returned nil, want error after max redirects")
 	}
 }

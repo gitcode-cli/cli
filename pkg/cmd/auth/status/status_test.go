@@ -285,3 +285,105 @@ type readCloser struct {
 }
 
 func (r *readCloser) Close() error { return nil }
+
+func TestStatusRunNotLoggedInReturnsAuthError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &StatusOptions{
+		IO:         f.IOStreams,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Config:     func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want auth error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitAuth {
+		t.Fatalf("ExitCode() = %d, want %d (ExitAuth)", got, cmdutil.ExitAuth)
+	}
+	if !strings.Contains(errOut.String(), "Not logged in") {
+		t.Fatalf("stderr = %q, want 'Not logged in'", errOut.String())
+	}
+	if strings.Contains(out.String(), "Not logged in") {
+		t.Fatalf("stdout leaked diagnostic: %q", out.String())
+	}
+}
+
+func TestStatusRunInvalidTokenReturnsAuthError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "bad-token")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &StatusOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusUnauthorized,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"message":"invalid token"}`),
+					}, nil
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want auth error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitAuth {
+		t.Fatalf("ExitCode() = %d, want %d (ExitAuth)", got, cmdutil.ExitAuth)
+	}
+	if !strings.Contains(errOut.String(), "invalid or expired") {
+		t.Fatalf("stderr = %q, want 'invalid or expired'", errOut.String())
+	}
+	if strings.Contains(out.String(), "invalid or expired") {
+		t.Fatalf("stdout leaked diagnostic: %q", out.String())
+	}
+}
+
+func TestStatusRunNotLoggedInJSONReturnsAuthError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+
+	opts := &StatusOptions{
+		IO:         f.IOStreams,
+		JSON:       true,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Config:     func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want auth error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitAuth {
+		t.Fatalf("ExitCode() = %d, want %d (ExitAuth)", got, cmdutil.ExitAuth)
+	}
+	if !strings.Contains(out.String(), `"logged_in": false`) {
+		t.Fatalf("stdout = %q, want logged_in: false JSON", out.String())
+	}
+}

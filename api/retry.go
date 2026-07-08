@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -47,6 +48,20 @@ func RetryMiddlewareWithLogger(rt http.RoundTripper, cfg RetryConfig, logger fun
 	return &retryTransport{base: rt, cfg: cfg, logger: logger}
 }
 
+// sanitizeError removes URL and host details from network errors to avoid
+// leaking endpoint information into CI logs. url.Error.Error() formats as
+// `Get "https://host/path": <underlying>`, so we unwrap to the inner error.
+func sanitizeError(err error) string {
+	var ue *url.Error
+	if errors.As(err, &ue) {
+		if ue.Err != nil {
+			return ue.Err.Error()
+		}
+		return ue.Op
+	}
+	return err.Error()
+}
+
 // RoundTrip executes the request with retry logic
 func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Clone body for potential retries
@@ -80,7 +95,7 @@ func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err != nil {
 			lastErr = err
 			if t.logger != nil {
-				t.logger(fmt.Sprintf("retry: attempt %d failed with error: %v", attempt+1, err))
+				t.logger(fmt.Sprintf("retry: attempt %d failed with error: %s", attempt+1, sanitizeError(err)))
 			}
 			if t.shouldRetryOnError(err) {
 				wait := t.calculateWait(attempt)

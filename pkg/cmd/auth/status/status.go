@@ -113,14 +113,15 @@ func statusRun(opts *StatusOptions) error {
 		status.LoggedIn = false
 
 		if opts.JSON {
-			return cmdutil.WriteJSON(opts.IO.Out, status)
+			_ = cmdutil.WriteJSON(opts.IO.Out, status)
+			return cmdutil.NewAuthError(fmt.Sprintf("not logged in to %s", opts.Hostname))
 		}
 
-		fmt.Fprintf(opts.IO.Out, "%s\n", opts.Hostname)
-		fmt.Fprintf(opts.IO.Out, "  %s Not logged in\n", cs.Red("✗"))
-		fmt.Fprintf(opts.IO.Out, "\n")
-		fmt.Fprintf(opts.IO.Out, "To authenticate, run: gc auth login\n")
-		return nil
+		fmt.Fprintf(opts.IO.ErrOut, "%s\n", opts.Hostname)
+		fmt.Fprintf(opts.IO.ErrOut, "  %s Not logged in\n", cs.Red("✗"))
+		fmt.Fprintf(opts.IO.ErrOut, "\n")
+		fmt.Fprintf(opts.IO.ErrOut, "To authenticate, run: gc auth login\n")
+		return cmdutil.NewAuthError(fmt.Sprintf("not logged in to %s", opts.Hostname))
 	}
 
 	status.LoggedIn = true
@@ -137,14 +138,15 @@ func statusRun(opts *StatusOptions) error {
 		status.TokenValid = false
 
 		if opts.JSON {
-			return cmdutil.WriteJSON(opts.IO.Out, status)
+			_ = cmdutil.WriteJSON(opts.IO.Out, status)
+			return cmdutil.NewAuthError(fmt.Sprintf("token for %s is invalid or expired", opts.Hostname))
 		}
 
-		fmt.Fprintf(opts.IO.Out, "%s\n", opts.Hostname)
-		fmt.Fprintf(opts.IO.Out, "  %s Token is invalid or expired\n", cs.Red("✗"))
-		fmt.Fprintf(opts.IO.Out, "\n")
-		fmt.Fprintf(opts.IO.Out, "To re-authenticate, run: gc auth login\n")
-		return nil
+		fmt.Fprintf(opts.IO.ErrOut, "%s\n", opts.Hostname)
+		fmt.Fprintf(opts.IO.ErrOut, "  %s Token is invalid or expired\n", cs.Red("✗"))
+		fmt.Fprintf(opts.IO.ErrOut, "\n")
+		fmt.Fprintf(opts.IO.ErrOut, "To re-authenticate, run: gc auth login\n")
+		return cmdutil.NewAuthError(fmt.Sprintf("token for %s is invalid or expired", opts.Hostname))
 	}
 
 	status.TokenValid = true

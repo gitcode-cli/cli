@@ -3,6 +3,7 @@ package api
 import (
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -140,6 +141,49 @@ func TestRunRejectsForeignURLHost(t *testing.T) {
 func TestParseHeadersRejectsInvalidHeader(t *testing.T) {
 	_, err := parseHeaders([]string{"missing-colon"})
 	if err == nil || !strings.Contains(err.Error(), "--header") {
-		t.Fatalf("parseHeaders() error = %v", err)
+		t.Fatalf("parseHeaders() error = %v, want host rejection", err)
+	}
+}
+
+func TestReadInputEmptyReturnsNil(t *testing.T) {
+	r, err := readInput(&Options{Input: ""})
+	if err != nil {
+		t.Fatalf("readInput() error = %v", err)
+	}
+	if r != nil {
+		t.Errorf("readInput() = %v, want nil", r)
+	}
+}
+
+func TestReadInputStreamsFile(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "input*.json")
+	if err != nil {
+		t.Fatalf("CreateTemp() error = %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+	want := `{"k":"v"}`
+	if _, err := tmpFile.WriteString(want); err != nil {
+		t.Fatalf("WriteString() error = %v", err)
+	}
+	tmpFile.Close()
+
+	r, err := readInput(&Options{Input: tmpFile.Name()})
+	if err != nil {
+		t.Fatalf("readInput() error = %v", err)
+	}
+	if r == nil {
+		t.Fatal("readInput() returned nil reader")
+	}
+	defer func() {
+		if rc, ok := r.(io.Closer); ok {
+			_ = rc.Close()
+		}
+	}()
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("ReadAll() error = %v", err)
+	}
+	if string(data) != want {
+		t.Errorf("readInput() data = %q, want %q", string(data), want)
 	}
 }

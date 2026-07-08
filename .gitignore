@@ -77,3 +77,4 @@ secrets.yml
 # Claude Code skills - installed from external source, not committed
 .claude/skills/
 .ai/skills/
+tmp

@@ -1,0 +1,10 @@
+title = "gc custom gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "exclude tmp/gh-cli reference code (GitHub CLI source) from secret scanning"
+paths = [
+    '''tmp/gh-cli/.*''',
+]

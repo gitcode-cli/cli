@@ -1,6 +1,10 @@
 package api
 
 import (
+	"bytes"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -251,5 +255,30 @@ func TestUploadAsset(t *testing.T) {
 	}
 	if asset.Name != "test.txt" {
 		t.Errorf("Name = %q, want %q", asset.Name, "test.txt")
+	}
+}
+
+func TestUploadToURL_TruncatesLongErrorBody(t *testing.T) {
+	longBody := strings.Repeat("x", 1024)
+	mockClient := &http.Client{
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: 400,
+				Status:     "400 Bad Request",
+				Body:       io.NopCloser(bytes.NewReader([]byte(longBody))),
+			}, nil
+		}),
+	}
+	c := &Client{httpClient: mockClient}
+
+	err := c.UploadToURL("http://upload.example.com/u", "f.txt", []byte("data"), "text/plain", nil)
+	if err == nil {
+		t.Fatal("UploadToURL returned nil error, want error for 400")
+	}
+	if !strings.Contains(err.Error(), "truncated") {
+		t.Errorf("error missing truncation marker: %v", err)
+	}
+	if strings.Contains(err.Error(), strings.Repeat("x", 1024)) {
+		t.Errorf("error leaked full response body (len=%d)", len(err.Error()))
 	}
 }

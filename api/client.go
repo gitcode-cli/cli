@@ -400,7 +400,12 @@ func (c *Client) UploadToURL(uploadURL, filename string, content []byte, content
 
 	// Check for errors
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("upload failed: %s - %s", resp.Status, string(respBody))
+		const maxBodyPreview = 512
+		preview := string(respBody)
+		if len(preview) > maxBodyPreview {
+			preview = preview[:maxBodyPreview] + "...(truncated)"
+		}
+		return fmt.Errorf("upload failed: %s - %s", resp.Status, preview)
 	}
 
 	return nil

@@ -117,12 +117,7 @@ func (c *Client) REST(method, path string, body interface{}, response interface{
 
 	// Check for errors
 	if resp.StatusCode >= 400 {
-		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
-			apiErr.StatusCode = resp.StatusCode
-			return &apiErr
-		}
-		return fmt.Errorf("API error: %s", resp.Status)
+		return decodeAPIError(respBody, resp.StatusCode, resp.Status)
 	}
 
 	// Parse response
@@ -177,12 +172,7 @@ func (c *Client) RawREST(method, endpoint string, body io.Reader, headers map[st
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 	if resp.StatusCode >= 400 {
-		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
-			apiErr.StatusCode = resp.StatusCode
-			return nil, &apiErr
-		}
-		return nil, fmt.Errorf("API error: %s", resp.Status)
+		return nil, decodeAPIError(respBody, resp.StatusCode, resp.Status)
 	}
 
 	return &RawResponse{
@@ -243,12 +233,7 @@ func (c *Client) GetText(path string) (string, error) {
 	}
 
 	if resp.StatusCode >= 400 {
-		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
-			apiErr.StatusCode = resp.StatusCode
-			return "", &apiErr
-		}
-		return "", fmt.Errorf("API error: %s", resp.Status)
+		return "", decodeAPIError(respBody, resp.StatusCode, resp.Status)
 	}
 
 	return string(respBody), nil
@@ -288,12 +273,7 @@ func (c *Client) PostForm(path string, formValues url.Values, response interface
 	}
 
 	if resp.StatusCode >= 400 {
-		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
-			apiErr.StatusCode = resp.StatusCode
-			return &apiErr
-		}
-		return fmt.Errorf("API error: %s", resp.Status)
+		return decodeAPIError(respBody, resp.StatusCode, resp.Status)
 	}
 
 	if response != nil && len(respBody) > 0 {
@@ -353,12 +333,7 @@ func (c *Client) PatchForm(path string, formValues url.Values, response interfac
 
 	// Check for errors
 	if resp.StatusCode >= 400 {
-		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
-			apiErr.StatusCode = resp.StatusCode
-			return &apiErr
-		}
-		return fmt.Errorf("API error: %s", resp.Status)
+		return decodeAPIError(respBody, resp.StatusCode, resp.Status)
 	}
 
 	// Parse response
@@ -437,12 +412,7 @@ func (c *Client) UploadAsset(path, filename string, content []byte, contentType 
 
 	// Check for errors
 	if resp.StatusCode >= 400 {
-		var apiErr APIError
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && (apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
-			apiErr.StatusCode = resp.StatusCode
-			return nil, &apiErr
-		}
-		return nil, fmt.Errorf("upload failed: %s", resp.Status)
+		return nil, decodeAPIError(respBody, resp.StatusCode, resp.Status)
 	}
 
 	// Parse response
@@ -480,6 +450,19 @@ func (e *APIError) Error() string {
 	}
 
 	return fmt.Sprintf("HTTP %d: %s", e.StatusCode, msg)
+}
+
+// decodeAPIError attempts to decode an API error from the response body.
+// Returns *APIError if the body contains a recognized error structure,
+// otherwise returns a generic error with the HTTP status.
+func decodeAPIError(respBody []byte, statusCode int, status string) error {
+	var apiErr APIError
+	if err := json.Unmarshal(respBody, &apiErr); err == nil &&
+		(apiErr.Message != "" || apiErr.ErrorMessage != "" || apiErr.ErrorName != "" || apiErr.ErrorCodeName != "") {
+		apiErr.StatusCode = statusCode
+		return &apiErr
+	}
+	return fmt.Errorf("API error: %s", status)
 }
 
 // BuildURL builds a URL with path parameters

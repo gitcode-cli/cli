@@ -1,6 +1,7 @@
 package status
 
 import (
+	"errors"
 	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"net/http"
 	"strings"
@@ -10,6 +11,10 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
+
+type errWriter struct{}
+
+func (errWriter) Write(p []byte) (int, error) { return 0, errors.New("write failed") }
 
 func TestNewCmdStatus(t *testing.T) {
 	f := cmdutil.TestFactory()
@@ -385,5 +390,103 @@ func TestStatusRunNotLoggedInJSONReturnsAuthError(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), `"logged_in": false`) {
 		t.Fatalf("stdout = %q, want logged_in: false JSON", out.String())
+	}
+}
+
+func TestStatusRunInvalidTokenJSONReturnsAuthError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "bad-token")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+
+	opts := &StatusOptions{
+		IO:   f.IOStreams,
+		JSON: true,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusUnauthorized,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"message":"invalid token"}`),
+					}, nil
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want auth error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitAuth {
+		t.Fatalf("ExitCode() = %d, want %d (ExitAuth)", got, cmdutil.ExitAuth)
+	}
+	// token exists but is invalid: LoggedIn stays true; TokenValid has omitempty
+	// so false is not serialized (separate follow-up issue).
+	if !strings.Contains(out.String(), `"logged_in": true`) {
+		t.Fatalf("stdout = %q, want logged_in: true JSON", out.String())
+	}
+}
+
+func TestStatusRunNotLoggedInJSONWriteFailureReturnsError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	f.IOStreams.Out = errWriter{}
+
+	opts := &StatusOptions{
+		IO:         f.IOStreams,
+		JSON:       true,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+		Config:     func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want write error")
+	}
+	if !strings.Contains(err.Error(), "write failed") {
+		t.Fatalf("error = %q, want 'write failed'", err.Error())
+	}
+}
+
+func TestStatusRunInvalidTokenJSONWriteFailureReturnsError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "bad-token")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	f.IOStreams.Out = errWriter{}
+
+	opts := &StatusOptions{
+		IO:   f.IOStreams,
+		JSON: true,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusUnauthorized,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"message":"invalid token"}`),
+					}, nil
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want write error")
+	}
+	if !strings.Contains(err.Error(), "write failed") {
+		t.Fatalf("error = %q, want 'write failed'", err.Error())
 	}
 }

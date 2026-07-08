@@ -3,18 +3,24 @@ package cmdutil
 import (
 	"errors"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
 
 func TestReadTextFileStripsUTF8BOM(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "body.md")
-	if err := os.WriteFile(path, []byte{0xef, 0xbb, 0xbf, 'b', 'o', 'd', 'y'}, 0o600); err != nil {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	if err := os.WriteFile("body.md", []byte{0xef, 0xbb, 0xbf, 'b', 'o', 'd', 'y'}, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
-	got, err := ReadTextFile(path)
+	got, err := ReadTextFile("body.md")
 	if err != nil {
 		t.Fatalf("ReadTextFile() error = %v", err)
 	}
@@ -24,12 +30,19 @@ func TestReadTextFileStripsUTF8BOM(t *testing.T) {
 }
 
 func TestReadTextFileKeepsNonBOMContent(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "body.md")
-	if err := os.WriteFile(path, []byte("plain body"), 0o600); err != nil {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	if err := os.WriteFile("body.md", []byte("plain body"), 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
-	got, err := ReadTextFile(path)
+	got, err := ReadTextFile("body.md")
 	if err != nil {
 		t.Fatalf("ReadTextFile() error = %v", err)
 	}
@@ -135,12 +148,19 @@ func TestReadBodyReadsFromStdinWhenBodyFileIsDash(t *testing.T) {
 }
 
 func TestReadBodyReadsFromFile(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "body.md")
-	if err := os.WriteFile(path, []byte("  file content\n"), 0o600); err != nil {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	if err := os.WriteFile("body.md", []byte("  file content\n"), 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
-	got, err := ReadBody("", path, nil)
+	got, err := ReadBody("", "body.md", nil)
 	if err != nil {
 		t.Fatalf("ReadBody() error = %v", err)
 	}

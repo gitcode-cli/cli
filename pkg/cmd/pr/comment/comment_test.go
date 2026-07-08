@@ -3,7 +3,6 @@ package comment
 import (
 	"bytes"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -150,18 +149,23 @@ func TestGetBody(t *testing.T) {
 }
 
 func TestGetBodyFromFile(t *testing.T) {
-	// Create temporary file
-	tmpDir := t.TempDir()
-	tmpFile := filepath.Join(tmpDir, "comment.txt")
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
 	content := "Comment from file\n"
-	if err := os.WriteFile(tmpFile, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile("comment.txt", []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	f := cmdutil.TestFactory()
 	opts := &CommentOptions{
 		IO:       f.IOStreams,
-		BodyFile: tmpFile,
+		BodyFile: "comment.txt",
 	}
 
 	got, err := getBody(opts)

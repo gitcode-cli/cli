@@ -190,16 +190,17 @@ func TestCreateRunPrereleaseSendsReleaseStatusAndVerifies(t *testing.T) {
 func TestCreateRunNotesFileReadsContent(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
-	// Create temp file with notes
-	tmpFile, err := os.CreateTemp("", "notes*.md")
+	origCwd, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
+		t.Fatalf("getwd: %v", err)
 	}
-	defer os.Remove(tmpFile.Name())
-	if _, err := tmpFile.WriteString("Notes from file"); err != nil {
-		t.Fatalf("failed to write temp file: %v", err)
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
 	}
-	tmpFile.Close()
+	if err := os.WriteFile("notes.md", []byte("Notes from file"), 0o644); err != nil {
+		t.Fatalf("os.WriteFile() error = %v", err)
+	}
 
 	f := cmdutil.TestFactory()
 	opts := &CreateOptions{
@@ -207,7 +208,7 @@ func TestCreateRunNotesFileReadsContent(t *testing.T) {
 		Repository: "owner/repo",
 		TagName:    "v1.0.0",
 		Title:      "Version 1.0.0",
-		NotesFile:  tmpFile.Name(),
+		NotesFile:  "notes.md",
 		JSON:       true,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{

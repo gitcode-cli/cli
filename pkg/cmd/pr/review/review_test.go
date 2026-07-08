@@ -393,19 +393,21 @@ func TestReviewRun_RequestChangesAPIError(t *testing.T) {
 }
 
 func TestReviewRun_RequestChangesWithCommentFile(t *testing.T) {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
 	io, _, out, _ := testutil.NewTestIOStreams()
 	restoreToken := testutil.SetTestToken()
 	defer restoreToken()
 
-	tmpFile, err := os.CreateTemp("", "comment-*.txt")
-	if err != nil {
+	if err := os.WriteFile("comment.txt", []byte("Fix the bug"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpFile.Name())
-	if _, err := tmpFile.WriteString("Fix the bug"); err != nil {
-		t.Fatal(err)
-	}
-	tmpFile.Close()
 
 	commentCalled := false
 
@@ -415,7 +417,7 @@ func TestReviewRun_RequestChangesWithCommentFile(t *testing.T) {
 		Repository:  "owner/repo",
 		Number:      123,
 		Request:     true,
-		CommentFile: tmpFile.Name(),
+		CommentFile: "comment.txt",
 		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
 			t.Fatal("did not expect request to call ReviewPR")
 			return nil
@@ -470,19 +472,21 @@ func TestReviewRun_ForceWithRequestReturnsError(t *testing.T) {
 }
 
 func TestReviewRun_ApproveWithCommentFile(t *testing.T) {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
 	io, _, out, _ := testutil.NewTestIOStreams()
 	restoreToken := testutil.SetTestToken()
 	defer restoreToken()
 
-	tmpFile, err := os.CreateTemp("", "comment-*.txt")
-	if err != nil {
+	if err := os.WriteFile("comment.txt", []byte("Self-check passed"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpFile.Name())
-	if _, err := tmpFile.WriteString("Self-check passed"); err != nil {
-		t.Fatal(err)
-	}
-	tmpFile.Close()
 
 	reviewCalled := false
 	commentCalled := false
@@ -493,7 +497,7 @@ func TestReviewRun_ApproveWithCommentFile(t *testing.T) {
 		Repository:  "owner/repo",
 		Number:      123,
 		Approve:     true,
-		CommentFile: tmpFile.Name(),
+		CommentFile: "comment.txt",
 		ReviewPR: func(client *api.Client, owner, repo string, number int, opts *api.ReviewPROptions) error {
 			reviewCalled = true
 			return nil

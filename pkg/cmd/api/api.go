@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -122,7 +121,7 @@ func readInput(opts *Options) (io.Reader, error) {
 		}
 		return bytes.NewReader(data), nil
 	}
-	data, err := os.ReadFile(opts.Input)
+	data, err := cmdutil.ReadInputFile(opts.Input)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read input file: %w", err)
 	}

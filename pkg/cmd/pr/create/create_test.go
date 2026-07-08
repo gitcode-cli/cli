@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -167,9 +166,15 @@ func TestCreateRunJSONWarnsWhenBodyMissingFromRemoteResponse(t *testing.T) {
 func TestCreateRunReadsBodyFile(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
-	dir := t.TempDir()
-	bodyPath := filepath.Join(dir, "body.md")
-	if err := os.WriteFile(bodyPath, []byte("file body\n"), 0o600); err != nil {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	if err := os.WriteFile("body.md", []byte("file body\n"), 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
@@ -180,7 +185,7 @@ func TestCreateRunReadsBodyFile(t *testing.T) {
 		HttpClient: f.HttpClient,
 		Repository: "owner/repo",
 		Title:      "title",
-		BodyFile:   bodyPath,
+		BodyFile:   "body.md",
 		Head:       "feature-branch",
 		Base:       "main",
 		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
@@ -204,9 +209,15 @@ func TestCreateRunReadsBodyFile(t *testing.T) {
 func TestCreateRunReadsBodyFileStripsUTF8BOM(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
-	dir := t.TempDir()
-	bodyPath := filepath.Join(dir, "body.md")
-	if err := os.WriteFile(bodyPath, []byte{0xef, 0xbb, 0xbf, 'f', 'i', 'l', 'e', ' ', 'b', 'o', 'd', 'y', '\n'}, 0o600); err != nil {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	if err := os.WriteFile("body.md", []byte{0xef, 0xbb, 0xbf, 'f', 'i', 'l', 'e', ' ', 'b', 'o', 'd', 'y', '\n'}, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
@@ -217,7 +228,7 @@ func TestCreateRunReadsBodyFileStripsUTF8BOM(t *testing.T) {
 		HttpClient: f.HttpClient,
 		Repository: "owner/repo",
 		Title:      "title",
-		BodyFile:   bodyPath,
+		BodyFile:   "body.md",
 		Head:       "feature-branch",
 		Base:       "main",
 		CreatePR: func(client *api.Client, owner, repo string, createOpts *api.CreatePROptions) (*api.PullRequest, error) {
@@ -492,9 +503,15 @@ func TestCreateRunFillPreservesExplicitTitleAndBody(t *testing.T) {
 func TestCreateRunFillPreservesBodyFile(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
-	dir := t.TempDir()
-	bodyPath := filepath.Join(dir, "body.md")
-	if err := os.WriteFile(bodyPath, []byte("file body\n"), 0o600); err != nil {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	if err := os.WriteFile("body.md", []byte("file body\n"), 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
@@ -506,7 +523,7 @@ func TestCreateRunFillPreservesBodyFile(t *testing.T) {
 		HttpClient: f.HttpClient,
 		Repository: "owner/repo",
 		Title:      "explicit title",
-		BodyFile:   bodyPath,
+		BodyFile:   "body.md",
 		Head:       "feature-branch",
 		Fill:       true,
 		Branch: func() (string, error) {

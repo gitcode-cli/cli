@@ -57,7 +57,7 @@ var ErrLossyPowerShellStdin = errors.New("lossy Windows PowerShell stdin")
 
 // ReadTextFile reads a user-provided text file and strips a UTF-8 BOM when present.
 func ReadTextFile(path string) (string, error) {
-	content, err := os.ReadFile(path)
+	content, err := ReadInputFile(path)
 	if err != nil {
 		return "", err
 	}

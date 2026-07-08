@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -16,9 +15,16 @@ import (
 func TestEditRunWithNotesFile(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
 	streams, _, out, _ := testutil.NewTestIOStreams()
-	notesPath := filepath.Join(t.TempDir(), "notes.md")
-	if err := os.WriteFile(notesPath, []byte("updated notes"), 0o644); err != nil {
+	if err := os.WriteFile("notes.md", []byte("updated notes"), 0o644); err != nil {
 		t.Fatalf("os.WriteFile() error = %v", err)
 	}
 
@@ -47,12 +53,12 @@ func TestEditRunWithNotesFile(t *testing.T) {
 		}
 	}))
 
-	err := editRun(&EditOptions{
+	err = editRun(&EditOptions{
 		IO:         streams,
 		HttpClient: func() (*http.Client, error) { return client, nil },
 		Repository: "owner/repo",
 		TagName:    "v1.0.0",
-		NotesFile:  notesPath,
+		NotesFile:  "notes.md",
 	})
 	if err != nil {
 		t.Fatalf("editRun() error = %v", err)

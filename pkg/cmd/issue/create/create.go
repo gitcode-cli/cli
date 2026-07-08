@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -233,7 +232,7 @@ func getCustomFields(opts *CreateOptions) ([]map[string]interface{}, error) {
 	case opts.CustomFieldsJSON != "":
 		raw = opts.CustomFieldsJSON
 	case opts.CustomFieldsFile != "":
-		content, err := os.ReadFile(opts.CustomFieldsFile)
+		content, err := cmdutil.ReadInputFile(opts.CustomFieldsFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read custom fields file %s: %w", opts.CustomFieldsFile, err)
 		}

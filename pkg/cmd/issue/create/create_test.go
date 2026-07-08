@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -353,9 +352,15 @@ func TestCreateRunDryRunWithJSONWritesPreview(t *testing.T) {
 }
 
 func TestGetCustomFields(t *testing.T) {
-	tempDir := t.TempDir()
-	fieldsPath := filepath.Join(tempDir, "fields.json")
-	if err := os.WriteFile(fieldsPath, []byte(`[{"id":"field","value":"demo"}]`), 0o644); err != nil {
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origCwd) })
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	if err := os.WriteFile("fields.json", []byte(`[{"id":"field","value":"demo"}]`), 0o644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
@@ -372,14 +377,14 @@ func TestGetCustomFields(t *testing.T) {
 		},
 		{
 			name:    "from file",
-			opts:    &CreateOptions{CustomFieldsFile: fieldsPath},
+			opts:    &CreateOptions{CustomFieldsFile: "fields.json"},
 			wantLen: 1,
 		},
 		{
 			name: "both sources",
 			opts: &CreateOptions{
 				CustomFieldsJSON: `[{"id":"field","value":"demo"}]`,
-				CustomFieldsFile: fieldsPath,
+				CustomFieldsFile: "fields.json",
 			},
 			wantErr: "cannot use both --custom-fields-json and --custom-fields-file",
 		},

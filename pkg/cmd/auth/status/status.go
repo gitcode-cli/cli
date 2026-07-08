@@ -113,7 +113,9 @@ func statusRun(opts *StatusOptions) error {
 		status.LoggedIn = false
 
 		if opts.JSON {
-			_ = cmdutil.WriteJSON(opts.IO.Out, status)
+			if err := cmdutil.WriteJSON(opts.IO.Out, status); err != nil {
+				return err
+			}
 			return cmdutil.NewAuthError(fmt.Sprintf("not logged in to %s", opts.Hostname))
 		}
 
@@ -138,7 +140,9 @@ func statusRun(opts *StatusOptions) error {
 		status.TokenValid = false
 
 		if opts.JSON {
-			_ = cmdutil.WriteJSON(opts.IO.Out, status)
+			if err := cmdutil.WriteJSON(opts.IO.Out, status); err != nil {
+				return err
+			}
 			return cmdutil.NewAuthError(fmt.Sprintf("token for %s is invalid or expired", opts.Hostname))
 		}
 

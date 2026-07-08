@@ -2,12 +2,33 @@
 package api
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 )
+
+// maxRedirects limits HTTP redirect hops to mitigate redirect-based attacks.
+const maxRedirects = 10
+
+// SafeCheckRedirect enforces a safe redirect policy:
+//   - limits total redirects to maxRedirects
+//   - strips the Authorization header when redirecting to a different host
+//
+// Go's net/http already removes Authorization on cross-host redirects, but we
+// enforce it explicitly as defense-in-depth so token leakage cannot occur even
+// if the standard library behavior changes or a transport wraps the client.
+func SafeCheckRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= maxRedirects {
+		return fmt.Errorf("stopped after %d redirects", maxRedirects)
+	}
+	if len(via) > 0 && req.URL.Host != via[0].URL.Host {
+		req.Header.Del("Authorization")
+	}
+	return nil
+}
 
 // Default timeout values
 const (
@@ -25,8 +46,9 @@ func DefaultHTTPClient() *http.Client {
 // NewHTTPClient creates an HTTP client with specified timeout
 func NewHTTPClient(timeout time.Duration) *http.Client {
 	return &http.Client{
-		Timeout:   timeout,
-		Transport: newDefaultTransport(),
+		Timeout:       timeout,
+		Transport:     newDefaultTransport(),
+		CheckRedirect: SafeCheckRedirect,
 	}
 }
 
@@ -34,8 +56,9 @@ func NewHTTPClient(timeout time.Duration) *http.Client {
 func NewHTTPClientWithRetry(timeout time.Duration, cfg RetryConfig) *http.Client {
 	transport := newDefaultTransport()
 	return &http.Client{
-		Timeout:   timeout,
-		Transport: RetryMiddleware(transport, cfg),
+		Timeout:       timeout,
+		Transport:     RetryMiddleware(transport, cfg),
+		CheckRedirect: SafeCheckRedirect,
 	}
 }
 
@@ -43,8 +66,9 @@ func NewHTTPClientWithRetry(timeout time.Duration, cfg RetryConfig) *http.Client
 func NewHTTPClientWithRetryAndLogger(timeout time.Duration, cfg RetryConfig, logger func(string)) *http.Client {
 	transport := newDefaultTransport()
 	return &http.Client{
-		Timeout:   timeout,
-		Transport: RetryMiddlewareWithLogger(transport, cfg, logger),
+		Timeout:       timeout,
+		Transport:     RetryMiddlewareWithLogger(transport, cfg, logger),
+		CheckRedirect: SafeCheckRedirect,
 	}
 }
 

@@ -8,6 +8,8 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -237,5 +239,32 @@ func TestCalculateWait(t *testing.T) {
 		if got != tt.expected {
 			t.Errorf("calculateWait(%d) = %v, want %v", tt.attempt, got, tt.expected)
 		}
+	}
+}
+
+func TestSanitizeError_UrlErrorStripsHost(t *testing.T) {
+	inner := errors.New("dial tcp: connection refused")
+	ue := &url.Error{Op: "Get", URL: "https://api.gitcode.com/api/v5/repos", Err: inner}
+
+	got := sanitizeError(ue)
+	if strings.Contains(got, "api.gitcode.com") {
+		t.Errorf("sanitizeError leaked host: %q", got)
+	}
+	if !strings.Contains(got, "connection refused") {
+		t.Errorf("sanitizeError lost inner error: %q", got)
+	}
+}
+
+func TestSanitizeError_PlainError(t *testing.T) {
+	err := errors.New("something failed")
+	if got := sanitizeError(err); got != "something failed" {
+		t.Errorf("sanitizeError = %q, want %q", got, "something failed")
+	}
+}
+
+func TestSanitizeError_NilInnerUsesOp(t *testing.T) {
+	ue := &url.Error{Op: "Get", URL: "https://api.gitcode.com/path", Err: nil}
+	if got := sanitizeError(ue); got != "Get" {
+		t.Errorf("sanitizeError = %q, want %q", got, "Get")
 	}
 }

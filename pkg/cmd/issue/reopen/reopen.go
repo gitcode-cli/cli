@@ -92,6 +92,11 @@ func NewCmdReopen(f *cmdutil.Factory, runF func(*ReopenOptions) error) *cobra.Co
 }
 
 func reopenRun(opts *ReopenOptions) error {
+	if opts.Comment != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Comment); err != nil {
+			return err
+		}
+	}
 	cs := opts.IO.ColorScheme()
 
 	httpClient, err := opts.HttpClient()

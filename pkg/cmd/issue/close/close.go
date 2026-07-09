@@ -92,6 +92,11 @@ func NewCmdClose(f *cmdutil.Factory, runF func(*CloseOptions) error) *cobra.Comm
 }
 
 func closeRun(opts *CloseOptions) error {
+	if opts.Comment != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Comment); err != nil {
+			return err
+		}
+	}
 	cs := opts.IO.ColorScheme()
 
 	httpClient, err := opts.HttpClient()

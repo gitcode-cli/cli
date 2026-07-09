@@ -131,6 +131,11 @@ func NewCmdSync(f *cmdutil.Factory, runF func(*SyncOptions) error) *cobra.Comman
 }
 
 func syncRun(opts *SyncOptions) error {
+	if opts.Body != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Body); err != nil {
+			return err
+		}
+	}
 	rootDir, err := opts.RootDir()
 	if err != nil {
 		return fmt.Errorf("repo sync must be run inside a git repository: %w", err)

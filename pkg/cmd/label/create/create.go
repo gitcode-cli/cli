@@ -71,6 +71,11 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 }
 
 func createRun(opts *CreateOptions) error {
+	if opts.Description != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Description); err != nil {
+			return err
+		}
+	}
 	cs := opts.IO.ColorScheme()
 
 	httpClient, err := opts.HttpClient()

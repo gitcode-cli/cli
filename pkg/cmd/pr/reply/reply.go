@@ -84,6 +84,11 @@ func NewCmdReply(f *cmdutil.Factory, runF func(*ReplyOptions) error) *cobra.Comm
 }
 
 func replyRun(opts *ReplyOptions) error {
+	if opts.Body != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Body); err != nil {
+			return err
+		}
+	}
 	cs := opts.IO.ColorScheme()
 
 	httpClient, err := opts.HttpClient()

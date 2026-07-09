@@ -58,6 +58,11 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 }
 
 func editRun(opts *EditOptions) error {
+	if opts.Body != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Body); err != nil {
+			return err
+		}
+	}
 	cs := opts.IO.ColorScheme()
 
 	httpClient, err := opts.HttpClient()

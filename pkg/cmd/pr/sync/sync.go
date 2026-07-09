@@ -170,6 +170,11 @@ func ParsePRRef(ref string) (*PRRef, error) {
 }
 
 func syncRun(opts *SyncOptions) error {
+	if opts.Body != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Body); err != nil {
+			return err
+		}
+	}
 	// Parse source PR reference
 	sourcePR, err := ParsePRRef(opts.SourcePR)
 	if err != nil {

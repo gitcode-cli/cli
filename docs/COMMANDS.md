@@ -1779,6 +1779,54 @@ gc precommit check --json
 
 ---
 
+## Actions 命令 (actions)
+
+`actions` 命令组用于检视 GitCode Actions 流水线（pipeline）运行记录与工作流作业（workflow jobs），只读，通过 Actions v8 API（`/api/v8/...`）访问。与其它命令默认使用的 v5 不同，Actions 走独立的 v8 路径。
+
+### actions run list - 列出流水线运行记录
+
+列出仓库的流水线运行记录，支持按状态、事件、分支、触发人、流水线等过滤。过滤在服务端应用。
+
+```bash
+# 列出最近的运行记录
+gc actions run list -R owner/repo
+
+# 按状态过滤
+gc actions run list -R owner/repo --status FAILED
+
+# 按事件与分支过滤
+gc actions run list -R owner/repo --event Push --branch main
+
+# 按触发人过滤
+gc actions run list -R owner/repo --executor dev
+
+# 按流水线名称或 id 过滤
+gc actions run list -R owner/repo --workflow "CI"
+gc actions run list -R owner/repo --workflow-id wf-1
+
+# 按 PR 编号过滤
+gc actions run list -R owner/repo --pr 42
+
+# 抓取全部分页
+gc actions run list -R owner/repo --paginate --per-page 100
+
+# 表格输出
+gc actions run list -R owner/repo --format table
+
+# 机器可消费输出
+gc actions run list -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，字段直接映射 Actions v8 API 响应（`workflow_runs` 数组，每项含 `workflow_run_id`、`workflow_id`、`workflow_name`、`file_path`、`title`、`status`、`event`、`run_number`、`head_branch`、`head_sha`、`actor`、`start_time`、`end_time`、`pause_time`）；空结果输出 `[]`。
+- `--status` 取值：`COMPLETED`/`RUNNING`/`FAILED`/`CANCELED`/`IGNORED`/`PAUSED`/`SUSPEND`；`--event` 取值：`MR`/`Push`/`Manual`。枚举为元数据（schema/help 发现用），不在本地强制校验，非法值原样透传给 API。
+- 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
+- 分页：`--limit`/`-L`（默认 30，映射为 `per_page`）、`--page`、`--paginate`（抓取全部分页至 `--limit`）、`--per-page`（API 页大小）。`--paginate` 与 `--page` 互斥。
+- 退出码：`0` 成功；`1` 通用错误（含 API 错误，如仓库不存在的 `HTTP 404`）；`2` 参数错误（如 `--paginate` 与 `--page` 同用、`--limit`/`--per-page` 为负）；`4` 认证/权限错误。
+
+---
+
 ## 其他命令
 
 ### version - 显示版本

@@ -245,7 +245,7 @@ func syncRun(opts *SyncOptions) error {
 	defer func() { _ = opts.RemoveAll(workDir) }()
 
 	// Clone target repository
-	if _, err := opts.GitRun(nil, "clone", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
+	if _, err := opts.GitRun(nil, "clone", "--", repositoryGitURL(targetOwner, targetRepo), workDir); err != nil {
 		return sshGitError("failed to clone target repository", err)
 	}
 

@@ -204,10 +204,5 @@ func wrapMergeError(err error) error {
 		}
 		return fmt.Errorf("failed to merge PR: %w", err)
 	}
-	// Non-APIError fallback: non-JSON 409 from api/client.go:125
-	// Error format: "API error: 409 Conflict"
-	if strings.Contains(err.Error(), "API error:") && strings.Contains(err.Error(), "409") {
-		return cmdutil.NewConflictError(fmt.Sprintf("merge conflict: %v", err))
-	}
 	return fmt.Errorf("failed to merge PR: %w", err)
 }

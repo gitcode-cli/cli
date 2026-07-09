@@ -5,13 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestDefaultRetryConfig(t *testing.T) {

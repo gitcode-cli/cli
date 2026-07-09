@@ -215,10 +215,10 @@ func TestWrapMergeError(t *testing.T) {
 			wantPrefix: "merge conflict:",
 		},
 		{
-			name:       "non-JSON 409 fallback → ExitConflict",
+			name:       "non-APIError 409 string → generic error (fallback removed, client always returns *APIError)",
 			err:        fmt.Errorf("API error: 409 Conflict"),
-			wantCode:   cmdutil.ExitConflict,
-			wantPrefix: "merge conflict:",
+			wantCode:   cmdutil.ExitError,
+			wantPrefix: "failed to merge PR:",
 		},
 		{
 			name:       "non-409 APIError → generic error",

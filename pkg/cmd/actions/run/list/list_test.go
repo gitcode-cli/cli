@@ -149,10 +149,10 @@ func TestListRunBuildsV8Query(t *testing.T) {
 func TestListRunDefaultPerPage(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
-	f := cmdutil.TestFactory()
+	io, _, _, _ := iostreams.Test()
 	var gotPath string
 	opts := &ListOptions{
-		IO: f.IOStreams,
+		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -174,6 +174,76 @@ func TestListRunDefaultPerPage(t *testing.T) {
 
 	if gotPath != "/api/v8/repos/owner/repo/actions/runs?per_page=30" {
 		t.Fatalf("request path = %q, want default per_page=30", gotPath)
+	}
+}
+
+func TestListRunPaginateDefaultPerPage(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := iostreams.Test()
+	var gotPath string
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotPath = req.URL.Path
+					if req.URL.RawQuery != "" {
+						gotPath += "?" + req.URL.RawQuery
+					}
+					return listTestResponse(http.StatusOK, `{"total_count":0,"workflow_runs":[]}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Paginate:   true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	parsed, err := url.Parse(gotPath)
+	if err != nil {
+		t.Fatalf("url.Parse() error = %v", err)
+	}
+	if got := parsed.Query().Get("per_page"); got != "100" {
+		t.Fatalf("per_page = %q, want 100 (paginate default)", got)
+	}
+}
+
+func TestListRunTrimsToLimit(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return listTestResponse(http.StatusOK, `{"total_count":3,"workflow_runs":[{"workflow_run_id":"r1","run_number":1,"status":"FAILED"},{"workflow_run_id":"r2","run_number":2,"status":"COMPLETED"},{"workflow_run_id":"r3","run_number":3,"status":"RUNNING"}]}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      2,
+		LimitSet:   true,
+		PerPage:    30,
+		PerPageSet: true,
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	var runs []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &runs); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if len(runs) != 2 {
+		t.Fatalf("len(runs) = %d, want 2 (trimmed to --limit)", len(runs))
 	}
 }
 

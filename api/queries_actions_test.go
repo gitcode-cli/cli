@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -166,10 +166,10 @@ func TestListActionsRunsError(t *testing.T) {
 		t.Fatal("ListActionsRuns() error = nil, want error")
 	}
 	var apiErr *APIError
-	if err := json.Unmarshal([]byte(err.Error()), &apiErr); err == nil {
-		t.Fatalf("error should be *APIError, got parseable json")
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError (unwrapped through %%w)", err)
 	}
-	if !strings.Contains(err.Error(), "400") {
-		t.Fatalf("error = %q, want to contain 400", err.Error())
+	if apiErr.StatusCode != http.StatusBadRequest {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusBadRequest)
 	}
 }

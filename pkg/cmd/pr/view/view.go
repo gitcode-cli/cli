@@ -49,6 +49,11 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		Short: "View a pull request",
 		Long: heredoc.Doc(`
 			View a pull request in a GitCode repository.
+
+			When enrichment (files/commits stats) or comments retrieval fails,
+			the PR details are still output and a non-zero exit code is returned:
+			401/403 -> 4 (ExitAuth), 404 -> 3 (ExitNotFound), 409 -> 5 (ExitConflict),
+			other -> 1 (ExitError).
 		`),
 		Example: heredoc.Doc(`
 			# View a PR
@@ -62,6 +67,9 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 			# Output as JSON
 			$ gc pr view 123 -R owner/repo --json
+
+			# View comments and output as JSON
+			$ gc pr view 123 -R owner/repo --comments --json
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

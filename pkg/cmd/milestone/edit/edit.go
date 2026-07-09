@@ -106,6 +106,11 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 func editRun(opts *EditOptions) error {
 	cs := opts.IO.ColorScheme()
 
+	// Validate mutual exclusion of --description and --description-file
+	if opts.Description != "" && opts.DescriptionFile != "" {
+		return cmdutil.NewUsageError("cannot use both --description and --description-file")
+	}
+
 	// Read description from file if specified
 	description := opts.Description
 	if description != "" {

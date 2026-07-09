@@ -210,3 +210,19 @@ func TestParseRepo(t *testing.T) {
 		})
 	}
 }
+
+func TestEditRunScansInlineBodyForSecrets(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	f := cmdutil.TestFactory()
+	opts := &EditOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     1,
+		Body:       "leaked: secret-token-abc123",
+	}
+	err := editRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "secret") {
+		t.Fatalf("editRun() error = %v, want secret detection error", err)
+	}
+}

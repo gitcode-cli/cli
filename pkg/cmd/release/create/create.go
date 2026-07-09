@@ -102,6 +102,11 @@ func createRun(opts *CreateOptions) error {
 
 	// Get release body from notes or file
 	body := opts.Notes
+	if body != "" {
+		if err := cmdutil.ScanContentForSecrets(body); err != nil {
+			return err
+		}
+	}
 	if opts.NotesFile != "" {
 		content, err := cmdutil.ReadTextFile(opts.NotesFile)
 		if err != nil {

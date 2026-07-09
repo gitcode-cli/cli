@@ -136,6 +136,9 @@ func editRun(opts *EditOptions) error {
 		updateOpts.Title = opts.Title
 	}
 	if opts.Body != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Body); err != nil {
+			return err
+		}
 		updateOpts.Body = opts.Body
 	}
 	if opts.BodyFile != "" {

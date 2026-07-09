@@ -214,7 +214,7 @@ gh run view <run-id> --log --job=<job-id>
 - AI 代理不得调用 `gitcode auth token`、`gitcode auth status --show-token`、读取 `~/.config/gc/auth.json` 或打印 `GC_TOKEN` / `GITCODE_TOKEN`；完整 token 只能由人工在交互式 TTY 中输入 hostname 确认后显示
 - 禁止提交：`*.pem`、`*.key`、`*.p12`、`*.pfx`、`id_rsa*`、`id_ed*`、`.env*`、`*.secret`、`credentials.json`、`token.txt`、`*.token`、`secrets.y*ml`
 - 提交前自检：无硬编码凭证、无敏感文件被追踪、测试与文档不含真实凭证
-- 不得在 issue/PR/comment/discussion/commit/release 的内容中含敏感信息（token 值、密钥、私钥、安全漏洞细节、PoC、攻击细节）；gc 在 `--body`/`--body-file`/`--comment-file` 提交前会扫描当前 `GC_TOKEN`/`GITCODE_TOKEN` 值（`cmdutil.ScanContentForSecrets`），但 AI 代理仍须自觉避免任何敏感信息进入提交内容
+- 不得在 issue/PR/comment/discussion/commit/release 的内容中含敏感信息（token 值、密钥、私钥、安全漏洞细节、PoC、攻击细节）；gc 在 `--body`/`--body-file`/`--comment`/`--comment-file`/`--description`/`--description-file`/`--notes`/`--notes-file` 提交前会扫描当前 `GC_TOKEN`/`GITCODE_TOKEN` 值（`cmdutil.ScanContentForSecrets`），但 AI 代理仍须自觉避免任何敏感信息进入提交内容
 - CI/CD 使用 Secrets；PyPI 发布使用 Trusted Publishing（OIDC）
 - 安全漏洞通过提交私密 Issue 报告（标记为私有），不在公开 Issue/PR/comment 中披露漏洞细节、PoC 或攻击细节
 

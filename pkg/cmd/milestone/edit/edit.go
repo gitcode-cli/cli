@@ -107,6 +107,11 @@ func editRun(opts *EditOptions) error {
 
 	// Read description from file if specified
 	description := opts.Description
+	if description != "" {
+		if err := cmdutil.ScanContentForSecrets(description); err != nil {
+			return err
+		}
+	}
 	if opts.DescriptionFile != "" {
 		content, err := cmdutil.ReadTextFile(opts.DescriptionFile)
 		if err != nil {

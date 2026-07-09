@@ -77,7 +77,11 @@ func ReadText(r io.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return DecodeUserText(content), nil
+	text := DecodeUserText(content)
+	if err := ScanContentForSecrets(text); err != nil {
+		return "", err
+	}
+	return text, nil
 }
 
 // ReadTextFromFlag reads stdin text for an explicit file flag such as

@@ -173,6 +173,13 @@ func reviewRun(opts *ReviewOptions) error {
 		}
 	}
 
+	// Scan inline --comment for secrets (file path already scanned above)
+	if opts.Comment != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Comment); err != nil {
+			return err
+		}
+	}
+
 	// Get repository
 	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
 	if err != nil {

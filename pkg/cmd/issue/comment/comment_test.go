@@ -2,6 +2,7 @@ package comment
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -171,4 +172,14 @@ func containsHelper(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+func TestGetBodyScansInlineBodyForSecrets(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	f := cmdutil.TestFactory()
+	opts := &CommentOptions{IO: f.IOStreams, Body: "leaked: secret-token-abc123"}
+	_, err := getBody(opts)
+	if err == nil || !strings.Contains(err.Error(), "secret") {
+		t.Fatalf("getBody() error = %v, want secret detection error", err)
+	}
 }

@@ -124,6 +124,13 @@ func editRun(opts *EditOptions) error {
 		return cmdutil.NewUsageError("no changes specified. Use --title, --notes, --notes-file, or --prerelease to specify what to edit")
 	}
 
+	// Scan inline --notes for secrets before any API call (fail-fast)
+	if opts.Notes != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Notes); err != nil {
+			return err
+		}
+	}
+
 	// Build update options - name and body are required by GitCode API
 	// First get existing release to populate required fields
 	existingRelease, err := api.GetRelease(client, owner, repo, opts.TagName)
@@ -142,9 +149,6 @@ func editRun(opts *EditOptions) error {
 		updateOpts.Name = opts.Title
 	}
 	if opts.Notes != "" {
-		if err := cmdutil.ScanContentForSecrets(opts.Notes); err != nil {
-			return err
-		}
 		updateOpts.Body = opts.Notes
 	}
 	if opts.NotesFile != "" {

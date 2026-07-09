@@ -334,12 +334,7 @@ func TestEditRunScansInlineNotesForSecrets(t *testing.T) {
 
 	streams, _, _, _ := testutil.NewTestIOStreams()
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.Method == http.MethodGet && r.URL.Path == "/api/v5/repos/owner/repo/releases/tags/v1.0.0" {
-			_, _ = w.Write([]byte(`{"tag_name":"v1.0.0","name":"v1.0.0","body":"original notes"}`))
-			return
-		}
-		t.Fatalf("unexpected request: %s %s (scan should reject before PATCH)", r.Method, r.URL.Path)
+		t.Fatalf("unexpected request: %s %s (scan should reject before any API call)", r.Method, r.URL.Path)
 	}))
 
 	err := editRun(&EditOptions{

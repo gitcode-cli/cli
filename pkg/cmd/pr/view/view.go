@@ -2,6 +2,7 @@
 package view
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -146,7 +147,9 @@ func viewRun(opts *ViewOptions) error {
 		if opts.Comments {
 			comments, err := api.ListPRComments(client, owner, repo, opts.Number)
 			if err != nil {
-				return fmt.Errorf("failed to get comments: %w", err)
+				fmt.Fprintf(opts.IO.ErrOut, "%s Failed to get comments: %v\n", cs.Yellow("!"), err)
+				commentErr := fmt.Errorf("failed to get comments: %w", err)
+				enrichErr = errors.Join(enrichErr, commentErr)
 			}
 			if err := cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
 				"pull_request": pr,
@@ -171,9 +174,8 @@ func viewRun(opts *ViewOptions) error {
 		comments, err := api.ListPRComments(client, owner, repo, opts.Number)
 		if err != nil {
 			fmt.Fprintf(opts.IO.ErrOut, "%s Failed to get comments: %v\n", cs.Yellow("!"), err)
-			if enrichErr == nil {
-				enrichErr = fmt.Errorf("failed to get comments: %w", err)
-			}
+			commentErr := fmt.Errorf("failed to get comments: %w", err)
+			enrichErr = errors.Join(enrichErr, commentErr)
 		} else if err := renderPRComments(opts.IO.Out, comments, timeFormat, now); err != nil {
 			return err
 		}
@@ -283,11 +285,11 @@ func enrichPRStats(client *api.Client, owner, repo string, pr *api.PullRequest) 
 	if pr == nil {
 		return nil
 	}
-	var errs []string
+	var errs []error
 	if pr.Additions == 0 && pr.Deletions == 0 && pr.ChangedFiles == 0 {
 		files, err := api.GetPRFiles(client, owner, repo, pr.Number)
 		if err != nil {
-			errs = append(errs, err.Error())
+			errs = append(errs, err)
 		} else if files != nil {
 			pr.Additions = files.AddedLines
 			pr.Deletions = files.RemoveLines
@@ -300,15 +302,12 @@ func enrichPRStats(client *api.Client, owner, repo string, pr *api.PullRequest) 
 	if pr.Commits == 0 {
 		commits, err := api.ListPRCommits(client, owner, repo, pr.Number)
 		if err != nil {
-			errs = append(errs, err.Error())
+			errs = append(errs, err)
 		} else if len(commits) > 0 {
 			pr.Commits = len(commits)
 		}
 	}
-	if len(errs) > 0 {
-		return fmt.Errorf("%s", strings.Join(errs, "; "))
-	}
-	return nil
+	return errors.Join(errs...)
 }
 
 func renderPRView(out io.Writer, cs *iostreams.ColorScheme, pr *api.PullRequest, comments []api.PRComment, timeFormat output.TimeFormat, now time.Time) error {

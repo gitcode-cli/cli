@@ -302,6 +302,9 @@ func TestViewRunEnrichFailureReturnsErrorButOutputsPR(t *testing.T) {
 	if !strings.Contains(errOut.String(), "Failed to enrich") {
 		t.Fatalf("stderr = %q, want 'Failed to enrich'", errOut.String())
 	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d (ExitError) for 500", code, cmdutil.ExitError)
+	}
 	var pr map[string]interface{}
 	if err := json.Unmarshal(out.Bytes(), &pr); err != nil {
 		t.Fatalf("stdout not JSON despite enrichment failure: %v; out=%q", err, out.String())
@@ -349,7 +352,263 @@ func TestViewRunCommentsFailureReturnsErrorInTextMode(t *testing.T) {
 	if !strings.Contains(errOut.String(), "Failed to get comments") {
 		t.Fatalf("stderr = %q, want 'Failed to get comments'", errOut.String())
 	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d (ExitError) for 502 comments failure", code, cmdutil.ExitError)
+	}
 	if !strings.Contains(out.String(), "PR") {
 		t.Fatalf("stdout = %q, want PR details rendered", out.String())
+	}
+}
+
+func TestViewRunEnrich401ReturnsExitAuth(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, errOut := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v5/repos/owner/repo/pulls/123":
+			_, _ = w.Write([]byte(`{"number":123,"title":"PR","head":{"ref":"feature"},"base":{"ref":"main"}}`))
+		case "/api/v5/repos/owner/repo/pulls/123/files.json":
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"message":"unauthorized"}`))
+		case "/api/v5/repos/owner/repo/pulls/123/commits":
+			_, _ = w.Write([]byte(`[{"sha":"abc","message":"fix"}]`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     123,
+		JSON:       true,
+		TimeFormat: "absolute",
+	})
+	if err == nil {
+		t.Fatal("viewRun() error = nil, want incomplete-data error")
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitAuth {
+		t.Fatalf("ExitCode = %d, want %d (ExitAuth) for 401 enrichment failure", code, cmdutil.ExitAuth)
+	}
+	if !strings.Contains(err.Error(), "incomplete") {
+		t.Fatalf("error = %q, want 'incomplete'", err.Error())
+	}
+	if !strings.Contains(errOut.String(), "Failed to enrich") {
+		t.Fatalf("stderr = %q, want 'Failed to enrich'", errOut.String())
+	}
+	var pr map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &pr); err != nil {
+		t.Fatalf("stdout not JSON despite enrichment failure: %v; out=%q", err, out.String())
+	}
+	if pr["number"] != float64(123) {
+		t.Fatalf("PR number = %v, want 123", pr["number"])
+	}
+}
+
+func TestViewRunEnrich404ReturnsExitNotFound(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, errOut := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v5/repos/owner/repo/pulls/123":
+			_, _ = w.Write([]byte(`{"number":123,"title":"PR","head":{"ref":"feature"},"base":{"ref":"main"}}`))
+		case "/api/v5/repos/owner/repo/pulls/123/files.json":
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"message":"not found"}`))
+		case "/api/v5/repos/owner/repo/pulls/123/commits":
+			_, _ = w.Write([]byte(`[{"sha":"abc","message":"fix"}]`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     123,
+		JSON:       true,
+		TimeFormat: "absolute",
+	})
+	if err == nil {
+		t.Fatal("viewRun() error = nil, want incomplete-data error")
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitNotFound {
+		t.Fatalf("ExitCode = %d, want %d (ExitNotFound) for 404 enrichment failure", code, cmdutil.ExitNotFound)
+	}
+	if !strings.Contains(err.Error(), "incomplete") {
+		t.Fatalf("error = %q, want 'incomplete'", err.Error())
+	}
+	if !strings.Contains(errOut.String(), "Failed to enrich") {
+		t.Fatalf("stderr = %q, want 'Failed to enrich'", errOut.String())
+	}
+	var pr map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &pr); err != nil {
+		t.Fatalf("stdout not JSON despite enrichment failure: %v; out=%q", err, out.String())
+	}
+	if pr["number"] != float64(123) {
+		t.Fatalf("PR number = %v, want 123", pr["number"])
+	}
+}
+
+func TestViewRunJSONCommentsFailureWritesJSONAndReturnsError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, errOut := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v5/repos/owner/repo/pulls/123":
+			_, _ = w.Write([]byte(`{"number":123,"title":"PR","head":{"ref":"feature"},"base":{"ref":"main"}}`))
+		case "/api/v5/repos/owner/repo/pulls/123/files.json":
+			_, _ = w.Write([]byte(`{"added_lines":0,"remove_lines":0,"count":0,"diffs":[]}`))
+		case "/api/v5/repos/owner/repo/pulls/123/commits":
+			_, _ = w.Write([]byte(`[]`))
+		case "/api/v5/repos/owner/repo/pulls/123/comments":
+			w.WriteHeader(http.StatusBadGateway)
+			_, _ = w.Write([]byte(`bad gateway`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     123,
+		JSON:       true,
+		Comments:   true,
+		TimeFormat: "absolute",
+	})
+	if err == nil {
+		t.Fatal("viewRun() error = nil, want incomplete-data error")
+	}
+	if !strings.Contains(err.Error(), "incomplete") {
+		t.Fatalf("error = %q, want 'incomplete'", err.Error())
+	}
+	if !strings.Contains(errOut.String(), "Failed to get comments") {
+		t.Fatalf("stderr = %q, want 'Failed to get comments'", errOut.String())
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d (ExitError) for 502 comments failure", code, cmdutil.ExitError)
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("stdout not JSON despite comments failure: %v; out=%q", err, out.String())
+	}
+	pr, ok := result["pull_request"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("stdout JSON missing pull_request: %#v", result)
+	}
+	if pr["number"] != float64(123) {
+		t.Fatalf("PR number = %v, want 123", pr["number"])
+	}
+	if _, ok := result["comments"]; !ok {
+		t.Fatalf("stdout JSON missing comments key (should be null): %#v", result)
+	}
+}
+
+func TestViewRunEnrichAndCommentsBothFail(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, errOut := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v5/repos/owner/repo/pulls/123":
+			_, _ = w.Write([]byte(`{"number":123,"title":"PR","head":{"ref":"feature"},"base":{"ref":"main"}}`))
+		case "/api/v5/repos/owner/repo/pulls/123/files.json":
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"message":"unauthorized"}`))
+		case "/api/v5/repos/owner/repo/pulls/123/commits":
+			_, _ = w.Write([]byte(`[{"sha":"abc","message":"fix"}]`))
+		case "/api/v5/repos/owner/repo/pulls/123/comments":
+			w.WriteHeader(http.StatusBadGateway)
+			_, _ = w.Write([]byte(`bad gateway`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     123,
+		JSON:       true,
+		Comments:   true,
+		TimeFormat: "absolute",
+	})
+	if err == nil {
+		t.Fatal("viewRun() error = nil, want incomplete-data error")
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitAuth {
+		t.Fatalf("ExitCode = %d, want %d (ExitAuth) when enrichment 401 + comments 502", code, cmdutil.ExitAuth)
+	}
+	if !strings.Contains(errOut.String(), "Failed to enrich") {
+		t.Fatalf("stderr = %q, want 'Failed to enrich'", errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "Failed to get comments") {
+		t.Fatalf("stderr = %q, want 'Failed to get comments'", errOut.String())
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("stdout not JSON despite failures: %v; out=%q", err, out.String())
+	}
+	pr, ok := result["pull_request"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("stdout JSON missing pull_request: %#v", result)
+	}
+	if pr["number"] != float64(123) {
+		t.Fatalf("PR number = %v, want 123", pr["number"])
+	}
+}
+
+func TestViewRunEnrichFilesAndCommitsBothFail(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v5/repos/owner/repo/pulls/123":
+			_, _ = w.Write([]byte(`{"number":123,"title":"PR","head":{"ref":"feature"},"base":{"ref":"main"}}`))
+		case "/api/v5/repos/owner/repo/pulls/123/files.json":
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"message":"not found"}`))
+		case "/api/v5/repos/owner/repo/pulls/123/commits":
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`server boom`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     123,
+		JSON:       true,
+		TimeFormat: "absolute",
+	})
+	if err == nil {
+		t.Fatal("viewRun() error = nil, want incomplete-data error")
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitNotFound {
+		t.Fatalf("ExitCode = %d, want %d (ExitNotFound) when files 404 + commits 500 (first error wins)", code, cmdutil.ExitNotFound)
+	}
+	var pr map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &pr); err != nil {
+		t.Fatalf("stdout not JSON despite enrichment failure: %v; out=%q", err, out.String())
+	}
+	if pr["number"] != float64(123) {
+		t.Fatalf("PR number = %v, want 123", pr["number"])
 	}
 }

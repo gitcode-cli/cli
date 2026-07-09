@@ -365,6 +365,45 @@ func TestStatusRunInvalidTokenReturnsAuthError(t *testing.T) {
 	}
 }
 
+func TestStatusRunServerErrorReturnsGenericErrorNotAuthError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &StatusOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusInternalServerError,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"message":"internal server error"}`),
+					}, nil
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode() = %d, want %d (ExitError) for 500, not ExitAuth", got, cmdutil.ExitError)
+	}
+	if !strings.Contains(errOut.String(), "Token verification failed") {
+		t.Fatalf("stderr = %q, want 'Token verification failed'", errOut.String())
+	}
+}
+
 func TestStatusRunNotLoggedInJSONReturnsAuthError(t *testing.T) {
 	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	t.Setenv("GC_TOKEN", "")

@@ -67,7 +67,7 @@ func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// we skip retry buffering to avoid loading the entire body into memory.
 	// The first attempt proceeds without retry capability.
 	canRetry := req.Body == nil || req.GetBody != nil
-	if !canRetry && t.cfg.MaxRetries > 0 {
+	if !canRetry {
 		if t.logger != nil {
 			t.logger("retry: body is non-rewindable (GetBody==nil), skipping retry to avoid memory buffering")
 		}

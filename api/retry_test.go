@@ -269,3 +269,34 @@ func TestSanitizeError_NilInnerUsesOp(t *testing.T) {
 		t.Errorf("sanitizeError = %q, want %q", got, "Get")
 	}
 }
+
+func TestRetrySkipsNonRewindableBody(t *testing.T) {
+	callCount := 0
+	mockTransport := testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		callCount++
+		return &http.Response{
+			StatusCode: http.StatusInternalServerError,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(bytes.NewReader([]byte("server error"))),
+		}, nil
+	})
+
+	cfg := DefaultRetryConfig()
+	cfg.MaxRetries = 3
+	cfg.InitialWait = 1 * time.Millisecond
+	client := &http.Client{Transport: RetryMiddleware(mockTransport, cfg)}
+
+	req, _ := http.NewRequest("POST", "http://example.com", io.NopCloser(strings.NewReader("body data")))
+	// io.NopCloser doesn't match *bytes.Reader/*strings.Reader/*bytes.Buffer,
+	// so GetBody stays nil — body is non-rewindable
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("client.Do() error = %v", err)
+	}
+	defer resp.Body.Close()
+
+	if callCount != 1 {
+		t.Fatalf("callCount = %d, want 1 (non-rewindable body should skip retries)", callCount)
+	}
+}

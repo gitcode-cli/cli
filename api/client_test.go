@@ -88,6 +88,11 @@ func TestAPIError(t *testing.T) {
 			apiErr:     APIError{StatusCode: 403, Message: "Forbidden"},
 			wantSubstr: "You don't have permission",
 		},
+		{
+			name:       "401 with guidance",
+			apiErr:     APIError{StatusCode: 401, Message: "Unauthorized"},
+			wantSubstr: "gc auth login",
+		},
 	}
 
 	for _, tt := range tests {

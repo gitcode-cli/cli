@@ -929,6 +929,7 @@ gc pr create -R infra-test/gctest1 --head feature-branch --title "Feature" --bod
 > 如果 GitCode 创建响应未返回 `body`，CLI 会在创建后尝试回读 PR；若回读仍未返回或无法确认远端 body，`--json` 会保持远端返回的空值并在 stderr 给出 warning，避免把本地提交内容伪装成远端事实。可用 `gitcode pr view <number> -R owner/repo --json` 再次核验。
 > **跨仓库 PR**: 跨仓库（从 fork 到 upstream）的源仓库通过 `head="<fork_owner>:<branch>"` 表达，而不是已废弃的 `fork_path` 表单字段——后者在 GitCode v5 会错误解析源（upstream 同名分支 → 0 commits）甚至直接 403（见 #259）。使用 `--fork owner/repo` 时，CLI 会自动把 `--head` 规范化为 `<fork_owner>:<branch>`；若 `--head` 已是 `owner:branch` 形式则原样保留，可省略 `--fork`。
 > 当前分支解析已统一接入 `Factory.Branch`；若当前目录不是 Git 仓库或无法识别分支，会明确提示改用 `--head`。
+> PR body 中含 `Closes #NNN`（或 `Fixes #NNN`/`Resolves #NNN`）时，PR merge 后 GitCode 自动关闭关联 issue；非修复型 PR 使用 `Refs #NNN` 仅引用不关闭。commit message 中的 `Closes` 不被 GitCode 识别为自动关闭。
 
 ### pr list - 列出 PRs
 

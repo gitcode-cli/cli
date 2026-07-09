@@ -128,7 +128,7 @@ Refs #23" \
 PR body 必须含 `Closes #XXX`（或 `Fixes #XXX` / `Resolves #XXX`）关联对应 issue：
 
 - **PR body 的 `Closes #XXX` 是 GitCode 识别的唯一来源** — PR merge 后 GitCode 自动关闭关联 issue
-- **commit message 的 `Closes #XXX` 不被 GitCode 识别为自动关闭**（实测：#400 commit message 含 `Closes #400` 但 issue 未自动关闭，需手动 close；#357 改用 PR body `Closes #357` 后 merge 即自动关闭）
+- **commit message 的 `Closes #XXX` 不被 GitCode 识别为自动关闭**（实测：某 issue commit message 含 `Closes #NNN` 但 issue 未自动关闭，需手动 close；改用 PR body `Closes #NNN` 后 merge 即自动关闭）
 - 用 `Refs #XXX` 仅引用不关闭，适用于非修复型 PR（如重构、文档）
 
 示例：
@@ -140,8 +140,8 @@ gc pr create --title "fix: ..." --body-file pr-self-check.md
 PR body（self-check）末尾含：
 
 ```
-**关联 Issue**: #400
-**Closes #400**
+**关联 Issue**: #NNN
+**Closes #NNN**
 ```
 
 ## 6. 作者自检
@@ -297,4 +297,4 @@ git pull origin main
 
 ---
 
-**最后更新**: 2026-05-01
+**最后更新**: 2026-07-09

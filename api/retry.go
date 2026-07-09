@@ -2,11 +2,9 @@
 package api
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -64,18 +62,16 @@ func sanitizeError(err error) string {
 
 // RoundTrip executes the request with retry logic
 func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Clone body for potential retries
-	var bodyBytes []byte
-	if req.Body != nil && req.GetBody == nil {
-		var err error
-		bodyBytes, err = io.ReadAll(req.Body)
-		req.Body.Close()
-		if err != nil {
-			return nil, fmt.Errorf("failed to read request body for retry: %w", err)
+	// For rewindable bodies (GetBody != nil), retries can restore the body.
+	// For non-rewindable bodies (GetBody == nil, e.g. *os.File or stdin),
+	// we skip retry buffering to avoid loading the entire body into memory.
+	// The first attempt proceeds without retry capability.
+	canRetry := req.Body == nil || req.GetBody != nil
+	if !canRetry {
+		if t.logger != nil {
+			t.logger("retry: body is non-rewindable (GetBody==nil), skipping retry to avoid memory buffering")
 		}
-		req.GetBody = func() (io.ReadCloser, error) {
-			return io.NopCloser(bytes.NewReader(bodyBytes)), nil
-		}
+		return t.base.RoundTrip(req)
 	}
 
 	var lastErr error

@@ -2,7 +2,7 @@ package status
 
 import (
 	"errors"
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -10,6 +10,7 @@ import (
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 type errWriter struct{}
@@ -362,6 +363,80 @@ func TestStatusRunInvalidTokenReturnsAuthError(t *testing.T) {
 	}
 	if strings.Contains(out.String(), "invalid or expired") {
 		t.Fatalf("stdout leaked diagnostic: %q", out.String())
+	}
+}
+
+func TestStatusRunServerErrorReturnsGenericErrorNotAuthError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &StatusOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusInternalServerError,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"message":"internal server error"}`),
+					}, nil
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode() = %d, want %d (ExitError) for 500, not ExitAuth", got, cmdutil.ExitError)
+	}
+	if !strings.Contains(errOut.String(), "Token verification failed") {
+		t.Fatalf("stderr = %q, want 'Token verification failed'", errOut.String())
+	}
+}
+
+func TestStatusRunNetworkErrorReturnsGenericErrorNotAuthError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GITCODE_TOKEN", "")
+
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	errOut := &strings.Builder{}
+	f.IOStreams.Out = out
+	f.IOStreams.ErrOut = errOut
+
+	opts := &StatusOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return nil, fmt.Errorf("dial tcp: connection refused")
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) { return config.New(), nil },
+	}
+
+	err := statusRun(opts)
+	if err == nil {
+		t.Fatal("statusRun() error = nil, want error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode() = %d, want %d (ExitError) for network error, not ExitAuth", got, cmdutil.ExitError)
+	}
+	if strings.Contains(errOut.String(), "invalid or expired") {
+		t.Fatalf("stderr = %q, should not say 'invalid or expired' for network error", errOut.String())
 	}
 }
 

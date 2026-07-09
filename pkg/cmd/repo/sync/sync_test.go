@@ -205,13 +205,16 @@ func TestSyncRunNoChanges(t *testing.T) {
 	if prCalled {
 		t.Fatal("CreatePR should not be called when there are no changes")
 	}
-	if len(cloneArgs) != 3 {
+	if len(cloneArgs) != 4 {
 		t.Fatalf("unexpected clone args: %#v", cloneArgs)
 	}
 	if len(cloneEnv) != 0 {
 		t.Fatalf("unexpected git env for SSH clone: %#v", cloneEnv)
 	}
-	if cloneArgs[1] != "git@gitcode.com:infra-test/target.git" {
+	if cloneArgs[1] != "--" {
+		t.Fatalf("unexpected clone separator: %#v", cloneArgs)
+	}
+	if cloneArgs[2] != "git@gitcode.com:infra-test/target.git" {
 		t.Fatalf("unexpected clone URL: %#v", cloneArgs)
 	}
 }

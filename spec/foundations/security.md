@@ -112,12 +112,13 @@ secrets.yaml
 
 | 阶段 | 触发时机 | 执行的 hook |
 |------|----------|-------------|
-| pre-commit | `git commit` | 全部 hook（gofmt + 语法校验 + 私钥检测 + gitleaks + 大文件 + 空白/换行） |
-| pre-push | `git push` | 安全子集：`gitleaks` + `detect-private-key` + `check-added-large-files` |
+| pre-commit | `git commit` | 全部 hook（gofmt + 语法校验 + 私钥检测 + gitleaks(workspace) + 大文件 + 空白/换行） |
+| pre-push | `git push` | 安全子集：`gitleaks(workspace)` + `gitleaks-history` + `detect-private-key` + `check-added-large-files` |
 
 **密钥扫描能力**：
 - `detect-private-key` — 检测私钥**文件**（SSH/PEM/RSA 等）
-- `gitleaks` — 扫描源码/文档/配置中的 **token/密钥字符串**（补充 detect-private-key 只检文件的缺口，覆盖 `GC_TOKEN`/`glpat-`/`gho_`/AWS key 等模式）
+- `gitleaks`（workspace）— 使用 `--no-git` 扫描工作区（含 gitignored 文件）中的 **token/密钥字符串**，覆盖 `GC_TOKEN`/`glpat-`/`gho_`/AWS key 等模式
+- `gitleaks-history`— 扫描 **git 提交历史**中的 token/密钥字符串，补充 workspace 扫描无法覆盖已提交但已删除的泄漏
 
 **安装**（首次或 clone 后）：
 
@@ -204,10 +205,10 @@ git ls-files | grep -iE "\.pem|\.key|\.env|credentials|secret"
 
 如果您发现安全问题，请：
 
-1. 不要在公开 Issue 中报告安全问题
-2. 发送邮件到项目维护者
+1. 不要在公开 Issue/PR/comment 中披露漏洞细节、PoC 或攻击细节
+2. 提交私密 Issue 报告（使用 `gc issue create --security-hole` 标记为私有 issue）
 3. 提供详细的问题描述和复现步骤
 
 ---
 
-**最后更新**: 2026-03-26
+**最后更新**: 2026-07-09

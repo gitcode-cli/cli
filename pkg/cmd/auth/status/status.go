@@ -2,6 +2,7 @@
 package status
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -139,18 +140,36 @@ func statusRun(opts *StatusOptions) error {
 	if err != nil {
 		status.TokenValid = false
 
+		var apiErr *api.APIError
+		isAuthError := false
+		if errors.As(err, &apiErr) {
+			switch apiErr.StatusCode {
+			case 401, 403:
+				isAuthError = true
+			default:
+				isAuthError = false
+			}
+		}
+
 		if opts.JSON {
 			if err := cmdutil.WriteJSON(opts.IO.Out, status); err != nil {
 				return err
 			}
-			return cmdutil.NewAuthError(fmt.Sprintf("token for %s is invalid or expired", opts.Hostname))
+			if isAuthError {
+				return cmdutil.NewAuthError(fmt.Sprintf("token for %s is invalid or expired", opts.Hostname))
+			}
+			return fmt.Errorf("failed to verify token for %s: %w", opts.Hostname, err)
 		}
 
 		fmt.Fprintf(opts.IO.ErrOut, "%s\n", opts.Hostname)
-		fmt.Fprintf(opts.IO.ErrOut, "  %s Token is invalid or expired\n", cs.Red("✗"))
-		fmt.Fprintf(opts.IO.ErrOut, "\n")
-		fmt.Fprintf(opts.IO.ErrOut, "To re-authenticate, run: gc auth login\n")
-		return cmdutil.NewAuthError(fmt.Sprintf("token for %s is invalid or expired", opts.Hostname))
+		if isAuthError {
+			fmt.Fprintf(opts.IO.ErrOut, "  %s Token is invalid or expired\n", cs.Red("✗"))
+			fmt.Fprintf(opts.IO.ErrOut, "\n")
+			fmt.Fprintf(opts.IO.ErrOut, "To re-authenticate, run: gc auth login\n")
+			return cmdutil.NewAuthError(fmt.Sprintf("token for %s is invalid or expired", opts.Hostname))
+		}
+		fmt.Fprintf(opts.IO.ErrOut, "  %s Token verification failed: %v\n", cs.Red("✗"), err)
+		return fmt.Errorf("failed to verify token for %s: %w", opts.Hostname, err)
 	}
 
 	status.TokenValid = true

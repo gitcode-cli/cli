@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"unicode/utf8"
 )
 
 const (
@@ -403,7 +404,11 @@ func (c *Client) UploadToURL(uploadURL, filename string, content []byte, content
 		const maxBodyPreview = 512
 		preview := string(respBody)
 		if len(preview) > maxBodyPreview {
-			preview = preview[:maxBodyPreview] + "...(truncated)"
+			cutoff := maxBodyPreview
+			for cutoff > 0 && !utf8.RuneStart(preview[cutoff]) {
+				cutoff--
+			}
+			preview = preview[:cutoff] + "...(truncated)"
 		}
 		return fmt.Errorf("upload failed: %s - %s", resp.Status, preview)
 	}

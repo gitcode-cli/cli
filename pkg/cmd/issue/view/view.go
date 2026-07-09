@@ -151,7 +151,14 @@ func viewRun(opts *ViewOptions) error {
 				var err error
 				comments, err = api.ListIssueCommentsAll(client, owner, repo, opts.Number, nil)
 				if err != nil {
-					return fmt.Errorf("failed to get comments: %w", err)
+					fmt.Fprintf(opts.IO.ErrOut, "%s Failed to get comments: %v\n", cs.Yellow("!"), err)
+					if err := cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
+						"issue":    issue,
+						"comments": comments,
+					}); err != nil {
+						return err
+					}
+					return fmt.Errorf("issue data incomplete: %w", err)
 				}
 			}
 			return cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
@@ -169,7 +176,8 @@ func viewRun(opts *ViewOptions) error {
 	if opts.Comments && issue.Comments > 0 {
 		comments, err := api.ListIssueCommentsAll(client, owner, repo, opts.Number, nil)
 		if err != nil {
-			return fmt.Errorf("failed to get comments: %w", err)
+			fmt.Fprintf(opts.IO.ErrOut, "%s Failed to get comments: %v\n", cs.Yellow("!"), err)
+			return fmt.Errorf("issue data incomplete: %w", err)
 		}
 		return renderIssueComments(opts.IO.Out, cs, comments, timeFormat, now)
 	}

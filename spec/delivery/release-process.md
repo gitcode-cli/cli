@@ -123,7 +123,7 @@ go build -o ./gc ./cmd/gc
 ./scripts/sync-docs-version.sh vX.Y.Z
 ```
 
-脚本支持 `--dry-run` 预览。同步后提交到 `main`，再创建 tag，使 tag 指向的提交包含正确的文档版本引用。下载 URL 指向的 release 产物在上传完成后（§6.8）即生效。
+脚本支持 `--dry-run` 预览。同步后提交到 `main`，再创建 tag，使 tag 指向的提交包含正确的文档版本引用。下载 URL 指向的 release 产物在 release 创建与上传完成后（§6.5）即生效。
 
 ### 6.5 创建 release
 

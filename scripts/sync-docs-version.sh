@@ -78,15 +78,29 @@ if [[ "${old_num}" == "${new_num}" ]]; then
 fi
 
 echo "Syncing doc version: ${old_tag} -> ${new_tag}"
+# Escape regex metachars (dots) for LHS; new is RHS literal.
+old_re="${old_num//./\\.}"
+new_re="${new_num//./\\.}"
+# Boundary-aware: version followed by non-digit or EOL, so 0.6.1 is not
+# falsely matched inside 0.6.10 (residual check) and vice versa.
+old_pat="v?${old_re}([^0-9]|$)"
+new_pat="v?${new_re}([^0-9]|$)"
+# Two-pass placeholder replace: move old (v-prefixed + bare) to distinct
+# placeholders, then placeholders to new. Prevents corrupting the new
+# version when old_num is a string prefix of new_num (e.g. 0.6.1 -> 0.6.10
+# would otherwise turn v0.6.10 into v0.6.100).
+ptag="__GCDOC_VER_TAG__"
+pnum="__GCDOC_VER_NUM__"
 for f in "${readme}" "${packaging}"; do
-    before=$(grep -c -E "v?${old_num//./\\.}" "${f}" || true)
+    before=$(grep -c -E "${old_pat}" "${f}" || true)
     if [[ ${dry_run} -eq 1 ]]; then
         echo "  [dry-run] would touch ${before} line(s) in $(basename "${f}")"
         continue
     fi
-    sed -i "s/v${old_num}/v${new_num}/g; s/${old_num}/${new_num}/g" "${f}"
-    after_old=$(grep -c -E "v?${old_num//./\\.}" "${f}" || true)
-    after_new=$(grep -c -E "v?${new_num//./\\.}" "${f}" || true)
+    sed -i "s/v${old_re}/${ptag}/g; s/${old_re}/${pnum}/g" "${f}"
+    sed -i "s/${ptag}/v${new_num}/g; s/${pnum}/${new_num}/g" "${f}"
+    after_old=$(grep -c -E "${old_pat}" "${f}" || true)
+    after_new=$(grep -c -E "${new_pat}" "${f}" || true)
     echo "  $(basename "${f}"): ${before} -> ${after_new} line(s) with ${new_tag}; residual ${old_tag}: ${after_old}"
     if [[ ${after_old} -gt 0 ]]; then
         echo "ERROR: residual ${old_tag} in $(basename "${f}") after replace" >&2

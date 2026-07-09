@@ -118,8 +118,7 @@ success "Updated pyproject.toml"
 sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" gc_cli/__init__.py
 success "Updated gc_cli/__init__.py"
 
-# Update README.md (Release badge and download links)
-sed -i "s/badge\/Release-v[0-9]\+\.[0-9]\+\.[0-9]\+/badge\/Release-v${VERSION}/g" README.md
+# Update README.md (download links; release badge is de-pinned to "latest")
 sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc_/v${VERSION}\/gc_/g" README.md
 sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc-/v${VERSION}\/gc-/g" README.md
 sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gitcode_cli/v${VERSION}\/gitcode_cli/g" README.md

@@ -2,6 +2,7 @@
 package create
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -110,6 +111,9 @@ func createRun(opts *CreateOptions) error {
 	if opts.NotesFile != "" {
 		content, err := cmdutil.ReadTextFile(opts.NotesFile)
 		if err != nil {
+			if errors.Is(err, cmdutil.ErrSecretDetected) {
+				return err
+			}
 			return fmt.Errorf("failed to read notes file: %w", err)
 		}
 		body = content

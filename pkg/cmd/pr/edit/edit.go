@@ -2,6 +2,7 @@
 package edit
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -144,6 +145,9 @@ func editRun(opts *EditOptions) error {
 	if opts.BodyFile != "" {
 		body, err := cmdutil.ReadTextFile(opts.BodyFile)
 		if err != nil {
+			if errors.Is(err, cmdutil.ErrSecretDetected) {
+				return err
+			}
 			return fmt.Errorf("failed to read body file: %w", err)
 		}
 		updateOpts.Body = body

@@ -2,6 +2,7 @@
 package edit
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -115,6 +116,9 @@ func editRun(opts *EditOptions) error {
 	if opts.DescriptionFile != "" {
 		content, err := cmdutil.ReadTextFile(opts.DescriptionFile)
 		if err != nil {
+			if errors.Is(err, cmdutil.ErrSecretDetected) {
+				return err
+			}
 			return fmt.Errorf("failed to read description file: %w", err)
 		}
 		description = content

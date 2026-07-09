@@ -177,3 +177,51 @@ func TestNewLossyPowerShellStdinErrorIncludesFlagAndExamples(t *testing.T) {
 		}
 	}
 }
+
+func TestReadBodyRejectsInlineBodyContainingToken(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	_, err := ReadBody("this leaks secret-token-abc123", "", nil)
+	if !errors.Is(err, ErrSecretDetected) {
+		t.Fatalf("ReadBody() error = %v, want ErrSecretDetected", err)
+	}
+}
+
+func TestReadBodyRejectsFileBodyContainingToken(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	path := filepath.Join(t.TempDir(), "body.md")
+	if err := os.WriteFile(path, []byte("leaked: secret-token-abc123"), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	_, err := ReadBody("", path, nil)
+	if !errors.Is(err, ErrSecretDetected) {
+		t.Fatalf("ReadBody() error = %v, want ErrSecretDetected", err)
+	}
+}
+
+func TestReadTextRejectsContentContainingToken(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	_, err := ReadText(strings.NewReader("contains secret-token-abc123"))
+	if !errors.Is(err, ErrSecretDetected) {
+		t.Fatalf("ReadText() error = %v, want ErrSecretDetected", err)
+	}
+}
+
+func TestReadTextFileRejectsContentContainingToken(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	path := filepath.Join(t.TempDir(), "body.md")
+	if err := os.WriteFile(path, []byte("leaked: secret-token-abc123"), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	_, err := ReadTextFile(path)
+	if !errors.Is(err, ErrSecretDetected) {
+		t.Fatalf("ReadTextFile() error = %v, want ErrSecretDetected", err)
+	}
+}
+
+func TestReadTextFromFlagRejectsContentContainingToken(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	_, err := ReadTextFromFlag(strings.NewReader("contains secret-token-abc123"), "--body-file")
+	if !errors.Is(err, ErrSecretDetected) {
+		t.Fatalf("ReadTextFromFlag() error = %v, want ErrSecretDetected", err)
+	}
+}

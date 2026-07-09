@@ -309,3 +309,19 @@ func releaseResponse(status int, body string) *http.Response {
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }
+
+func TestCreateRunScansInlineNotesForSecrets(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO:         f.IOStreams,
+		HttpClient: f.HttpClient,
+		Repository: "owner/repo",
+		TagName:    "v1.0.0",
+		Notes:      "leaked: secret-token-abc123",
+	}
+	err := createRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "secret") {
+		t.Fatalf("createRun() error = %v, want secret detection error", err)
+	}
+}

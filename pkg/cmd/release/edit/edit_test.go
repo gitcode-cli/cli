@@ -328,3 +328,28 @@ func TestEditRunWithNoChanges(t *testing.T) {
 		t.Fatalf("Expected 'no changes specified' error, got: %v", err)
 	}
 }
+
+func TestEditRunScansInlineNotesForSecrets(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+
+	streams, _, _, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet && r.URL.Path == "/api/v5/repos/owner/repo/releases/tags/v1.0.0" {
+			_, _ = w.Write([]byte(`{"tag_name":"v1.0.0","name":"v1.0.0","body":"original notes"}`))
+			return
+		}
+		t.Fatalf("unexpected request: %s %s (scan should reject before PATCH)", r.Method, r.URL.Path)
+	}))
+
+	err := editRun(&EditOptions{
+		IO:         streams,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		Repository: "owner/repo",
+		TagName:    "v1.0.0",
+		Notes:      "leaked: secret-token-abc123",
+	})
+	if err == nil || !strings.Contains(err.Error(), "secret") {
+		t.Fatalf("editRun() error = %v, want secret detection error", err)
+	}
+}

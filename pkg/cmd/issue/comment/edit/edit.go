@@ -127,6 +127,9 @@ func getBody(opts *EditOptions) (string, error) {
 	}
 
 	if opts.Body != "" {
+		if err := cmdutil.ScanContentForSecrets(opts.Body); err != nil {
+			return "", err
+		}
 		return opts.Body, nil
 	}
 

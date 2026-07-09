@@ -177,3 +177,13 @@ type readCloser struct {
 }
 
 func (r *readCloser) Close() error { return nil }
+
+func TestGetBodyScansInlineBodyForSecrets(t *testing.T) {
+	t.Setenv("GC_TOKEN", "secret-token-abc123")
+	f := cmdutil.TestFactory()
+	opts := &EditOptions{IO: f.IOStreams, Body: "leaked: secret-token-abc123"}
+	_, err := getBody(opts)
+	if err == nil || !strings.Contains(err.Error(), "secret") {
+		t.Fatalf("getBody() error = %v, want secret detection error", err)
+	}
+}

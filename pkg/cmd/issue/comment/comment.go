@@ -168,35 +168,14 @@ func commentRun(opts *CommentOptions) error {
 }
 
 func getBody(opts *CommentOptions) (string, error) {
-	if opts.Body != "" && opts.BodyFile != "" {
-		return "", fmt.Errorf("cannot use both --body and --body-file")
+	body, err := cmdutil.ReadBody(opts.Body, opts.BodyFile, opts.IO.In)
+	if err != nil {
+		return "", err
 	}
-
-	if opts.Body != "" {
-		if err := cmdutil.ScanContentForSecrets(opts.Body); err != nil {
-			return "", err
-		}
-		return opts.Body, nil
-	}
-
 	if opts.BodyFile != "" {
-		if opts.BodyFile == "-" {
-			body, err := cmdutil.ReadTextFromFlag(opts.IO.In, "--body-file")
-			if err != nil {
-				return "", fmt.Errorf("failed to read from stdin: %w", err)
-			}
-			return strings.TrimSpace(body), nil
-		}
-
-		// Read from file
-		content, err := cmdutil.ReadTextFile(opts.BodyFile)
-		if err != nil {
-			return "", fmt.Errorf("failed to read file %s: %w", opts.BodyFile, err)
-		}
-		return strings.TrimSpace(content), nil
+		return strings.TrimSpace(body), nil
 	}
-
-	return "", nil
+	return body, nil
 }
 
 func parseRepo(repo string) (string, string, error) {

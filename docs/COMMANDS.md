@@ -1001,7 +1001,7 @@ gc pr view 1 -R infra-test/gctest1 --time-format relative
 - `pr view` 的文本详情输出会使用更稳定的元信息排布，便于人工和代理阅读。
 - 文本输出包含里程碑信息（如果 PR 关联了里程碑）。
 - `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
-- 如果 PR 详情 API 返回的 `additions`、`deletions`、`changed_files` 或 `commits` 为 0，CLI 会尝试通过 PR files/commits API 补齐统计；补齐失败时会给出 warning，但不阻断查看。补齐失败时返回非零退出码（按底层 API 错误映射：401→4、404→3、409→5、其他→1），PR 详情仍输出到 stdout。
+- 如果 PR 详情 API 返回的 `additions`、`deletions`、`changed_files` 或 `commits` 为 0，CLI 会尝试通过 PR files/commits API 补齐统计；补齐失败时会给出 warning，但不阻断查看。补齐失败时返回非零退出码（按底层 API 错误映射：401→4、404→3、409→5、其他→1），PR 详情仍输出到 stdout。多个补齐源同时失败时，退出码按首个失败 API 的状态码映射。
 - `--json` 路径保持结构化输出，milestone、body、description、merged_at 等字段会自动包含在 JSON 中；其中 `body` 与 `description` 会基于远端返回互相补齐。`--comments --json` 在评论获取失败时仍写入 `{"pull_request": ..., "comments": null}` 并返回非零退出码，与文本模式"渲染已有数据 + 信号不完整"的行为一致。
 
 ### pr issues - 查看 PR 关联的 Issues

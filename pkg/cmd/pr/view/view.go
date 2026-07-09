@@ -149,11 +149,7 @@ func viewRun(opts *ViewOptions) error {
 			if err != nil {
 				fmt.Fprintf(opts.IO.ErrOut, "%s Failed to get comments: %v\n", cs.Yellow("!"), err)
 				commentErr := fmt.Errorf("failed to get comments: %w", err)
-				if enrichErr == nil {
-					enrichErr = commentErr
-				} else {
-					enrichErr = errors.Join(enrichErr, commentErr)
-				}
+				enrichErr = errors.Join(enrichErr, commentErr)
 			}
 			if err := cmdutil.WriteJSON(opts.IO.Out, map[string]interface{}{
 				"pull_request": pr,
@@ -179,11 +175,7 @@ func viewRun(opts *ViewOptions) error {
 		if err != nil {
 			fmt.Fprintf(opts.IO.ErrOut, "%s Failed to get comments: %v\n", cs.Yellow("!"), err)
 			commentErr := fmt.Errorf("failed to get comments: %w", err)
-			if enrichErr == nil {
-				enrichErr = commentErr
-			} else {
-				enrichErr = errors.Join(enrichErr, commentErr)
-			}
+			enrichErr = errors.Join(enrichErr, commentErr)
 		} else if err := renderPRComments(opts.IO.Out, comments, timeFormat, now); err != nil {
 			return err
 		}

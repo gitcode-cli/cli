@@ -83,11 +83,12 @@ MAJOR.MINOR.PATCH-PRERELEASE
 1. 切换到最新 `main`
 2. 运行测试与本地构建验证
 3. 准备 release notes
-4. 使用标准脚本构建发布产物
-5. 创建 tag
-6. 创建 release
-7. 上传 release 产物
-8. 执行发布后验证
+4. 同步文档版本号
+5. 使用标准脚本构建发布产物
+6. 创建 tag
+7. 创建 release
+8. 上传 release 产物
+9. 执行发布后验证
 
 ### 6.1 获取最新主线
 
@@ -114,7 +115,17 @@ go build -o ./gc ./cmd/gc
 ./scripts/package.sh <version> release
 ```
 
-### 6.4 创建 release
+### 6.4 同步文档版本号
+
+`README.md` 与 `docs/PACKAGING.md` 含版本号绑定的下载 URL 与示例，必须随发版同步，否则滞后（见 #314）。使用专用脚本自动探测当前版本串并替换为目标版本，幂等，替换后校验无残留：
+
+```bash
+./scripts/sync-docs-version.sh vX.Y.Z
+```
+
+脚本支持 `--dry-run` 预览。同步后提交到 `main`，再创建 tag，使 tag 指向的提交包含正确的文档版本引用。下载 URL 指向的 release 产物在上传完成后（§6.8）即生效。
+
+### 6.5 创建 release
 
 当前仓库的 CLI 路径为：
 
@@ -123,7 +134,7 @@ gc release create <tag> -R gitcode-cli/cli --title "<title>" --notes "<notes>"
 gc release upload <tag> <files...> -R gitcode-cli/cli
 ```
 
-### 6.5 创建 tag
+### 6.6 创建 tag
 
 ```bash
 git tag -a vX.Y.Z -m "Release vX.Y.Z"

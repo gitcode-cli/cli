@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	actionscmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions"
 	apicmd "gitcode.com/gitcode-cli/cli/pkg/cmd/api"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth"
 	commitcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/commit"
@@ -49,6 +50,7 @@ func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 
 	// Add subcommands.
 	cmd.AddCommand(version.NewCmdVersion(ver, commit, date, commandName))
+	cmd.AddCommand(actionscmd.NewCmdActions(f))
 	cmd.AddCommand(apicmd.NewCmdAPI(f, nil))
 	cmd.AddCommand(auth.NewCmdAuth(f))
 	cmd.AddCommand(repo.NewCmdRepo(f))

@@ -292,6 +292,9 @@ gc pr list -R owner/repo --commit-message "fix login"
 # 提交前检查 pre-commit 配置与本地环境
 gc precommit check
 
+# 查看流水线运行记录
+gc actions run list -R owner/repo --status FAILED
+
 # 调用 GitCode API 原始响应
 gc api repos/owner/repo
 

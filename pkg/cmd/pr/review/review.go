@@ -2,6 +2,7 @@
 package review
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -161,12 +162,18 @@ func reviewRun(opts *ReviewOptions) error {
 		if opts.CommentFile == "-" {
 			comment, err := cmdutil.ReadTextFromFlag(opts.IO.In, "--comment-file")
 			if err != nil {
+				if errors.Is(err, cmdutil.ErrSecretDetected) {
+					return err
+				}
 				return fmt.Errorf("failed to read from stdin: %w", err)
 			}
 			opts.Comment = strings.TrimSpace(comment)
 		} else {
 			comment, err := cmdutil.ReadTextFile(opts.CommentFile)
 			if err != nil {
+				if errors.Is(err, cmdutil.ErrSecretDetected) {
+					return err
+				}
 				return fmt.Errorf("failed to read comment file: %w", err)
 			}
 			opts.Comment = strings.TrimSpace(comment)

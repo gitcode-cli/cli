@@ -34,14 +34,19 @@ func ReadBody(body, bodyFile string, stdin io.Reader) (string, error) {
 		if bodyFile == "-" {
 			bodyText, err := ReadTextFromFlag(stdin, "--body-file")
 			if err != nil {
+				if errors.Is(err, ErrSecretDetected) {
+					return "", err
+				}
 				return "", fmt.Errorf("failed to read from stdin: %w", err)
 			}
 			return strings.TrimSpace(bodyText), nil
 		}
 
-		// Read from file
 		content, err := ReadTextFile(bodyFile)
 		if err != nil {
+			if errors.Is(err, ErrSecretDetected) {
+				return "", err
+			}
 			return "", fmt.Errorf("failed to read file %s: %w", bodyFile, err)
 		}
 		return strings.TrimSpace(content), nil

@@ -489,6 +489,11 @@ func (e *APIError) Error() string {
 		return fmt.Sprintf("HTTP %d: %s\n\nYou don't have permission for this action. Possible reasons:\n- You are not the owner or a project maintainer\n- The project requires specific permissions\n\nFor permission details, check the project settings or contact a maintainer.", e.StatusCode, msg)
 	}
 
+	// Add actionable guidance for authentication errors
+	if e.StatusCode == 401 {
+		return fmt.Sprintf("HTTP %d: %s\n\nYour token may be invalid or expired. Try:\n- Run `gc auth login` to re-authenticate\n- Check that GC_TOKEN or GITCODE_TOKEN is set correctly", e.StatusCode, msg)
+	}
+
 	return fmt.Sprintf("HTTP %d: %s", e.StatusCode, msg)
 }
 

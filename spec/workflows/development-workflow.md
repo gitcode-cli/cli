@@ -292,7 +292,7 @@ Issue 和 PR 至少应使用以下标签维度：
 - 类型：`type/bug`、`type/feature`、`type/docs`、`type/refactor`
 - 状态：`status/triage`、`status/verified`、`status/in-progress`、`status/blocked`、`status/ready-for-review`、`status/merged`
 - 风险：`risk/low`、`risk/medium`、`risk/high`
-- 范围：`scope/auth`、`scope/repo`、`scope/issue`、`scope/pr`、`scope/release`、`scope/docs`
+- 范围：开放命名空间，按命令/模块领域命名（示例：`scope/auth`、`scope/repo`、`scope/issue`、`scope/pr`、`scope/release`、`scope/docs`、`scope/api`、`scope/actions`、`scope/ci` 等，可按需扩展）
 
 如果仓库当前尚未预建这些标签，先在规范和执行记录中按该命名约定使用。
 

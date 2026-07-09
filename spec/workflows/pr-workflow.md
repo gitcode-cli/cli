@@ -50,7 +50,7 @@ PR 至少应补齐以下维度：
 - 类型：`type/bug`、`type/feature`、`type/docs`、`type/refactor`
 - 状态：`status/draft`、`status/self-checked`、`status/ready-for-review`、`status/changes-requested`、`status/approved`、`status/merged`
 - 风险：`risk/low`、`risk/medium`、`risk/high`
-- 范围：`scope/auth`、`scope/repo`、`scope/issue`、`scope/pr`、`scope/release`、`scope/docs`
+- 范围：开放命名空间，按命令/模块领域命名（示例：`scope/auth`、`scope/repo`、`scope/issue`、`scope/pr`、`scope/release`、`scope/docs`、`scope/api`、`scope/actions`、`scope/ci` 等，可按需扩展）
 
 ## 3. 开发与测试
 

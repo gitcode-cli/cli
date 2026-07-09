@@ -41,7 +41,7 @@
 
 - **类型**: `type/bug`, `type/feature`, `type/docs`, `type/refactor`
 - **状态**: `status/triage`, `status/verified`, `status/in-progress`, `status/merged`
-- **范围**: `scope/auth`, `scope/repo`, `scope/issue`, `scope/pr`, `scope/release`, `scope/docs`, `scope/testing`
+- **范围**: 开放命名空间，按命令/模块领域命名（示例：`scope/auth`, `scope/repo`, `scope/issue`, `scope/pr`, `scope/release`, `scope/docs`, `scope/testing`, `scope/api`, `scope/actions`, `scope/ci` 等，可按需扩展）
 - **风险**: `risk/low`, `risk/medium`, `risk/high` (可选，验证后添加)
 
 ### PR 必须包含

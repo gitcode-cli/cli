@@ -141,7 +141,7 @@ func statusRun(opts *StatusOptions) error {
 		status.TokenValid = false
 
 		var apiErr *api.APIError
-		isAuthError := true
+		isAuthError := false
 		if errors.As(err, &apiErr) {
 			switch apiErr.StatusCode {
 			case 401, 403:

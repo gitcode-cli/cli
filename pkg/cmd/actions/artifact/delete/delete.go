@@ -79,7 +79,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
-	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Skip confirmation (required in non-interactive mode)")
+	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation (required in non-interactive mode)")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview the deletion without deleting")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
@@ -88,15 +88,6 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 
 func deleteRun(opts *DeleteOptions) error {
 	cs := opts.IO.ColorScheme()
-
-	httpClient, err := opts.HttpClient()
-	if err != nil {
-		return fmt.Errorf("failed to create HTTP client: %w", err)
-	}
-	client, err := cmdutil.AuthenticatedClient(httpClient)
-	if err != nil {
-		return err
-	}
 
 	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
 	if err != nil {
@@ -107,7 +98,7 @@ func deleteRun(opts *DeleteOptions) error {
 		return err
 	}
 
-	// Dry run
+	// Dry run (before auth — no API call needed, mirrors label delete)
 	if opts.DryRun {
 		result := DeleteResult{
 			ArtifactID: opts.ArtifactID,
@@ -120,6 +111,11 @@ func deleteRun(opts *DeleteOptions) error {
 		}
 		fmt.Fprintf(opts.IO.Out, "Dry run: would delete artifact %s from %s/%s\n", opts.ArtifactID, owner, repo)
 		return nil
+	}
+
+	client, err := cmdutil.AuthenticatedClientFromFactory(opts.HttpClient)
+	if err != nil {
+		return err
 	}
 
 	// Confirmation gate

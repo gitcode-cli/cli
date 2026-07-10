@@ -1825,6 +1825,24 @@ gc actions run list -R owner/repo --json
 - 分页：`--limit`/`-L`（默认 30，映射为 `per_page`）、`--page`、`--paginate`（抓取全部分页至 `--limit`）、`--per-page`（API 页大小）。`--paginate` 与 `--page` 互斥。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如 `--paginate` 与 `--page` 同用、`--limit`/`--per-page` 为负）；`3` 资源不存在（HTTP 404，如仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
+### actions run view - 查看流水线运行详情
+
+查看单条流水线运行记录的详情，含运行元信息与其下 stages（阶段）/jobs（任务）概览。`<run-id>` 取 `gc actions run list` 返回的 `workflow_run_id`。
+
+```bash
+# 查看一条流水线运行详情
+gc actions run view <run-id> -R owner/repo
+
+# 忠实 JSON 输出（保留 API 全部字段，含 stage/job/step 深层执行字段）
+gc actions run view <run-id> -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，**原样透传 API 响应**（字段名直接映射 Actions v8 API，保留 `stages[].jobs[].steps[]` 及 `pre`/`post`/`parallel`/`condition`/`inputs`/`env` 等深层/可空字段，不被本地类型裁剪）。人类可读视图（默认）只摘要显示运行元信息 + stages/jobs 状态与计数，steps 明细见 `--json`。
+- 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`）；`3` 资源不存在（HTTP 404，如 run 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
 ---
 
 ## 其他命令

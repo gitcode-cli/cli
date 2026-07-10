@@ -173,3 +173,167 @@ func TestListActionsRunsError(t *testing.T) {
 		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusBadRequest)
 	}
 }
+
+func TestGetActionsRunBuildsV8Path(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusOK, detailRunJSON()), nil
+	})
+	client.SetToken("test-token", "test")
+
+	if _, _, err := GetActionsRun(client, "owner", "repo", "run-1"); err != nil {
+		t.Fatalf("GetActionsRun() error = %v", err)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	want := "/api/v8/repos/owner/repo/actions/runs/run-1"
+	if gotPath != want {
+		t.Fatalf("request path = %q, want %q", gotPath, want)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+}
+
+func TestGetActionsRunParsesDetail(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, detailRunJSON()), nil
+	})
+
+	detail, raw, err := GetActionsRun(client, "owner", "repo", "run-1")
+	if err != nil {
+		t.Fatalf("GetActionsRun() error = %v", err)
+	}
+	if detail == nil {
+		t.Fatal("detail = nil")
+	}
+	if detail.WorkflowRunID != "run-1" {
+		t.Fatalf("WorkflowRunID = %q, want run-1", detail.WorkflowRunID)
+	}
+	if detail.RunNumber != 7 {
+		t.Fatalf("RunNumber = %d, want 7", detail.RunNumber)
+	}
+	if detail.Status != "COMPLETED" {
+		t.Fatalf("Status = %q, want COMPLETED", detail.Status)
+	}
+	if !detail.ExistInDefaultBranch {
+		t.Fatal("ExistInDefaultBranch = false, want true")
+	}
+	if len(detail.Stages) != 1 {
+		t.Fatalf("len(Stages) = %d, want 1", len(detail.Stages))
+	}
+	stage := detail.Stages[0]
+	if stage.Name != "build" || stage.Status != "COMPLETED" {
+		t.Fatalf("stage = %+v, want name=build status=COMPLETED", stage)
+	}
+	if len(stage.Jobs) != 1 {
+		t.Fatalf("len(stage.Jobs) = %d, want 1", len(stage.Jobs))
+	}
+	job := stage.Jobs[0]
+	if job.Name != "compile" || job.Status != "COMPLETED" {
+		t.Fatalf("job = %+v, want name=compile status=COMPLETED", job)
+	}
+	if len(job.Steps) != 1 {
+		t.Fatalf("len(job.Steps) = %d, want 1", len(job.Steps))
+	}
+	if job.Steps[0].Name != "checkout" {
+		t.Fatalf("step name = %q, want checkout", job.Steps[0].Name)
+	}
+	if len(raw) == 0 {
+		t.Fatal("raw = empty, want non-empty faithful response body")
+	}
+}
+
+func TestGetActionsRunRawIsFaithful(t *testing.T) {
+	body := detailRunJSON()
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, body), nil
+	})
+
+	_, raw, err := GetActionsRun(client, "owner", "repo", "run-1")
+	if err != nil {
+		t.Fatalf("GetActionsRun() error = %v", err)
+	}
+	if string(raw) != body {
+		t.Fatalf("raw body not preserved verbatim (len %d vs %d)", len(raw), len(body))
+	}
+}
+
+func TestGetActionsRunError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+
+	_, _, err := GetActionsRun(client, "owner", "repo", "missing-run")
+	if err == nil {
+		t.Fatal("GetActionsRun() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
+	}
+}
+
+func detailRunJSON() string {
+	return `{
+		"workflow_run_id":"run-1",
+		"workflow_id":"wf-1",
+		"workflow_name":"CI",
+		"file_path":".gitcode/workflows/ci.yml",
+		"title":"run CI",
+		"status":"COMPLETED",
+		"event":"Push",
+		"run_number":7,
+		"head_branch":"main",
+		"head_sha":"abc123",
+		"actor":{"id":"1","object_id":"u1","login":"dev","name":"Dev"},
+		"start_time":1700000000,
+		"end_time":1700000100,
+		"pause_time":0,
+		"exist_in_default_branch":true,
+		"stages":[
+			{
+				"id":"stg-1","category":"ci","name":"build","identifier":"build",
+				"run_always":true,"fail_fast":false,"parallel":null,"is_select":true,
+				"sequence":1,"depends_on":[],"condition":null,"status":"COMPLETED",
+				"start_time":1700000000,"end_time":1700000090,"pause_time":0,
+				"pre":[],"post":[],
+				"jobs":[
+					{
+						"id":"job-1","category":null,"sequence":1,"async":null,
+						"name":"compile","identifier":"compile","depends_on":[],
+						"condition":"","resource":"default","is_select":true,
+						"timeout":null,"last_dispatch_id":"d1","execute_cost_time":80,
+						"status":"COMPLETED","message":null,"start_time":1700000000,
+						"end_time":1700000080,"exec_id":"e1","job_type":"normal",
+						"steps":[
+							{
+								"id":"step-1","name":"checkout","task":"actions/checkout@v4",
+								"identifier":"checkout","status":"COMPLETED","sequence":1,
+								"job_run_id":"jr-1","last_dispatch_id":"d2",
+								"start_time":1700000000,"end_time":1700000010,
+								"runtime_attribution":null,"multi_step_editable":0,
+								"official_task_version":null,"icon_url":null,"business_type":null,
+								"inputs":[{"key":"ref","value":"main"}],"env":[],
+								"endpoint_ids":null,"message":null,"daily_build_number":null,
+								"timeout-minutes":null,"continue-on-error":null
+							}
+						],
+						"max_parallel":null,"fail_fast":null,"from":null,"with":null,
+						"secrets":null,"outputs_define":null,"concurrency":null,
+						"timeout_minutes":null,"continue_on_error":null
+					}
+				]
+			}
+		]
+	}`
+}

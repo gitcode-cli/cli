@@ -559,3 +559,74 @@ func jobDetailJSON() string {
 		]
 	}`
 }
+
+func TestGetActionsJobLogBuildsV8Path(t *testing.T) {
+	var gotPath string
+	var gotAccept string
+	var gotAuth string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAccept = req.Header.Get("Accept")
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusOK, jobLogContent()), nil
+	})
+	client.SetToken("test-token", "test")
+
+	if _, err := GetActionsJobLog(client, "owner", "repo", "run-1", "job-1"); err != nil {
+		t.Fatalf("GetActionsJobLog() error = %v", err)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	want := "/api/v8/repos/owner/repo/actions/runs/run-1/jobs/job-1/download_log"
+	if gotPath != want {
+		t.Fatalf("request path = %q, want %q", gotPath, want)
+	}
+	if gotAccept != "*/*" {
+		t.Fatalf("Accept = %q, want */* (raw log, not JSON)", gotAccept)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+}
+
+func TestGetActionsJobLogRaw(t *testing.T) {
+	body := jobLogContent()
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, body), nil
+	})
+
+	got, err := GetActionsJobLog(client, "owner", "repo", "run-1", "job-1")
+	if err != nil {
+		t.Fatalf("GetActionsJobLog() error = %v", err)
+	}
+	if string(got) != body {
+		t.Fatalf("log body not preserved verbatim (len %d vs %d)", len(got), len(body))
+	}
+}
+
+func TestGetActionsJobLogError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+
+	_, err := GetActionsJobLog(client, "owner", "repo", "run-1", "missing")
+	if err == nil {
+		t.Fatal("GetActionsJobLog() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
+	}
+}
+
+func jobLogContent() string {
+	return "2026-07-08T08:52:35Z [step] starting checkout\n" +
+		"2026-07-08T08:52:39Z [step] checkout done\n" +
+		"2026-07-08T08:53:51Z [job] COMPLETED\n"
+}

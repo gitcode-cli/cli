@@ -1884,6 +1884,26 @@ gc actions job view <run-id> <job-id> -R owner/repo --json
 - 时间字段（`started`/`ended` 及 step 时间）由 API 的毫秒时间戳格式化为 RFC3339（UTC）；`--json` 保留原始毫秒整数值。`execute_cost_time` 单位未在 API 文档标明，人类视图不渲染（避免误显），`--json` 保留原始值。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`/`<job-id>`）；`3` 资源不存在（HTTP 404，如 job 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
+### actions job log - 下载工作流 job 日志
+
+下载单个工作流作业（job）的日志。需同时提供 `<run-id>`（`gc actions run list` 的 `workflow_run_id`）与 `<job-id>`（`gc actions job list` 的 `id`），对应 API 路径 `runs/{run_id}/jobs/{job_id}/download_log`。
+
+```bash
+# 保存 job 日志归档并解压
+gc actions job log <run-id> <job-id> -R owner/repo --output job-log.zip
+unzip job-log.zip
+
+# 重定向到文件（非 TTY / 管道）
+gc actions job log <run-id> <job-id> -R owner/repo > job-log.zip
+```
+
+说明：
+
+- 端点返回 **ZIP 归档**（二进制，含各 step 日志如 `0_Login to CodeArts.log`/`1_codecheck.log`），非纯文本、非 JSON；故无 `--json`。
+- 输出：`--output/-o FILE` 写文件（推荐，便于 `unzip`）；无 `--output` 时写原始字节到 stdout。**在交互式终端（TTY）且未给 `--output` 时拒绝写入**（避免二进制刷乱终端），提示用 `--output` 或重定向；管道/重定向（非 TTY）正常写原始字节。
+- 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置）；API 文档虽标 `access_token` 为 required，但 GitCode 接受 Bearer，不通过 query 暴露 token。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`/`<job-id>`，或 TTY 未给 `--output`/重定向）；`3` 资源不存在（HTTP 404，如 job 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
 ---
 
 ## 其他命令

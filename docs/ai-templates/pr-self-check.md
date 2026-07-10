@@ -15,5 +15,4 @@
 
 ---
 
-**关联 Issue**: #XXX
 **Closes #XXX**

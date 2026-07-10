@@ -403,3 +403,19 @@ func GetActionsArtifact(client *Client, owner, repo, artifactID string) (*Artifa
 	}
 	return &artifact, resp.Body, nil
 }
+
+// DownloadActionsArtifact downloads an artifact as a ZIP archive.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/artifacts/{artifact_id}/zip.
+// The endpoint returns a 302 redirect to a pre-signed download URL; the HTTP
+// client follows the redirect automatically. The response body is the raw ZIP
+// archive bytes (binary, not JSON).
+func DownloadActionsArtifact(client *Client, owner, repo, artifactID string) ([]byte, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/artifacts/" + url.PathEscape(artifactID) + "/zip"
+
+	resp, err := client.RawREST("GET", endpoint, nil, map[string]string{"Accept": "*/*"})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
+}

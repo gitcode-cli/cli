@@ -304,6 +304,9 @@ gc actions job list <run-id> -R owner/repo
 # 查看工作流 job 详情
 gc actions job view <run-id> <job-id> -R owner/repo
 
+# 下载 job 日志归档
+gc actions job log <run-id> <job-id> -R owner/repo --output job-log.zip
+
 # 调用 GitCode API 原始响应
 gc api repos/owner/repo
 

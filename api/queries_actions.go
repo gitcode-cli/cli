@@ -254,3 +254,19 @@ func GetActionsJob(client *Client, owner, repo, runID, jobID string) (*WorkflowR
 	}
 	return &job, resp.Body, nil
 }
+
+// GetActionsJobLog downloads the log of a single workflow job.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/runs/{run_id}/jobs/{job_id}/download_log.
+// The endpoint returns the raw log content (Content-Type */*, no JSON schema),
+// so this returns the response body bytes verbatim. Accept is set to */* so
+// the server returns the log rather than a JSON representation.
+func GetActionsJobLog(client *Client, owner, repo, runID, jobID string) ([]byte, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runs/" + url.PathEscape(runID) + "/jobs/" + url.PathEscape(jobID) + "/download_log"
+
+	resp, err := client.RawREST("GET", endpoint, nil, map[string]string{"Accept": "*/*"})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
+}

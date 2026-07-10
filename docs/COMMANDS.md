@@ -1957,6 +1957,25 @@ gc actions artifact view <artifact-id> -R owner/repo --json
 - 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<artifact-id>`，或 artifact_id 格式不合法 → HTTP 400 参数类型错误）；`3` 资源不存在（HTTP 404，如 artifact 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。注意：该端点对格式不合法的 artifact_id 返回 HTTP 400（exit 2），而非 404。
 
+### actions artifact download - 下载 Artifact
+
+下载单个制品（artifact）为 ZIP 归档。`<artifact-id>` 取 `gc actions artifact list` 返回的 `id`。端点返回 302 跳转到预签名下载 URL，HTTP 客户端自动跟随，最终获取 ZIP 字节。
+
+```bash
+# 保存 artifact 到文件
+gc actions artifact download <artifact-id> -R owner/repo --output artifact.zip
+
+# 重定向到文件（非 TTY / 管道）
+gc actions artifact download <artifact-id> -R owner/repo > artifact.zip
+```
+
+说明：
+
+- 端点返回 **ZIP 归档**（二进制），非 JSON；故无 `--json`。
+- 输出：`--output/-o FILE` 写文件（推荐）；无 `--output` 时写原始字节到 stdout。**在交互式终端（TTY）且未给 `--output` 时拒绝写入**（避免二进制刷乱终端），提示用 `--output` 或重定向；管道/重定向（非 TTY）正常写原始字节。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<artifact-id>`，或 TTY 未给 `--output`/重定向，或 artifact_id 格式不合法 → HTTP 400）；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
 ---
 
 ## 其他命令

@@ -128,7 +128,7 @@ Refs #23" \
 PR body 必须含 `Closes #XXX`（或 `Fixes #XXX` / `Resolves #XXX`）关联对应 issue：
 
 - **PR body 的 `Closes #XXX` 在 merge 后触发 GitCode 自动关闭关联 issue**
-- **GitCode 对 PR body 里的裸 `#NNN` 也触发自动关闭**（不止 `Closes`/`Fixes`/`Resolves`，任何 `#NNN` 提及都可能在 merge 时被解析为关闭引用）— PR body 自检/描述/未覆盖项文本不得出现 `#NNN`（除 `Closes #XXX` 行外），如需引用其他 issue 用文字描述（如"后续 run view 交付"）
+- **GitCode 对 PR body 里的裸 `#NNN`（即无 `Closes`/`Fixes`/`Resolves`/`Refs` 等关键字前缀的 `#NNN`）也触发自动关闭** — PR body 自检/描述/未覆盖项文本不得出现裸 `#NNN`（除 `Closes #XXX` 行外），如需引用其他 issue 用文字描述（如"后续 run view 交付"）
 - **commit message 的 `Closes #XXX` 不被 GitCode 识别为自动关闭**（实测：某 issue commit message 含 `Closes` 但 issue 未自动关闭，需手动 close；改用 PR body `Closes` 后 merge 即自动关闭）
 - 实测：PR body 自检文本裸写其他 issue 编号（如"jobs(#NNN)"在"未覆盖项"段落）导致 merge 时未交付 issue 被误关；后续 PR body 不得裸写 `#NNN`
 - 用 `Refs #XXX` 仅引用不关闭，适用于非修复型 PR（如重构、文档）
@@ -142,7 +142,6 @@ gc pr create --title "fix: ..." --body-file pr-self-check.md
 PR body（self-check）末尾含：
 
 ```
-**关联 Issue**: #NNN
 **Closes #NNN**
 ```
 

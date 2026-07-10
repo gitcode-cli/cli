@@ -285,7 +285,7 @@ gh run view <run-id> --log --job=<job-id>
 - 判断"某个 issue / 功能是否已合入主干"时，必须以 merged PR 和 `origin/main` 为准，不能只依据 issue 状态、issue comment、release 文案或功能分支存在与否
 - 如果 issue 已关闭但没有 merged PR 或 `origin/main` 不包含对应代码，必须明确判定为"未完成主干合入"
 - 创建 PR 时 body 必须含 `Closes #XXX`（或 `Fixes #XXX`/`Resolves #XXX`）关联对应 issue（修复型 PR）；非修复型 PR（重构、文档等）使用 `Refs #XXX` 仅引用不关闭；commit message 的 `Closes` 不被 GitCode 识别为自动关闭，PR body 的 `Closes #XXX` 会在 merge 后自动关闭 issue（见 [spec/workflows/pr-workflow.md](./spec/workflows/pr-workflow.md) §5）
-- **GitCode 对 PR body 里的裸 `#NNN` 也触发自动关闭**（不止 `Closes`/`Fixes`/`Resolves`，任何 `#NNN` 提及都可能在 merge 时被 GitCode 解析为关闭引用）：PR body 自检/描述/未覆盖项文本不得出现 `#NNN`（除 `Closes #XXX` 行外），如需引用其他 issue 用文字描述（如"后续 run view 交付"）
+- **GitCode 对 PR body 里的裸 `#NNN`（即无 `Closes`/`Fixes`/`Resolves`/`Refs` 等关键字前缀的 `#NNN`）也触发自动关闭**：PR body 自检/描述/未覆盖项文本不得出现裸 `#NNN`（除 `Closes #XXX` 行外），如需引用其他 issue 用文字描述（如"后续 run view 交付"）
 - 外部项目使用 AI 操作 GitCode 的说明以 `docs/AI-GUIDE.md` 为准，但该文档不定义本仓库内部开发流程
 - 代码或流程变化后必须同步检查相关文档
 - 实际命令测试只能使用 `infra-test/*`

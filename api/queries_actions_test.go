@@ -406,6 +406,23 @@ func TestListActionsRunJobsEmpty(t *testing.T) {
 	}
 }
 
+func TestListActionsRunJobsNullJobs(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `{"total_count":3,"jobs":null}`), nil
+	})
+
+	resp, err := ListActionsRunJobs(client, "owner", "repo", "run-1")
+	if err != nil {
+		t.Fatalf("ListActionsRunJobs() error = %v", err)
+	}
+	if resp.TotalCount != 3 {
+		t.Fatalf("TotalCount = %d, want 3", resp.TotalCount)
+	}
+	if resp.Jobs != nil {
+		t.Fatalf("Jobs = %v, want nil for null response", resp.Jobs)
+	}
+}
+
 func TestListActionsRunJobsError(t *testing.T) {
 	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
 		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil

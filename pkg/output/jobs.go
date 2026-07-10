@@ -56,7 +56,7 @@ func (p *WorkflowJobListPrinter) printSimple(w io.Writer, jobs []api.WorkflowRun
 			maxStatusWidth,
 			p.statusLabel(job, maxStatusWidth),
 			fmt.Sprintf("%-*s", maxNameWidth, jobName(job)),
-			fmt.Sprintf("%d steps", len(job.Steps)),
+			stepsLabel(len(job.Steps)),
 		)
 	}
 	return nil
@@ -130,4 +130,11 @@ func jobName(job api.WorkflowRunJob) string {
 		return job.Name
 	}
 	return job.Identifier
+}
+
+func stepsLabel(n int) string {
+	if n == 1 {
+		return "1 step"
+	}
+	return fmt.Sprintf("%d steps", n)
 }

@@ -163,6 +163,61 @@ func TestListRunEmptyJSON(t *testing.T) {
 	}
 }
 
+func TestListRunNullJobsJSON(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return listTestResponse(http.StatusOK, `{"total_count":3,"jobs":null}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		RunID:      "run-1",
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	if out.String() != "[]\n" {
+		t.Fatalf("output = %q, want []\\n (null jobs normalized)", out.String())
+	}
+}
+
+func TestListRunTable(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return listTestResponse(http.StatusOK, jobsResponseJSON()), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		RunID:      "run-1",
+		Format:     "table",
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	got := out.String()
+	for _, want := range []string{"STATUS", "NAME", "IDENTIFIER", "SEQUENCE", "STEPS", "compile", "test"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("table output missing %q; output=%s", want, got)
+		}
+	}
+}
+
 func TestListRunHumanRendering(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

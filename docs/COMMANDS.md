@@ -1939,6 +1939,24 @@ gc actions artifact list -R owner/repo --json
 - 分页：`--limit`/`-L`（默认 30，映射为 `per_page`）、`--page`、`--paginate`（抓取全部分页至 `--limit`）、`--per-page`。`--paginate` 与 `--page` 互斥。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如 `--paginate` 与 `--page` 同用、`--limit`/`--per-page` 为负）；`3` 资源不存在（HTTP 404，如仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
+### actions artifact view - 查看 Artifact 详情
+
+查看单个制品（artifact）的详情。`<artifact-id>` 取 `gc actions artifact list` 返回的 `id`。
+
+```bash
+# 查看 artifact 详情
+gc actions artifact view <artifact-id> -R owner/repo
+
+# 忠实 JSON 输出（保留 API 全部字段）
+gc actions artifact view <artifact-id> -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，**原样透传 API 响应**（字段名直接映射 Actions v8 API，时间字段为字符串型毫秒时间戳）。人类可读视图（默认）显示 artifact 元信息（name/id/size 人类可读 B/KiB/MiB/GiB/digest/workflow_run_id/created/updated/expires，时间 ms→RFC3339 UTC）。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<artifact-id>`，或 artifact_id 格式不合法 → HTTP 400 参数类型错误）；`3` 资源不存在（HTTP 404，如 artifact 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。注意：该端点对格式不合法的 artifact_id 返回 HTTP 400（exit 2），而非 404。
+
 ---
 
 ## 其他命令

@@ -310,6 +310,9 @@ gc actions job log <run-id> <job-id> -R owner/repo --output job-log.zip
 # 列出仓库 artifacts
 gc actions artifact list -R owner/repo
 
+# 查看 artifact 详情
+gc actions artifact view <artifact-id> -R owner/repo
+
 # 调用 GitCode API 原始响应
 gc api repos/owner/repo
 

@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/artifact/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/artifact/view"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -20,10 +21,14 @@ func NewCmdArtifact(f *cmdutil.Factory) *cobra.Command {
 		Example: heredoc.Doc(`
 			# List repository artifacts
 			$ gc actions artifact list -R owner/repo
+
+			# View an artifact detail
+			$ gc actions artifact view <artifact-id> -R owner/repo
 		`),
 	}
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(view.NewCmdView(f, nil))
 
 	return cmd
 }

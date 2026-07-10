@@ -295,6 +295,9 @@ gc precommit check
 # 查看流水线运行记录
 gc actions run list -R owner/repo --status FAILED
 
+# 查看流水线运行详情
+gc actions run view <run-id> -R owner/repo
+
 # 调用 GitCode API 原始响应
 gc api repos/owner/repo
 

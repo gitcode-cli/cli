@@ -5,6 +5,7 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
+	jobcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/job"
 	runcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/run"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
@@ -31,6 +32,9 @@ func NewCmdActions(f *cmdutil.Factory) *cobra.Command {
 
 			# Output runs as JSON
 			$ gc actions run list -R owner/repo --json
+
+			# List jobs of a pipeline run
+			$ gc actions job list <run-id> -R owner/repo
 		`),
 		Annotations: map[string]string{
 			"IsCore": "true",
@@ -38,6 +42,7 @@ func NewCmdActions(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(runcmd.NewCmdRun(f))
+	cmd.AddCommand(jobcmd.NewCmdJob(f))
 
 	return cmd
 }

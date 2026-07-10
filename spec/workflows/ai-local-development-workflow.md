@@ -245,6 +245,7 @@ python3 scripts/validate-ai-record.py --mode record --kind pr-self-check /path/t
 - 不得让作者与评审者是同一执行主体
 - 不得把 `issues-plan/PROGRESS.md` 当成实时事实源
 - 不得把 `docs/AI-GUIDE.md` 当成仓库内部开发规则
+- 不得在 PR body 自检/描述文本裸写 `#NNN`（GitCode 对裸 `#NNN` 也触发自动关闭，会误关未交付 issue；仅在 `Closes #XXX` 行使用 `#NNN`，其余用文字描述）
 
 ## 下一步去看哪里
 

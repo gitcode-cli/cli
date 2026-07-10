@@ -206,3 +206,30 @@ func GetActionsRun(client *Client, owner, repo, runID string) (*WorkflowRunDetai
 	}
 	return &detail, resp.Body, nil
 }
+
+// WorkflowRunJobsResponse represents the response from listing the jobs of a
+// workflow run.
+type WorkflowRunJobsResponse struct {
+	TotalCount int              `json:"total_count"`
+	Jobs       []WorkflowRunJob `json:"jobs"`
+}
+
+// ListActionsRunJobs lists the jobs of a single pipeline run.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/runs/{run_id}/jobs. The
+// job items share the WorkflowRunJob type used by the run detail response
+// (the job shape is identical in both endpoints).
+func ListActionsRunJobs(client *Client, owner, repo, runID string) (*WorkflowRunJobsResponse, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runs/" + url.PathEscape(runID) + "/jobs"
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result WorkflowRunJobsResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse workflow run jobs response: %w", err)
+	}
+	return &result, nil
+}

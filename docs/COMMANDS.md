@@ -1844,6 +1844,27 @@ gc actions run view <run-id> -R owner/repo --json
 - 时间字段（`started`/`ended`/`paused` 及 stage/job 时间）由 API 的毫秒时间戳格式化为 RFC3339（UTC）；`--json` 保留原始毫秒整数值。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`）；`3` 资源不存在（HTTP 404，如 run 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
+### actions job list - 列出工作流运行的 jobs
+
+列出一条流水线运行（run）下的工作流作业（jobs）。`<run-id>` 取 `gc actions run list` 返回的 `workflow_run_id`。
+
+```bash
+# 列出 run 的 jobs
+gc actions job list <run-id> -R owner/repo
+
+# 表格输出
+gc actions job list <run-id> -R owner/repo --format table
+
+# 机器可消费输出
+gc actions job list <run-id> -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，为数组，每项映射 `WorkflowRunJob`（`id`、`name`、`identifier`、`status`、`sequence`、`job_type`、`resource`、`condition`、`is_select`、`depends_on`、`start_time`、`end_time`、`execute_cost_time`、`exec_id`、`last_dispatch_id`、`steps`）；空结果输出 `[]`。深层可空执行字段（`category`/`async`/`timeout`/`message`/`max_parallel` 等）不建模（多为 null，列表视图用不到；完整明细见 `actions run view` 或后续 `job view`）。
+- 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`）；`3` 资源不存在（HTTP 404，如 run 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
 ---
 
 ## 其他命令

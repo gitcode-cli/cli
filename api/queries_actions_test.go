@@ -337,3 +337,102 @@ func detailRunJSON() string {
 		]
 	}`
 }
+
+func TestListActionsRunJobsBuildsV8Path(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusOK, jobsResponseJSON()), nil
+	})
+	client.SetToken("test-token", "test")
+
+	if _, err := ListActionsRunJobs(client, "owner", "repo", "run-1"); err != nil {
+		t.Fatalf("ListActionsRunJobs() error = %v", err)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	want := "/api/v8/repos/owner/repo/actions/runs/run-1/jobs"
+	if gotPath != want {
+		t.Fatalf("request path = %q, want %q", gotPath, want)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+}
+
+func TestListActionsRunJobsParses(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, jobsResponseJSON()), nil
+	})
+
+	resp, err := ListActionsRunJobs(client, "owner", "repo", "run-1")
+	if err != nil {
+		t.Fatalf("ListActionsRunJobs() error = %v", err)
+	}
+	if resp.TotalCount != 2 {
+		t.Fatalf("TotalCount = %d, want 2", resp.TotalCount)
+	}
+	if len(resp.Jobs) != 2 {
+		t.Fatalf("len(Jobs) = %d, want 2", len(resp.Jobs))
+	}
+	j := resp.Jobs[0]
+	if j.Name != "compile" || j.Status != "COMPLETED" {
+		t.Fatalf("job0 = name=%q status=%q, want compile/COMPLETED", j.Name, j.Status)
+	}
+	if len(j.Steps) != 1 {
+		t.Fatalf("len(job0.Steps) = %d, want 1", len(j.Steps))
+	}
+	if j.Steps[0].Name != "checkout" {
+		t.Fatalf("step0 name = %q, want checkout", j.Steps[0].Name)
+	}
+}
+
+func TestListActionsRunJobsEmpty(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `{"total_count":0,"jobs":[]}`), nil
+	})
+
+	resp, err := ListActionsRunJobs(client, "owner", "repo", "run-1")
+	if err != nil {
+		t.Fatalf("ListActionsRunJobs() error = %v", err)
+	}
+	if resp.TotalCount != 0 || len(resp.Jobs) != 0 {
+		t.Fatalf("TotalCount=%d len(Jobs)=%d, want 0/0", resp.TotalCount, len(resp.Jobs))
+	}
+}
+
+func TestListActionsRunJobsError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+
+	_, err := ListActionsRunJobs(client, "owner", "repo", "missing")
+	if err == nil {
+		t.Fatal("ListActionsRunJobs() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
+	}
+}
+
+func jobsResponseJSON() string {
+	return `{
+		"total_count": 2,
+		"jobs": [
+			{"id":"job-1","name":"compile","identifier":"compile","status":"COMPLETED",
+			 "sequence":1,"job_type":"normal","resource":"default","steps":[
+				{"id":"step-1","name":"checkout","task":"actions/checkout@v4","status":"COMPLETED"}]},
+			{"id":"job-2","name":"test","identifier":"test","status":"FAILED",
+			 "sequence":2,"job_type":"normal","resource":"default","steps":[]}
+		]
+	}`
+}

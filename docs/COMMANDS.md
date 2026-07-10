@@ -1904,6 +1904,38 @@ gc actions job log <run-id> <job-id> -R owner/repo > job-log.zip
 - 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置）；API 文档虽标 `access_token` 为 required，但 GitCode 接受 Bearer，不通过 query 暴露 token。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`/`<job-id>`，或 TTY 未给 `--output`/重定向）；`3` 资源不存在（HTTP 404，如 job 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
+### actions artifact list - 列出仓库 Artifacts
+
+分页查询仓库下的制品（artifacts），支持按名称模糊过滤与排序。过滤在服务端应用。
+
+```bash
+# 列出仓库 artifacts
+gc actions artifact list -R owner/repo
+
+# 按名称过滤（模糊匹配）
+gc actions artifact list -R owner/repo --name build
+
+# 按创建时间排序
+gc actions artifact list -R owner/repo --sort created --direction desc
+
+# 抓取全部分页
+gc actions artifact list -R owner/repo --paginate --per-page 100
+
+# 表格输出
+gc actions artifact list -R owner/repo --format table
+
+# 机器可消费输出
+gc actions artifact list -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，为数组，每项映射 `Artifact`（`id`、`name`、`size_bytes`、`workflow_id`、`workflow_run_id`、`digest`、`expires_at`、`created_at`、`updated_at`；时间为字符串型毫秒时间戳）；空结果输出 `[]`。
+- `--sort` 取值 `created`；`--direction` 取值 `asc`/`desc`。枚举为元数据（schema/help 发现用），不在本地强制校验，非法值原样透传给 API。
+- 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
+- 分页：`--limit`/`-L`（默认 30，映射为 `per_page`）、`--page`、`--paginate`（抓取全部分页至 `--limit`）、`--per-page`。`--paginate` 与 `--page` 互斥。
+- 退出码：`0` 成功；`1` 通用错误（含 API 错误，如仓库不存在的 `HTTP 404`）；`2` 参数错误（如 `--paginate` 与 `--page` 同用、`--limit`/`--per-page` 为负）；`3` 资源不存在（HTTP 404，如仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
 ---
 
 ## 其他命令

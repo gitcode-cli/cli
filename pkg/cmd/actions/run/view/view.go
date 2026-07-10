@@ -180,9 +180,20 @@ func orDash(s string) string {
 	return s
 }
 
+// msTimestampThreshold separates second from millisecond timestamps.
+// Values at or above it are treated as milliseconds and divided by 1000.
+// Seconds are ~1.7e9 (10 digits); the Actions v8 API returns milliseconds
+// (~1.7e12, 13 digits). The threshold leaves seconds untouched for any
+// realistic date while covering millisecond values from 1973 onward.
+const msTimestampThreshold = 100_000_000_000 // 1e11
+
 func formatTime(t int64) string {
 	if t <= 0 {
 		return "-"
 	}
-	return time.Unix(t, 0).UTC().Format(time.RFC3339)
+	secs := t
+	if t >= msTimestampThreshold {
+		secs = t / 1000
+	}
+	return time.Unix(secs, 0).UTC().Format(time.RFC3339)
 }

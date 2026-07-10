@@ -1841,6 +1841,7 @@ gc actions run view <run-id> -R owner/repo --json
 
 - 支持 `--json`：输出写入 stdout，**原样透传 API 响应**（字段名直接映射 Actions v8 API，保留 `stages[].jobs[].steps[]` 及 `pre`/`post`/`parallel`/`condition`/`inputs`/`env` 等深层/可空字段，不被本地类型裁剪）。人类可读视图（默认）只摘要显示运行元信息 + stages/jobs 状态与计数，steps 明细见 `--json`。
 - 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
+- 时间字段（`started`/`ended`/`paused` 及 stage/job 时间）由 API 的毫秒时间戳格式化为 RFC3339（UTC）；`--json` 保留原始毫秒整数值。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`）；`3` 资源不存在（HTTP 404，如 run 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
 ---

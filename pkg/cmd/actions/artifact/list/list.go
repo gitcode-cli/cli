@@ -58,6 +58,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			# List repository artifacts
 			$ gc actions artifact list -R owner/repo
 
+			# List artifacts of a specific run
+			$ gc actions artifact list -R owner/repo --run <run-id>
+
 			# Filter by name (fuzzy)
 			$ gc actions artifact list -R owner/repo --name build
 

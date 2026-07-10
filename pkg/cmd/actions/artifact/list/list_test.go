@@ -376,6 +376,56 @@ func TestListRunPaginatesUntilLimit(t *testing.T) {
 	}
 }
 
+func TestListRunPaginateWithRunFlag(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := iostreams.Test()
+	var gotPaths []string
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotPath := req.URL.Path
+					if req.URL.RawQuery != "" {
+						gotPath += "?" + req.URL.RawQuery
+					}
+					gotPaths = append(gotPaths, gotPath)
+					switch req.URL.Query().Get("page") {
+					case "1":
+						return listTestResponse(http.StatusOK, `{"total_count":2,"artifacts":[{"id":"a1","name":"a"},{"id":"a2","name":"b"}]}`), nil
+					default:
+						return listTestResponse(http.StatusOK, `{"total_count":2,"artifacts":[]}`), nil
+					}
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		RunID:      "run-1",
+		Limit:      30,
+		Paginate:   true,
+		PerPage:    2,
+		PerPageSet: true,
+		JSON:       true,
+	}
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	// Verify all requests hit the run-scoped endpoint (not repo-level).
+	for _, p := range gotPaths {
+		if !strings.HasPrefix(p, "/api/v8/repos/owner/repo/actions/runs/run-1/artifacts") {
+			t.Fatalf("paginate+--run path = %q, want run-scoped prefix", p)
+		}
+	}
+	var arts []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &arts); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if len(arts) != 2 {
+		t.Fatalf("len(arts) = %d, want 2", len(arts))
+	}
+}
+
 func TestListRunTrimsToLimit(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

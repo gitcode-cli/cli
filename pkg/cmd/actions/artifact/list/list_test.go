@@ -236,7 +236,7 @@ func TestListRunTable(t *testing.T) {
 		t.Fatalf("listRun() error = %v", err)
 	}
 	got := out.String()
-	for _, want := range []string{"NAME", "ID", "SIZE", "CREATED", "EXPIRES", "build-output", "art-1"} {
+	for _, want := range []string{"NAME", "ID", "SIZE", "CREATED", "EXPIRES", "build-output", "art-1", "1.0 MiB", "2026-"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("table output missing %q; output=%s", want, got)
 		}
@@ -266,6 +266,145 @@ func TestListRunError(t *testing.T) {
 	}
 	if got := cmdutil.ExitCode(err); got != cmdutil.ExitNotFound {
 		t.Fatalf("ExitCode = %d, want %d (404 preserved through %%w)", got, cmdutil.ExitNotFound)
+	}
+}
+
+func TestListRunInvalidLimit(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	io, _, _, _ := iostreams.Test()
+	opts := &ListOptions{IO: io, HttpClient: func() (*http.Client, error) { return &http.Client{}, nil }, Repository: "owner/repo", Limit: 0}
+	if err := listRun(opts); err == nil {
+		t.Fatal("listRun() error = nil, want usage error for --limit 0")
+	}
+}
+
+func TestListRunPaginateWithPage(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	io, _, _, _ := iostreams.Test()
+	opts := &ListOptions{IO: io, HttpClient: func() (*http.Client, error) { return &http.Client{}, nil }, Repository: "owner/repo", Limit: 30, Paginate: true, Page: 2}
+	if err := listRun(opts); err == nil {
+		t.Fatal("listRun() error = nil, want usage error for --paginate with --page")
+	}
+}
+
+func TestListRunPaginateDefaultPerPage(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := iostreams.Test()
+	var gotPath string
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotPath = req.URL.Path
+					if req.URL.RawQuery != "" {
+						gotPath += "?" + req.URL.RawQuery
+					}
+					return listTestResponse(http.StatusOK, `{"total_count":0,"artifacts":[]}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Paginate:   true,
+	}
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	parsed, err := url.Parse(gotPath)
+	if err != nil {
+		t.Fatalf("url.Parse() error = %v", err)
+	}
+	if got := parsed.Query().Get("per_page"); got != "100" {
+		t.Fatalf("per_page = %q, want 100 (paginate default)", got)
+	}
+}
+
+func TestListRunPaginatesUntilLimit(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := iostreams.Test()
+	var gotPaths []string
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotPath := req.URL.Path
+					if req.URL.RawQuery != "" {
+						gotPath += "?" + req.URL.RawQuery
+					}
+					gotPaths = append(gotPaths, gotPath)
+					switch req.URL.Query().Get("page") {
+					case "1":
+						return listTestResponse(http.StatusOK, `{"total_count":3,"artifacts":[{"id":"a1","name":"a"},{"id":"a2","name":"b"}]}`), nil
+					case "2":
+						return listTestResponse(http.StatusOK, `{"total_count":3,"artifacts":[{"id":"a3","name":"c"},{"id":"a4","name":"d"}]}`), nil
+					default:
+						t.Fatalf("unexpected page %q", req.URL.Query().Get("page"))
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      3,
+		LimitSet:   true,
+		Paginate:   true,
+		PerPage:    2,
+		PerPageSet: true,
+		JSON:       true,
+	}
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	for _, want := range []string{
+		"/api/v8/repos/owner/repo/actions/artifacts?page=1&per_page=2",
+		"/api/v8/repos/owner/repo/actions/artifacts?page=2&per_page=2",
+	} {
+		if !slices.Contains(gotPaths, want) {
+			t.Fatalf("paths = %#v, missing %q", gotPaths, want)
+		}
+	}
+	var arts []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &arts); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if len(arts) != 3 {
+		t.Fatalf("len(arts) = %d, want 3; output=%s", len(arts), out.String())
+	}
+}
+
+func TestListRunTrimsToLimit(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return listTestResponse(http.StatusOK, `{"total_count":3,"artifacts":[{"id":"a1","name":"a","size_bytes":10},{"id":"a2","name":"b","size_bytes":20},{"id":"a3","name":"c","size_bytes":30}]}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      2,
+		LimitSet:   true,
+		PerPage:    30,
+		PerPageSet: true,
+		JSON:       true,
+	}
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	var arts []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &arts); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if len(arts) != 2 {
+		t.Fatalf("len(arts) = %d, want 2 (trimmed to --limit)", len(arts))
 	}
 }
 

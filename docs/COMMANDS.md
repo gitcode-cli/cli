@@ -1934,7 +1934,7 @@ gc actions artifact list -R owner/repo --json
 - `--sort` 取值 `created`；`--direction` 取值 `asc`/`desc`。枚举为元数据（schema/help 发现用），不在本地强制校验，非法值原样透传给 API。
 - 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
 - 分页：`--limit`/`-L`（默认 30，映射为 `per_page`）、`--page`、`--paginate`（抓取全部分页至 `--limit`）、`--per-page`。`--paginate` 与 `--page` 互斥。
-- 退出码：`0` 成功；`1` 通用错误（含 API 错误，如仓库不存在的 `HTTP 404`）；`2` 参数错误（如 `--paginate` 与 `--page` 同用、`--limit`/`--per-page` 为负）；`3` 资源不存在（HTTP 404，如仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如 `--paginate` 与 `--page` 同用、`--limit`/`--per-page` 为负）；`3` 资源不存在（HTTP 404，如仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
 ---
 

@@ -834,3 +834,96 @@ func TestListActionsRunArtifactsError(t *testing.T) {
 		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
 	}
 }
+
+func TestGetActionsArtifactBuildsV8Path(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusOK, artifactDetailJSON()), nil
+	})
+	client.SetToken("test-token", "test")
+
+	if _, _, err := GetActionsArtifact(client, "owner", "repo", "art-1"); err != nil {
+		t.Fatalf("GetActionsArtifact() error = %v", err)
+	}
+	assertNoAccessTokenQuery(t, gotPath)
+	want := "/api/v8/repos/owner/repo/actions/artifacts/art-1"
+	if gotPath != want {
+		t.Fatalf("request path = %q, want %q", gotPath, want)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+}
+
+func TestGetActionsArtifactParses(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, artifactDetailJSON()), nil
+	})
+	a, raw, err := GetActionsArtifact(client, "owner", "repo", "art-1")
+	if err != nil {
+		t.Fatalf("GetActionsArtifact() error = %v", err)
+	}
+	if a == nil {
+		t.Fatal("artifact = nil")
+	}
+	if a.ID != "art-1" || a.Name != "build-output" || a.SizeBytes != 1048576 {
+		t.Fatalf("artifact = id=%q name=%q size=%d, want art-1/build-output/1048576", a.ID, a.Name, a.SizeBytes)
+	}
+	if a.Digest != "sha256:abc" || a.WorkflowRunID != "run-1" {
+		t.Fatalf("digest=%q workflow_run_id=%q, want sha256:abc/run-1", a.Digest, a.WorkflowRunID)
+	}
+	if len(raw) == 0 {
+		t.Fatal("raw = empty, want non-empty")
+	}
+}
+
+func TestGetActionsArtifactRawIsFaithful(t *testing.T) {
+	body := artifactDetailJSON()
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, body), nil
+	})
+	_, raw, err := GetActionsArtifact(client, "owner", "repo", "art-1")
+	if err != nil {
+		t.Fatalf("GetActionsArtifact() error = %v", err)
+	}
+	if string(raw) != body {
+		t.Fatalf("raw body not preserved verbatim (len %d vs %d)", len(raw), len(body))
+	}
+}
+
+func TestGetActionsArtifactError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+	_, _, err := GetActionsArtifact(client, "owner", "repo", "missing")
+	if err == nil {
+		t.Fatal("GetActionsArtifact() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
+	}
+}
+
+func artifactDetailJSON() string {
+	return `{
+		"id":"art-1",
+		"name":"build-output",
+		"size_bytes":1048576,
+		"workflow_id":"wf-1",
+		"workflow_run_id":"run-1",
+		"digest":"sha256:abc",
+		"expires_at":"1783587145000",
+		"created_at":"1783500745000",
+		"updated_at":"1783500745000"
+	}`
+}

@@ -383,3 +383,23 @@ func ListActionsRunArtifacts(client *Client, owner, repo, runID string, opts *Ac
 	}
 	return &result, nil
 }
+
+// GetActionsArtifact fetches the detail of a single artifact.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/artifacts/{artifact_id}.
+// It returns both the typed artifact (for the human-facing view) and the raw
+// response body (for faithful --json output), mirroring GetActionsRun/GetActionsJob.
+func GetActionsArtifact(client *Client, owner, repo, artifactID string) (*Artifact, json.RawMessage, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/artifacts/" + url.PathEscape(artifactID)
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var artifact Artifact
+	if err := json.Unmarshal(resp.Body, &artifact); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse artifact response: %w", err)
+	}
+	return &artifact, resp.Body, nil
+}

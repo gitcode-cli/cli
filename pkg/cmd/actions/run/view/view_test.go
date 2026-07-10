@@ -201,3 +201,34 @@ func detailRunJSON() string {
 			"status":"COMPLETED","steps":[{"id":"step-1","name":"checkout","status":"COMPLETED"}]}]}]
 	}`
 }
+
+func TestFormatTime(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		in   int64
+		want string
+	}{
+		{name: "zero", in: 0, want: "-"},
+		{name: "negative", in: -1, want: "-"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := formatTime(tt.in); got != tt.want {
+				t.Errorf("formatTime(%d) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+
+	// The Actions v8 API returns millisecond timestamps (13 digits). A
+	// millisecond value and its second equivalent must render identically,
+	// and must not explode into year 58486 (the pre-fix bug).
+	const sec int64 = 1783500745
+	ms := sec * 1000
+	gotSec := formatTime(sec)
+	gotMs := formatTime(ms)
+	if gotSec != gotMs {
+		t.Fatalf("formatTime(sec)=%q != formatTime(ms)=%q", gotSec, gotMs)
+	}
+	if !strings.HasPrefix(gotSec, "2026") {
+		t.Fatalf("formatTime(%d) = %q, want a 2026 date (ms/s mixup renders 58486)", sec, gotSec)
+	}
+}

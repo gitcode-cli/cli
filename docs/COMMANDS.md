@@ -1906,11 +1906,14 @@ gc actions job log <run-id> <job-id> -R owner/repo > job-log.zip
 
 ### actions artifact list - 列出仓库 Artifacts
 
-分页查询仓库下的制品（artifacts），支持按名称模糊过滤与排序。过滤在服务端应用。
+分页查询仓库下的制品（artifacts），支持按名称模糊过滤与排序。`--run <run-id>` 切换到特定 Run 的制品列表（API 路径 `/actions/runs/{run_id}/artifacts`）。过滤在服务端应用。
 
 ```bash
 # 列出仓库 artifacts
 gc actions artifact list -R owner/repo
+
+# 列出特定 Run 的 artifacts
+gc actions artifact list -R owner/repo --run <run-id>
 
 # 按名称过滤（模糊匹配）
 gc actions artifact list -R owner/repo --name build

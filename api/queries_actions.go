@@ -342,3 +342,44 @@ func ListActionsArtifacts(client *Client, owner, repo string, opts *ActionsListA
 	}
 	return &result, nil
 }
+
+// ListActionsRunArtifacts lists the artifacts produced by a specific run.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/runs/{run_id}/artifacts.
+// The response shape (Artifact items, total_count) is identical to the
+// repository-level artifacts endpoint, so it reuses ArtifactsResponse and
+// ActionsListArtifactsOptions.
+func ListActionsRunArtifacts(client *Client, owner, repo, runID string, opts *ActionsListArtifactsOptions) (*ArtifactsResponse, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runs/" + url.PathEscape(runID) + "/artifacts"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Name != "" {
+			values.Set("name", opts.Name)
+		}
+		if opts.Sort != "" {
+			values.Set("sort", opts.Sort)
+		}
+		if opts.Direction != "" {
+			values.Set("direction", opts.Direction)
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result ArtifactsResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse run artifacts response: %w", err)
+	}
+	return &result, nil
+}

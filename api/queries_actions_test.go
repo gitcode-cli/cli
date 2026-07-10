@@ -770,3 +770,67 @@ func artifactsResponseJSON() string {
 		]
 	}`
 }
+
+func TestListActionsRunArtifactsBuildsV8Path(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusOK, artifactsResponseJSON()), nil
+	})
+	client.SetToken("test-token", "test")
+
+	if _, err := ListActionsRunArtifacts(client, "owner", "repo", "run-1", &ActionsListArtifactsOptions{
+		Name: "build", Sort: "created", Direction: "desc", PerPage: 50, Page: 2,
+	}); err != nil {
+		t.Fatalf("ListActionsRunArtifacts() error = %v", err)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	wantPrefix := "/api/v8/repos/owner/repo/actions/runs/run-1/artifacts?"
+	if !strings.HasPrefix(gotPath, wantPrefix) {
+		t.Fatalf("request path = %q, want prefix %q", gotPath, wantPrefix)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+}
+
+func TestListActionsRunArtifactsParses(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, artifactsResponseJSON()), nil
+	})
+
+	resp, err := ListActionsRunArtifacts(client, "owner", "repo", "run-1", nil)
+	if err != nil {
+		t.Fatalf("ListActionsRunArtifacts() error = %v", err)
+	}
+	if resp.TotalCount != 1 || len(resp.Artifacts) != 1 {
+		t.Fatalf("TotalCount=%d len(Artifacts)=%d, want 1/1", resp.TotalCount, len(resp.Artifacts))
+	}
+	if resp.Artifacts[0].ID != "art-1" {
+		t.Fatalf("artifact id = %q, want art-1", resp.Artifacts[0].ID)
+	}
+}
+
+func TestListActionsRunArtifactsError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+
+	_, err := ListActionsRunArtifacts(client, "owner", "repo", "missing", nil)
+	if err == nil {
+		t.Fatal("ListActionsRunArtifacts() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
+	}
+}

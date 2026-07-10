@@ -49,6 +49,7 @@ func TestDownloadRunBuildsV8Path(t *testing.T) {
 
 	io, _, _, _ := iostreams.Test()
 	var gotPath string
+	outFile := filepath.Join(t.TempDir(), "test.zip")
 	opts := &DownloadOptions{
 		IO: io,
 		HttpClient: func() (*http.Client, error) {
@@ -64,7 +65,7 @@ func TestDownloadRunBuildsV8Path(t *testing.T) {
 		},
 		Repository: "owner/repo",
 		ArtifactID: "art-1",
-		Output:     "/dev/null",
+		Output:     outFile,
 	}
 	if err := downloadRun(opts); err != nil {
 		t.Fatalf("downloadRun() error = %v", err)
@@ -154,7 +155,7 @@ func TestDownloadRunError(t *testing.T) {
 		},
 		Repository: "owner/repo",
 		ArtifactID: "missing",
-		Output:     "/dev/null",
+		Output:     filepath.Join(t.TempDir(), "test.zip"),
 	}
 	err := downloadRun(opts)
 	if err == nil {

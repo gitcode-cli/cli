@@ -174,6 +174,9 @@ func TestViewRunError(t *testing.T) {
 	if !strings.Contains(err.Error(), "failed to get pipeline run") {
 		t.Fatalf("error = %q, want to wrap pipeline run failure", err.Error())
 	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitNotFound {
+		t.Fatalf("ExitCode = %d, want %d (404 preserved through %%w wrap)", got, cmdutil.ExitNotFound)
+	}
 }
 
 func viewTestResponse(status int, body string) *http.Response {

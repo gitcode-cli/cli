@@ -94,10 +94,11 @@ func viewRun(opts *ViewOptions) error {
 	if opts.JSON {
 		// Output the raw API response verbatim for full fidelity (preserves
 		// deep stage/job/step execution fields that the typed struct elides).
-		if _, err := fmt.Fprintln(opts.IO.Out, string(raw)); err != nil {
+		if _, err := opts.IO.Out.Write(raw); err != nil {
 			return fmt.Errorf("failed to write JSON output: %w", err)
 		}
-		return nil
+		_, err := fmt.Fprintln(opts.IO.Out)
+		return err
 	}
 
 	return printDetail(opts, detail)

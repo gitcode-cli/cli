@@ -5,6 +5,7 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
+	artifactcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/artifact"
 	jobcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/job"
 	runcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/run"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -43,6 +44,7 @@ func NewCmdActions(f *cmdutil.Factory) *cobra.Command {
 
 	cmd.AddCommand(runcmd.NewCmdRun(f))
 	cmd.AddCommand(jobcmd.NewCmdJob(f))
+	cmd.AddCommand(artifactcmd.NewCmdArtifact(f))
 
 	return cmd
 }

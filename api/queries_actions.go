@@ -270,3 +270,75 @@ func GetActionsJobLog(client *Client, owner, repo, runID, jobID string) ([]byte,
 	}
 	return resp.Body, nil
 }
+
+// Artifact represents a workflow run artifact.
+type Artifact struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	SizeBytes     int64  `json:"size_bytes"`
+	WorkflowID    string `json:"workflow_id"`
+	WorkflowRunID string `json:"workflow_run_id"`
+	Digest        string `json:"digest"`
+	ExpiresAt     string `json:"expires_at"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
+}
+
+// ArtifactsResponse represents the response from listing artifacts.
+type ArtifactsResponse struct {
+	TotalCount int        `json:"total_count"`
+	Artifacts  []Artifact `json:"artifacts"`
+}
+
+// ActionsListArtifactsOptions represents the filter options for listing artifacts.
+//
+// The fields mirror the query parameters accepted by the GitCode Actions v8
+// artifacts endpoint (name filter, sort/direction, pagination). The optional
+// access_token query parameter is intentionally omitted: the CLI authenticates
+// through the standard Bearer header.
+type ActionsListArtifactsOptions struct {
+	Name      string
+	Sort      string
+	Direction string
+	Page      int
+	PerPage   int
+}
+
+// ListActionsArtifacts lists the artifacts of a repository.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/artifacts. The endpoint
+// supports name filtering, sort (created) and direction, plus pagination.
+func ListActionsArtifacts(client *Client, owner, repo string, opts *ActionsListArtifactsOptions) (*ArtifactsResponse, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/artifacts"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Name != "" {
+			values.Set("name", opts.Name)
+		}
+		if opts.Sort != "" {
+			values.Set("sort", opts.Sort)
+		}
+		if opts.Direction != "" {
+			values.Set("direction", opts.Direction)
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result ArtifactsResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse artifacts response: %w", err)
+	}
+	return &result, nil
+}

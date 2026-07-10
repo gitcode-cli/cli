@@ -630,3 +630,143 @@ func jobLogContent() string {
 		"2026-07-08T08:52:39Z [step] checkout done\n" +
 		"2026-07-08T08:53:51Z [job] COMPLETED\n"
 }
+
+func TestListActionsArtifactsBuildsV8Query(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusOK, artifactsResponseJSON()), nil
+	})
+	client.SetToken("test-token", "test")
+
+	resp, err := ListActionsArtifacts(client, "owner", "repo", &ActionsListArtifactsOptions{
+		Name:      "build",
+		Sort:      "created",
+		Direction: "desc",
+		PerPage:   50,
+		Page:      2,
+	})
+	if err != nil {
+		t.Fatalf("ListActionsArtifacts() error = %v", err)
+	}
+	if resp.TotalCount != 1 {
+		t.Fatalf("TotalCount = %d, want 1", resp.TotalCount)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	if !strings.HasPrefix(gotPath, "/api/v8/repos/owner/repo/actions/artifacts?") {
+		t.Fatalf("request path = %q, want v8 prefix", gotPath)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+	parsed, err := url.Parse(gotPath)
+	if err != nil {
+		t.Fatalf("url.Parse() error = %v", err)
+	}
+	q := parsed.Query()
+	for _, key := range []string{"name", "sort", "direction", "per_page", "page"} {
+		if _, ok := q[key]; !ok {
+			t.Fatalf("query missing %s in %s", key, q.Encode())
+		}
+	}
+}
+
+func TestListActionsArtifactsNoOptions(t *testing.T) {
+	var gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		return authTestResponse(http.StatusOK, `{"total_count":0,"artifacts":[]}`), nil
+	})
+
+	if _, err := ListActionsArtifacts(client, "owner", "repo", nil); err != nil {
+		t.Fatalf("ListActionsArtifacts() error = %v", err)
+	}
+	want := "/api/v8/repos/owner/repo/actions/artifacts"
+	if gotPath != want {
+		t.Fatalf("request path = %q, want %q (no query)", gotPath, want)
+	}
+}
+
+func TestListActionsArtifactsParses(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, artifactsResponseJSON()), nil
+	})
+
+	resp, err := ListActionsArtifacts(client, "owner", "repo", nil)
+	if err != nil {
+		t.Fatalf("ListActionsArtifacts() error = %v", err)
+	}
+	if len(resp.Artifacts) != 1 {
+		t.Fatalf("len(Artifacts) = %d, want 1", len(resp.Artifacts))
+	}
+	a := resp.Artifacts[0]
+	if a.ID != "art-1" || a.Name != "build-output" || a.SizeBytes != 1048576 {
+		t.Fatalf("artifact = id=%q name=%q size=%d, want art-1/build-output/1048576", a.ID, a.Name, a.SizeBytes)
+	}
+	if a.WorkflowRunID != "run-1" || a.Digest != "sha256:abc" {
+		t.Fatalf("artifact workflow_run_id=%q digest=%q, want run-1/sha256:abc", a.WorkflowRunID, a.Digest)
+	}
+	if a.CreatedAt != "1783500745000" {
+		t.Fatalf("CreatedAt = %q, want 1783500745000", a.CreatedAt)
+	}
+}
+
+func TestListActionsArtifactsEmpty(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `{"total_count":0,"artifacts":null}`), nil
+	})
+
+	resp, err := ListActionsArtifacts(client, "owner", "repo", nil)
+	if err != nil {
+		t.Fatalf("ListActionsArtifacts() error = %v", err)
+	}
+	if resp.TotalCount != 0 || resp.Artifacts != nil {
+		t.Fatalf("TotalCount=%d Artifacts=%v, want 0/nil", resp.TotalCount, resp.Artifacts)
+	}
+}
+
+func TestListActionsArtifactsError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+
+	_, err := ListActionsArtifacts(client, "owner", "repo", nil)
+	if err == nil {
+		t.Fatal("ListActionsArtifacts() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
+	}
+}
+
+func artifactsResponseJSON() string {
+	return `{
+		"total_count": 1,
+		"artifacts": [
+			{
+				"id": "art-1",
+				"name": "build-output",
+				"size_bytes": 1048576,
+				"workflow_id": "wf-1",
+				"workflow_run_id": "run-1",
+				"digest": "sha256:abc",
+				"expires_at": "1783587145000",
+				"created_at": "1783500745000",
+				"updated_at": "1783500745000"
+			}
+		]
+	}`
+}

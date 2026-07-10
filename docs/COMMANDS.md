@@ -1865,6 +1865,25 @@ gc actions job list <run-id> -R owner/repo --json
 - 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`）；`3` 资源不存在（HTTP 404，如 run 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
+### actions job view - 查看工作流 job 详情
+
+查看单个工作流作业（job）的详情，含其 steps。需同时提供 `<run-id>`（`gc actions run list` 的 `workflow_run_id`）与 `<job-id>`（`gc actions job list` 的 `id`），对应 API 路径 `runs/{run_id}/jobs/{job_id}`。
+
+```bash
+# 查看 job 详情
+gc actions job view <run-id> <job-id> -R owner/repo
+
+# 忠实 JSON 输出（保留 API 全部字段，含 steps 的 inputs/env 等深层字段）
+gc actions job view <run-id> <job-id> -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，**原样透传 API 响应**（字段名直接映射 Actions v8 API，保留 `steps[]` 及 `inputs`/`env`/`runtime_attribution` 等深层/可空字段，不被本地类型裁剪）。人类可读视图（默认）摘要显示 job 元信息 + steps 列表（名称/task/status/时间），steps 深层明细见 `--json`。
+- 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
+- 时间字段（`started`/`ended` 及 step 时间）由 API 的毫秒时间戳格式化为 RFC3339（UTC）；`--json` 保留原始毫秒整数值。`execute_cost_time` 单位未在 API 文档标明，人类视图不渲染（避免误显），`--json` 保留原始值。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`/`<job-id>`）；`3` 资源不存在（HTTP 404，如 job 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
 ---
 
 ## 其他命令

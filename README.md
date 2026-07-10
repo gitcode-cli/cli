@@ -301,6 +301,9 @@ gc actions run view <run-id> -R owner/repo
 # 列出流水线运行的 jobs
 gc actions job list <run-id> -R owner/repo
 
+# 查看工作流 job 详情
+gc actions job view <run-id> <job-id> -R owner/repo
+
 # 调用 GitCode API 原始响应
 gc api repos/owner/repo
 

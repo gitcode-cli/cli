@@ -453,3 +453,109 @@ func jobsResponseJSON() string {
 		]
 	}`
 }
+
+func TestGetActionsJobBuildsV8Path(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusOK, jobDetailJSON()), nil
+	})
+	client.SetToken("test-token", "test")
+
+	if _, _, err := GetActionsJob(client, "owner", "repo", "run-1", "job-1"); err != nil {
+		t.Fatalf("GetActionsJob() error = %v", err)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	want := "/api/v8/repos/owner/repo/actions/runs/run-1/jobs/job-1"
+	if gotPath != want {
+		t.Fatalf("request path = %q, want %q", gotPath, want)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+}
+
+func TestGetActionsJobParses(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, jobDetailJSON()), nil
+	})
+
+	job, raw, err := GetActionsJob(client, "owner", "repo", "run-1", "job-1")
+	if err != nil {
+		t.Fatalf("GetActionsJob() error = %v", err)
+	}
+	if job == nil {
+		t.Fatal("job = nil")
+	}
+	if job.ID != "job-1" || job.Name != "compile" || job.Status != "COMPLETED" {
+		t.Fatalf("job = id=%q name=%q status=%q, want job-1/compile/COMPLETED", job.ID, job.Name, job.Status)
+	}
+	if len(job.Steps) != 1 {
+		t.Fatalf("len(Steps) = %d, want 1", len(job.Steps))
+	}
+	if job.Steps[0].Name != "checkout" {
+		t.Fatalf("step0 name = %q, want checkout", job.Steps[0].Name)
+	}
+	if len(raw) == 0 {
+		t.Fatal("raw = empty, want non-empty faithful response body")
+	}
+}
+
+func TestGetActionsJobRawIsFaithful(t *testing.T) {
+	body := jobDetailJSON()
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, body), nil
+	})
+
+	_, raw, err := GetActionsJob(client, "owner", "repo", "run-1", "job-1")
+	if err != nil {
+		t.Fatalf("GetActionsJob() error = %v", err)
+	}
+	if string(raw) != body {
+		t.Fatalf("raw body not preserved verbatim (len %d vs %d)", len(raw), len(body))
+	}
+}
+
+func TestGetActionsJobError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+
+	_, _, err := GetActionsJob(client, "owner", "repo", "run-1", "missing")
+	if err == nil {
+		t.Fatal("GetActionsJob() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
+	}
+}
+
+func jobDetailJSON() string {
+	return `{
+		"id":"job-1","name":"compile","identifier":"compile","status":"COMPLETED",
+		"sequence":1,"job_type":"normal","resource":"default","condition":"",
+		"is_select":true,"depends_on":[],"exec_id":"e1","last_dispatch_id":"d1",
+		"execute_cost_time":80,"start_time":1700000000,"end_time":1700000080,
+		"category":null,"async":null,"timeout":null,"message":null,
+		"max_parallel":null,"fail_fast":null,"from":null,"with":null,"secrets":null,
+		"outputs_define":null,"concurrency":null,"timeout_minutes":null,"continue_on_error":null,
+		"steps":[
+			{"id":"step-1","name":"checkout","task":"actions/checkout@v4","identifier":"checkout",
+			 "status":"COMPLETED","sequence":1,"job_run_id":"jr-1","last_dispatch_id":"d2",
+			 "start_time":1700000000,"end_time":1700000010,
+			 "runtime_attribution":null,"multi_step_editable":0,"official_task_version":null,
+			 "icon_url":null,"business_type":null,"inputs":[],"env":[],"endpoint_ids":null,
+			 "message":null,"daily_build_number":null,"timeout-minutes":null,"continue-on-error":null}
+		]
+	}`
+}

@@ -233,3 +233,24 @@ func ListActionsRunJobs(client *Client, owner, repo, runID string) (*WorkflowRun
 	}
 	return &result, nil
 }
+
+// GetActionsJob fetches the detail of a single workflow job.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/runs/{run_id}/jobs/{job_id}.
+// It returns both the typed job (for the human-facing view) and the raw
+// response body (for faithful --json output that preserves the deep step
+// execution fields the typed struct does not model), mirroring GetActionsRun.
+func GetActionsJob(client *Client, owner, repo, runID, jobID string) (*WorkflowRunJob, json.RawMessage, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runs/" + url.PathEscape(runID) + "/jobs/" + url.PathEscape(jobID)
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var job WorkflowRunJob
+	if err := json.Unmarshal(resp.Body, &job); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse workflow job response: %w", err)
+	}
+	return &job, resp.Body, nil
+}

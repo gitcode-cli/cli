@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/job/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/job/view"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -20,10 +21,14 @@ func NewCmdJob(f *cmdutil.Factory) *cobra.Command {
 		Example: heredoc.Doc(`
 			# List jobs of a pipeline run
 			$ gc actions job list <run-id> -R owner/repo
+
+			# View a workflow job detail
+			$ gc actions job view <run-id> <job-id> -R owner/repo
 		`),
 	}
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(view.NewCmdView(f, nil))
 
 	return cmd
 }

@@ -69,7 +69,7 @@ AI 接到任务后，按以下顺序建立上下文：
 AI 执行交付时，须维护一份与门禁清单（见 [development-workflow.md §5.3](./development-workflow.md) 的 In-Progress 阶段门禁表）对齐的细粒度任务清单，并实时反映进度：
 
 - 拆分粒度对齐到单个门禁或子任务，不把多个门禁合并为一项
-- 任一时刻仅 1 项 in-progress；完成即翻为 completed，再推下一项，不批量标记多项完成
+- 任一时刻仅 1 项 in-progress；完成即翻为 completed，再推下一项，不批量标记多项完成（此处 in-progress/completed 指任务清单项状态，区别于 issue/PR 的 `status/*` 标签）
 - 每项完成时在对话中留下证据（命令或结果摘要）
 
 目的：让交付进度可审计、可回放，避免批量跳步或“看起来像完成”。清单的具体工具由客户端决定，上述粒度与实时性要求适用于所有 AI 客户端（Codex、Claude、人工）。

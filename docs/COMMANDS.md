@@ -975,6 +975,7 @@ gc pr list -R infra-test/gctest1 --format table
 - `--paginate` 会从第一页开始连续读取多页结果，直到远端返回不足一页；不能与 `--page` 同时使用。
 - `--per-page` 控制单页大小，未显式传 `--limit` 时默认每页 100；显式传 `--limit` 时会在本地截断到指定数量。
 - `--commit-message` 会读取每个候选 PR 的提交列表并按提交信息子串匹配，适合从提交标题反查关联 PR。
+- `--json` 输出结构化数组写入 stdout；空结果输出 `[]`（不会输出 `null`）。
 
 ### pr view - 查看 PR
 

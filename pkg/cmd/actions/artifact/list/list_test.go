@@ -436,6 +436,47 @@ func TestResolveOutputFormat(t *testing.T) {
 	}
 }
 
+func TestListRunWithRunFlag(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := iostreams.Test()
+	var gotPath string
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotPath = req.URL.Path
+					if req.URL.RawQuery != "" {
+						gotPath += "?" + req.URL.RawQuery
+					}
+					return listTestResponse(http.StatusOK, artifactsResponseJSON()), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		RunID:      "run-1",
+		Limit:      30,
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	wantPrefix := "/api/v8/repos/owner/repo/actions/runs/run-1/artifacts"
+	if !strings.HasPrefix(gotPath, wantPrefix) {
+		t.Fatalf("request path = %q, want run-scoped prefix %q", gotPath, wantPrefix)
+	}
+	assertNoAccessTokenQuery(t, gotPath)
+	var arts []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &arts); err != nil {
+		t.Fatalf("output is not JSON: %v", err)
+	}
+	if len(arts) != 1 {
+		t.Fatalf("len(arts) = %d, want 1", len(arts))
+	}
+}
+
 func listTestResponse(status int, body string) *http.Response {
 	return &http.Response{
 		StatusCode: status,

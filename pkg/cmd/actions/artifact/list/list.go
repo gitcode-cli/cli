@@ -21,6 +21,7 @@ type ListOptions struct {
 	BaseRepo   func() (string, error)
 
 	Repository string
+	RunID      string
 
 	Name       string
 	Sort       string
@@ -83,6 +84,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
+	cmd.Flags().StringVar(&opts.RunID, "run", "", "Filter by workflow run id (list run-scoped artifacts)")
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Filter by artifact name (fuzzy)")
 	cmd.Flags().StringVar(&opts.Sort, "sort", "", "Sort by created")
 	cmdutil.SetFlagEnum(cmd, "sort", "created")
@@ -161,13 +163,7 @@ func listRun(opts *ListOptions) error {
 func listArtifacts(client *api.Client, owner, repo string, opts *ListOptions) ([]api.Artifact, error) {
 	perPage := resolvePerPage(opts)
 	if !opts.Paginate {
-		resp, err := api.ListActionsArtifacts(client, owner, repo, &api.ActionsListArtifactsOptions{
-			Name:      opts.Name,
-			Sort:      opts.Sort,
-			Direction: opts.Direction,
-			PerPage:   perPage,
-			Page:      opts.Page,
-		})
+		resp, err := fetchArtifactsPage(client, owner, repo, opts, opts.Page)
 		if err != nil {
 			return nil, err
 		}
@@ -176,13 +172,7 @@ func listArtifacts(client *api.Client, owner, repo string, opts *ListOptions) ([
 
 	var all []api.Artifact
 	for page := 1; ; page++ {
-		resp, err := api.ListActionsArtifacts(client, owner, repo, &api.ActionsListArtifactsOptions{
-			Name:      opts.Name,
-			Sort:      opts.Sort,
-			Direction: opts.Direction,
-			PerPage:   perPage,
-			Page:      page,
-		})
+		resp, err := fetchArtifactsPage(client, owner, repo, opts, page)
 		if err != nil {
 			return nil, err
 		}
@@ -198,6 +188,22 @@ func listArtifacts(client *api.Client, owner, repo string, opts *ListOptions) ([
 		all = []api.Artifact{}
 	}
 	return all, nil
+}
+
+// fetchArtifactsPage fetches one page of artifacts from either the repository
+// endpoint (default) or the run-scoped endpoint (when --run is set).
+func fetchArtifactsPage(client *api.Client, owner, repo string, opts *ListOptions, page int) (*api.ArtifactsResponse, error) {
+	o := &api.ActionsListArtifactsOptions{
+		Name:      opts.Name,
+		Sort:      opts.Sort,
+		Direction: opts.Direction,
+		PerPage:   resolvePerPage(opts),
+		Page:      page,
+	}
+	if opts.RunID != "" {
+		return api.ListActionsRunArtifacts(client, owner, repo, opts.RunID, o)
+	}
+	return api.ListActionsArtifacts(client, owner, repo, o)
 }
 
 func resolvePerPage(opts *ListOptions) int {

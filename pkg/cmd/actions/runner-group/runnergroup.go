@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner-group/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner-group/view"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -33,6 +34,7 @@ func NewCmdRunnerGroup(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(view.NewCmdView(f, nil))
 
 	return cmd
 }

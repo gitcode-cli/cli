@@ -2033,6 +2033,28 @@ gc actions runner-group list --org my-org --json
 
 ---
 
+### actions runner-group view - 查看 Runner Group 详情
+
+查看指定组织下单个 Runner Group 的详细信息。`<runner-group-id>` 取 `gc actions runner-group list` 返回的 `id`。
+
+```bash
+# 查看 runner group 详情
+gc actions runner-group view <runner-group-id> --org my-org
+
+# 忠实 JSON 输出（保留 API 全部字段）
+gc actions runner-group view <runner-group-id> --org my-org --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，**原样透传 API 响应**（字段名直接映射 Actions v8 API：runner_group_id/runner_group_name/share_all/share_all_public_repos/explicit_shared_repo_count/created_at/updated_at）。人类可读视图显示 ID/名称/分享状态/分享仓库数/创建时间/更新时间。
+- `--org`（必填）：组织 path（如 `my-org`）。
+- `<runner-group-id>`（位置参数，必填）：Runner Group ID。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<runner-group-id>` 或 `--org`）；`3` 资源不存在（HTTP 404，如 runner group 或组织不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
+---
+
 ## 其他命令
 
 ### version - 显示版本

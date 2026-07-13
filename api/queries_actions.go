@@ -592,3 +592,37 @@ func ListRunnerGroupRunners(client *Client, org, runnerGroupID string, opts *Lis
 	}
 	return &result, nil
 }
+
+// ListRepoRunners lists all host runners in a repository.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/runners. The response
+// shape (RunnersResponse with Runner items) is identical to the org-level
+// runner-group runners endpoint.
+func ListRepoRunners(client *Client, owner, repo string, opts *ListRunnerGroupRunnersOptions) (*RunnersResponse, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runners"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Keyword != "" {
+			values.Set("keyword", opts.Keyword)
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result RunnersResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse repo runners response: %w", err)
+	}
+	return &result, nil
+}

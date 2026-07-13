@@ -2003,6 +2003,36 @@ gc actions artifact delete <artifact-id> -R owner/repo --yes --json
 
 ---
 
+### actions runner-group list - 列出组织 Runner Group
+
+列出指定组织下的所有 Runner Group。
+
+```bash
+# 列出组织的 runner groups
+gc actions runner-group list --org my-org
+
+# 按关键字过滤
+gc actions runner-group list --org my-org --keyword prod
+
+# 获取所有页
+gc actions runner-group list --org my-org --paginate --per-page 100
+
+# JSON 输出
+gc actions runner-group list --org my-org --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，字段名直接映射 Actions v8 API（id/name/runner_group_name/namespace_id/creator/create_time/runner_count/namespace_type/share_all）。
+- `--org`（必填）：组织 path（如 `my-org`）。
+- `--keyword`：关键字过滤（服务端过滤）。
+- 分页：`--page` 指定页码；`--paginate` 自动获取所有页（不能与 `--page` 同用）；`--per-page` 控制 API 页大小；`--limit` 截断总数。
+- 空结果输出 `[]`（JSON）或 `No runner groups found`（文本）。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `--org`，或 `--paginate` 与 `--page` 同用，或 `--limit`/`--per-page` 为负）；`3` 资源不存在（HTTP 404，如组织不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
+---
+
 ## 其他命令
 
 ### version - 显示版本

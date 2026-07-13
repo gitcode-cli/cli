@@ -673,3 +673,52 @@ func ListRunnerGroupRunnerSets(client *Client, org, runnerGroupID string, opts *
 	}
 	return &result, nil
 }
+
+// SharedNamespace represents a namespace sharing record for a runner group.
+type SharedNamespace struct {
+	ID              string `json:"id"`
+	RunnerGroupID   string `json:"runner_group_id"`
+	FromNamespaceID string `json:"from_namespace_id"`
+	ToNamespaceID   string `json:"to_namespace_id"`
+	Type            string `json:"type"`
+	CreateTime      int64  `json:"create_time"`
+	UpdateTime      int64  `json:"update_time"`
+}
+
+// SharedNamespacesResponse represents the response from listing shared namespaces.
+type SharedNamespacesResponse struct {
+	TotalCount       int               `json:"total_count"`
+	SharedNamespaces []SharedNamespace `json:"shared_namespaces"`
+}
+
+// ListRunnerGroupSharedNamespaces lists namespaces that have access to a runner group.
+//
+// It calls GET /api/v8/orgs/{org}/actions/runner-groups/{runner_group_id}/shared-namespaces.
+func ListRunnerGroupSharedNamespaces(client *Client, org, runnerGroupID string, opts *ListRunnerGroupRunnersOptions) (*SharedNamespacesResponse, error) {
+	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups/" + url.PathEscape(runnerGroupID) + "/shared-namespaces"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Keyword != "" {
+			values.Set("keyword", opts.Keyword)
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result SharedNamespacesResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse shared namespaces response: %w", err)
+	}
+	return &result, nil
+}

@@ -87,6 +87,8 @@ func setupEnv(t *testing.T, env *testscript.Env, root, gcBin, readRepo, writeRep
 	copyOptionalEnv(env, "APPDATA")
 	copyOptionalEnv(env, "GC_CONFIG_DIR")
 	copyOptionalEnv(env, "XDG_CONFIG_HOME")
+	copyOptionalEnv(env, "GC_TOKEN")
+	copyOptionalEnv(env, "GITCODE_TOKEN")
 }
 
 func buildOrUseBinary(t *testing.T, root string) string {

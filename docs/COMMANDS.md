@@ -2083,6 +2083,33 @@ gc actions runner-group runner list <runner-group-id> --org my-org --json
 
 ---
 
+### actions runner list - 列出仓库主机 Runner
+
+列出指定仓库下的所有主机 Runner。
+
+```bash
+# 列出仓库的主机 runner
+gc actions runner list -R owner/repo
+
+# 按关键字过滤
+gc actions runner list -R owner/repo --keyword prod
+
+# JSON 输出
+gc actions runner list -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，字段名直接映射 Actions v8 API（id/runner_group_id/runner_name/name/work_dir/labels[ label_name/label_value/label_color ]）。
+- `-R`：仓库（可选，缺省时从当前 git 仓库解析）（owner/repo）。
+- `--keyword`：关键字过滤（服务端过滤）。
+- 分页：`--page`/`--paginate`/`--per-page`/`--limit`。
+- 空结果输出 `[]`（JSON）或 `No runners found`（文本）。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误；`5` 资源冲突。
+
+---
+
 ## 其他命令
 
 ### version - 显示版本

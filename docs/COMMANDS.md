@@ -2193,6 +2193,33 @@ gc actions runner-set list -R owner/repo --json
 
 ---
 
+### actions runner shared-runners - 列出仓库的共享主机 Runner
+
+列出分享给指定仓库的所有主机 Runner（来自组织 Runner Group 共享）。
+
+```bash
+# 列出共享主机 runner
+gc actions runner shared-runners -R owner/repo
+
+# 按关键字过滤
+gc actions runner shared-runners -R owner/repo --keyword prod
+
+# JSON 输出
+gc actions runner shared-runners -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，字段名直接映射 Actions v8 API（id/runner_group_id/runner_name/name/work_dir/labels[ label_name/label_value/label_color ]）。
+- `-R`：仓库（owner/repo，可选，缺省时从当前 git 仓库解析）。
+- `--keyword`：关键字过滤（服务端过滤）。
+- 分页：`--page`/`--paginate`/`--per-page`/`--limit`。
+- 空结果输出 `[]`（JSON）或 `No shared runners found`（文本）。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误；`5` 资源冲突。
+
+---
+
 ## 其他命令
 
 ### version - 显示版本

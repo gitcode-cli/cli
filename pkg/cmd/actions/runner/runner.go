@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner/shared-runners"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -24,12 +25,16 @@ func NewCmdRunner(f *cmdutil.Factory) *cobra.Command {
 			# List host runners for a repository
 			$ gc actions runner list -R owner/repo
 
+			# List shared host runners
+			$ gc actions runner shared-runners -R owner/repo
+
 			# Output as JSON
 			$ gc actions runner list -R owner/repo --json
 		`),
 	}
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(sharedrunners.NewCmdList(f, nil))
 
 	return cmd
 }

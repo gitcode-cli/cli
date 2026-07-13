@@ -2083,6 +2083,34 @@ gc actions runner-group runner list <runner-group-id> --org my-org --json
 
 ---
 
+### actions runner-group runner-set list - 列出 Runner Group 下的 K8S Runner Set
+
+列出指定 Runner Group 下的所有 K8S Runner Set。
+
+```bash
+# 列出 K8S runner sets
+gc actions runner-group runner-set list <runner-group-id> --org my-org
+
+# 按关键字过滤
+gc actions runner-group runner-set list <runner-group-id> --org my-org --keyword prod
+
+# JSON 输出
+gc actions runner-group runner-set list <runner-group-id> --org my-org --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，字段名直接映射 Actions v8 API（id/runner_group_id/name/status/required_labels[ label_name/label_value/label_color ]）。
+- `<runner-group-id>`（位置参数，必填）：Runner Group ID。
+- `--org`（必填）：组织 path。
+- `--keyword`：关键字过滤（服务端过滤）。
+- 分页：`--page`/`--paginate`/`--per-page`/`--limit`。
+- 空结果输出 `[]`（JSON）或 `No runner sets found`（文本）。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误（如缺少 `<runner-group-id>` 或 `--org`，或 runner group 不存在 → HTTP 400）；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误；`5` 资源冲突。
+
+---
+
 ### actions runner list - 列出仓库主机 Runner
 
 列出指定仓库下的所有主机 Runner。

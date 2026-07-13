@@ -128,7 +128,10 @@ go test ./...
 go build -o ./gc ./cmd/gc
 ./gc version
 ./scripts/regression-core.sh
+go test -tags=system ./tests/system
 ```
+
+`./scripts/regression-core.sh` 是核心冒烟回归脚本；`go test -tags=system ./tests/system` 是结构化真实命令系统测试（只读路径，需本地认证）。两者均要求 `infra-test/*` 仓库且不得读取或打印真实 token。
 
 如果改动影响具体命令行为，还必须补至少一个真实命令验证。
 

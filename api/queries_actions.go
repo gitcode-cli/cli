@@ -626,3 +626,50 @@ func ListRepoRunners(client *Client, owner, repo string, opts *ListRunnerGroupRu
 	}
 	return &result, nil
 }
+
+// RunnerSet represents a single K8S runner set in a runner group.
+type RunnerSet struct {
+	ID             string        `json:"id"`
+	RunnerGroupID  string        `json:"runner_group_id"`
+	Name           string        `json:"name"`
+	Status         string        `json:"status"`
+	RequiredLabels []RunnerLabel `json:"required_labels"`
+}
+
+// RunnerSetsResponse represents the response from listing K8S runner sets.
+type RunnerSetsResponse struct {
+	TotalCount int         `json:"total_count"`
+	RunnerSets []RunnerSet `json:"runner_sets"`
+}
+
+// ListRunnerGroupRunnerSets lists all K8S runner sets in a runner group.
+//
+// It calls GET /api/v8/orgs/{org}/actions/runner-groups/{runner_group_id}/runner-sets.
+func ListRunnerGroupRunnerSets(client *Client, org, runnerGroupID string, opts *ListRunnerGroupRunnersOptions) (*RunnerSetsResponse, error) {
+	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups/" + url.PathEscape(runnerGroupID) + "/runner-sets"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Keyword != "" {
+			values.Set("keyword", opts.Keyword)
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result RunnerSetsResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse runner sets response: %w", err)
+	}
+	return &result, nil
+}

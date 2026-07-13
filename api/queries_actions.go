@@ -790,3 +790,37 @@ func ListRepoSharedRunners(client *Client, owner, repo string, opts *ListRunnerG
 	}
 	return &result, nil
 }
+
+// ListRepoSharedRunnerSets lists all shared K8S runner sets available to a repository.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/shared-runner-sets.
+// The response shape (RunnerSetsResponse with RunnerSet items) is identical
+// to the repo-level runner-sets endpoint.
+func ListRepoSharedRunnerSets(client *Client, owner, repo string, opts *ListRunnerGroupRunnersOptions) (*RunnerSetsResponse, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/shared-runner-sets"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Keyword != "" {
+			values.Set("keyword", opts.Keyword)
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result RunnerSetsResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse shared runner sets response: %w", err)
+	}
+	return &result, nil
+}

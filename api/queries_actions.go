@@ -430,3 +430,68 @@ func DeleteActionsArtifact(client *Client, owner, repo, artifactID string) error
 	_, err := client.RawREST("DELETE", endpoint, nil, nil)
 	return err
 }
+
+// RunnerGroup represents a single Actions runner group in an organization.
+type RunnerGroup struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	RunnerGroupName string `json:"runner_group_name"`
+	NamespaceID     string `json:"namespace_id"`
+	Creator         string `json:"creator"`
+	CreateTime      int64  `json:"create_time"`
+	RunnerCount     int    `json:"runner_count"`
+	NamespaceType   string `json:"namespace_type"`
+	ShareAll        bool   `json:"share_all"`
+}
+
+// RunnerGroupsResponse represents the response from listing org runner groups.
+type RunnerGroupsResponse struct {
+	TotalCount   int           `json:"total_count"`
+	RunnerGroups []RunnerGroup `json:"runner_groups"`
+}
+
+// ListOrgRunnerGroupsOptions represents the filter options for listing runner groups.
+//
+// The fields mirror the query parameters accepted by the GitCode Actions v8
+// endpoint GET /api/v8/orgs/{org}/actions/runner-groups. The optional
+// access_token query parameter is intentionally omitted: the CLI authenticates
+// through the standard Bearer header.
+type ListOrgRunnerGroupsOptions struct {
+	Keyword string
+	Page    int
+	PerPage int
+}
+
+// ListOrgRunnerGroups lists all runner groups in an organization.
+//
+// It calls GET /api/v8/orgs/{org}/actions/runner-groups. Unlike most queries
+// that use the default v5 prefix, the Actions API lives under v8, so the
+// request is issued via RawREST with a full /api/v8 path.
+func ListOrgRunnerGroups(client *Client, org string, opts *ListOrgRunnerGroupsOptions) (*RunnerGroupsResponse, error) {
+	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Keyword != "" {
+			values.Set("keyword", opts.Keyword)
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result RunnerGroupsResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse runner groups response: %w", err)
+	}
+	return &result, nil
+}

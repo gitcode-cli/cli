@@ -495,3 +495,34 @@ func ListOrgRunnerGroups(client *Client, org string, opts *ListOrgRunnerGroupsOp
 	}
 	return &result, nil
 }
+
+// RunnerGroupDetail represents the detailed information of a single runner group.
+type RunnerGroupDetail struct {
+	RunnerGroupID           string `json:"runner_group_id"`
+	RunnerGroupName         string `json:"runner_group_name"`
+	ShareAll                bool   `json:"share_all"`
+	ShareAllPublicRepos     bool   `json:"share_all_public_repos"`
+	ExplicitSharedRepoCount int    `json:"explicit_shared_repo_count"`
+	CreatedAt               int64  `json:"created_at"`
+	UpdatedAt               int64  `json:"updated_at"`
+}
+
+// GetOrgRunnerGroup fetches the detail of a single runner group.
+//
+// It calls GET /api/v8/orgs/{org}/actions/runner-groups/{runner_group_id}.
+// It returns both the typed detail (for the human-facing view) and the raw
+// response body (for faithful --json output), mirroring GetActionsArtifact.
+func GetOrgRunnerGroup(client *Client, org, runnerGroupID string) (*RunnerGroupDetail, json.RawMessage, error) {
+	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups/" + url.PathEscape(runnerGroupID)
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var detail RunnerGroupDetail
+	if err := json.Unmarshal(resp.Body, &detail); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse runner group response: %w", err)
+	}
+	return &detail, resp.Body, nil
+}

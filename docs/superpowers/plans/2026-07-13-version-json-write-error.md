@@ -161,6 +161,7 @@ Create `/tmp/issue-416-pr-body.md` with these sections in order:
 - 主要修改: Cobra callback 改为可返回错误；JSON 分支返回 WriteJSON 错误；新增失败 writer 回归测试
 - 单元测试: focused writer-error regression, version package, and full repository suite all PASS（附上 Step 4/5 的准确命令）
 - 构建: `go build -o /tmp/gc-issue416-fixed ./cmd/gc` PASS
+- CI 验证: 跨仓 PR 创建时写明“待 PR 触发，暂无 run ID”；CI 完成后更新为 run ID/URL 与 lint、三平台 test、三平台 build、docker 的逐项结论
 - 实际命令验证: `/tmp/gc-issue416-fixed version --json` returns valid version/commit/built/url JSON; writer failure is deterministically covered by unit test because a real terminal cannot reliably induce this path
 - 安全审查: no credentials, API, auth, filesystem write, or remote mutation path changed
 - 文档同步: no command schema, flag, successful output, or documented behavior changed; COMMANDS update not required

@@ -10,6 +10,7 @@ import (
 	runcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/run"
 	runnercmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner"
 	runnergroupcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner-group"
+	runnersetcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner-set"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -49,6 +50,7 @@ func NewCmdActions(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(artifactcmd.NewCmdArtifact(f))
 	cmd.AddCommand(runnergroupcmd.NewCmdRunnerGroup(f))
 	cmd.AddCommand(runnercmd.NewCmdRunner(f))
+	cmd.AddCommand(runnersetcmd.NewCmdRunnerSet(f))
 
 	return cmd
 }

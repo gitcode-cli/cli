@@ -419,3 +419,14 @@ func DownloadActionsArtifact(client *Client, owner, repo, artifactID string) ([]
 	}
 	return resp.Body, nil
 }
+
+// DeleteActionsArtifact deletes a single artifact.
+//
+// It calls DELETE /api/v8/repos/{owner}/{repo}/actions/artifacts/{artifact_id}.
+// The endpoint returns 204 No Content on success.
+func DeleteActionsArtifact(client *Client, owner, repo, artifactID string) error {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/artifacts/" + url.PathEscape(artifactID)
+
+	_, err := client.RawREST("DELETE", endpoint, nil, nil)
+	return err
+}

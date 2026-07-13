@@ -316,6 +316,9 @@ gc actions artifact view <artifact-id> -R owner/repo
 # 下载 artifact
 gc actions artifact download <artifact-id> -R owner/repo --output artifact.zip
 
+# 删除 artifact
+gc actions artifact delete <artifact-id> -R owner/repo --yes
+
 # 调用 GitCode API 原始响应
 gc api repos/owner/repo
 

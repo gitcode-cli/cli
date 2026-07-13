@@ -5,6 +5,7 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
 
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/artifact/delete"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/artifact/download"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/artifact/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/artifact/view"
@@ -28,12 +29,16 @@ func NewCmdArtifact(f *cmdutil.Factory) *cobra.Command {
 
 			# Download an artifact
 			$ gc actions artifact download <artifact-id> -R owner/repo --output artifact.zip
+
+			# Delete an artifact
+			$ gc actions artifact delete <artifact-id> -R owner/repo --yes
 		`),
 	}
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(view.NewCmdView(f, nil))
 	cmd.AddCommand(download.NewCmdDownload(f, nil))
+	cmd.AddCommand(delete.NewCmdDelete(f, nil))
 
 	return cmd
 }

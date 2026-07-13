@@ -1976,6 +1976,31 @@ gc actions artifact download <artifact-id> -R owner/repo > artifact.zip
 - 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<artifact-id>`，或 TTY 未给 `--output`/重定向，或 artifact_id 格式不合法 → HTTP 400）；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
+### actions artifact delete - 删除 Artifact
+
+删除单个制品（artifact）。`<artifact-id>` 取 `gc actions artifact list` 返回的 `id`。这是**破坏性操作**，默认有确认保护。
+
+```bash
+# 交互式删除（需输入 artifact id 确认）
+gc actions artifact delete <artifact-id> -R owner/repo
+
+# 非交互式（需 --yes）
+gc actions artifact delete <artifact-id> -R owner/repo --yes
+
+# 预览删除（不实际删除）
+gc actions artifact delete <artifact-id> -R owner/repo --dry-run
+
+# JSON 输出
+gc actions artifact delete <artifact-id> -R owner/repo --yes --json
+```
+
+说明：
+
+- 支持 `--json`：输出 `{artifact_id, owner, repo, action}`（action 为 `deleted` 或 `dry_run`）。
+- 确认保护：交互式终端（TTY）需输入 artifact id 确认；非 TTY 环境须传 `--yes` 跳过，否则立即失败（exit 2）。`--dry-run` 跳过确认，仅预览。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<artifact-id>`，或非 TTY 未给 `--yes`，或 artifact_id 格式不合法 → HTTP 400）；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
 ---
 
 ## 其他命令

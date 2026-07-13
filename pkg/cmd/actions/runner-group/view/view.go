@@ -92,7 +92,11 @@ func viewRun(opts *ViewOptions) error {
 	}
 
 	if opts.JSON {
-		return cmdutil.WriteJSON(opts.IO.Out, rawBody)
+		if _, err := opts.IO.Out.Write(rawBody); err != nil {
+			return fmt.Errorf("failed to write JSON output: %w", err)
+		}
+		_, err := fmt.Fprintln(opts.IO.Out)
+		return err
 	}
 
 	printRunnerGroupDetail(opts.IO, detail)

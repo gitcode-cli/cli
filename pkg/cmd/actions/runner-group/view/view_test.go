@@ -62,13 +62,13 @@ func TestViewRunJSONOutput(t *testing.T) {
 	}
 
 	got := strings.TrimSpace(out.String())
-	if !strings.Contains(got, `"runner_group_id": "1"`) {
+	if !strings.Contains(got, `"runner_group_id":"1"`) {
 		t.Fatalf("JSON output = %q, missing runner_group_id", got)
 	}
-	if !strings.Contains(got, `"runner_group_name": "prod"`) {
+	if !strings.Contains(got, `"runner_group_name":"prod"`) {
 		t.Fatalf("JSON output = %q, missing runner_group_name", got)
 	}
-	if !strings.Contains(got, `"share_all": true`) {
+	if !strings.Contains(got, `"share_all":true`) {
 		t.Fatalf("JSON output = %q, missing share_all", got)
 	}
 }

@@ -526,3 +526,69 @@ func GetOrgRunnerGroup(client *Client, org, runnerGroupID string) (*RunnerGroupD
 	}
 	return &detail, resp.Body, nil
 }
+
+// RunnerLabel represents a label attached to a runner.
+type RunnerLabel struct {
+	LabelName  string `json:"label_name"`
+	LabelValue string `json:"label_value"`
+	LabelColor string `json:"label_color"`
+}
+
+// Runner represents a single host runner in a runner group.
+type Runner struct {
+	ID            string        `json:"id"`
+	RunnerGroupID string        `json:"runner_group_id"`
+	RunnerName    string        `json:"runner_name"`
+	Name          string        `json:"name"`
+	WorkDir       string        `json:"work_dir"`
+	Labels        []RunnerLabel `json:"labels"`
+}
+
+// RunnersResponse represents the response from listing runners in a runner group.
+type RunnersResponse struct {
+	TotalCount int      `json:"total_count"`
+	Runners    []Runner `json:"runners"`
+}
+
+// ListRunnerGroupRunnersOptions represents the filter options for listing runners.
+//
+// The fields mirror the query parameters accepted by the GitCode Actions v8
+// endpoint GET /api/v8/orgs/{org}/actions/runner-groups/{runner_group_id}/runners.
+// The optional access_token query parameter is intentionally omitted.
+type ListRunnerGroupRunnersOptions struct {
+	Keyword string
+	Page    int
+	PerPage int
+}
+
+// ListRunnerGroupRunners lists all host runners in a runner group.
+//
+// It calls GET /api/v8/orgs/{org}/actions/runner-groups/{runner_group_id}/runners.
+func ListRunnerGroupRunners(client *Client, org, runnerGroupID string, opts *ListRunnerGroupRunnersOptions) (*RunnersResponse, error) {
+	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups/" + url.PathEscape(runnerGroupID) + "/runners"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Keyword != "" {
+			values.Set("keyword", opts.Keyword)
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result RunnersResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse runners response: %w", err)
+	}
+	return &result, nil
+}

@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner-set/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner-set/shared-runner-sets"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -30,6 +31,7 @@ func NewCmdRunnerSet(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(sharedrunnersets.NewCmdList(f, nil))
 
 	return cmd
 }

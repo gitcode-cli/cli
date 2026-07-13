@@ -2101,7 +2101,7 @@ gc actions runner list -R owner/repo --json
 说明：
 
 - 支持 `--json`：输出写入 stdout，字段名直接映射 Actions v8 API（id/runner_group_id/runner_name/name/work_dir/labels[ label_name/label_value/label_color ]）。
-- `-R`（必填）：仓库（owner/repo）。
+- `-R`：仓库（可选，缺省时从当前 git 仓库解析）（owner/repo）。
 - `--keyword`：关键字过滤（服务端过滤）。
 - 分页：`--page`/`--paginate`/`--per-page`/`--limit`。
 - 空结果输出 `[]`（JSON）或 `No runners found`（文本）。

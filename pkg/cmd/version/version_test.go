@@ -3,9 +3,18 @@ package version
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
 )
+
+type errorWriter struct {
+	err error
+}
+
+func (w errorWriter) Write([]byte) (int, error) {
+	return 0, w.err
+}
 
 func TestNewCmdVersion(t *testing.T) {
 	tests := []struct {
@@ -122,5 +131,17 @@ func TestVersionOutputUsesCommandName(t *testing.T) {
 	}
 	if cmd.Short != "Print gitcode version" {
 		t.Fatalf("NewCmdVersion().Short = %q, want %q", cmd.Short, "Print gitcode version")
+	}
+}
+
+func TestVersionJSONReturnsWriteError(t *testing.T) {
+	wantErr := errors.New("write failed")
+	cmd := NewCmdVersion("v1.0.0", "abc123", "2026-07-13")
+	cmd.SetArgs([]string{"--json"})
+	cmd.SetOut(errorWriter{err: wantErr})
+
+	err := cmd.Execute()
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("cmd.Execute() error = %v, want %v", err, wantErr)
 	}
 }

@@ -2321,6 +2321,7 @@ gc schema "issue view"
 | `--web` | 在浏览器中打开 |
 | `--json` | 输出结构化 JSON |
 | `--dry-run` | 预演写操作而不执行 |
+| `--no-interactive` | 禁用所有交互提示；破坏性操作需配合 `--yes` |
 
 ---
 

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 func TestRootHelpMentionsWindowsPowerShellAliasForGC(t *testing.T) {
@@ -132,4 +133,55 @@ func TestGitcodeHelpRewritesExamples(t *testing.T) {
 	if strings.Contains(output, `Use "gc issue`) {
 		t.Fatalf("help output should not expose gc use hint when root is gitcode: %s", output)
 	}
+}
+
+func TestNoInteractiveFlag(t *testing.T) {
+	t.Run("flag is registered as persistent", func(t *testing.T) {
+		cmd := NewRootCmd("dev", "none", "unknown", cmdutil.TestFactory())
+		flag := cmd.PersistentFlags().Lookup("no-interactive")
+		if flag == nil {
+			t.Fatal("expected --no-interactive persistent flag to be registered")
+		}
+		if flag.DefValue != "false" {
+			t.Fatalf("default value = %q, want false", flag.DefValue)
+		}
+	})
+
+	t.Run("flag sets IOStreams.noInteractive", func(t *testing.T) {
+		f := cmdutil.TestFactory()
+		io, _, _, _ := iostreams.TestTTY()
+		f.IOStreams = io
+
+		if !f.IOStreams.CanPrompt() {
+			t.Fatal("precondition: CanPrompt() should be true before --no-interactive")
+		}
+
+		cmd := NewRootCmd("dev", "none", "unknown", f)
+		cmd.SetArgs([]string{"--no-interactive", "version"})
+
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("Execute() error = %v", err)
+		}
+
+		if f.IOStreams.CanPrompt() {
+			t.Fatal("CanPrompt() should return false after --no-interactive")
+		}
+	})
+
+	t.Run("without flag CanPrompt remains true", func(t *testing.T) {
+		f := cmdutil.TestFactory()
+		io, _, _, _ := iostreams.TestTTY()
+		f.IOStreams = io
+
+		cmd := NewRootCmd("dev", "none", "unknown", f)
+		cmd.SetArgs([]string{"version"})
+
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("Execute() error = %v", err)
+		}
+
+		if !f.IOStreams.CanPrompt() {
+			t.Fatal("CanPrompt() should remain true without --no-interactive")
+		}
+	})
 }

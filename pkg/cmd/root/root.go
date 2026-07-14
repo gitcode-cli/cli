@@ -48,6 +48,13 @@ func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 		SilenceErrors: true,
 	}
 
+	cmd.PersistentFlags().Bool("no-interactive", false, "Disable all interactive prompts; require --yes for destructive actions")
+	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		if noInteractive, _ := cmd.Flags().GetBool("no-interactive"); noInteractive {
+			f.IOStreams.SetNoInteractive(true)
+		}
+	}
+
 	// Add subcommands.
 	cmd.AddCommand(version.NewCmdVersion(ver, commit, date, commandName))
 	cmd.AddCommand(actionscmd.NewCmdActions(f))

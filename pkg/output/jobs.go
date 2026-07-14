@@ -52,10 +52,11 @@ func (p *WorkflowJobListPrinter) printSimple(w io.Writer, jobs []api.WorkflowRun
 	for _, job := range jobs {
 		fmt.Fprintf(
 			w,
-			"%-*s %s %s\n",
+			"%-*s %s %s  %s\n",
 			maxStatusWidth,
 			p.statusLabel(job, maxStatusWidth),
 			fmt.Sprintf("%-*s", maxNameWidth, jobName(job)),
+			job.ID,
 			stepsLabel(len(job.Steps)),
 		)
 	}
@@ -67,6 +68,7 @@ func (p *WorkflowJobListPrinter) printTable(w io.Writer, jobs []api.WorkflowRunJ
 	maxIdentifierWidth := len("IDENTIFIER")
 	maxSequenceWidth := len("SEQUENCE")
 	maxStatusWidth := len("STATUS")
+	maxIDWidth := len("ID")
 
 	for _, job := range jobs {
 		if width := len(jobName(job)); width > maxNameWidth {
@@ -81,13 +83,17 @@ func (p *WorkflowJobListPrinter) printTable(w io.Writer, jobs []api.WorkflowRunJ
 		if width := len(job.Status); width > maxStatusWidth {
 			maxStatusWidth = width
 		}
+		if width := len(job.ID); width > maxIDWidth {
+			maxIDWidth = width
+		}
 	}
 
 	fmt.Fprintf(
 		w,
-		"%-*s  %-*s  %-*s  %-*s  %s\n",
+		"%-*s  %-*s  %-*s  %-*s  %-*s  %s\n",
 		maxStatusWidth, "STATUS",
 		maxNameWidth, "NAME",
+		maxIDWidth, "ID",
 		maxIdentifierWidth, "IDENTIFIER",
 		maxSequenceWidth, "SEQUENCE",
 		"STEPS",
@@ -95,9 +101,10 @@ func (p *WorkflowJobListPrinter) printTable(w io.Writer, jobs []api.WorkflowRunJ
 	for _, job := range jobs {
 		fmt.Fprintf(
 			w,
-			"%-*s  %-*s  %-*s  %-*d  %d\n",
+			"%-*s  %-*s  %-*s  %-*s  %-*d  %d\n",
 			maxStatusWidth, p.statusLabel(job, maxStatusWidth),
 			maxNameWidth, jobName(job),
+			maxIDWidth, job.ID,
 			maxIdentifierWidth, job.Identifier,
 			maxSequenceWidth, job.Sequence,
 			len(job.Steps),

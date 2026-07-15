@@ -17,6 +17,7 @@ import (
 type TestOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -32,6 +33,7 @@ func NewCmdTest(f *cmdutil.Factory, runF func(*TestOptions) error) *cobra.Comman
 	opts := &TestOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -84,7 +86,11 @@ func testRun(opts *TestOptions) error {
 	}
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}

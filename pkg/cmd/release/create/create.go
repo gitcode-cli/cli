@@ -17,6 +17,7 @@ import (
 type CreateOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	TagName string
@@ -37,6 +38,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	opts := &CreateOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -129,7 +131,11 @@ func createRun(opts *CreateOptions) error {
 	}
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}

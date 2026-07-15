@@ -44,3 +44,20 @@ func TestNewCmdDelete(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteBaseRepoInjected(t *testing.T) {
+	f := cmdutil.TestFactory()
+	var capturedBaseRepo func() (string, error)
+	cmd := NewCmdDelete(f, func(opts *DeleteOptions) error {
+		capturedBaseRepo = opts.BaseRepo
+		return nil
+	})
+	cmd.SetArgs([]string{"v1.0.0", "--yes"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if capturedBaseRepo == nil {
+		t.Fatal("opts.BaseRepo is nil, want injected from f.BaseRepo")
+	}
+}

@@ -133,3 +133,35 @@ func TestGitcodeHelpRewritesExamples(t *testing.T) {
 		t.Fatalf("help output should not expose gc use hint when root is gitcode: %s", output)
 	}
 }
+
+func TestNoInteractiveFlagDisablesCanPrompt(t *testing.T) {
+	f := cmdutil.TestFactory()
+	cmd := NewRootCmd("dev", "none", "unknown", f)
+	cmd.SetArgs([]string{"--no-interactive", "version"})
+
+	if f.IOStreams.NoInteractive() {
+		t.Fatal("NoInteractive() = true before Execute, want false")
+	}
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !f.IOStreams.NoInteractive() {
+		t.Fatal("NoInteractive() = false after --no-interactive, want true")
+	}
+	if f.IOStreams.CanPrompt() {
+		t.Fatal("CanPrompt() = true after --no-interactive, want false")
+	}
+}
+
+func TestNoInteractiveFlagAbsentKeepsCanPrompt(t *testing.T) {
+	f := cmdutil.TestFactory()
+	cmd := NewRootCmd("dev", "none", "unknown", f)
+	cmd.SetArgs([]string{"version"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if f.IOStreams.NoInteractive() {
+		t.Fatal("NoInteractive() = true without --no-interactive, want false")
+	}
+}

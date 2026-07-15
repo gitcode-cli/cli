@@ -15,11 +15,24 @@ type IOStreams struct {
 	Out    io.Writer
 	ErrOut io.Writer
 
-	colorEnabled bool
-	isTerminal   func(io.Writer) bool
-	isInputTTY   func(io.Reader) bool
-	pager        string
-	pagerCmd     *exec.Cmd
+	colorEnabled  bool
+	isTerminal    func(io.Writer) bool
+	isInputTTY    func(io.Reader) bool
+	pager         string
+	pagerCmd      *exec.Cmd
+	noInteractive bool
+}
+
+// SetNoInteractive disables interactive prompts. When true, CanPrompt always
+// returns false, forcing commands to require explicit --yes or fail in
+// non-interactive (agent/script) contexts.
+func (s *IOStreams) SetNoInteractive(v bool) {
+	s.noInteractive = v
+}
+
+// NoInteractive returns whether non-interactive mode was explicitly requested.
+func (s *IOStreams) NoInteractive() bool {
+	return s != nil && s.noInteractive
 }
 
 // System returns IOStreams connected to standard input, output, and error
@@ -197,7 +210,10 @@ func (s *IOStreams) IsStderrTTY() bool {
 
 // CanPromptForInput returns true when this IOStreams instance can prompt safely.
 func (s *IOStreams) CanPrompt() bool {
-	return s != nil && s.IsStdinTTY() && os.Getenv("GC_TEST_DISABLE_PROMPT") == ""
+	if s == nil || s.noInteractive {
+		return false
+	}
+	return s.IsStdinTTY() && os.Getenv("GC_TEST_DISABLE_PROMPT") == ""
 }
 
 // IsInputTTY returns true if input is from a terminal

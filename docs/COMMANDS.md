@@ -154,13 +154,23 @@ docker compose up gc
 |--------|--------|------|----------|
 | 0 | ExitSuccess | 命令执行成功 | 正常完成 |
 | 1 | ExitError | 通用错误 | API 错误、网络错误 |
-| 2 | ExitUsage | 参数用法错误 | 缺少必选参数、参数格式错误 |
+| 2 | ExitUsage | 参数用法错误 | 缺少必选参数、参数格式错误、非交互模式未传 `--yes` |
 | 3 | ExitNotFound | 资源不存在 | issue/pr/repo 不存在 |
 | 4 | ExitAuth | 认证错误 | 未登录或 token 无效 |
 | 5 | ExitConflict | 资源冲突 | PR merge 冲突 |
 
+### 全局 flag
+
+| Flag | 说明 |
+|------|------|
+| `--no-interactive` | 禁用交互式提示（供 AI 代理/脚本/管道使用）。设置后所有确认提示立即失败并提示 `--yes`，等价于强制非 TTY 的确认行为。破坏性命令仍需显式传 `--yes` 才能执行。 |
+
 示例：
 ```bash
+# 非交互模式：破坏性命令必须显式 --yes，否则退出码 2
+gc --no-interactive pr merge 11 -R owner/repo          # 退出码 2，提示 rerun with --yes
+gc --no-interactive --yes pr merge 11 -R owner/repo    # 执行合并
+
 # 检查退出码
 gc issue view abc  # 无效 issue 号
 echo $?            # 输出 2 (ExitUsage)

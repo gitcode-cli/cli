@@ -46,7 +46,15 @@ func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 		Long:          rootLong(commandName),
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if noInteractive, _ := cmd.Flags().GetBool("no-interactive"); noInteractive {
+				f.IOStreams.SetNoInteractive(true)
+			}
+			return nil
+		},
 	}
+
+	cmd.PersistentFlags().Bool("no-interactive", false, "Disable interactive prompts; forces --yes or fails on confirmations (for agents/scripts)")
 
 	// Add subcommands.
 	cmd.AddCommand(version.NewCmdVersion(ver, commit, date, commandName))

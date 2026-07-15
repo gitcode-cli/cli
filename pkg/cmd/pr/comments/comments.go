@@ -18,6 +18,7 @@ import (
 type CommentsOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -33,6 +34,7 @@ func NewCmdComments(f *cmdutil.Factory, runF func(*CommentsOptions) error) *cobr
 	opts := &CommentsOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -81,7 +83,11 @@ func commentsRun(opts *CommentsOptions) error {
 
 	// Validate repository input before auth so usage errors are not masked by
 	// missing local credentials.
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}

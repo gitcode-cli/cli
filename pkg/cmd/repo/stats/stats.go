@@ -18,6 +18,7 @@ import (
 type StatsOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	Repository string
 	Branch     string
@@ -33,6 +34,7 @@ func NewCmdStats(f *cmdutil.Factory, runF func(*StatsOptions) error) *cobra.Comm
 	opts := &StatsOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -90,7 +92,11 @@ func statsRun(opts *StatsOptions) error {
 		return err
 	}
 
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}

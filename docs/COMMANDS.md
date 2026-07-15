@@ -47,7 +47,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comment-file -`）上拦截疑似已被 Windows PowerShell 损坏成 `???` 的输入，并在 stderr 提示正确用法；如果确实需要原样传入连续问号，可设置 `GITCODE_CLI_ALLOW_LOSSY_STDIN=1`。
 
 当前自动推断边界：
-- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前主要覆盖 `issue` 相关命令、`repo view/log/branch view`，以及 `pr list/view/issues`、`release list/view`、`commit view`、`label list`、`milestone list/view` 等"作用于当前仓库"的安全只读场景。
+- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，主要覆盖 `issue` 相关命令、`repo view/log/branch view/stats`，`pr list/view/issues/comments/checkout/create/merge/reply/test`、`release list/view/create/delete/upload`、`commit view`、`commit comments (create/edit/list/list-by-sha/view)`、`commit diff/patch`、`label list/create/delete`、`milestone list/view/create/delete`、`actions` 相关命令等。注意：自动推断现已覆盖写/破坏性命令（如 `pr merge`、`release delete`），缺省 `-R` 即作用于当前 Git 仓库。
 - 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
 
@@ -154,13 +154,23 @@ docker compose up gc
 |--------|--------|------|----------|
 | 0 | ExitSuccess | 命令执行成功 | 正常完成 |
 | 1 | ExitError | 通用错误 | API 错误、网络错误 |
-| 2 | ExitUsage | 参数用法错误 | 缺少必选参数、参数格式错误 |
+| 2 | ExitUsage | 参数用法错误 | 缺少必选参数、参数格式错误、非交互模式未传 `--yes` |
 | 3 | ExitNotFound | 资源不存在 | issue/pr/repo 不存在 |
 | 4 | ExitAuth | 认证错误 | 未登录或 token 无效 |
 | 5 | ExitConflict | 资源冲突 | PR merge 冲突 |
 
+### 全局 flag
+
+| Flag | 说明 |
+|------|------|
+| `--no-interactive` | 禁用交互式提示（供 AI 代理/脚本/管道使用）。设置后所有确认提示立即失败并提示 `--yes`，等价于强制非 TTY 的确认行为。破坏性命令仍需显式传 `--yes` 才能执行。 |
+
 示例：
 ```bash
+# 非交互模式：破坏性命令必须显式 --yes，否则退出码 2
+gc --no-interactive pr merge 11 -R owner/repo          # 退出码 2，提示 rerun with --yes
+gc --no-interactive --yes pr merge 11 -R owner/repo    # 执行合并
+
 # 检查退出码
 gc issue view abc  # 无效 issue 号
 echo $?            # 输出 2 (ExitUsage)

@@ -1,6 +1,8 @@
 package iostreams
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestSplitCommandLine(t *testing.T) {
 	tests := []struct {
@@ -88,9 +90,11 @@ func TestCanPrompt(t *testing.T) {
 			t.Fatal("CanPrompt() should return true after SetNoInteractive(false)")
 		}
 	})
+}
 
-	t.Run("SetNoInteractive on nil receiver is safe", func(t *testing.T) {
-		var io *IOStreams
-		io.SetNoInteractive(true) // should not panic
-	})
+func TestCanPromptNilSafe(t *testing.T) {
+	var s *IOStreams
+	if s.CanPrompt() {
+		t.Fatal("nil IOStreams CanPrompt() = true, want false")
+	}
 }

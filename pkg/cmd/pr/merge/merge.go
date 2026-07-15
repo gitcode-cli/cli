@@ -19,6 +19,7 @@ import (
 type MergeOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -43,6 +44,7 @@ func NewCmdMerge(f *cmdutil.Factory, runF func(*MergeOptions) error) *cobra.Comm
 	opts := &MergeOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -107,7 +109,11 @@ func mergeRun(opts *MergeOptions) error {
 	}
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}

@@ -147,7 +147,7 @@ func TestNoInteractiveFlag(t *testing.T) {
 		}
 	})
 
-	t.Run("flag sets IOStreams.noInteractive", func(t *testing.T) {
+	t.Run("flag sets IOStreams.noInteractive and disables CanPrompt", func(t *testing.T) {
 		f := cmdutil.TestFactory()
 		io, _, _, _ := iostreams.TestTTY()
 		f.IOStreams = io
@@ -159,10 +159,15 @@ func TestNoInteractiveFlag(t *testing.T) {
 		cmd := NewRootCmd("dev", "none", "unknown", f)
 		cmd.SetArgs([]string{"--no-interactive", "version"})
 
+		if f.IOStreams.NoInteractive() {
+			t.Fatal("NoInteractive() = true before Execute, want false")
+		}
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("Execute() error = %v", err)
 		}
-
+		if !f.IOStreams.NoInteractive() {
+			t.Fatal("NoInteractive() = false after --no-interactive, want true")
+		}
 		if f.IOStreams.CanPrompt() {
 			t.Fatal("CanPrompt() should return false after --no-interactive")
 		}
@@ -182,6 +187,9 @@ func TestNoInteractiveFlag(t *testing.T) {
 
 		if !f.IOStreams.CanPrompt() {
 			t.Fatal("CanPrompt() should remain true without --no-interactive")
+		}
+		if f.IOStreams.NoInteractive() {
+			t.Fatal("NoInteractive() = true without --no-interactive, want false")
 		}
 	})
 }

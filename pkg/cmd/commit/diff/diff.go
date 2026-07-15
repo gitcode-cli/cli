@@ -16,6 +16,7 @@ import (
 type DiffOptions struct {
 	IO         *iostreams.IOStreams
 	HttpClient func() (*http.Client, error)
+	BaseRepo   func() (string, error)
 
 	// Arguments
 	Repository string
@@ -27,6 +28,7 @@ func NewCmdDiff(f *cmdutil.Factory, runF func(*DiffOptions) error) *cobra.Comman
 	opts := &DiffOptions{
 		IO:         f.IOStreams,
 		HttpClient: f.HttpClient,
+		BaseRepo:   f.BaseRepo,
 	}
 
 	cmd := &cobra.Command{
@@ -66,7 +68,11 @@ func diffRun(opts *DiffOptions) error {
 	}
 
 	// Get repository
-	owner, repo, err := parseRepo(opts.Repository)
+	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
+	}
+	owner, repo, err := parseRepo(repository)
 	if err != nil {
 		return err
 	}

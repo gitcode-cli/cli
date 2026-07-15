@@ -14,12 +14,12 @@
 
 ```bash
 # DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc_0.5.9_amd64.deb
-sudo dpkg -i gc_0.5.9_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_0.8.0_amd64.deb
+sudo dpkg -i gc_0.8.0_amd64.deb
 
 # RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gc-0.5.9-1.x86_64.rpm
-sudo rpm -i gc-0.5.9-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc-0.8.0-1.x86_64.rpm
+sudo rpm -i gc-0.8.0-1.x86_64.rpm
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -35,7 +35,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.5.9/gitcode_cli-0.5.9-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gitcode_cli-0.8.0-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode，避免 gc 被内置 Get-Content 别名覆盖
 gitcode version
@@ -164,6 +164,7 @@ gc release upload v1.0.0 app.zip -R owner/repo --json
 说明：
 
 - 删除、关闭、重开、状态切换、合并、同步推送/建 PR 等高风险写操作在非交互环境中不会再隐式等待输入；如果未显式传 `--yes`，会直接失败。
+- AI 代理/脚本可显式传 `--no-interactive` 主动声明非交互模式，等价于强制非 TTY 的确认行为；破坏性命令仍需 `--yes` 才能执行。
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
 - `repo log --json` 适合按文件和分支追踪提交历史；`pr list --paginate` 适合跨页扫描，`--commit-message` 适合从提交信息反查 PR。
 - `gc api` 输出远端原始响应，适合 typed command 尚未覆盖的 API；使用含 `&` 的查询参数时建议整体加引号。

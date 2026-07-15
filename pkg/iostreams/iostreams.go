@@ -30,6 +30,11 @@ func (s *IOStreams) SetNoInteractive(v bool) {
 	s.noInteractive = v
 }
 
+// NoInteractive returns whether non-interactive mode was explicitly requested.
+func (s *IOStreams) NoInteractive() bool {
+	return s != nil && s.noInteractive
+}
+
 // System returns IOStreams connected to standard input, output, and error
 func System() *IOStreams {
 	return &IOStreams{

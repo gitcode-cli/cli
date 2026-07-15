@@ -47,7 +47,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comment-file -`）上拦截疑似已被 Windows PowerShell 损坏成 `???` 的输入，并在 stderr 提示正确用法；如果确实需要原样传入连续问号，可设置 `GITCODE_CLI_ALLOW_LOSSY_STDIN=1`。
 
 当前自动推断边界：
-- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，当前覆盖 `issue` 相关命令、`repo view/log/branch view/stats`，`pr list/view/issues/comments/checkout/create/merge/reply/test`、`release create/delete/upload`、`commit comments (create/edit/list/list-by-sha/view)`、`commit diff/patch`、`label create/delete/list`、`milestone create/delete/list/view` 等命令。
+- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，主要覆盖 `issue` 相关命令、`repo view/log/branch view/stats`，`pr list/view/issues/comments/checkout/create/merge/reply/test`、`release list/view/create/delete/upload`、`commit view`、`commit comments (create/edit/list/list-by-sha/view)`、`commit diff/patch`、`label list/create/delete`、`milestone list/view/create/delete`、`actions` 相关命令等。注意：自动推断现已覆盖写/破坏性命令（如 `pr merge`、`release delete`），缺省 `-R` 即作用于当前 Git 仓库。
 - 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
 

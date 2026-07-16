@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
 
 func TestRootHelpMentionsWindowsPowerShellAliasForGC(t *testing.T) {
@@ -134,34 +135,61 @@ func TestGitcodeHelpRewritesExamples(t *testing.T) {
 	}
 }
 
-func TestNoInteractiveFlagDisablesCanPrompt(t *testing.T) {
-	f := cmdutil.TestFactory()
-	cmd := NewRootCmd("dev", "none", "unknown", f)
-	cmd.SetArgs([]string{"--no-interactive", "version"})
+func TestNoInteractiveFlag(t *testing.T) {
+	t.Run("flag is registered as persistent", func(t *testing.T) {
+		cmd := NewRootCmd("dev", "none", "unknown", cmdutil.TestFactory())
+		flag := cmd.PersistentFlags().Lookup("no-interactive")
+		if flag == nil {
+			t.Fatal("expected --no-interactive persistent flag to be registered")
+		}
+		if flag.DefValue != "false" {
+			t.Fatalf("default value = %q, want false", flag.DefValue)
+		}
+	})
 
-	if f.IOStreams.NoInteractive() {
-		t.Fatal("NoInteractive() = true before Execute, want false")
-	}
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Execute() error = %v", err)
-	}
-	if !f.IOStreams.NoInteractive() {
-		t.Fatal("NoInteractive() = false after --no-interactive, want true")
-	}
-	if f.IOStreams.CanPrompt() {
-		t.Fatal("CanPrompt() = true after --no-interactive, want false")
-	}
-}
+	t.Run("flag sets IOStreams.noInteractive and disables CanPrompt", func(t *testing.T) {
+		f := cmdutil.TestFactory()
+		io, _, _, _ := iostreams.TestTTY()
+		f.IOStreams = io
 
-func TestNoInteractiveFlagAbsentKeepsCanPrompt(t *testing.T) {
-	f := cmdutil.TestFactory()
-	cmd := NewRootCmd("dev", "none", "unknown", f)
-	cmd.SetArgs([]string{"version"})
+		if !f.IOStreams.CanPrompt() {
+			t.Fatal("precondition: CanPrompt() should be true before --no-interactive")
+		}
 
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Execute() error = %v", err)
-	}
-	if f.IOStreams.NoInteractive() {
-		t.Fatal("NoInteractive() = true without --no-interactive, want false")
-	}
+		cmd := NewRootCmd("dev", "none", "unknown", f)
+		cmd.SetArgs([]string{"--no-interactive", "version"})
+
+		if f.IOStreams.NoInteractive() {
+			t.Fatal("NoInteractive() = true before Execute, want false")
+		}
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("Execute() error = %v", err)
+		}
+		if !f.IOStreams.NoInteractive() {
+			t.Fatal("NoInteractive() = false after --no-interactive, want true")
+		}
+		if f.IOStreams.CanPrompt() {
+			t.Fatal("CanPrompt() should return false after --no-interactive")
+		}
+	})
+
+	t.Run("without flag CanPrompt remains true", func(t *testing.T) {
+		f := cmdutil.TestFactory()
+		io, _, _, _ := iostreams.TestTTY()
+		f.IOStreams = io
+
+		cmd := NewRootCmd("dev", "none", "unknown", f)
+		cmd.SetArgs([]string{"version"})
+
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("Execute() error = %v", err)
+		}
+
+		if !f.IOStreams.CanPrompt() {
+			t.Fatal("CanPrompt() should remain true without --no-interactive")
+		}
+		if f.IOStreams.NoInteractive() {
+			t.Fatal("NoInteractive() = true without --no-interactive, want false")
+		}
+	})
 }

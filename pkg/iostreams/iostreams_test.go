@@ -1,7 +1,6 @@
 package iostreams
 
 import (
-	"io"
 	"testing"
 )
 
@@ -60,19 +59,37 @@ func TestSplitCommandLine(t *testing.T) {
 	}
 }
 
-func TestSetNoInteractiveDisablesCanPrompt(t *testing.T) {
-	s := &IOStreams{isInputTTY: func(io.Reader) bool { return true }}
-	if !s.CanPrompt() {
-		t.Fatal("CanPrompt() = false, want true before SetNoInteractive")
-	}
-	s.SetNoInteractive(true)
-	if s.CanPrompt() {
-		t.Fatal("CanPrompt() = true, want false after SetNoInteractive(true)")
-	}
-	s.SetNoInteractive(false)
-	if !s.CanPrompt() {
-		t.Fatal("CanPrompt() = false, want true after SetNoInteractive(false)")
-	}
+func TestCanPrompt(t *testing.T) {
+	t.Run("default Test() returns false", func(t *testing.T) {
+		io, _, _, _ := Test()
+		if io.CanPrompt() {
+			t.Fatal("Test() IOStreams should not be promptable")
+		}
+	})
+
+	t.Run("TestTTY returns true by default", func(t *testing.T) {
+		io, _, _, _ := TestTTY()
+		if !io.CanPrompt() {
+			t.Fatal("TestTTY() IOStreams should be promptable by default")
+		}
+	})
+
+	t.Run("SetNoInteractive disables prompting", func(t *testing.T) {
+		io, _, _, _ := TestTTY()
+		io.SetNoInteractive(true)
+		if io.CanPrompt() {
+			t.Fatal("CanPrompt() should return false after SetNoInteractive(true)")
+		}
+	})
+
+	t.Run("SetNoInteractive false restores prompting", func(t *testing.T) {
+		io, _, _, _ := TestTTY()
+		io.SetNoInteractive(true)
+		io.SetNoInteractive(false)
+		if !io.CanPrompt() {
+			t.Fatal("CanPrompt() should return true after SetNoInteractive(false)")
+		}
+	})
 }
 
 func TestCanPromptNilSafe(t *testing.T) {

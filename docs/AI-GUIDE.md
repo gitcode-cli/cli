@@ -94,8 +94,8 @@ gitcode auth login
 ## 3. 验证安装
 
 ```bash
-gc version
-gc auth status
+gitcode version
+gitcode auth status
 ```
 
 ## 4. 安装 GitCode CLI Skills
@@ -112,12 +112,19 @@ gc auth status
 ```bash
 git clone git@gitcode.com:gitcode-cli/skills.git
 cd skills
+git checkout 6f0d8b0eb2bc3fb6f4c112a90432f3fcbf491d75
+
+# 启用前审阅 skill 及其引用文件；目标已存在时停止，避免静默覆盖
+git show --stat --oneline HEAD
+git show HEAD:gitcode-pr-review/SKILL.md
+test ! -e ~/.codex/skills/gitcode-pr-review/SKILL.md || { echo "target skill already exists" >&2; exit 1; }
 
 # Codex 示例
 mkdir -p ~/.codex/skills/gitcode-pr-review
 cp gitcode-pr-review/SKILL.md ~/.codex/skills/gitcode-pr-review/SKILL.md
 
 # Claude 示例
+test ! -e ~/.claude/skills/gitcode-pr-review/SKILL.md || { echo "target skill already exists" >&2; exit 1; }
 mkdir -p ~/.claude/skills/gitcode-pr-review
 cp gitcode-pr-review/SKILL.md ~/.claude/skills/gitcode-pr-review/SKILL.md
 ```
@@ -127,52 +134,59 @@ Windows PowerShell：
 ```powershell
 git clone git@gitcode.com:gitcode-cli/skills.git
 Set-Location skills
+$SkillCommit = "6f0d8b0eb2bc3fb6f4c112a90432f3fcbf491d75"
+git checkout $SkillCommit
+git show --stat --oneline HEAD
+git show HEAD:gitcode-pr-review/SKILL.md
+$Target = "$env:USERPROFILE\.codex\skills\gitcode-pr-review\SKILL.md"
+if (Test-Path $Target) { throw "target skill already exists: $Target" }
 New-Item -ItemType Directory -Force "$env:USERPROFILE\.codex\skills\gitcode-pr-review" | Out-Null
-Copy-Item gitcode-pr-review\SKILL.md "$env:USERPROFILE\.codex\skills\gitcode-pr-review\SKILL.md"
+Copy-Item gitcode-pr-review\SKILL.md $Target
 ```
 
-完整 skill 清单、适用场景和安装说明见 [GitCode CLI Skills README](https://gitcode.com/gitcode-cli/skills)。安装后，AI 即可按对应工作流使用 `gitcode` 命令操作 GitCode。
+示例固定到评审时核验过的 commit；升级前应重新审阅 `SKILL.md` 及其引用文件。完整 skill 清单、适用场景和安装说明见 [GitCode CLI Skills README](https://gitcode.com/gitcode-cli/skills)。安装后，AI 即可按对应工作流使用 `gitcode` 命令操作 GitCode。
 
 ## 5. 面向 AI 的使用建议
 
-为了让 AI 和脚本更稳定地消费 `gc`，优先使用以下模式：
+为了让 AI 和脚本更稳定地消费 `gitcode`，优先使用以下模式：
 
 ```bash
 # 读取类命令优先使用 JSON
-gc repo view owner/repo --json
-gc repo log -R owner/repo --file README.md --branch main --json
-gc issue list -R owner/repo --json
-gc pr view 123 -R owner/repo --json
-gc pr list -R owner/repo --paginate --per-page 100 --json
-gc pr list -R owner/repo --commit-message "fix login" --json
-gc pr comments 123 -R owner/repo --json
-gc issue prs 123 -R owner/repo --json
-gc repo stats -R owner/repo --branch main --json
-gc milestone view 1 -R owner/repo --json
-gc commit comments list -R owner/repo --json
-gc commit comments list-by-sha <sha> -R owner/repo --json
-gc commit comments view <id> -R owner/repo --json
+gitcode repo view owner/repo --json
+gitcode repo log -R owner/repo --file README.md --branch main --json
+gitcode issue list -R owner/repo --json
+gitcode pr view 123 -R owner/repo --json
+gitcode pr list -R owner/repo --paginate --per-page 100 --json
+gitcode pr list -R owner/repo --commit-message "fix login" --json
+gitcode pr comments 123 -R owner/repo --json
+gitcode issue prs 123 -R owner/repo --json
+gitcode repo stats -R owner/repo --branch main --json
+gitcode milestone view 1 -R owner/repo --json
+gitcode commit comments list -R owner/repo --json
+gitcode commit comments list-by-sha <sha> -R owner/repo --json
+gitcode commit comments view <id> -R owner/repo --json
 
 # 探索命令结构优先使用 schema
-gc schema
-gc schema "issue view"
+gitcode schema
+gitcode schema "issue view"
 
-# typed command 尚未覆盖时，可使用 gc api 读取 GitCode API 原始响应
-gc api repos/owner/repo
-gc api 'repos/owner/repo/commits?path=README.md&sha=main'
+# typed command 尚未覆盖时，可使用 gitcode api 读取 GitCode API 原始响应
+gitcode api repos/owner/repo
+gitcode api 'repos/owner/repo/commits?path=README.md&sha=main'
 
 # 高风险删除命令先 dry-run，再决定是否执行
-gc repo delete owner/repo --dry-run
-gc release delete v1.0.0 -R owner/repo --dry-run
+gitcode repo delete owner/repo --dry-run
+gitcode release delete v1.0.0 -R owner/repo --dry-run
 
 # 高频写路径需要解析结果时使用 JSON
-gc issue create -R owner/repo --title "Bug" --body "..." --json
-gc pr create -R owner/repo --head feature-branch --title "Feature" --body "..." --json
-gc issue edit 123 -R owner/repo --title "Updated" --json
-gc pr merge 123 -R owner/repo --yes --json
-gc repo fork owner/repo --json
-gc release create v1.0.0 -R owner/repo --title "v1.0.0" --notes "..." --json
-gc release upload v1.0.0 app.zip -R owner/repo --json
+gitcode issue create -R owner/repo --title "Bug" --body "..." --json
+gitcode pr create -R owner/repo --head feature-branch --title "Feature" --body "..." --json
+gitcode issue edit 123 -R owner/repo --title "Updated" --json
+# 仅在用户针对本次合并明确授权后，才允许跳过交互确认
+gitcode pr merge 123 -R owner/repo --yes --json
+gitcode repo fork owner/repo --json
+gitcode release create v1.0.0 -R owner/repo --title "v1.0.0" --notes "..." --json
+gitcode release upload v1.0.0 app.zip -R owner/repo --json
 ```
 
 说明：
@@ -181,7 +195,7 @@ gc release upload v1.0.0 app.zip -R owner/repo --json
 - AI 代理/脚本可显式传 `--no-interactive` 主动声明非交互模式，等价于强制非 TTY 的确认行为；破坏性命令仍需 `--yes` 才能执行。
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
 - `repo log --json` 适合按文件和分支追踪提交历史；`pr list --paginate` 适合跨页扫描，`--commit-message` 适合从提交信息反查 PR。
-- `gc api` 输出远端原始响应，适合 typed command 尚未覆盖的 API；使用含 `&` 的查询参数时建议整体加引号。
+- `gitcode api` 输出远端原始响应，适合 typed command 尚未覆盖的 API；使用含 `&` 的查询参数时建议整体加引号。
 - 写路径 `--json` 只在操作成功后输出结构化结果；执行失败时不要从 stdout 解析半成品结果。
 - `pr create --json` 会尽量回读新建 PR 以补齐创建响应缺失的正文；如果远端仍未返回 body，会在 stderr 给 warning，并保持 JSON 中的远端事实为空，脚本可再运行 `gitcode pr view <number> -R owner/repo --json` 核验。
 - 当前基础退出码语义：`0` 成功，`1` 通用错误，`2` 参数/用法错误，`3` 资源不存在，`4` 认证/权限错误，`5` 资源冲突。
@@ -278,7 +292,7 @@ Showing 15 of 15 pull requests in owner/repo (filtered)
 发布 v1.0.0 版本
 ```
 
-AI 会自动使用 `gc` 命令执行操作。
+AI 会自动使用 `gitcode` 命令执行操作。
 
 ## 更多信息
 

@@ -232,35 +232,35 @@ gitcode auth login
 
 ```bash
 # 查看认证状态
-gc auth status
+gitcode auth status
 ```
 
 > 详细命令行为和完整示例请查看 [docs/COMMANDS.md](./docs/COMMANDS.md)。
 
 ## 输出格式
 
-`gc` 的只读命令继续以文本输出为默认体验，同时为脚本和代理保留稳定的结构化入口。
+`gitcode` 的只读命令继续以文本输出为默认体验，同时为脚本和代理保留稳定的结构化入口。
 
 ```bash
 # 结构化输出
-gc issue list -R owner/repo --json
-gc issue list -R owner/repo --format json
-gc repo log -R owner/repo --file README.md --branch main --json
-gc pr list -R owner/repo --paginate --per-page 100 --json
+gitcode issue list -R owner/repo --json
+gitcode issue list -R owner/repo --format json
+gitcode repo log -R owner/repo --file README.md --branch main --json
+gitcode pr list -R owner/repo --paginate --per-page 100 --json
 
 # 常规文本与表格
-gc issue list -R owner/repo --format simple
-gc issue list -R owner/repo --format table
+gitcode issue list -R owner/repo --format simple
+gitcode issue list -R owner/repo --format table
 
 # 时间格式切换
-gc issue list -R owner/repo --time-format absolute
-gc issue list -R owner/repo --time-format relative
+gitcode issue list -R owner/repo --time-format absolute
+gitcode issue list -R owner/repo --time-format relative
 
 # 自定义模板输出
-gc issue list -R owner/repo --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"}}{{end}}'
+gitcode issue list -R owner/repo --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"}}{{end}}'
 
-# typed command 尚未覆盖的 API，可用 gc api 读取原始响应
-gc api repos/owner/repo
+# typed command 尚未覆盖的 API，可用 gitcode api 读取原始响应
+gitcode api repos/owner/repo
 ```
 
 `issue view` 和 `pr view` 的文本详情展示也会保持稳定布局，而 `--json` 仍然是面向机器调用的首选入口。
@@ -271,58 +271,58 @@ gc api repos/owner/repo
 
 ```bash
 # 查看仓库
-gc repo view
+gitcode repo view
 
 # 查看文件提交历史
-gc repo log -R owner/repo --file README.md --branch main
+gitcode repo log -R owner/repo --file README.md --branch main
 
 # 创建 Issue
-gc issue create --title "Bug report" --body "Description"
+gitcode issue create --title "Bug report" --body "Description"
 
 # 列出 Issues
-gc issue list --state open
+gitcode issue list --state open
 
 # 创建 PR
-gc pr create --title "New feature" --base main
+gitcode pr create --title "New feature" --base main
 
 # 按提交信息反查 PR
-gc pr list -R owner/repo --commit-message "fix login"
+gitcode pr list -R owner/repo --commit-message "fix login"
 
 # 提交前检查 pre-commit 配置与本地环境
-gc precommit check
+gitcode precommit check
 
 # 查看流水线运行记录
-gc actions run list -R owner/repo --status FAILED
+gitcode actions run list -R owner/repo --status FAILED
 
 # 查看流水线运行详情
-gc actions run view <run-id> -R owner/repo
+gitcode actions run view <run-id> -R owner/repo
 
 # 列出流水线运行的 jobs
-gc actions job list <run-id> -R owner/repo
+gitcode actions job list <run-id> -R owner/repo
 
 # 查看工作流 job 详情
-gc actions job view <run-id> <job-id> -R owner/repo
+gitcode actions job view <run-id> <job-id> -R owner/repo
 
 # 下载 job 日志归档
-gc actions job log <run-id> <job-id> -R owner/repo --output job-log.zip
+gitcode actions job log <run-id> <job-id> -R owner/repo --output job-log.zip
 
 # 列出仓库 artifacts
-gc actions artifact list -R owner/repo
+gitcode actions artifact list -R owner/repo
 
 # 查看 artifact 详情
-gc actions artifact view <artifact-id> -R owner/repo
+gitcode actions artifact view <artifact-id> -R owner/repo
 
 # 下载 artifact
-gc actions artifact download <artifact-id> -R owner/repo --output artifact.zip
+gitcode actions artifact download <artifact-id> -R owner/repo --output artifact.zip
 
 # 删除 artifact
-gc actions artifact delete <artifact-id> -R owner/repo --yes
+gitcode actions artifact delete <artifact-id> -R owner/repo --yes
 
 # 调用 GitCode API 原始响应
-gc api repos/owner/repo
+gitcode api repos/owner/repo
 
 # 查看认证状态
-gc auth status
+gitcode auth status
 ```
 
 完整命令说明、参数细节、平台限制和更多示例，请直接查看：

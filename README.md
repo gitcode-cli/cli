@@ -6,7 +6,9 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/badge/Release-latest-blue)](https://gitcode.com/gitcode-cli/cli/releases)
 
-GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
+GitCode CLI 把仓库、Issue、PR、Release 和 Actions 带回终端，让开发者减少页面切换，也让脚本与 AI 获得结构化、可审计、带安全边界的 GitCode 执行入口。
+
+[快速了解核心价值与应用场景，并在五分钟内开始使用](./docs/INTRODUCTION.md)。
 
 ## 文档导航
 
@@ -21,6 +23,7 @@ GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验
 
 主要文档：
 
+- [产品介绍与快速上手](./docs/INTRODUCTION.md)
 - [命令手册](./docs/COMMANDS.md)
 - [认证说明](./docs/AUTH.md)
 - [回归说明](./docs/REGRESSION.md)
@@ -167,11 +170,13 @@ make docker-run
 docker compose up gc
 ```
 
-认证 token 通过环境变量传入：
+认证 Token 通过环境变量传入。请在交互终端中静默读取，避免 Token 值进入 shell history：
 
 ```bash
-# 使用 export 而非内联赋值，避免 token 被记录到 shell history
-export GC_TOKEN=your_token && make docker-run
+read -rsp "GitCode token: " GC_TOKEN
+export GC_TOKEN
+make docker-run
+unset GC_TOKEN
 ```
 
 更多用法参见 Makefile 和 `docker-compose.yml`。
@@ -187,29 +192,23 @@ export GC_TOKEN=your_token && make docker-run
 
 ### 认证
 
-**方式一：设置环境变量（推荐）**
+以下示例使用安装包提供的 `gitcode` 入口；从源码构建或使用独立二进制时，请将命令名改为 `gc`。
+
+**方式一：打开令牌页面并登录**
 
 ```bash
-# 设置 Token 环境变量
-export GC_TOKEN="your_gitcode_token"
-
-# 或使用备用变量名
-export GITCODE_TOKEN="your_gitcode_token"
-
-# 添加到 shell 配置文件（永久生效）
-echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
-source ~/.bashrc
+gitcode auth login --web
 ```
 
-**方式二：交互式登录**
+当前 `--web` 会打开个人令牌页面，生成令牌后仍需回到终端粘贴。当前版本不会隐藏输入，因此必须由用户本人在私有、未录制且不由 AI 控制的本地终端中执行。
+
+**方式二：交互式 Token 登录**
 
 ```bash
-# 交互式登录（需输入 Token）
-gc auth login
-
-# 非交互登录（从 stdin 读取 Token）
-echo "YOUR_TOKEN" | gc auth login --with-token
+gitcode auth login
 ```
+
+浏览器不可用时，可在同样受控的本地交互终端中输入 Token。不要把 Token 值直接写进命令、shell history 或配置脚本。CI 场景应通过平台 Secret 注入 `GC_TOKEN` 或 `GITCODE_TOKEN`。
 
 当前版本认证优先级：
 

@@ -4,7 +4,7 @@
 
 边界说明：
 
-- 本文档只适用于“外部项目通过 AI 使用 `gc` 操作 GitCode”
+- 本文档只适用于“外部项目通过 AI 使用 `gitcode`（或可用时的 `gc`）操作 GitCode”
 - 本文档不定义 gitcode-cli 仓库内部开发流程
 - 在 gitcode-cli 仓库内部参与开发时，应以 `AGENTS.md`、`CLAUDE.md`、`spec/README.md` 和 `spec/workflows/*` 为准
 
@@ -74,14 +74,17 @@ go build -o gc ./cmd/gc
 
 ## 2. 认证配置
 
-```bash
-# 设置 Token 环境变量
-export GC_TOKEN=your_gitcode_token
+以下示例使用安装包提供的 `gitcode` 入口；从源码构建或使用独立二进制时，请将命令名改为 `gc`。
 
-# 添加到 shell 配置文件（永久生效）
-echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
-source ~/.bashrc
+```bash
+# 打开个人令牌页面，生成后回到终端粘贴
+gitcode auth login --web
+
+# 浏览器不可用时，在本地交互终端中输入 Token
+gitcode auth login
 ```
+
+当前 `--web` 不是完整的浏览器授权流程，终端粘贴的 Token 也不会隐藏。上述登录命令必须由用户本人在私有、未录制且不由 AI 控制的本地终端中执行。不要把 Token 值交给 AI，也不要把 Token 直接写进命令、shell history、Prompt 或配置脚本。CI 场景应通过平台 Secret 注入 `GC_TOKEN` 或 `GITCODE_TOKEN`。完整认证规则见 [AUTH.md](./AUTH.md)。
 
 **获取 Token：**
 1. 登录 [GitCode](https://gitcode.com)
@@ -95,29 +98,40 @@ gc version
 gc auth status
 ```
 
-## 4. 安装 gc-core Skill
+## 4. 安装 GitCode CLI Skills
 
-外部项目推荐使用 `gc-core` 通用 skill 包，而不是仓库内部协作 skill。
+面向外部项目的通用 skills 已独立维护在 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)，不再从本仓库内的 `.ai/distribution` 安装。
 
-详细安装与分发说明见：
+该仓库将 skills 分为两类：
 
-- [gc-core 安装与分发说明](../.ai/distribution/gc-core/INSTALL.md)
+- 核心命令 skills：覆盖认证、仓库、Issue、PR、Review、Release、Commit、标签与里程碑等命令族
+- 工作流 skills：覆盖 Issue 创建与评审、PR 创建与评审、评审反馈修复、Release 发布、安全检查、流水线分析等端到端任务
 
-常见安装方式：
+安装时克隆 skills 仓库，并将需要的独立 skill 目录复制到 AI 客户端的 skills 目录。每个 skill 都可以独立安装：
 
 ```bash
-# Claude
-mkdir -p ~/.claude/skills/gc-pr
-cp .ai/distribution/gc-core/pr/SKILL.md ~/.claude/skills/gc-pr/SKILL.md
+git clone git@gitcode.com:gitcode-cli/skills.git
+cd skills
 
-# Codex
-mkdir -p ~/.codex/skills/gc-pr
-cp .ai/distribution/gc-core/pr/SKILL.md ~/.codex/skills/gc-pr/SKILL.md
+# Codex 示例
+mkdir -p ~/.codex/skills/gitcode-pr-review
+cp gitcode-pr-review/SKILL.md ~/.codex/skills/gitcode-pr-review/SKILL.md
+
+# Claude 示例
+mkdir -p ~/.claude/skills/gitcode-pr-review
+cp gitcode-pr-review/SKILL.md ~/.claude/skills/gitcode-pr-review/SKILL.md
 ```
 
-你也可以按同样方式安装 `gc-auth`、`gc-issue`、`gc-review` 等其他通用 skill。
+Windows PowerShell：
 
-安装后，AI 就可以通过 `gc` 命令操作 GitCode。
+```powershell
+git clone git@gitcode.com:gitcode-cli/skills.git
+Set-Location skills
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.codex\skills\gitcode-pr-review" | Out-Null
+Copy-Item gitcode-pr-review\SKILL.md "$env:USERPROFILE\.codex\skills\gitcode-pr-review\SKILL.md"
+```
+
+完整 skill 清单、适用场景和安装说明见 [GitCode CLI Skills README](https://gitcode.com/gitcode-cli/skills)。安装后，AI 即可按对应工作流使用 `gitcode` 命令操作 GitCode。
 
 ## 5. 面向 AI 的使用建议
 
@@ -273,4 +287,4 @@ AI 会自动使用 `gc` 命令执行操作。
 
 ---
 
-**最后更新**: 2026-06-17
+**最后更新**: 2026-07-22

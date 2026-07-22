@@ -6,7 +6,9 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/badge/Release-latest-blue)](https://gitcode.com/gitcode-cli/cli/releases)
 
-GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验。
+GitCode CLI 把仓库、Issue、PR、Release 和 Actions 带回终端，让开发者减少页面切换，也让脚本与 AI 获得结构化、可审计、带安全边界的 GitCode 执行入口。
+
+[快速了解核心价值与应用场景，并在五分钟内开始使用](./docs/INTRODUCTION.md)。
 
 ## 文档导航
 
@@ -21,6 +23,7 @@ GitCode 命令行工具，为 GitCode 用户提供便捷的命令行操作体验
 
 主要文档：
 
+- [产品介绍与快速上手](./docs/INTRODUCTION.md)
 - [命令手册](./docs/COMMANDS.md)
 - [认证说明](./docs/AUTH.md)
 - [回归说明](./docs/REGRESSION.md)
@@ -167,11 +170,13 @@ make docker-run
 docker compose up gc
 ```
 
-认证 token 通过环境变量传入：
+认证 Token 通过环境变量传入。请在交互终端中静默读取，避免 Token 值进入 shell history：
 
 ```bash
-# 使用 export 而非内联赋值，避免 token 被记录到 shell history
-export GC_TOKEN=your_token && make docker-run
+read -rsp "GitCode token: " GC_TOKEN
+export GC_TOKEN
+make docker-run
+unset GC_TOKEN
 ```
 
 更多用法参见 Makefile 和 `docker-compose.yml`。
@@ -187,29 +192,23 @@ export GC_TOKEN=your_token && make docker-run
 
 ### 认证
 
-**方式一：设置环境变量（推荐）**
+以下示例使用安装包提供的 `gitcode` 入口；从源码构建或使用独立二进制时，请将命令名改为 `gc`。
+
+**方式一：打开令牌页面并登录**
 
 ```bash
-# 设置 Token 环境变量
-export GC_TOKEN="your_gitcode_token"
-
-# 或使用备用变量名
-export GITCODE_TOKEN="your_gitcode_token"
-
-# 添加到 shell 配置文件（永久生效）
-echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
-source ~/.bashrc
+gitcode auth login --web
 ```
 
-**方式二：交互式登录**
+当前 `--web` 会打开个人令牌页面，生成令牌后仍需回到终端粘贴。当前版本不会隐藏输入，因此必须由用户本人在私有、未录制且不由 AI 控制的本地终端中执行。
+
+**方式二：交互式 Token 登录**
 
 ```bash
-# 交互式登录（需输入 Token）
-gc auth login
-
-# 非交互登录（从 stdin 读取 Token）
-echo "YOUR_TOKEN" | gc auth login --with-token
+gitcode auth login
 ```
+
+浏览器不可用时，可在同样受控的本地交互终端中输入 Token。不要把 Token 值直接写进命令、shell history 或配置脚本。CI 场景应通过平台 Secret 注入 `GC_TOKEN` 或 `GITCODE_TOKEN`。
 
 当前版本认证优先级：
 
@@ -233,35 +232,35 @@ echo "YOUR_TOKEN" | gc auth login --with-token
 
 ```bash
 # 查看认证状态
-gc auth status
+gitcode auth status
 ```
 
 > 详细命令行为和完整示例请查看 [docs/COMMANDS.md](./docs/COMMANDS.md)。
 
 ## 输出格式
 
-`gc` 的只读命令继续以文本输出为默认体验，同时为脚本和代理保留稳定的结构化入口。
+`gitcode` 的只读命令继续以文本输出为默认体验，同时为脚本和代理保留稳定的结构化入口。
 
 ```bash
 # 结构化输出
-gc issue list -R owner/repo --json
-gc issue list -R owner/repo --format json
-gc repo log -R owner/repo --file README.md --branch main --json
-gc pr list -R owner/repo --paginate --per-page 100 --json
+gitcode issue list -R owner/repo --json
+gitcode issue list -R owner/repo --format json
+gitcode repo log -R owner/repo --file README.md --branch main --json
+gitcode pr list -R owner/repo --paginate --per-page 100 --json
 
 # 常规文本与表格
-gc issue list -R owner/repo --format simple
-gc issue list -R owner/repo --format table
+gitcode issue list -R owner/repo --format simple
+gitcode issue list -R owner/repo --format table
 
 # 时间格式切换
-gc issue list -R owner/repo --time-format absolute
-gc issue list -R owner/repo --time-format relative
+gitcode issue list -R owner/repo --time-format absolute
+gitcode issue list -R owner/repo --time-format relative
 
 # 自定义模板输出
-gc issue list -R owner/repo --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"}}{{end}}'
+gitcode issue list -R owner/repo --template '{{range .}}#{{.Number}} {{.Title}}{{"\n"}}{{end}}'
 
-# typed command 尚未覆盖的 API，可用 gc api 读取原始响应
-gc api repos/owner/repo
+# typed command 尚未覆盖的 API，可用 gitcode api 读取原始响应
+gitcode api repos/owner/repo
 ```
 
 `issue view` 和 `pr view` 的文本详情展示也会保持稳定布局，而 `--json` 仍然是面向机器调用的首选入口。
@@ -272,58 +271,58 @@ gc api repos/owner/repo
 
 ```bash
 # 查看仓库
-gc repo view
+gitcode repo view
 
 # 查看文件提交历史
-gc repo log -R owner/repo --file README.md --branch main
+gitcode repo log -R owner/repo --file README.md --branch main
 
 # 创建 Issue
-gc issue create --title "Bug report" --body "Description"
+gitcode issue create --title "Bug report" --body "Description"
 
 # 列出 Issues
-gc issue list --state open
+gitcode issue list --state open
 
 # 创建 PR
-gc pr create --title "New feature" --base main
+gitcode pr create --title "New feature" --base main
 
 # 按提交信息反查 PR
-gc pr list -R owner/repo --commit-message "fix login"
+gitcode pr list -R owner/repo --commit-message "fix login"
 
 # 提交前检查 pre-commit 配置与本地环境
-gc precommit check
+gitcode precommit check
 
 # 查看流水线运行记录
-gc actions run list -R owner/repo --status FAILED
+gitcode actions run list -R owner/repo --status FAILED
 
 # 查看流水线运行详情
-gc actions run view <run-id> -R owner/repo
+gitcode actions run view <run-id> -R owner/repo
 
 # 列出流水线运行的 jobs
-gc actions job list <run-id> -R owner/repo
+gitcode actions job list <run-id> -R owner/repo
 
 # 查看工作流 job 详情
-gc actions job view <run-id> <job-id> -R owner/repo
+gitcode actions job view <run-id> <job-id> -R owner/repo
 
 # 下载 job 日志归档
-gc actions job log <run-id> <job-id> -R owner/repo --output job-log.zip
+gitcode actions job log <run-id> <job-id> -R owner/repo --output job-log.zip
 
 # 列出仓库 artifacts
-gc actions artifact list -R owner/repo
+gitcode actions artifact list -R owner/repo
 
 # 查看 artifact 详情
-gc actions artifact view <artifact-id> -R owner/repo
+gitcode actions artifact view <artifact-id> -R owner/repo
 
 # 下载 artifact
-gc actions artifact download <artifact-id> -R owner/repo --output artifact.zip
+gitcode actions artifact download <artifact-id> -R owner/repo --output artifact.zip
 
 # 删除 artifact
-gc actions artifact delete <artifact-id> -R owner/repo --yes
+gitcode actions artifact delete <artifact-id> -R owner/repo --yes
 
 # 调用 GitCode API 原始响应
-gc api repos/owner/repo
+gitcode api repos/owner/repo
 
 # 查看认证状态
-gc auth status
+gitcode auth status
 ```
 
 完整命令说明、参数细节、平台限制和更多示例，请直接查看：
@@ -362,7 +361,7 @@ source ~/.config/fish/config.fish
 
 补充说明：
 
-- `docs/AI-GUIDE.md` 只服务外部项目通过 AI 使用 `gc`
+- `docs/AI-GUIDE.md` 只服务外部项目通过 AI 使用 `gitcode`（或源码构建的 `gc`）
 - gitcode-cli 仓库内部 AI 开发请看 `AGENTS.md`、`CLAUDE.md` 和 `spec/workflows/ai-local-development-workflow.md`
 - `issues-plan/PROGRESS.md` 只作为阶段说明，不作为单个 issue / PR 的实时事实依据
 

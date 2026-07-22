@@ -361,7 +361,7 @@ source ~/.config/fish/config.fish
 
 补充说明：
 
-- `docs/AI-GUIDE.md` 只服务外部项目通过 AI 使用 `gc`
+- `docs/AI-GUIDE.md` 只服务外部项目通过 AI 使用 `gitcode`（或源码构建的 `gc`）
 - gitcode-cli 仓库内部 AI 开发请看 `AGENTS.md`、`CLAUDE.md` 和 `spec/workflows/ai-local-development-workflow.md`
 - `issues-plan/PROGRESS.md` 只作为阶段说明，不作为单个 issue / PR 的实时事实依据
 

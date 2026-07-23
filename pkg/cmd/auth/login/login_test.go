@@ -2,7 +2,6 @@ package login
 
 import (
 	"bytes"
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -10,6 +9,7 @@ import (
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdLogin(t *testing.T) {
@@ -65,6 +65,59 @@ func TestNewCmdLoginBindsWebAndHostnameFlags(t *testing.T) {
 	}
 	if gotHostname != "gitcode.com" {
 		t.Fatalf("Hostname = %q, want gitcode.com", gotHostname)
+	}
+}
+
+func TestNewCmdLoginRejectsWebWithToken(t *testing.T) {
+	f := cmdutil.TestFactory()
+	f.IOStreams.In = bytes.NewBufferString("test-token\n")
+	f.HttpClient = func() (*http.Client, error) {
+		t.Fatal("unexpected HTTP client creation")
+		return nil, nil
+	}
+	f.Config = func() (config.Config, error) {
+		t.Fatal("unexpected config access")
+		return nil, nil
+	}
+
+	cmd := NewCmdLogin(f, nil)
+	cmd.SetArgs([]string{"--web", "--with-token", "--hostname", "enterprise.example.com"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want mutually exclusive flags error")
+	}
+	if !strings.Contains(err.Error(), "--web and --with-token cannot be used together") {
+		t.Fatalf("Execute() error = %q, want mutually exclusive flags error", err.Error())
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", code, cmdutil.ExitUsage)
+	}
+}
+
+func TestNewCmdLoginRejectsWebWithCustomHost(t *testing.T) {
+	f := cmdutil.TestFactory()
+	f.HttpClient = func() (*http.Client, error) {
+		t.Fatal("unexpected HTTP client creation")
+		return nil, nil
+	}
+	f.Config = func() (config.Config, error) {
+		t.Fatal("unexpected config access")
+		return nil, nil
+	}
+
+	cmd := NewCmdLogin(f, nil)
+	cmd.SetArgs([]string{"--web", "--hostname", "enterprise.example.com"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want unsupported host")
+	}
+	if !strings.Contains(err.Error(), "--web only supports gitcode.com") {
+		t.Fatalf("Execute() error = %q, want unsupported host", err.Error())
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", code, cmdutil.ExitUsage)
 	}
 }
 

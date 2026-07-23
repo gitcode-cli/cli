@@ -76,6 +76,7 @@
 - 若同时存在环境变量，后续命令仍优先使用环境变量
 - 未显式传 `--with-token` 时，需要交互式 TTY；非交互环境会直接报错
 - `--web` (`-w`): 仅支持默认主机 `gitcode.com`，打开 `https://gitcode.com/setting/token-classic/create` 新建访问令牌页面，再继续在终端中完成登录
+- `--web` 与 `--with-token` 是互斥的认证模式，不能同时使用
 - 自定义主机不支持 `--web`；请先核对目标主机，再使用 `gc auth login --hostname <host>` 在本地交互终端登录
 - `--git-protocol` (`-p`): 选择 Git 操作使用的协议，支持 `https`（默认）和 `ssh`
 

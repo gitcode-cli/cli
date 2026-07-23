@@ -94,7 +94,7 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 	cmd.Flags().BoolVar(&opts.WithToken, "with-token", false, "Read token from standard input")
 	cmd.Flags().StringVarP(&opts.GitProtocol, "git-protocol", "p", "https", "The Git protocol to use for operations (https/ssh)")
 	cmdutil.SetFlagEnum(cmd, "git-protocol", "https", "ssh")
-	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open a browser to authenticate")
+	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open GitCode.com in a browser to authenticate")
 
 	return cmd
 }
@@ -163,6 +163,10 @@ func loginWithWeb(opts *LoginOptions) error {
 		return err
 	}
 	opts.Hostname = hostname
+
+	if opts.Hostname != "gitcode.com" {
+		return cmdutil.NewUsageError("--web only supports gitcode.com; use auth login --hostname <host> for custom hosts")
+	}
 
 	loginURL := fmt.Sprintf("https://%s/setting/token-classic/create", opts.Hostname)
 	fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", loginURL)

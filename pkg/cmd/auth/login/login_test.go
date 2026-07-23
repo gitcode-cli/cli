@@ -46,6 +46,28 @@ func TestNewCmdLogin(t *testing.T) {
 	}
 }
 
+func TestNewCmdLoginBindsWebAndHostnameFlags(t *testing.T) {
+	f := cmdutil.TestFactory()
+	var gotWeb bool
+	var gotHostname string
+	cmd := NewCmdLogin(f, func(opts *LoginOptions) error {
+		gotWeb = opts.Web
+		gotHostname = opts.Hostname
+		return nil
+	})
+	cmd.SetArgs([]string{"--web", "--hostname", "gitcode.com"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !gotWeb {
+		t.Fatal("Web = false, want true")
+	}
+	if gotHostname != "gitcode.com" {
+		t.Fatalf("Hostname = %q, want gitcode.com", gotHostname)
+	}
+}
+
 func TestLoginWithWebOpensBrowser(t *testing.T) {
 	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	io, _, out, _ := iostreams.Test()
@@ -87,41 +109,23 @@ func TestLoginWithWebOpensBrowser(t *testing.T) {
 	}
 }
 
-func TestLoginWithWebUsesCustomHost(t *testing.T) {
-	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+func TestLoginWithWebRejectsCustomHost(t *testing.T) {
 	io, _, _, _ := iostreams.Test()
-	io.In = bytes.NewBufferString("test-token\n")
-
-	var openedURL string
 	opts := &LoginOptions{
 		IO:       io,
 		Hostname: "enterprise.example.com",
-		HttpClient: func() (*http.Client, error) {
-			return &http.Client{
-				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-					return &http.Response{
-						StatusCode: http.StatusOK,
-						Header:     make(http.Header),
-						Body:       ioNopCloser(`{"login":"tester"}`),
-					}, nil
-				}),
-			}, nil
-		},
-		Config: func() (config.Config, error) {
-			return config.New(), nil
-		},
 		OpenBrowser: func(url string) error {
-			openedURL = url
+			t.Fatalf("unexpected browser open: %s", url)
 			return nil
 		},
 	}
 
-	if err := loginWithWeb(opts); err != nil {
-		t.Fatalf("loginWithWeb() error = %v", err)
+	err := loginWithWeb(opts)
+	if err == nil {
+		t.Fatal("loginWithWeb() error = nil, want unsupported host")
 	}
-
-	if openedURL != "https://enterprise.example.com/setting/token-classic/create" {
-		t.Fatalf("opened URL = %q", openedURL)
+	if !strings.Contains(err.Error(), "--web only supports gitcode.com") {
+		t.Fatalf("loginWithWeb() error = %q, want unsupported host", err.Error())
 	}
 }
 

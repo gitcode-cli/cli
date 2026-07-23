@@ -403,5 +403,5 @@ make run
 ## 相关链接
 
 - [GitCode](https://gitcode.com) - GitCode 平台
-- [API 文档](https://gitcode.com/docs/api) - GitCode API 参考
+- [API 文档](https://docs.gitcode.com/docs/apis/) - GitCode API 参考
 - [问题反馈](https://gitcode.com/gitcode-cli/cli/issues) - 提交 Bug 或建议

@@ -68,6 +68,15 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 			$ gc auth login --hostname gitcode.com
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if opts.Web && opts.WithToken {
+				return cmdutil.NewUsageError("--web and --with-token cannot be used together")
+			}
+			if opts.Web {
+				if err := validateWebHostname(opts); err != nil {
+					return err
+				}
+			}
+
 			if runF != nil {
 				return runF(opts)
 			}
@@ -158,6 +167,21 @@ func loginWithTokenFlag(opts *LoginOptions) error {
 }
 
 func loginWithWeb(opts *LoginOptions) error {
+	if err := validateWebHostname(opts); err != nil {
+		return err
+	}
+
+	const loginURL = "https://gitcode.com/setting/token-classic/create"
+	fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", loginURL)
+	if err := opts.OpenBrowser(loginURL); err != nil {
+		return fmt.Errorf("failed to open browser: %w", err)
+	}
+
+	fmt.Fprintf(opts.IO.Out, "After generating a token in the browser, paste it below.\n")
+	return loginInteractive(opts)
+}
+
+func validateWebHostname(opts *LoginOptions) error {
 	hostname, err := config.NormalizeTrustedHost(opts.Hostname)
 	if err != nil {
 		return err
@@ -167,15 +191,7 @@ func loginWithWeb(opts *LoginOptions) error {
 	if opts.Hostname != "gitcode.com" {
 		return cmdutil.NewUsageError("--web only supports gitcode.com; use auth login --hostname <host> for custom hosts")
 	}
-
-	loginURL := fmt.Sprintf("https://%s/setting/token-classic/create", opts.Hostname)
-	fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", loginURL)
-	if err := opts.OpenBrowser(loginURL); err != nil {
-		return fmt.Errorf("failed to open browser: %w", err)
-	}
-
-	fmt.Fprintf(opts.IO.Out, "After generating a token in the browser, paste it below.\n")
-	return loginInteractive(opts)
+	return nil
 }
 
 func loginInteractive(opts *LoginOptions) error {

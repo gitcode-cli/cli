@@ -2,7 +2,6 @@ package login
 
 import (
 	"bytes"
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -10,6 +9,7 @@ import (
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/config"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdLogin(t *testing.T) {
@@ -46,6 +46,81 @@ func TestNewCmdLogin(t *testing.T) {
 	}
 }
 
+func TestNewCmdLoginBindsWebAndHostnameFlags(t *testing.T) {
+	f := cmdutil.TestFactory()
+	var gotWeb bool
+	var gotHostname string
+	cmd := NewCmdLogin(f, func(opts *LoginOptions) error {
+		gotWeb = opts.Web
+		gotHostname = opts.Hostname
+		return nil
+	})
+	cmd.SetArgs([]string{"--web", "--hostname", "gitcode.com"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !gotWeb {
+		t.Fatal("Web = false, want true")
+	}
+	if gotHostname != "gitcode.com" {
+		t.Fatalf("Hostname = %q, want gitcode.com", gotHostname)
+	}
+}
+
+func TestNewCmdLoginRejectsWebWithToken(t *testing.T) {
+	f := cmdutil.TestFactory()
+	f.IOStreams.In = bytes.NewBufferString("test-token\n")
+	f.HttpClient = func() (*http.Client, error) {
+		t.Fatal("unexpected HTTP client creation")
+		return nil, nil
+	}
+	f.Config = func() (config.Config, error) {
+		t.Fatal("unexpected config access")
+		return nil, nil
+	}
+
+	cmd := NewCmdLogin(f, nil)
+	cmd.SetArgs([]string{"--web", "--with-token", "--hostname", "enterprise.example.com"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want mutually exclusive flags error")
+	}
+	if !strings.Contains(err.Error(), "--web and --with-token cannot be used together") {
+		t.Fatalf("Execute() error = %q, want mutually exclusive flags error", err.Error())
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", code, cmdutil.ExitUsage)
+	}
+}
+
+func TestNewCmdLoginRejectsWebWithCustomHost(t *testing.T) {
+	f := cmdutil.TestFactory()
+	f.HttpClient = func() (*http.Client, error) {
+		t.Fatal("unexpected HTTP client creation")
+		return nil, nil
+	}
+	f.Config = func() (config.Config, error) {
+		t.Fatal("unexpected config access")
+		return nil, nil
+	}
+
+	cmd := NewCmdLogin(f, nil)
+	cmd.SetArgs([]string{"--web", "--hostname", "enterprise.example.com"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want unsupported host")
+	}
+	if !strings.Contains(err.Error(), "--web only supports gitcode.com") {
+		t.Fatalf("Execute() error = %q, want unsupported host", err.Error())
+	}
+	if code := cmdutil.ExitCode(err); code != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode() = %d, want %d", code, cmdutil.ExitUsage)
+	}
+}
+
 func TestLoginWithWebOpensBrowser(t *testing.T) {
 	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	io, _, out, _ := iostreams.Test()
@@ -79,11 +154,31 @@ func TestLoginWithWebOpensBrowser(t *testing.T) {
 		t.Fatalf("loginWithWeb() error = %v", err)
 	}
 
-	if openedURL != "https://gitcode.com/-/profile/personal_access_tokens" {
+	if openedURL != "https://gitcode.com/setting/token-classic/create" {
 		t.Fatalf("opened URL = %q", openedURL)
 	}
-	if !strings.Contains(out.String(), "Opening https://gitcode.com/-/profile/personal_access_tokens in your browser.") {
+	if !strings.Contains(out.String(), "Opening https://gitcode.com/setting/token-classic/create in your browser.") {
 		t.Fatalf("output = %q", out.String())
+	}
+}
+
+func TestLoginWithWebRejectsCustomHost(t *testing.T) {
+	io, _, _, _ := iostreams.Test()
+	opts := &LoginOptions{
+		IO:       io,
+		Hostname: "enterprise.example.com",
+		OpenBrowser: func(url string) error {
+			t.Fatalf("unexpected browser open: %s", url)
+			return nil
+		},
+	}
+
+	err := loginWithWeb(opts)
+	if err == nil {
+		t.Fatal("loginWithWeb() error = nil, want unsupported host")
+	}
+	if !strings.Contains(err.Error(), "--web only supports gitcode.com") {
+		t.Fatalf("loginWithWeb() error = %q, want unsupported host", err.Error())
 	}
 }
 

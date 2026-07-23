@@ -110,7 +110,7 @@ gitcode auth login --web
 gitcode auth status
 ```
 
-`--web` 会打开个人令牌页面，生成后仍需回到终端粘贴；当前版本不会隐藏输入。请只在用户本人控制的私有、未录制本地终端中执行。浏览器不可用时可运行 `gitcode auth login`，但同样需要遵守这一限制。不要把 Token 交给 AI，也不要把 Token 直接写进命令、脚本或聊天内容。认证来源、优先级和安全注意事项见[认证说明](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AUTH.md)。
+`--web` 会打开 GitCode 的新建访问令牌页面，生成后仍需回到终端粘贴；当前版本不会隐藏输入。请只在用户本人控制的私有、未录制本地终端中执行。浏览器不可用时可运行 `gitcode auth login`，但同样需要遵守这一限制。不要把 Token 交给 AI，也不要把 Token 直接写进命令、脚本或聊天内容。认证来源、优先级和安全注意事项见[认证说明](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AUTH.md)。
 
 ### 3. 先从只读命令开始
 

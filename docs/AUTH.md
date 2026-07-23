@@ -75,7 +75,7 @@
 - 成功后写入本地配置（主机名、用户名、token、Git protocol）
 - 若同时存在环境变量，后续命令仍优先使用环境变量
 - 未显式传 `--with-token` 时，需要交互式 TTY；非交互环境会直接报错
-- `--web` (`-w`): 打开浏览器引导用户从 GitCode Token 页面生成 token，再继续在终端中完成登录
+- `--web` (`-w`): 打开 `https://<host>/setting/token-classic/create` 新建访问令牌页面，再继续在终端中完成登录
 - `--git-protocol` (`-p`): 选择 Git 操作使用的协议，支持 `https`（默认）和 `ssh`
 
 ### auth status

@@ -79,11 +79,49 @@ func TestLoginWithWebOpensBrowser(t *testing.T) {
 		t.Fatalf("loginWithWeb() error = %v", err)
 	}
 
-	if openedURL != "https://gitcode.com/-/profile/personal_access_tokens" {
+	if openedURL != "https://gitcode.com/setting/token-classic/create" {
 		t.Fatalf("opened URL = %q", openedURL)
 	}
-	if !strings.Contains(out.String(), "Opening https://gitcode.com/-/profile/personal_access_tokens in your browser.") {
+	if !strings.Contains(out.String(), "Opening https://gitcode.com/setting/token-classic/create in your browser.") {
 		t.Fatalf("output = %q", out.String())
+	}
+}
+
+func TestLoginWithWebUsesCustomHost(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	io, _, _, _ := iostreams.Test()
+	io.In = bytes.NewBufferString("test-token\n")
+
+	var openedURL string
+	opts := &LoginOptions{
+		IO:       io,
+		Hostname: "enterprise.example.com",
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"login":"tester"}`),
+					}, nil
+				}),
+			}, nil
+		},
+		Config: func() (config.Config, error) {
+			return config.New(), nil
+		},
+		OpenBrowser: func(url string) error {
+			openedURL = url
+			return nil
+		},
+	}
+
+	if err := loginWithWeb(opts); err != nil {
+		t.Fatalf("loginWithWeb() error = %v", err)
+	}
+
+	if openedURL != "https://enterprise.example.com/setting/token-classic/create" {
+		t.Fatalf("opened URL = %q", openedURL)
 	}
 }
 

@@ -164,7 +164,7 @@ func loginWithWeb(opts *LoginOptions) error {
 	}
 	opts.Hostname = hostname
 
-	loginURL := fmt.Sprintf("https://%s/-/profile/personal_access_tokens", opts.Hostname)
+	loginURL := fmt.Sprintf("https://%s/setting/token-classic/create", opts.Hostname)
 	fmt.Fprintf(opts.IO.Out, "Opening %s in your browser.\n", loginURL)
 	if err := opts.OpenBrowser(loginURL); err != nil {
 		return fmt.Errorf("failed to open browser: %w", err)

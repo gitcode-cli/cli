@@ -77,7 +77,7 @@ go build -o gc ./cmd/gc
 以下示例使用安装包提供的 `gitcode` 入口；从源码构建或使用独立二进制时，请将命令名改为 `gc`。
 
 ```bash
-# 打开个人令牌页面，生成后回到终端粘贴
+# 打开新建访问令牌页面，生成后回到终端粘贴
 gitcode auth login --web
 
 # 浏览器不可用时，在本地交互终端中输入 Token
@@ -88,8 +88,8 @@ gitcode auth login
 
 **获取 Token：**
 1. 登录 [GitCode](https://gitcode.com)
-2. 进入 设置 -> 私人令牌
-3. 生成新令牌并复制
+2. 进入 个人设置 -> 访问令牌
+3. 新建访问令牌并复制
 
 ## 3. 验证安装
 

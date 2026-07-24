@@ -3,7 +3,6 @@ package create
 import (
 	"bytes"
 	"encoding/json"
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdCreate(t *testing.T) {
@@ -120,9 +120,7 @@ func TestCreateRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
-					case "/api/v5/users/alice":
-						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
-					case "/api/v5/repos/owner/repo/issues":
+					case "/api/v5/repos/owner/issues":
 						return issueResponse(http.StatusOK, `{"number":"12","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
 					case "/api/v5/repos/owner/repo/issues/12":
 						return issueResponse(http.StatusOK, `{"number":"12","assignees":[]}`), nil
@@ -163,9 +161,7 @@ func TestCreateRunJSONSuppressesOutputWhenAssigneesAreNotApplied(t *testing.T) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
-					case "/api/v5/users/alice":
-						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
-					case "/api/v5/repos/owner/repo/issues":
+					case "/api/v5/repos/owner/issues":
 						return issueResponse(http.StatusOK, `{"number":"12","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
 					case "/api/v5/repos/owner/repo/issues/12":
 						return issueResponse(http.StatusOK, `{"number":"12","assignees":[]}`), nil
@@ -242,33 +238,35 @@ func TestCreateRunUsesOwnerIssueCreateWhenAdvancedFieldsAreSet(t *testing.T) {
 	}
 }
 
-func TestCreateRunSkipsAssigneeResolutionForAdvancedOwnerPath(t *testing.T) {
+func TestCreateRunUsesAssigneeUsernameWithoutResolution(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
 	f := cmdutil.TestFactory()
 	opts := &CreateOptions{
-		IO:           f.IOStreams,
-		Repository:   "owner/repo",
-		Title:        "Feature request",
-		Assignees:    []string{"alice"},
-		TemplatePath: ".gitcode/ISSUE_TEMPLATE/feature.yaml",
+		IO:         f.IOStreams,
+		Repository: "owner/repo",
+		Title:      "Feature request",
+		Assignees:  []string{"alice"},
+		JSON:       true,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-					if req.URL.Path == "/api/v5/users/alice" {
-						t.Fatal("advanced owner path should not resolve assignee IDs")
+					switch req.URL.Path {
+					case "/api/v5/repos/owner/issues":
+						body, err := io.ReadAll(req.Body)
+						if err != nil {
+							t.Fatalf("ReadAll() error = %v", err)
+						}
+						if !strings.Contains(string(body), `"assignee":"alice"`) {
+							t.Fatalf("request body = %s, want assignee username", string(body))
+						}
+						return issueResponse(http.StatusOK, `{"number":"35","html_url":"https://gitcode.com/owner/repo/issues/35"}`), nil
+					case "/api/v5/repos/owner/repo/issues/35":
+						return issueResponse(http.StatusOK, `{"number":"35","assignees":[{"login":"alice"}]}`), nil
+					default:
+						t.Fatalf("unexpected request: %s", req.URL.Path)
+						return nil, nil
 					}
-					if req.URL.Path != "/api/v5/repos/owner/issues" {
-						t.Fatalf("request path = %s, want /api/v5/repos/owner/issues", req.URL.Path)
-					}
-					body, err := io.ReadAll(req.Body)
-					if err != nil {
-						t.Fatalf("ReadAll() error = %v", err)
-					}
-					if !strings.Contains(string(body), `"assignee":"alice"`) {
-						t.Fatalf("request body = %s, want assignee username", string(body))
-					}
-					return issueResponse(http.StatusOK, `{"number":"35","html_url":"https://gitcode.com/owner/repo/issues/35"}`), nil
 				}),
 			}, nil
 		},
@@ -276,6 +274,56 @@ func TestCreateRunSkipsAssigneeResolutionForAdvancedOwnerPath(t *testing.T) {
 
 	if err := createRun(opts); err != nil {
 		t.Fatalf("createRun() error = %v", err)
+	}
+	var got map[string]interface{}
+	if err := json.Unmarshal(f.IOStreams.Out.(*bytes.Buffer).Bytes(), &got); err != nil {
+		t.Fatalf("JSON output did not parse: %v", err)
+	}
+	assignees, ok := got["assignees"].([]interface{})
+	if !ok || len(assignees) != 1 || assignees[0].(map[string]interface{})["login"] != "alice" {
+		t.Fatalf("JSON assignees = %#v, want verified alice", got["assignees"])
+	}
+}
+
+func TestCreateRunFailsWhenAssigneeVerificationReadFails(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	opts := &CreateOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					switch req.URL.Path {
+					case "/api/v5/repos/owner/issues":
+						return issueResponse(
+							http.StatusOK,
+							`{"number":"36","html_url":"https://gitcode.com/owner/repo/issues/36"}`,
+						), nil
+					case "/api/v5/repos/owner/repo/issues/36":
+						return issueResponse(http.StatusInternalServerError, `{"message":"temporary failure"}`), nil
+					default:
+						t.Fatalf("unexpected request: %s", req.URL.Path)
+						return nil, nil
+					}
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Title:      "Feature request",
+		Assignees:  []string{"alice"},
+		JSON:       true,
+	}
+
+	err := createRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "failed to verify requested assignees") {
+		t.Fatalf("createRun() error = %v, want verification failure", err)
+	}
+	if !strings.Contains(err.Error(), "https://gitcode.com/owner/repo/issues/36") {
+		t.Fatalf("createRun() error = %v, want created issue URL", err)
+	}
+	if out := f.IOStreams.Out.(*bytes.Buffer).String(); out != "" {
+		t.Fatalf("stdout = %q, want empty JSON output on failed verification", out)
 	}
 }
 

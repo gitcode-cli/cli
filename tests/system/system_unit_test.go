@@ -4,6 +4,7 @@ package system_test
 
 import (
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -63,6 +64,23 @@ func TestValidateInfraRepo(t *testing.T) {
 	}
 }
 
+func TestSystemCondition(t *testing.T) {
+	const name = "GC_SYSTEM_CONDITION_TEST"
+	t.Setenv(name, "set")
+	ok, err := systemCondition("env:" + name)
+	if err != nil || !ok {
+		t.Fatalf("systemCondition() = %v, %v, want true, nil", ok, err)
+	}
+	t.Setenv(name, "")
+	ok, err = systemCondition("env:" + name)
+	if err != nil || ok {
+		t.Fatalf("systemCondition() = %v, %v, want false, nil", ok, err)
+	}
+	if _, err := systemCondition("unsupported"); err == nil {
+		t.Fatal("systemCondition() error = nil, want unknown condition error")
+	}
+}
+
 func TestJSONTypeMatches(t *testing.T) {
 	tests := []struct {
 		value any
@@ -85,9 +103,29 @@ func TestJSONTypeMatches(t *testing.T) {
 	}
 }
 
+func TestLookupJSONPathSupportsAssigneeLogin(t *testing.T) {
+	value := map[string]any{
+		"assignees": []any{map[string]any{"login": "alice"}},
+	}
+	got, ok, err := lookupJSONPath(value, "assignees[0].login")
+	if err != nil {
+		t.Fatalf("lookupJSONPath returned error: %v", err)
+	}
+	if !ok || got != "alice" {
+		t.Fatalf("lookupJSONPath got %v, %v, want alice, true", got, ok)
+	}
+}
+
 func TestUniqueNameShape(t *testing.T) {
-	name := uniqueName("system-test-label", "label-lifecycle", 1234)
-	if name != "system-test-label-label-lifecycle-1234" {
-		t.Fatalf("uniqueName returned %q", name)
+	name, err := uniqueName("system-test-label", "label-lifecycle", 1234)
+	if err != nil {
+		t.Fatalf("uniqueName returned error: %v", err)
+	}
+	matched, err := regexp.MatchString(`^system-test-label-label-lifecycle-1234-[0-9a-f]{32}$`, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !matched {
+		t.Fatalf("uniqueName returned %q with unexpected shape", name)
 	}
 }

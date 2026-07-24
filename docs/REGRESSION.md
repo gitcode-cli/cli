@@ -55,6 +55,21 @@ GC_SYSTEM_WRITE=1 go test -tags=system ./tests/system -run TestWriteScripts
 make system-test-write
 ```
 
+Assignee write scenarios require an assignable username for the current
+authentication:
+
+```bash
+GC_SYSTEM_WRITE=1 GC_SYSTEM_ASSIGNEE=<username> go test -tags=system ./tests/system -run TestWriteScripts
+```
+
+This scenario creates two temporary issues only in `infra-test/*`, verifies real
+`issue create --assignee` and `issue edit --assignee` writes by reading them
+back, and closes both temporary issues during cleanup.
+
+Run `gc auth login` first. The system runner intentionally does not copy real
+`GC_TOKEN` or `GITCODE_TOKEN` values into testscript because verbose testscript
+output includes its environment.
+
 PR write-path cases require a prepared test branch:
 
 ```bash

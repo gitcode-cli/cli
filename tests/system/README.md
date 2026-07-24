@@ -27,6 +27,18 @@ GC_SYSTEM_WRITE=1 go test -tags=system ./tests/system -run TestWriteScripts
 make system-test-write
 ```
 
+Set `GC_SYSTEM_ASSIGNEE` to an assignable username to include the real
+`issue create --assignee` and `issue edit --assignee` lifecycle test:
+
+```bash
+GC_SYSTEM_WRITE=1 GC_SYSTEM_ASSIGNEE=<username> go test -tags=system ./tests/system -run TestWriteScripts
+```
+
+Authenticate with the local `gc auth login` configuration before running the
+suite. Real `GC_TOKEN` and `GITCODE_TOKEN` values are intentionally not copied
+into the testscript environment because verbose testscript output includes its
+environment.
+
 Script cases live under:
 
 - `tests/system/testdata/read/*.txtar`
@@ -37,8 +49,10 @@ Custom testscript commands:
 - `require-infra <repo>`: fail unless the repository is `infra-test/*`.
 - `json-ok <file>`: assert that a file, usually `stdout`, is valid JSON.
 - `json-assert <file> <path> <type>`: assert JSON field presence and type.
+- `json-value <file> <path> <expected>`: assert a JSON field's string value.
 - `stdout2env <name> <regexp>`: capture one stdout regexp group into an env var.
 - `defer-close-issue <number>`: close a created write-test issue during cleanup.
+- `defer-close-issue-title <title>`: close matching open issues during cleanup.
 - `defer-delete-label <name>`: delete a created write-test label during cleanup.
 - `unique-name <name> <prefix>`: create a process/test scoped resource name.
 

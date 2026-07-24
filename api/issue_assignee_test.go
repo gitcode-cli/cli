@@ -41,6 +41,36 @@ func TestCreateIssueUsesAssigneeIDs(t *testing.T) {
 	}
 }
 
+func TestCreateIssueUsesOwnerPathForAssigneeUsernames(t *testing.T) {
+	var gotBody map[string]interface{}
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Path != "/api/v5/repos/owner/issues" {
+			t.Fatalf("request path = %s, want /api/v5/repos/owner/issues", req.URL.Path)
+		}
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			t.Fatalf("ReadAll() error = %v", err)
+		}
+		if err := json.Unmarshal(body, &gotBody); err != nil {
+			t.Fatalf("json.Unmarshal() error = %v", err)
+		}
+		return authTestResponse(http.StatusOK, `{"number":"2","title":"created"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := CreateIssue(client, "owner", "repo", &CreateIssueOptions{
+		Title:     "created",
+		Assignees: []string{"alice", "bob"},
+	})
+	if err != nil {
+		t.Fatalf("CreateIssue() error = %v", err)
+	}
+	if gotBody["assignee"] != "alice,bob" {
+		t.Fatalf("assignee = %#v, want %q", gotBody["assignee"], "alice,bob")
+	}
+}
+
 func TestCreateIssueUsesOwnerPathForAdvancedFields(t *testing.T) {
 	var gotBody map[string]interface{}
 
@@ -161,6 +191,36 @@ func TestUpdateIssueUsesAssigneeIDs(t *testing.T) {
 	}
 	if got := gotBody["assignee_ids[]"]; len(got) != 1 || got[0] != "4744798" {
 		t.Fatalf("assignee_ids[] = %v, want [%q]", got, "4744798")
+	}
+}
+
+func TestUpdateIssueUsesAssigneeUsernames(t *testing.T) {
+	var gotBody url.Values
+
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			t.Fatalf("ReadAll() error = %v", err)
+		}
+		gotBody, err = url.ParseQuery(string(body))
+		if err != nil {
+			t.Fatalf("ParseQuery() error = %v", err)
+		}
+		return authTestResponse(http.StatusOK, `{"number":"1","title":"updated"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := UpdateIssue(client, "owner", "repo", 1, &UpdateIssueOptions{
+		Assignees: []string{"alice", "bob"},
+	})
+	if err != nil {
+		t.Fatalf("UpdateIssue() error = %v", err)
+	}
+	if gotBody.Get("assignee") != "alice,bob" {
+		t.Fatalf("assignee = %q, want %q", gotBody.Get("assignee"), "alice,bob")
+	}
+	if gotBody.Get("assignee_id") != "" || len(gotBody["assignee_ids[]"]) != 0 {
+		t.Fatalf("legacy assignee ID fields unexpectedly sent: %v", gotBody)
 	}
 }
 

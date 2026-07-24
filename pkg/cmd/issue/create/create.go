@@ -191,29 +191,28 @@ func createRun(opts *CreateOptions) error {
 		CustomFields:  customFields,
 	}
 
-	var assigneeIDs []string
-	if !useOwnerIssueCreate(createOpts) {
-		assigneeIDs, err = api.ResolveUserIDs(client, opts.Assignees)
-		if err != nil {
-			return fmt.Errorf("failed to resolve assignees: %w", err)
-		}
-		createOpts.AssigneeIDs = assigneeIDs
-	}
-
 	// Create issue
 	issue, err := api.CreateIssue(client, owner, repo, createOpts)
 	if err != nil {
 		return fmt.Errorf("failed to create issue: %w", err)
 	}
 	if opts.JSON {
-		if err := ensureAssigneesApplied(client, owner, repo, string(issue.Number), issue.HTMLURL, assigneeIDs, "created"); err != nil {
+		verifiedIssue, err := ensureAssigneesApplied(
+			client, owner, repo, string(issue.Number), issue.HTMLURL, opts.Assignees, "created",
+		)
+		if err != nil {
 			return err
+		}
+		if verifiedIssue != nil {
+			issue = verifiedIssue
 		}
 		return cmdutil.WriteJSON(opts.IO.Out, issue)
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Created issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
-	if err := ensureAssigneesApplied(client, owner, repo, string(issue.Number), issue.HTMLURL, assigneeIDs, "created"); err != nil {
+	if _, err := ensureAssigneesApplied(
+		client, owner, repo, string(issue.Number), issue.HTMLURL, opts.Assignees, "created",
+	); err != nil {
 		return err
 	}
 	return nil
@@ -256,56 +255,62 @@ func boolString(v bool) string {
 	return ""
 }
 
-func useOwnerIssueCreate(opts *api.CreateIssueOptions) bool {
-	if opts == nil {
-		return false
-	}
-
-	return opts.SecurityHole != "" ||
-		opts.TemplatePath != "" ||
-		opts.IssueType != "" ||
-		opts.IssueSeverity != "" ||
-		len(opts.CustomFields) > 0
-}
-
-func ensureAssigneesApplied(client *api.Client, owner, repo, issueNumber, issueURL string, expectedIDs []string, action string) error {
-	if len(expectedIDs) == 0 {
-		return nil
+func ensureAssigneesApplied(
+	client *api.Client,
+	owner, repo, issueNumber, issueURL string,
+	expectedLogins []string,
+	action string,
+) (*api.Issue, error) {
+	if len(expectedLogins) == 0 {
+		return nil, nil
 	}
 
 	number, err := strconv.Atoi(issueNumber)
 	if err != nil {
-		return nil
+		return nil, assigneeVerificationError(issueNumber, issueURL, action, fmt.Errorf("invalid issue number: %w", err))
 	}
 
 	issue, err := api.GetIssue(client, owner, repo, number)
 	if err != nil {
-		return nil
+		return nil, assigneeVerificationError(issueNumber, issueURL, action, err)
 	}
-	if hasExpectedAssignees(issue, expectedIDs) {
-		return nil
+	if hasExpectedAssignees(issue, expectedLogins) {
+		return issue, nil
 	}
 	if issueURL != "" {
-		return fmt.Errorf("issue #%s was %s at %s, but GitCode API did not apply the requested assignees", issueNumber, action, issueURL)
+		return nil, fmt.Errorf(
+			"issue #%s was %s at %s, but GitCode API did not apply the requested assignees",
+			issueNumber, action, issueURL,
+		)
 	}
-	return fmt.Errorf("issue #%s was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
+	return nil, fmt.Errorf("issue #%s was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
 }
 
-func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
-	if issue == nil || len(expectedIDs) == 0 {
+func assigneeVerificationError(issueNumber, issueURL, action string, cause error) error {
+	if issueURL != "" {
+		return fmt.Errorf(
+			"issue #%s was %s at %s, but failed to verify requested assignees: %w",
+			issueNumber, action, issueURL, cause,
+		)
+	}
+	return fmt.Errorf("issue #%s was %s, but failed to verify requested assignees: %w", issueNumber, action, cause)
+}
+
+func hasExpectedAssignees(issue *api.Issue, expectedLogins []string) bool {
+	if issue == nil || len(expectedLogins) == 0 {
 		return true
 	}
 
 	actual := make(map[string]struct{}, len(issue.Assignees))
 	for _, assignee := range issue.Assignees {
-		if assignee == nil || assignee.ID == nil {
+		if assignee == nil || assignee.Login == "" {
 			continue
 		}
-		actual[fmt.Sprint(assignee.ID)] = struct{}{}
+		actual[assignee.Login] = struct{}{}
 	}
 
-	for _, expectedID := range expectedIDs {
-		if _, ok := actual[expectedID]; !ok {
+	for _, expectedLogin := range expectedLogins {
+		if _, ok := actual[expectedLogin]; !ok {
 			return false
 		}
 	}

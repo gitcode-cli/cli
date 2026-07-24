@@ -149,11 +149,6 @@ func editRun(opts *EditOptions) error {
 		return err
 	}
 
-	assigneeIDs, err := api.ResolveUserIDs(client, opts.Assignees)
-	if err != nil {
-		return fmt.Errorf("failed to resolve assignees: %w", err)
-	}
-
 	// Normalize state value
 	state := opts.State
 	if state == "closed" {
@@ -191,12 +186,12 @@ func editRun(opts *EditOptions) error {
 
 	// Build update options
 	updateOpts := &api.UpdateIssueOptions{
-		Title:       opts.Title,
-		Body:        body,
-		State:       state,
-		AssigneeIDs: assigneeIDs,
-		Labels:      opts.Labels,
-		Milestone:   opts.Milestone,
+		Title:     opts.Title,
+		Body:      body,
+		State:     state,
+		Assignees: opts.Assignees,
+		Labels:    opts.Labels,
+		Milestone: opts.Milestone,
 	}
 
 	if opts.SecurityHole {
@@ -208,14 +203,22 @@ func editRun(opts *EditOptions) error {
 		return fmt.Errorf("failed to update issue: %w", err)
 	}
 	if opts.JSON {
-		if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, assigneeIDs, "updated"); err != nil {
+		verifiedIssue, err := ensureAssigneesApplied(
+			client, owner, repo, opts.Number, issue.HTMLURL, opts.Assignees, "updated",
+		)
+		if err != nil {
 			return err
+		}
+		if verifiedIssue != nil {
+			issue = verifiedIssue
 		}
 		return cmdutil.WriteJSON(opts.IO.Out, issue)
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Updated issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
-	if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, assigneeIDs, "updated"); err != nil {
+	if _, err := ensureAssigneesApplied(
+		client, owner, repo, opts.Number, issue.HTMLURL, opts.Assignees, "updated",
+	); err != nil {
 		return err
 	}
 	return nil
@@ -225,39 +228,59 @@ func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
 }
 
-func ensureAssigneesApplied(client *api.Client, owner, repo string, issueNumber int, issueURL string, expectedIDs []string, action string) error {
-	if len(expectedIDs) == 0 {
-		return nil
+func ensureAssigneesApplied(
+	client *api.Client,
+	owner, repo string,
+	issueNumber int,
+	issueURL string,
+	expectedLogins []string,
+	action string,
+) (*api.Issue, error) {
+	if len(expectedLogins) == 0 {
+		return nil, nil
 	}
 
 	issue, err := api.GetIssue(client, owner, repo, issueNumber)
 	if err != nil {
-		return nil
+		return nil, assigneeVerificationError(issueNumber, issueURL, action, err)
 	}
-	if hasExpectedAssignees(issue, expectedIDs) {
-		return nil
+	if hasExpectedAssignees(issue, expectedLogins) {
+		return issue, nil
 	}
 	if issueURL != "" {
-		return fmt.Errorf("issue #%d was %s at %s, but GitCode API did not apply the requested assignees", issueNumber, action, issueURL)
+		return nil, fmt.Errorf(
+			"issue #%d was %s at %s, but GitCode API did not apply the requested assignees",
+			issueNumber, action, issueURL,
+		)
 	}
-	return fmt.Errorf("issue #%d was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
+	return nil, fmt.Errorf("issue #%d was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
 }
 
-func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
-	if issue == nil || len(expectedIDs) == 0 {
+func assigneeVerificationError(issueNumber int, issueURL, action string, cause error) error {
+	if issueURL != "" {
+		return fmt.Errorf(
+			"issue #%d was %s at %s, but failed to verify requested assignees: %w",
+			issueNumber, action, issueURL, cause,
+		)
+	}
+	return fmt.Errorf("issue #%d was %s, but failed to verify requested assignees: %w", issueNumber, action, cause)
+}
+
+func hasExpectedAssignees(issue *api.Issue, expectedLogins []string) bool {
+	if issue == nil || len(expectedLogins) == 0 {
 		return true
 	}
 
 	actual := make(map[string]struct{}, len(issue.Assignees))
 	for _, assignee := range issue.Assignees {
-		if assignee == nil || assignee.ID == nil {
+		if assignee == nil || assignee.Login == "" {
 			continue
 		}
-		actual[fmt.Sprint(assignee.ID)] = struct{}{}
+		actual[assignee.Login] = struct{}{}
 	}
 
-	for _, expectedID := range expectedIDs {
-		if _, ok := actual[expectedID]; !ok {
+	for _, expectedLogin := range expectedLogins {
+		if _, ok := actual[expectedLogin]; !ok {
 			return false
 		}
 	}

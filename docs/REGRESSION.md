@@ -62,7 +62,7 @@ authentication:
 GC_SYSTEM_WRITE=1 GC_SYSTEM_ASSIGNEE=<username> go test -tags=system ./tests/system -run TestWriteScripts
 ```
 
-This scenario creates a temporary issue only in `infra-test/*`, verifies real
+This scenario creates two temporary issues only in `infra-test/*`, verifies real
 `issue create --assignee` and `issue edit --assignee` writes by reading the
 issue back, and closes the temporary issue during cleanup.
 

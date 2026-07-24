@@ -203,14 +203,22 @@ func editRun(opts *EditOptions) error {
 		return fmt.Errorf("failed to update issue: %w", err)
 	}
 	if opts.JSON {
-		if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, opts.Assignees, "updated"); err != nil {
+		verifiedIssue, err := ensureAssigneesApplied(
+			client, owner, repo, opts.Number, issue.HTMLURL, opts.Assignees, "updated",
+		)
+		if err != nil {
 			return err
+		}
+		if verifiedIssue != nil {
+			issue = verifiedIssue
 		}
 		return cmdutil.WriteJSON(opts.IO.Out, issue)
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Updated issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
-	if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, opts.Assignees, "updated"); err != nil {
+	if _, err := ensureAssigneesApplied(
+		client, owner, repo, opts.Number, issue.HTMLURL, opts.Assignees, "updated",
+	); err != nil {
 		return err
 	}
 	return nil
@@ -220,22 +228,42 @@ func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
 }
 
-func ensureAssigneesApplied(client *api.Client, owner, repo string, issueNumber int, issueURL string, expectedLogins []string, action string) error {
+func ensureAssigneesApplied(
+	client *api.Client,
+	owner, repo string,
+	issueNumber int,
+	issueURL string,
+	expectedLogins []string,
+	action string,
+) (*api.Issue, error) {
 	if len(expectedLogins) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	issue, err := api.GetIssue(client, owner, repo, issueNumber)
 	if err != nil {
-		return nil
+		return nil, assigneeVerificationError(issueNumber, issueURL, action, err)
 	}
 	if hasExpectedAssignees(issue, expectedLogins) {
-		return nil
+		return issue, nil
 	}
 	if issueURL != "" {
-		return fmt.Errorf("issue #%d was %s at %s, but GitCode API did not apply the requested assignees", issueNumber, action, issueURL)
+		return nil, fmt.Errorf(
+			"issue #%d was %s at %s, but GitCode API did not apply the requested assignees",
+			issueNumber, action, issueURL,
+		)
 	}
-	return fmt.Errorf("issue #%d was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
+	return nil, fmt.Errorf("issue #%d was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
+}
+
+func assigneeVerificationError(issueNumber int, issueURL, action string, cause error) error {
+	if issueURL != "" {
+		return fmt.Errorf(
+			"issue #%d was %s at %s, but failed to verify requested assignees: %w",
+			issueNumber, action, issueURL, cause,
+		)
+	}
+	return fmt.Errorf("issue #%d was %s, but failed to verify requested assignees: %w", issueNumber, action, cause)
 }
 
 func hasExpectedAssignees(issue *api.Issue, expectedLogins []string) bool {

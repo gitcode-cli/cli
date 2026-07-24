@@ -598,6 +598,7 @@ gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --json
 - `--custom-fields-json` 与 `--custom-fields-file` 不能同时使用；两者都要求 JSON 顶层是 `object[]`。
 - 模板路径支持仓库下的 `.gitcode`、`.github`、`.gitee` 目录；组织模板可能来自 `owner/.gitcode`，第一阶段仅支持显式传路径，不保证自动发现。
 - 若 GitCode API 已创建 issue 但未实际应用 assignee，命令会返回失败并包含已创建 issue 的 URL，避免静默误判；自动化调用方不应盲目重试创建。
+- 若负责人回读请求失败，命令同样返回包含已创建 issue URL 的验证错误；写操作可能已完成，调用方应先回读而不是直接重试创建。
 - Windows PowerShell 中从 stdin 传中文正文时，建议使用 UTF-8 文件或先设置 `$OutputEncoding`，详见“Windows PowerShell 命令名和 stdin”。
 
 ### issue list - 列出 Issues
@@ -756,6 +757,7 @@ gc issue edit 1 --title "Bug fix" -R infra-test/gctest1 --json
 说明：
 - `issue edit --assignee` 按 GitCode 文档要求直接提交用户名；多个用户名以英文逗号组合。
 - 若 GitCode API 未实际应用 assignee，命令会返回失败并包含已更新 issue 的 URL，避免自动化流程静默误判。
+- 若负责人回读请求失败，命令返回包含已更新 issue URL 的验证错误；调用方可据此重新查询远端状态。
 - `--json` 只在成功更新并完成必要回读验证后输出 issue 对象；不会混入文本提示。
 
 ### issue reopen - 重开 Issue

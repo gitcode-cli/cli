@@ -63,14 +63,15 @@ func TestWriteScripts(t *testing.T) {
 
 func systemCmds() map[string]func(ts *testscript.TestScript, neg bool, args []string) {
 	return map[string]func(ts *testscript.TestScript, neg bool, args []string){
-		"defer-delete-label": cmdDeferDeleteLabel,
-		"defer-close-issue":  cmdDeferCloseIssue,
-		"json-assert":        cmdJSONAssert,
-		"json-value":         cmdJSONValue,
-		"json-ok":            cmdJSONOK,
-		"require-infra":      cmdRequireInfra,
-		"stdout2env":         cmdStdout2Env,
-		"unique-name":        cmdUniqueName,
+		"defer-delete-label":      cmdDeferDeleteLabel,
+		"defer-close-issue":       cmdDeferCloseIssue,
+		"defer-close-issue-title": cmdDeferCloseIssueTitle,
+		"json-assert":             cmdJSONAssert,
+		"json-value":              cmdJSONValue,
+		"json-ok":                 cmdJSONOK,
+		"require-infra":           cmdRequireInfra,
+		"stdout2env":              cmdStdout2Env,
+		"unique-name":             cmdUniqueName,
 	}
 }
 
@@ -90,8 +91,6 @@ func setupEnv(t *testing.T, env *testscript.Env, root, gcBin, readRepo, writeRep
 	copyOptionalEnv(env, "APPDATA")
 	copyOptionalEnv(env, "GC_CONFIG_DIR")
 	copyOptionalEnv(env, "XDG_CONFIG_HOME")
-	copyOptionalEnv(env, "GC_TOKEN")
-	copyOptionalEnv(env, "GITCODE_TOKEN")
 	copyOptionalEnv(env, "GC_SYSTEM_ASSIGNEE")
 }
 
@@ -435,8 +434,67 @@ func cmdDeferCloseIssue(ts *testscript.TestScript, neg bool, args []string) {
 	gcBin := ts.Getenv("GC_BIN")
 	writeRepo := ts.Getenv("WRITE_REPO")
 	ts.Defer(func() {
-		_ = exec.Command(gcBin, "issue", "close", issueNumber, "-R", writeRepo, "--yes").Run()
+		if err := closeIssueIfOpen(gcBin, writeRepo, issueNumber); err != nil {
+			ts.Fatalf("close issue %s during cleanup: %v", issueNumber, err)
+		}
 	})
+}
+
+func cmdDeferCloseIssueTitle(ts *testscript.TestScript, neg bool, args []string) {
+	if neg {
+		ts.Fatalf("unsupported: ! defer-close-issue-title")
+	}
+	if len(args) != 1 {
+		ts.Fatalf("usage: defer-close-issue-title exact-title")
+	}
+	title := args[0]
+	gcBin := ts.Getenv("GC_BIN")
+	writeRepo := ts.Getenv("WRITE_REPO")
+	ts.Defer(func() {
+		output, err := exec.Command(
+			gcBin, "issue", "list", "-R", writeRepo, "--state", "all", "--search", title, "--limit", "100", "--json",
+		).Output()
+		if err != nil {
+			ts.Fatalf("list issues during title cleanup: %v", err)
+		}
+		var issues []struct {
+			Number string `json:"number"`
+			Title  string `json:"title"`
+			State  string `json:"state"`
+		}
+		if err := json.Unmarshal(output, &issues); err != nil {
+			ts.Fatalf("parse issue list during title cleanup: %v", err)
+		}
+		for _, issue := range issues {
+			if issue.Title != title || issue.State != "open" {
+				continue
+			}
+			if err := closeIssueIfOpen(gcBin, writeRepo, issue.Number); err != nil {
+				ts.Fatalf("close issue %s during title cleanup: %v", issue.Number, err)
+			}
+		}
+	})
+}
+
+func closeIssueIfOpen(gcBin, repo, number string) error {
+	output, err := exec.Command(gcBin, "issue", "view", number, "-R", repo, "--json").Output()
+	if err != nil {
+		return fmt.Errorf("view issue: %w", err)
+	}
+	var issue struct {
+		State string `json:"state"`
+	}
+	if err := json.Unmarshal(output, &issue); err != nil {
+		return fmt.Errorf("parse issue: %w", err)
+	}
+	if issue.State == "closed" {
+		return nil
+	}
+	closeOutput, err := exec.Command(gcBin, "issue", "close", number, "-R", repo, "--yes").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("close issue: %w\n%s", err, closeOutput)
+	}
+	return nil
 }
 
 func cmdDeferDeleteLabel(ts *testscript.TestScript, neg bool, args []string) {

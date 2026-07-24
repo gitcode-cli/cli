@@ -1,19 +1,36 @@
 require-infra $WRITE_REPO
 [!env:GC_SYSTEM_ASSIGNEE] skip 'GC_SYSTEM_ASSIGNEE is required for assignee write test'
 
-exec $GC_BIN issue create -R $WRITE_REPO --title 'System Test issue assignee' --body 'Created by tests/system; safe to close.' --assignee $GC_SYSTEM_ASSIGNEE --json
+# Create-path verification. Register cleanup by unique title before the write
+# so a post-write verification failure cannot leave the issue open.
+unique-name CREATE_TITLE system-test-create-assignee
+defer-close-issue-title $CREATE_TITLE
+exec $GC_BIN issue create -R $WRITE_REPO --title $CREATE_TITLE --body 'Created by tests/system; safe to close.' --assignee $GC_SYSTEM_ASSIGNEE --json
 json-ok stdout
-stdout2env ISSUE_NUMBER '"number"[[:space:]]*:[[:space:]]*"?([0-9]+)"?'
-defer-close-issue $ISSUE_NUMBER
+stdout2env CREATE_NUMBER '"number"[[:space:]]*:[[:space:]]*"?([0-9]+)"?'
 
-exec $GC_BIN issue view $ISSUE_NUMBER -R $WRITE_REPO --json
+exec $GC_BIN issue view $CREATE_NUMBER -R $WRITE_REPO --json
 json-value stdout assignees[0].login $GC_SYSTEM_ASSIGNEE
 
-exec $GC_BIN issue edit $ISSUE_NUMBER -R $WRITE_REPO --assignee $GC_SYSTEM_ASSIGNEE --json
-json-ok stdout
+exec $GC_BIN issue close $CREATE_NUMBER -R $WRITE_REPO --yes
+stdout 'Closed'
 
-exec $GC_BIN issue view $ISSUE_NUMBER -R $WRITE_REPO --json
+# Edit-path verification starts without an assignee, then adds one.
+unique-name EDIT_TITLE system-test-edit-assignee
+defer-close-issue-title $EDIT_TITLE
+exec $GC_BIN issue create -R $WRITE_REPO --title $EDIT_TITLE --body 'Created by tests/system; safe to close.' --json
+json-ok stdout
+stdout2env EDIT_NUMBER '"number"[[:space:]]*:[[:space:]]*"?([0-9]+)"?'
+
+exec $GC_BIN issue view $EDIT_NUMBER -R $WRITE_REPO --json
+! json-value stdout assignees[0].login $GC_SYSTEM_ASSIGNEE
+
+exec $GC_BIN issue edit $EDIT_NUMBER -R $WRITE_REPO --assignee $GC_SYSTEM_ASSIGNEE --json
+json-ok stdout
 json-value stdout assignees[0].login $GC_SYSTEM_ASSIGNEE
 
-exec $GC_BIN issue close $ISSUE_NUMBER -R $WRITE_REPO --yes
+exec $GC_BIN issue view $EDIT_NUMBER -R $WRITE_REPO --json
+json-value stdout assignees[0].login $GC_SYSTEM_ASSIGNEE
+
+exec $GC_BIN issue close $EDIT_NUMBER -R $WRITE_REPO --yes
 stdout 'Closed'

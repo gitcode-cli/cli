@@ -66,6 +66,10 @@ This scenario creates a temporary issue only in `infra-test/*`, verifies real
 `issue create --assignee` and `issue edit --assignee` writes by reading the
 issue back, and closes the temporary issue during cleanup.
 
+Run `gc auth login` first. The system runner intentionally does not copy real
+`GC_TOKEN` or `GITCODE_TOKEN` values into testscript because verbose testscript
+output includes its environment.
+
 PR write-path cases require a prepared test branch:
 
 ```bash

@@ -63,6 +63,23 @@ func TestValidateInfraRepo(t *testing.T) {
 	}
 }
 
+func TestSystemCondition(t *testing.T) {
+	const name = "GC_SYSTEM_CONDITION_TEST"
+	t.Setenv(name, "set")
+	ok, err := systemCondition("env:" + name)
+	if err != nil || !ok {
+		t.Fatalf("systemCondition() = %v, %v, want true, nil", ok, err)
+	}
+	t.Setenv(name, "")
+	ok, err = systemCondition("env:" + name)
+	if err != nil || ok {
+		t.Fatalf("systemCondition() = %v, %v, want false, nil", ok, err)
+	}
+	if _, err := systemCondition("unsupported"); err == nil {
+		t.Fatal("systemCondition() error = nil, want unknown condition error")
+	}
+}
+
 func TestJSONTypeMatches(t *testing.T) {
 	tests := []struct {
 		value any
@@ -82,6 +99,19 @@ func TestJSONTypeMatches(t *testing.T) {
 		if got := jsonTypeMatches(tt.value, tt.want); got != tt.ok {
 			t.Fatalf("jsonTypeMatches(%v, %q) = %v, want %v", tt.value, tt.want, got, tt.ok)
 		}
+	}
+}
+
+func TestLookupJSONPathSupportsAssigneeLogin(t *testing.T) {
+	value := map[string]any{
+		"assignees": []any{map[string]any{"login": "alice"}},
+	}
+	got, ok, err := lookupJSONPath(value, "assignees[0].login")
+	if err != nil {
+		t.Fatalf("lookupJSONPath returned error: %v", err)
+	}
+	if !ok || got != "alice" {
+		t.Fatalf("lookupJSONPath got %v, %v, want alice, true", got, ok)
 	}
 }
 

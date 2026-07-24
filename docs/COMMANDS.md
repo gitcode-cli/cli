@@ -592,12 +592,12 @@ gc issue create -R infra-test/gctest1 --title "Task" --body "Description" --json
 - `issue create` 当前已支持 `--dry-run` 预演创建参数。
 - `issue create --dry-run --json` 输出结构化预览，不执行真实创建。
 - `--json` 只在成功创建并完成必要回读验证后输出 issue 对象；不会混入文本提示。
-- 仅使用基础字段时，创建会继续走兼容的 repo 级 form 提交路径。
-- 基础路径中的 `--assignee` 继续使用用户名输入，但客户端会先解析为 GitCode user ID，再提交到 issue API。
+- 不含负责人和高级字段时，创建会继续走兼容的 repo 级 form 提交路径。
+- `--assignee` 直接按 GitCode 文档要求提交用户名；多个用户名以英文逗号组合，并切换到 owner 级创建接口。
 - 显式传入 `--template-path`、`--security-hole`、`--issue-type`、`--issue-severity`、`--custom-fields-json`、`--custom-fields-file` 时，会切换到 GitCode 文档化的 owner 级创建接口并透传高级字段。
 - `--custom-fields-json` 与 `--custom-fields-file` 不能同时使用；两者都要求 JSON 顶层是 `object[]`。
 - 模板路径支持仓库下的 `.gitcode`、`.github`、`.gitee` 目录；组织模板可能来自 `owner/.gitcode`，第一阶段仅支持显式传路径，不保证自动发现。
-- 若 GitCode API 未实际应用 assignee，命令会成功完成创建并在 stderr 给出告警，避免自动化重试制造重复 issue。
+- 若 GitCode API 已创建 issue 但未实际应用 assignee，命令会返回失败并包含已创建 issue 的 URL，避免静默误判；自动化调用方不应盲目重试创建。
 - Windows PowerShell 中从 stdin 传中文正文时，建议使用 UTF-8 文件或先设置 `$OutputEncoding`，详见“Windows PowerShell 命令名和 stdin”。
 
 ### issue list - 列出 Issues
@@ -754,7 +754,7 @@ gc issue edit 1 --title "Bug fix" -R infra-test/gctest1 --json
 ```
 
 说明：
-- `issue edit --assignee` 使用用户名输入，客户端会先解析为 GitCode user ID，再调用 issue 更新接口。
+- `issue edit --assignee` 按 GitCode 文档要求直接提交用户名；多个用户名以英文逗号组合。
 - 若 GitCode API 未实际应用 assignee，命令会返回失败并包含已更新 issue 的 URL，避免自动化流程静默误判。
 - `--json` 只在成功更新并完成必要回读验证后输出 issue 对象；不会混入文本提示。
 

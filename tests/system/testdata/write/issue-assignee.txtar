@@ -1,0 +1,19 @@
+require-infra $WRITE_REPO
+[!env:GC_SYSTEM_ASSIGNEE] skip 'GC_SYSTEM_ASSIGNEE is required for assignee write test'
+
+exec $GC_BIN issue create -R $WRITE_REPO --title 'System Test issue assignee' --body 'Created by tests/system; safe to close.' --assignee $GC_SYSTEM_ASSIGNEE --json
+json-ok stdout
+stdout2env ISSUE_NUMBER '"number"[[:space:]]*:[[:space:]]*"?([0-9]+)"?'
+defer-close-issue $ISSUE_NUMBER
+
+exec $GC_BIN issue view $ISSUE_NUMBER -R $WRITE_REPO --json
+json-value stdout assignees[0].login $GC_SYSTEM_ASSIGNEE
+
+exec $GC_BIN issue edit $ISSUE_NUMBER -R $WRITE_REPO --assignee $GC_SYSTEM_ASSIGNEE --json
+json-ok stdout
+
+exec $GC_BIN issue view $ISSUE_NUMBER -R $WRITE_REPO --json
+json-value stdout assignees[0].login $GC_SYSTEM_ASSIGNEE
+
+exec $GC_BIN issue close $ISSUE_NUMBER -R $WRITE_REPO --yes
+stdout 'Closed'

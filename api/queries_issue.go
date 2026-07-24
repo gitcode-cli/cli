@@ -103,6 +103,7 @@ type UpdateIssueOptions struct {
 	Body         string   `json:"body,omitempty"`
 	State        string   `json:"state,omitempty"`
 	AssigneeIDs  []string `json:"assignee_ids,omitempty"`
+	Assignees    []string `json:"-"`
 	Labels       []string `json:"labels,omitempty"`
 	Milestone    int      `json:"milestone,omitempty"`
 	SecurityHole string   `json:"security_hole,omitempty"`
@@ -259,7 +260,8 @@ func shouldUseOwnerIssueCreate(opts *CreateIssueOptions) bool {
 		return true
 	}
 
-	return opts.SecurityHole != "" ||
+	return len(opts.Assignees) > 0 ||
+		opts.SecurityHole != "" ||
 		opts.TemplatePath != "" ||
 		opts.IssueType != "" ||
 		opts.IssueSeverity != "" ||
@@ -339,7 +341,11 @@ func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIss
 	for _, label := range opts.Labels {
 		formValues.Add("labels[]", label)
 	}
-	addAssigneeIDs(formValues, opts.AssigneeIDs)
+	if len(opts.Assignees) > 0 {
+		formValues.Set("assignee", strings.Join(opts.Assignees, ","))
+	} else {
+		addAssigneeIDs(formValues, opts.AssigneeIDs)
+	}
 	if opts.Milestone > 0 {
 		formValues.Set("milestone", itoa(opts.Milestone))
 	}

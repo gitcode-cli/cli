@@ -149,11 +149,6 @@ func editRun(opts *EditOptions) error {
 		return err
 	}
 
-	assigneeIDs, err := api.ResolveUserIDs(client, opts.Assignees)
-	if err != nil {
-		return fmt.Errorf("failed to resolve assignees: %w", err)
-	}
-
 	// Normalize state value
 	state := opts.State
 	if state == "closed" {
@@ -191,12 +186,12 @@ func editRun(opts *EditOptions) error {
 
 	// Build update options
 	updateOpts := &api.UpdateIssueOptions{
-		Title:       opts.Title,
-		Body:        body,
-		State:       state,
-		AssigneeIDs: assigneeIDs,
-		Labels:      opts.Labels,
-		Milestone:   opts.Milestone,
+		Title:     opts.Title,
+		Body:      body,
+		State:     state,
+		Assignees: opts.Assignees,
+		Labels:    opts.Labels,
+		Milestone: opts.Milestone,
 	}
 
 	if opts.SecurityHole {
@@ -208,14 +203,14 @@ func editRun(opts *EditOptions) error {
 		return fmt.Errorf("failed to update issue: %w", err)
 	}
 	if opts.JSON {
-		if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, assigneeIDs, "updated"); err != nil {
+		if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, opts.Assignees, "updated"); err != nil {
 			return err
 		}
 		return cmdutil.WriteJSON(opts.IO.Out, issue)
 	}
 	fmt.Fprintf(opts.IO.Out, "%s Updated issue #%s in %s/%s\n", cs.Green("✓"), issue.Number, owner, repo)
 	fmt.Fprintf(opts.IO.Out, "  %s\n", issue.HTMLURL)
-	if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, assigneeIDs, "updated"); err != nil {
+	if err := ensureAssigneesApplied(client, owner, repo, opts.Number, issue.HTMLURL, opts.Assignees, "updated"); err != nil {
 		return err
 	}
 	return nil
@@ -225,8 +220,8 @@ func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
 }
 
-func ensureAssigneesApplied(client *api.Client, owner, repo string, issueNumber int, issueURL string, expectedIDs []string, action string) error {
-	if len(expectedIDs) == 0 {
+func ensureAssigneesApplied(client *api.Client, owner, repo string, issueNumber int, issueURL string, expectedLogins []string, action string) error {
+	if len(expectedLogins) == 0 {
 		return nil
 	}
 
@@ -234,7 +229,7 @@ func ensureAssigneesApplied(client *api.Client, owner, repo string, issueNumber 
 	if err != nil {
 		return nil
 	}
-	if hasExpectedAssignees(issue, expectedIDs) {
+	if hasExpectedAssignees(issue, expectedLogins) {
 		return nil
 	}
 	if issueURL != "" {
@@ -243,21 +238,21 @@ func ensureAssigneesApplied(client *api.Client, owner, repo string, issueNumber 
 	return fmt.Errorf("issue #%d was %s, but GitCode API did not apply the requested assignees", issueNumber, action)
 }
 
-func hasExpectedAssignees(issue *api.Issue, expectedIDs []string) bool {
-	if issue == nil || len(expectedIDs) == 0 {
+func hasExpectedAssignees(issue *api.Issue, expectedLogins []string) bool {
+	if issue == nil || len(expectedLogins) == 0 {
 		return true
 	}
 
 	actual := make(map[string]struct{}, len(issue.Assignees))
 	for _, assignee := range issue.Assignees {
-		if assignee == nil || assignee.ID == nil {
+		if assignee == nil || assignee.Login == "" {
 			continue
 		}
-		actual[fmt.Sprint(assignee.ID)] = struct{}{}
+		actual[assignee.Login] = struct{}{}
 	}
 
-	for _, expectedID := range expectedIDs {
-		if _, ok := actual[expectedID]; !ok {
+	for _, expectedLogin := range expectedLogins {
+		if _, ok := actual[expectedLogin]; !ok {
 			return false
 		}
 	}

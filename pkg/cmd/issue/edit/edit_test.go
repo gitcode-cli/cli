@@ -3,13 +3,13 @@ package edit
 import (
 	"bytes"
 	"encoding/json"
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdEdit(t *testing.T) {
@@ -194,8 +194,6 @@ func TestEditRunFailsWhenAssigneesAreNotApplied(t *testing.T) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
-					case "/api/v5/users/alice":
-						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
 					case "/api/v5/repos/owner/issues/12":
 						return issueResponse(http.StatusOK, `{"number":"12","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
 					case "/api/v5/repos/owner/repo/issues/12":
@@ -235,8 +233,6 @@ func TestEditRunJSONSuppressesOutputWhenAssigneesAreNotApplied(t *testing.T) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					switch req.URL.Path {
-					case "/api/v5/users/alice":
-						return issueResponse(http.StatusOK, `{"id":"101","login":"alice"}`), nil
 					case "/api/v5/repos/owner/issues/12":
 						return issueResponse(http.StatusOK, `{"number":"12","html_url":"https://gitcode.com/owner/repo/issues/12"}`), nil
 					case "/api/v5/repos/owner/repo/issues/12":

@@ -27,7 +27,8 @@ func TestReadScripts(t *testing.T) {
 	requireInfraRepo(t, "GC_SYSTEM_WRITE_REPO", writeRepo)
 
 	testscript.Run(t, testscript.Params{
-		Dir: "testdata/read",
+		Dir:       "testdata/read",
+		Condition: systemCondition,
 		Setup: func(env *testscript.Env) error {
 			setupEnv(t, env, root, gcBin, readRepo, writeRepo)
 			return nil
@@ -50,7 +51,8 @@ func TestWriteScripts(t *testing.T) {
 	requireInfraRepo(t, "GC_SYSTEM_WRITE_REPO", writeRepo)
 
 	testscript.Run(t, testscript.Params{
-		Dir: "testdata/write",
+		Dir:       "testdata/write",
+		Condition: systemCondition,
 		Setup: func(env *testscript.Env) error {
 			setupEnv(t, env, root, gcBin, readRepo, writeRepo)
 			return nil
@@ -64,6 +66,7 @@ func systemCmds() map[string]func(ts *testscript.TestScript, neg bool, args []st
 		"defer-delete-label": cmdDeferDeleteLabel,
 		"defer-close-issue":  cmdDeferCloseIssue,
 		"json-assert":        cmdJSONAssert,
+		"json-value":         cmdJSONValue,
 		"json-ok":            cmdJSONOK,
 		"require-infra":      cmdRequireInfra,
 		"stdout2env":         cmdStdout2Env,
@@ -89,6 +92,7 @@ func setupEnv(t *testing.T, env *testscript.Env, root, gcBin, readRepo, writeRep
 	copyOptionalEnv(env, "XDG_CONFIG_HOME")
 	copyOptionalEnv(env, "GC_TOKEN")
 	copyOptionalEnv(env, "GITCODE_TOKEN")
+	copyOptionalEnv(env, "GC_SYSTEM_ASSIGNEE")
 }
 
 func buildOrUseBinary(t *testing.T, root string) string {
@@ -136,6 +140,14 @@ func copyOptionalEnv(env *testscript.Env, name string) {
 	if value := os.Getenv(name); value != "" {
 		env.Setenv(name, value)
 	}
+}
+
+func systemCondition(condition string) (bool, error) {
+	name, ok := strings.CutPrefix(condition, "env:")
+	if !ok || name == "" {
+		return false, fmt.Errorf("unknown condition %q", condition)
+	}
+	return os.Getenv(name) != "", nil
 }
 
 func requireInfraRepo(t *testing.T, name, repo string) {
@@ -224,6 +236,33 @@ func cmdJSONAssert(ts *testscript.TestScript, neg bool, args []string) {
 	}
 	if !matches {
 		ts.Fatalf("%s %s has type %s, want %s", args[0], args[1], jsonType(actual), args[2])
+	}
+}
+
+func cmdJSONValue(ts *testscript.TestScript, neg bool, args []string) {
+	if len(args) != 3 {
+		ts.Fatalf("usage: json-value file path expected")
+	}
+	value, err := parseJSONFile(ts, args[0])
+	if err != nil {
+		ts.Fatalf("%s is not valid JSON: %v", args[0], err)
+	}
+	actual, ok, err := lookupJSONPath(value, args[1])
+	if err != nil {
+		ts.Fatalf("invalid JSON path %q: %v", args[1], err)
+	}
+	matches := ok && fmt.Sprint(actual) == args[2]
+	if neg {
+		if matches {
+			ts.Fatalf("%s %s unexpectedly equals %q", args[0], args[1], args[2])
+		}
+		return
+	}
+	if !ok {
+		ts.Fatalf("%s %s is missing", args[0], args[1])
+	}
+	if !matches {
+		ts.Fatalf("%s %s = %q, want %q", args[0], args[1], fmt.Sprint(actual), args[2])
 	}
 }
 

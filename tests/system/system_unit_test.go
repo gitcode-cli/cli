@@ -4,6 +4,7 @@ package system_test
 
 import (
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -116,8 +117,15 @@ func TestLookupJSONPathSupportsAssigneeLogin(t *testing.T) {
 }
 
 func TestUniqueNameShape(t *testing.T) {
-	name := uniqueName("system-test-label", "label-lifecycle", 1234)
-	if name != "system-test-label-label-lifecycle-1234" {
-		t.Fatalf("uniqueName returned %q", name)
+	name, err := uniqueName("system-test-label", "label-lifecycle", 1234)
+	if err != nil {
+		t.Fatalf("uniqueName returned error: %v", err)
+	}
+	matched, err := regexp.MatchString(`^system-test-label-label-lifecycle-1234-[0-9a-f]{32}$`, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !matched {
+		t.Fatalf("uniqueName returned %q with unexpected shape", name)
 	}
 }

@@ -3,6 +3,8 @@
 package system_test
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -519,9 +521,17 @@ func cmdUniqueName(ts *testscript.TestScript, neg bool, args []string) {
 	if len(args) != 2 {
 		ts.Fatalf("usage: unique-name VAR prefix")
 	}
-	ts.Setenv(args[0], uniqueName(args[1], ts.Name(), os.Getpid()))
+	name, err := uniqueName(args[1], ts.Name(), os.Getpid())
+	if err != nil {
+		ts.Fatalf("generate unique name: %v", err)
+	}
+	ts.Setenv(args[0], name)
 }
 
-func uniqueName(prefix, testName string, pid int) string {
-	return fmt.Sprintf("%s-%s-%d", prefix, testName, pid)
+func uniqueName(prefix, testName string, pid int) (string, error) {
+	var nonce [16]byte
+	if _, err := rand.Read(nonce[:]); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s-%s-%d-%s", prefix, testName, pid, hex.EncodeToString(nonce[:])), nil
 }

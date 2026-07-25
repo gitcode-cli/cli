@@ -250,6 +250,42 @@ func TestBuildPRUpdateFormValuesNilOptions(t *testing.T) {
 	}
 }
 
+func TestBuildPRUpdateFormValuesExplicitLabels(t *testing.T) {
+	tests := []struct {
+		name   string
+		labels []string
+		want   string
+	}{
+		{
+			name:   "replace labels",
+			labels: []string{" type/feature ", "risk/medium"},
+			want:   "type/feature,risk/medium",
+		},
+		{
+			name: "clear labels",
+			want: ",",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			formValues := buildPRUpdateFormValues(&UpdatePROptions{
+				Labels:    tt.labels,
+				LabelsSet: true,
+			})
+			if got := formValues.Get("labels"); got != tt.want {
+				t.Fatalf("labels = %q, want %q", got, tt.want)
+			}
+			if _, ok := formValues["labels"]; !ok {
+				t.Fatal("labels field is missing")
+			}
+			if _, ok := formValues["labels[]"]; ok {
+				t.Fatal("labels[] should not be sent for an explicit label update")
+			}
+		})
+	}
+}
+
 func TestListPRCommentsPaginatesUntilShortPage(t *testing.T) {
 	var gotPaths []string
 

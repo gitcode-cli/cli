@@ -107,6 +107,7 @@ type UpdatePROptions struct {
 	Draft             *bool    `json:"draft,omitempty"`
 	MilestoneNumber   int      `json:"milestone_number,omitempty"`
 	Labels            []string `json:"labels,omitempty"`
+	LabelsSet         bool     `json:"-"`
 	CloseRelatedIssue *bool    `json:"close_related_issue,omitempty"`
 }
 
@@ -310,10 +311,26 @@ func buildPRUpdateFormValues(opts *UpdatePROptions) url.Values {
 	if opts.MilestoneNumber > 0 {
 		formValues.Set("milestone_number", itoa(opts.MilestoneNumber))
 	}
-	for _, label := range opts.Labels {
-		trimmed := strings.TrimSpace(label)
-		if trimmed != "" {
-			formValues.Add("labels[]", trimmed)
+	if opts.LabelsSet {
+		labels := make([]string, 0, len(opts.Labels))
+		for _, label := range opts.Labels {
+			if trimmed := strings.TrimSpace(label); trimmed != "" {
+				labels = append(labels, trimmed)
+			}
+		}
+		value := strings.Join(labels, ",")
+		if value == "" {
+			// GitCode rejects labels= as a missing parameter. A lone comma is
+			// parsed as an explicit empty label list and clears all labels.
+			value = ","
+		}
+		formValues.Set("labels", value)
+	} else {
+		for _, label := range opts.Labels {
+			trimmed := strings.TrimSpace(label)
+			if trimmed != "" {
+				formValues.Add("labels[]", trimmed)
+			}
 		}
 	}
 	if opts.CloseRelatedIssue != nil {

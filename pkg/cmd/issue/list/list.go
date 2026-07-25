@@ -248,16 +248,32 @@ func resolveMilestoneFilter(client *api.Client, owner, repo, value string) (stri
 		return "", nil
 	}
 
-	number, err := strconv.Atoi(value)
-	if err != nil {
+	if !isASCIIDecimal(value) {
 		return value, nil
 	}
 
-	milestone, err := api.GetMilestone(client, owner, repo, number)
+	number, err := strconv.ParseInt(value, 10, 32)
+	if err != nil || number <= 0 {
+		return "", cmdutil.NewUsageError("--milestone number must be a positive 32-bit integer")
+	}
+
+	milestone, err := api.GetMilestone(client, owner, repo, int(number))
 	if err != nil {
 		return "", cmdutil.WrapNotFound(err, "milestone #%d not found in %s/%s", number, owner, repo)
 	}
 	return milestone.Title, nil
+}
+
+func isASCIIDecimal(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, char := range value {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func parseRepo(repo string) (string, string, error) {

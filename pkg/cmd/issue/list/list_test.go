@@ -1,7 +1,7 @@
 package list
 
 import (
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -9,6 +9,7 @@ import (
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdList(t *testing.T) {
@@ -340,7 +341,7 @@ func TestListRunResolvesMilestoneNumberToTitle(t *testing.T) {
 		},
 		Repository: "owner/repo",
 		Limit:      30,
-		Milestone:  "123",
+		Milestone:  "000123",
 		JSON:       true,
 	}
 
@@ -382,6 +383,76 @@ func TestListRunReturnsNotFoundForUnknownMilestoneNumber(t *testing.T) {
 	err := listRun(opts)
 	if err == nil || !strings.Contains(err.Error(), "milestone #999 not found") {
 		t.Fatalf("listRun() error = %v, want milestone not found error", err)
+	}
+	var cliErr *cmdutil.CLIError
+	if !errors.As(err, &cliErr) {
+		t.Fatalf("listRun() error type = %T, want *cmdutil.CLIError", err)
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitNotFound {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitNotFound)
+	}
+}
+
+func TestResolveMilestoneFilterNumericBoundaries(t *testing.T) {
+	tests := []struct {
+		name    string
+		value   string
+		want    string
+		wantErr bool
+	}{
+		{name: "empty", value: "", want: ""},
+		{name: "title", value: "v1.0", want: "v1.0"},
+		{name: "plus sign is title", value: "+1", want: "+1"},
+		{name: "minus sign is title", value: "-1", want: "-1"},
+		{name: "zero is invalid number", value: "0", wantErr: true},
+		{name: "32-bit overflow is invalid", value: "2147483648", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resolveMilestoneFilter(nil, "owner", "repo", tt.value)
+			if tt.wantErr {
+				if err == nil || cmdutil.ExitCode(err) != cmdutil.ExitUsage {
+					t.Fatalf("resolveMilestoneFilter() error = %v, want usage error", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("resolveMilestoneFilter() error = %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("resolveMilestoneFilter() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestListRunPreservesNonNotFoundMilestoneError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, _, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				return jsonResponse(http.StatusInternalServerError, `{"message":"temporary failure"}`), nil
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Milestone:  "123",
+		JSON:       true,
+	}
+
+	err := listRun(opts)
+	if err == nil {
+		t.Fatal("listRun() error = nil, want server error")
+	}
+	if strings.Contains(err.Error(), "not found") {
+		t.Fatalf("listRun() error = %v, must preserve non-404 failure", err)
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitError)
 	}
 }
 

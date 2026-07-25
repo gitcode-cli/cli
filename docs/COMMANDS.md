@@ -1291,12 +1291,27 @@ gc pr edit 1 --draft false -R infra-test/gctest1
 # 添加标签
 gc pr edit 1 --labels bug,enhancement -R infra-test/gctest1
 
+# 显式追加和移除标签（保留其余标签）
+gc pr edit 1 --add-label status/approved --remove-label status/review -R infra-test/gctest1
+
+# 替换全部标签（交互确认；自动化场景需显式添加 --yes）
+gc pr edit 1 --replace-labels status/approved,risk/low -R infra-test/gctest1
+
+# 清空全部标签
+gc pr edit 1 --replace-labels "" -R infra-test/gctest1 --yes
+
 # 设置里程碑
 gc pr edit 1 --milestone 5 -R infra-test/gctest1
 
 # JSON 输出
 gc pr edit 1 --title "新标题" -R infra-test/gctest1 --json
 ```
+
+说明：
+- `--labels` 为兼容参数，语义是追加标签，不会删除 PR 上已有的其他标签；新脚本建议使用含义更明确的 `--add-label`。
+- `--add-label` 和 `--remove-label` 可同时使用，均会保留未指定的现有标签，并对最终标签列表去重。
+- `--replace-labels` 会替换全部标签，不能与 `--labels`、`--add-label` 或 `--remove-label` 同时使用。
+- 全量替换默认要求输入 `replace-labels` 确认；非交互环境必须显式传入 `--yes`，空值可用于清空全部标签。
 
 ### pr label - 管理 PR 标签
 

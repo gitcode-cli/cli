@@ -2,14 +2,15 @@ package edit
 
 import (
 	"fmt"
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdEdit(t *testing.T) {
@@ -108,55 +109,199 @@ func TestEditRun(t *testing.T) {
 	}
 }
 
-func TestEditRunUsesFormEncodedLabels(t *testing.T) {
-	t.Setenv("GC_TOKEN", "test-token")
-
-	var gotPath string
-	var gotContentType string
-	var gotBody string
-
+func TestNewCmdEditTracksLabelFlags(t *testing.T) {
 	ioStreams, _, _, _ := iostreams.Test()
-	opts := &EditOptions{
-		IO: ioStreams,
-		HttpClient: func() (*http.Client, error) {
-			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-				gotPath = req.URL.Path
-				gotContentType = req.Header.Get("Content-Type")
-				body, err := io.ReadAll(req.Body)
-				if err != nil {
-					t.Fatalf("failed to read request body: %v", err)
-				}
-				gotBody = string(body)
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Status:     http.StatusText(http.StatusOK),
-					Header:     make(http.Header),
-					Body:       io.NopCloser(strings.NewReader(`{"number":123,"title":"updated"}`)),
-				}, nil
-			})}, nil
+	f := &cmdutil.Factory{IOStreams: ioStreams}
+
+	var got *EditOptions
+	cmd := NewCmdEdit(f, func(opts *EditOptions) error {
+		got = opts
+		return nil
+	})
+	cmd.SetArgs([]string{
+		"123", "-R", "owner/repo",
+		"--labels", "legacy",
+		"--add-label", "added",
+		"--remove-label", "removed",
+	})
+	if _, err := cmd.ExecuteC(); err != nil {
+		t.Fatalf("ExecuteC() error = %v", err)
+	}
+	if got == nil || !got.LabelsSet || !got.AddLabelsSet || !got.RemoveLabelsSet {
+		t.Fatalf("label flag presence was not recorded: %#v", got)
+	}
+}
+
+func TestEditRunUpdatesLabels(t *testing.T) {
+	tests := []struct {
+		name          string
+		configure     func(*EditOptions)
+		wantLabels    string
+		wantRequests  int
+		wantFirstVerb string
+	}{
+		{
+			name: "legacy labels add and deduplicate",
+			configure: func(opts *EditOptions) {
+				opts.Labels = []string{"risk/high", "status/approved"}
+			},
+			wantLabels:    "type/bug,risk/high,status/approved",
+			wantRequests:  2,
+			wantFirstVerb: http.MethodGet,
 		},
-		Repository: "owner/repo",
-		Number:     123,
-		Labels:     []string{"type/feature", "risk/medium"},
+		{
+			name: "add and remove preserve other labels",
+			configure: func(opts *EditOptions) {
+				opts.AddLabels = []string{"status/approved"}
+				opts.RemoveLabels = []string{"risk/high"}
+			},
+			wantLabels:    "type/bug,status/approved",
+			wantRequests:  2,
+			wantFirstVerb: http.MethodGet,
+		},
+		{
+			name: "replace labels skips current labels lookup",
+			configure: func(opts *EditOptions) {
+				opts.ReplaceLabels = []string{"status/approved", "status/approved"}
+				opts.ReplaceLabelsSet = true
+				opts.Yes = true
+			},
+			wantLabels:    "status/approved",
+			wantRequests:  1,
+			wantFirstVerb: http.MethodPatch,
+		},
+		{
+			name: "replace with empty value clears labels",
+			configure: func(opts *EditOptions) {
+				opts.ReplaceLabelsSet = true
+				opts.Yes = true
+			},
+			wantLabels:    ",",
+			wantRequests:  1,
+			wantFirstVerb: http.MethodPatch,
+		},
 	}
 
-	if err := editRun(opts); err != nil {
-		t.Fatalf("editRun() error = %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("GC_TOKEN", "test-token")
+			var methods []string
+			var gotLabels string
+
+			ioStreams, _, _, _ := iostreams.Test()
+			opts := &EditOptions{
+				IO:         ioStreams,
+				Repository: "owner/repo",
+				Number:     123,
+			}
+			tt.configure(opts)
+			opts.HttpClient = func() (*http.Client, error) {
+				return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					methods = append(methods, req.Method)
+					switch req.Method {
+					case http.MethodGet:
+						return editTestResponse(`{"number":123,"labels":[{"name":"type/bug"},{"name":"risk/high"}]}`), nil
+					case http.MethodPatch:
+						body, err := io.ReadAll(req.Body)
+						if err != nil {
+							t.Fatalf("read request body: %v", err)
+						}
+						values, err := url.ParseQuery(string(body))
+						if err != nil {
+							t.Fatalf("parse request body: %v", err)
+						}
+						gotLabels = values.Get("labels")
+						if _, ok := values["labels"]; !ok {
+							t.Fatal("PATCH request omitted labels field")
+						}
+						return editTestResponse(`{"number":123,"title":"updated"}`), nil
+					default:
+						t.Fatalf("unexpected method %s", req.Method)
+						return nil, nil
+					}
+				})}, nil
+			}
+
+			if err := editRun(opts); err != nil {
+				t.Fatalf("editRun() error = %v", err)
+			}
+			if len(methods) != tt.wantRequests {
+				t.Fatalf("request count = %d, want %d (%v)", len(methods), tt.wantRequests, methods)
+			}
+			if methods[0] != tt.wantFirstVerb {
+				t.Fatalf("first method = %q, want %q", methods[0], tt.wantFirstVerb)
+			}
+			if gotLabels != tt.wantLabels {
+				t.Fatalf("labels = %q, want %q", gotLabels, tt.wantLabels)
+			}
+		})
+	}
+}
+
+func TestEditRunRejectsUnsafeLabelChangesBeforeHTTP(t *testing.T) {
+	tests := []struct {
+		name      string
+		configure func(*EditOptions)
+		want      string
+	}{
+		{
+			name: "replace requires confirmation",
+			configure: func(opts *EditOptions) {
+				opts.ReplaceLabels = []string{"status/approved"}
+				opts.ReplaceLabelsSet = true
+			},
+			want: "confirmation required",
+		},
+		{
+			name: "replace conflicts with add",
+			configure: func(opts *EditOptions) {
+				opts.ReplaceLabelsSet = true
+				opts.AddLabels = []string{"status/approved"}
+			},
+			want: "cannot be combined",
+		},
+		{
+			name: "same label cannot be added and removed",
+			configure: func(opts *EditOptions) {
+				opts.AddLabels = []string{"status/approved"}
+				opts.RemoveLabels = []string{"status/approved"}
+			},
+			want: "both added and removed",
+		},
 	}
 
-	if gotPath != "/api/v5/repos/owner/repo/pulls/123" {
-		t.Fatalf("request path = %q, want %q", gotPath, "/api/v5/repos/owner/repo/pulls/123")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ioStreams, _, _, _ := iostreams.Test()
+			httpCalled := false
+			opts := &EditOptions{
+				IO:         ioStreams,
+				Repository: "owner/repo",
+				Number:     123,
+				HttpClient: func() (*http.Client, error) {
+					httpCalled = true
+					return &http.Client{}, nil
+				},
+			}
+			tt.configure(opts)
+
+			err := editRun(opts)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("editRun() error = %v, want containing %q", err, tt.want)
+			}
+			if httpCalled {
+				t.Fatal("HTTP client was created before label validation or confirmation")
+			}
+		})
 	}
-	if gotContentType != "application/x-www-form-urlencoded" {
-		t.Fatalf("Content-Type = %q, want %q", gotContentType, "application/x-www-form-urlencoded")
-	}
-	for _, pair := range []string{
-		"labels%5B%5D=type%2Ffeature",
-		"labels%5B%5D=risk%2Fmedium",
-	} {
-		if !strings.Contains(gotBody, pair) {
-			t.Fatalf("request body %q does not contain %q", gotBody, pair)
-		}
+}
+
+func editTestResponse(body string) *http.Response {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Status:     http.StatusText(http.StatusOK),
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }
 

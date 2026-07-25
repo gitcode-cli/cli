@@ -131,11 +131,12 @@ func viewRun(opts *ViewOptions) error {
 		return nil
 	}
 
-	// Fetch issues if requested
+	// JSON counts must be derived from the issue list because GitCode currently
+	// returns stale zero values in the milestone count fields.
 	var issues []api.Issue
-	if opts.Issues {
+	if opts.Issues || opts.JSON {
 		issues, err = api.ListRepoIssuesAll(client, owner, repo, &api.IssueListOptions{
-			Milestone: strconv.Itoa(opts.Number),
+			Milestone: ms.Title,
 			State:     "all",
 		})
 		if err != nil {
@@ -143,12 +144,15 @@ func viewRun(opts *ViewOptions) error {
 		}
 	}
 
-	// Calculate counts
 	totalIssues := len(issues)
 	closedIssues := countIssuesByState(issues, "closed")
 	openIssues := totalIssues - closedIssues
 
 	if opts.JSON {
+		var outputIssues []api.Issue
+		if opts.Issues {
+			outputIssues = issues
+		}
 		return cmdutil.WriteJSON(opts.IO.Out, &MilestoneWithIssues{
 			Number:       ms.Number,
 			Title:        ms.Title,
@@ -156,7 +160,7 @@ func viewRun(opts *ViewOptions) error {
 			DueOn:        ms.DueOn,
 			Description:  ms.Description,
 			URL:          milestoneURL,
-			Issues:       issues,
+			Issues:       outputIssues,
 			TotalIssues:  totalIssues,
 			ClosedIssues: closedIssues,
 			OpenIssues:   openIssues,
@@ -212,7 +216,7 @@ func viewRun(opts *ViewOptions) error {
 	return nil
 }
 
-// countIssuesByState counts issues matching the given state
+// countIssuesByState counts issues matching the given state.
 func countIssuesByState(issues []api.Issue, state string) int {
 	count := 0
 	for _, issue := range issues {

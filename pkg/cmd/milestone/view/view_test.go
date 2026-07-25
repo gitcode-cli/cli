@@ -132,10 +132,21 @@ func TestViewRunJSONOutput(t *testing.T) {
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/api/v5/repos/owner/repo/milestones/1" {
-			_, _ = w.Write([]byte(`{"id":1,"number":1,"title":"v1","state":"open","description":"release"}`))
+			_, _ = w.Write([]byte(`{
+				"id":1,
+				"number":1,
+				"title":"v1",
+				"state":"open",
+				"description":"release",
+				"open_issues":99,
+				"closed_issues":88
+			}`))
 			return
 		}
 		if r.URL.Path == "/api/v5/repos/owner/repo/issues" {
+			if r.URL.Query().Get("milestone") != "v1" {
+				t.Fatalf("milestone filter = %q, want title v1", r.URL.Query().Get("milestone"))
+			}
 			_, _ = w.Write([]byte(`[]`))
 			return
 		}
@@ -174,10 +185,21 @@ func TestViewRunJSONOutputWithIssues(t *testing.T) {
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/api/v5/repos/owner/repo/milestones/1" {
-			_, _ = w.Write([]byte(`{"id":1,"number":1,"title":"v1","state":"open","description":"release"}`))
+			_, _ = w.Write([]byte(`{
+				"id":1,
+				"number":1,
+				"title":"v1",
+				"state":"open",
+				"description":"release",
+				"open_issues":2,
+				"closed_issues":1
+			}`))
 			return
 		}
 		if r.URL.Path == "/api/v5/repos/owner/repo/issues" {
+			if r.URL.Query().Get("milestone") != "v1" {
+				t.Fatalf("milestone filter = %q, want title v1", r.URL.Query().Get("milestone"))
+			}
 			_, _ = w.Write([]byte(`[
 				{"id":"1","number":"10","title":"Bug fix","state":"closed"},
 				{"id":"2","number":"11","title":"New feature","state":"open"},
@@ -229,10 +251,21 @@ func TestViewRunTextOutputWithIssues(t *testing.T) {
 	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/api/v5/repos/owner/repo/milestones/1" {
-			_, _ = w.Write([]byte(`{"id":1,"number":1,"title":"v1.0","state":"open","description":"First release"}`))
+			_, _ = w.Write([]byte(`{
+				"id":1,
+				"number":1,
+				"title":"v1.0",
+				"state":"open",
+				"description":"First release",
+				"open_issues":2,
+				"closed_issues":1
+			}`))
 			return
 		}
 		if r.URL.Path == "/api/v5/repos/owner/repo/issues" {
+			if r.URL.Query().Get("milestone") != "v1.0" {
+				t.Fatalf("milestone filter = %q, want title v1.0", r.URL.Query().Get("milestone"))
+			}
 			_, _ = w.Write([]byte(`[
 				{"id":"1","number":"10","title":"Bug fix","state":"closed"},
 				{"id":"2","number":"11","title":"New feature","state":"open"},
@@ -281,7 +314,14 @@ func TestViewRunWithoutIssues(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		// Only milestone request should be made
 		if r.URL.Path == "/api/v5/repos/owner/repo/milestones/1" {
-			_, _ = w.Write([]byte(`{"id":1,"number":1,"title":"v1.0","state":"open"}`))
+			_, _ = w.Write([]byte(`{
+				"id":1,
+				"number":1,
+				"title":"v1.0",
+				"state":"open",
+				"open_issues":4,
+				"closed_issues":2
+			}`))
 			return
 		}
 		// Issues request should NOT be made when Issues=false
@@ -303,6 +343,61 @@ func TestViewRunWithoutIssues(t *testing.T) {
 	output := out.String()
 	if strings.Contains(output, "Issues") {
 		t.Errorf("output should not contain issues section: %s", output)
+	}
+}
+
+func TestViewRunJSONWithoutIssueDetailsCalculatesCounts(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v5/repos/owner/repo/milestones/1":
+			_, _ = w.Write([]byte(`{
+				"id":1,
+				"number":1,
+				"title":"v1.0",
+				"state":"open",
+				"open_issues":0,
+				"closed_issues":0
+			}`))
+		case "/api/v5/repos/owner/repo/issues":
+			if r.URL.Query().Get("milestone") != "v1.0" {
+				t.Fatalf("milestone filter = %q, want title v1.0", r.URL.Query().Get("milestone"))
+			}
+			_, _ = w.Write([]byte(`[
+				{"id":"1","number":"10","title":"Closed","state":"closed"},
+				{"id":"2","number":"11","title":"Open one","state":"open"},
+				{"id":"3","number":"12","title":"Open two","state":"open"}
+			]`))
+		default:
+			t.Fatalf("unexpected request when Issues=false: %s", r.URL.Path)
+		}
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Repository: "owner/repo",
+		Number:     1,
+		JSON:       true,
+		Issues:     false,
+	})
+	if err != nil {
+		t.Fatalf("viewRun() error = %v", err)
+	}
+
+	var result MilestoneWithIssues
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("output is not valid JSON: %v; output=%q", err, out.String())
+	}
+	if result.TotalIssues != 3 || result.OpenIssues != 2 || result.ClosedIssues != 1 {
+		t.Fatalf("unexpected milestone counts: %#v", result)
+	}
+	if result.Issues != nil {
+		t.Fatalf("issues = %#v, want omitted details", result.Issues)
 	}
 }
 
@@ -360,20 +455,13 @@ func TestViewRunRejectsJSONWithWebBeforeAuth(t *testing.T) {
 
 func TestCountIssuesByState(t *testing.T) {
 	issues := []api.Issue{
-		{Number: "1", Title: "A", State: "open"},
-		{Number: "2", Title: "B", State: "closed"},
-		{Number: "3", Title: "C", State: "open"},
-		{Number: "4", Title: "D", State: "CLOSED"}, // test case insensitivity
+		{Number: "1", State: "open"},
+		{Number: "2", State: "closed"},
+		{Number: "3", State: "CLOSED"},
 	}
 
-	openCount := countIssuesByState(issues, "open")
-	if openCount != 2 {
-		t.Errorf("open count = %d, want 2", openCount)
-	}
-
-	closedCount := countIssuesByState(issues, "closed")
-	if closedCount != 2 {
-		t.Errorf("closed count = %d, want 2", closedCount)
+	if got := countIssuesByState(issues, "closed"); got != 2 {
+		t.Fatalf("countIssuesByState() = %d, want 2", got)
 	}
 }
 

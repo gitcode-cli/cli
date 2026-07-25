@@ -37,12 +37,14 @@ type Label struct {
 
 // Milestone represents a GitCode milestone
 type Milestone struct {
-	ID          interface{} `json:"id"`
-	Number      int         `json:"number"`
-	Title       string      `json:"title"`
-	Description string      `json:"description"`
-	State       string      `json:"state"`
-	DueOn       string      `json:"due_on"`
+	ID           interface{} `json:"id"`
+	Number       int         `json:"number"`
+	Title        string      `json:"title"`
+	Description  string      `json:"description"`
+	State        string      `json:"state"`
+	DueOn        string      `json:"due_on"`
+	OpenIssues   int         `json:"open_issues,omitempty"`
+	ClosedIssues int         `json:"closed_issues,omitempty"`
 }
 
 // IssueComment represents a comment on an issue

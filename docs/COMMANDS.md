@@ -620,8 +620,11 @@ gc issue list -R infra-test/gctest1 --label bug,enhancement
 # 限制数量
 gc issue list -R infra-test/gctest1 --limit 20
 
-# 按里程碑筛选
+# 按里程碑完整标题筛选
 gc issue list -R infra-test/gctest1 --milestone "v1.0"
+
+# 按里程碑编号筛选
+gc issue list -R infra-test/gctest1 --milestone 123
 
 # 按受理人筛选
 gc issue list -R infra-test/gctest1 --assignee username
@@ -663,6 +666,8 @@ gc issue list -R infra-test/gctest1 --template '{{range .}}#{{.Number}} {{.Title
 
 说明：
 - `--json` 继续作为兼容入口保留，适合脚本和代理调用。
+- `--milestone` 接受完整里程碑标题或正的 32 位十进制编号；纯 ASCII 数字输入始终按编号解析，允许前导零，`0` 和溢出值会返回参数错误。
+- 带符号或其他非数字字符的值按完整标题处理；不支持标题缩写或模糊匹配，因此纯数字标题无法通过该参数与编号消歧。
 - `--format json` 与 `--json` 输出一致。
 - `--time-format` 只影响文本展示中的时间格式，不改变 JSON 结构。
 - `--template` 使用 Go template 渲染 issue 列表，当前与 `--json`、`--format` 互斥。

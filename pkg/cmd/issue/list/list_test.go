@@ -1,7 +1,7 @@
 package list
 
 import (
-	"gitcode.com/gitcode-cli/cli/pkg/testutil"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -9,6 +9,7 @@ import (
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
+	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
 func TestNewCmdList(t *testing.T) {
@@ -275,5 +276,191 @@ func TestListRunAllowsTemplateOutputForEmptyResults(t *testing.T) {
 
 	if got := stdout.String(); got != "0 issues" {
 		t.Fatalf("stdout = %q, want %q", got, "0 issues")
+	}
+}
+
+func TestListRunUsesMilestoneTitleWithoutExtraRequest(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	var requests int
+	ioStreams, _, stdout, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				requests++
+				if req.URL.Path != "/api/v5/repos/owner/repo/issues" {
+					t.Fatalf("unexpected path: %s", req.URL.Path)
+				}
+				if got := req.URL.Query().Get("milestone"); got != "v1.0" {
+					t.Fatalf("milestone query = %q, want %q", got, "v1.0")
+				}
+				return jsonResponse(http.StatusOK, `[]`), nil
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Milestone:  "v1.0",
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	if requests != 1 {
+		t.Fatalf("requests = %d, want 1", requests)
+	}
+	if stdout.String() != "[]\n" {
+		t.Fatalf("stdout = %q, want empty JSON array", stdout.String())
+	}
+}
+
+func TestListRunResolvesMilestoneNumberToTitle(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	var requests []string
+	ioStreams, _, stdout, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				requests = append(requests, req.URL.Path)
+				switch req.URL.Path {
+				case "/api/v5/repos/owner/repo/milestones/123":
+					return jsonResponse(http.StatusOK, `{"number":123,"title":"v1.0"}`), nil
+				case "/api/v5/repos/owner/repo/issues":
+					if got := req.URL.Query().Get("milestone"); got != "v1.0" {
+						t.Fatalf("milestone query = %q, want resolved title v1.0", got)
+					}
+					return jsonResponse(http.StatusOK, `[]`), nil
+				default:
+					t.Fatalf("unexpected path: %s", req.URL.Path)
+					return nil, nil
+				}
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Milestone:  "000123",
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	wantRequests := []string{
+		"/api/v5/repos/owner/repo/milestones/123",
+		"/api/v5/repos/owner/repo/issues",
+	}
+	if strings.Join(requests, "\n") != strings.Join(wantRequests, "\n") {
+		t.Fatalf("requests = %#v, want %#v", requests, wantRequests)
+	}
+	if stdout.String() != "[]\n" {
+		t.Fatalf("stdout = %q, want empty JSON array", stdout.String())
+	}
+}
+
+func TestListRunReturnsNotFoundForUnknownMilestoneNumber(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, _, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				if req.URL.Path != "/api/v5/repos/owner/repo/milestones/999" {
+					t.Fatalf("unexpected path: %s", req.URL.Path)
+				}
+				return jsonResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Milestone:  "999",
+		JSON:       true,
+	}
+
+	err := listRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "milestone #999 not found") {
+		t.Fatalf("listRun() error = %v, want milestone not found error", err)
+	}
+	var cliErr *cmdutil.CLIError
+	if !errors.As(err, &cliErr) {
+		t.Fatalf("listRun() error type = %T, want *cmdutil.CLIError", err)
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitNotFound {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitNotFound)
+	}
+}
+
+func TestResolveMilestoneFilterNumericBoundaries(t *testing.T) {
+	tests := []struct {
+		name    string
+		value   string
+		want    string
+		wantErr bool
+	}{
+		{name: "empty", value: "", want: ""},
+		{name: "title", value: "v1.0", want: "v1.0"},
+		{name: "plus sign is title", value: "+1", want: "+1"},
+		{name: "minus sign is title", value: "-1", want: "-1"},
+		{name: "zero is invalid number", value: "0", wantErr: true},
+		{name: "32-bit overflow is invalid", value: "2147483648", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resolveMilestoneFilter(nil, "owner", "repo", tt.value)
+			if tt.wantErr {
+				if err == nil || cmdutil.ExitCode(err) != cmdutil.ExitUsage {
+					t.Fatalf("resolveMilestoneFilter() error = %v, want usage error", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("resolveMilestoneFilter() error = %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("resolveMilestoneFilter() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestListRunPreservesNonNotFoundMilestoneError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, _, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				return jsonResponse(http.StatusInternalServerError, `{"message":"temporary failure"}`), nil
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Milestone:  "123",
+		JSON:       true,
+	}
+
+	err := listRun(opts)
+	if err == nil {
+		t.Fatal("listRun() error = nil, want server error")
+	}
+	if strings.Contains(err.Error(), "not found") {
+		t.Fatalf("listRun() error = %v, must preserve non-404 failure", err)
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode() = %d, want %d", got, cmdutil.ExitError)
+	}
+}
+
+func jsonResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Status:     http.StatusText(status),
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }

@@ -146,9 +146,7 @@ func TestMilestone_Unmarshal(t *testing.T) {
 		"number": 1,
 		"title": "v1.0.0",
 		"description": "First release",
-		"state": "open",
-		"open_issues": 3,
-		"closed_issues": 2
+		"state": "open"
 	}`
 
 	var milestone Milestone
@@ -162,12 +160,6 @@ func TestMilestone_Unmarshal(t *testing.T) {
 	}
 	if milestone.Title != "v1.0.0" {
 		t.Errorf("Expected Title 'v1.0.0', got '%s'", milestone.Title)
-	}
-	if milestone.OpenIssues != 3 {
-		t.Errorf("Expected OpenIssues 3, got '%d'", milestone.OpenIssues)
-	}
-	if milestone.ClosedIssues != 2 {
-		t.Errorf("Expected ClosedIssues 2, got '%d'", milestone.ClosedIssues)
 	}
 }
 

@@ -1706,8 +1706,8 @@ gc milestone view 1 -R infra-test/gctest1 --issues=false
 
 说明：
 - `milestone view` 默认显示里程碑关联的 issues，按状态分组（Closed/Open）。
-- `--json` 输出包含 `issues` 数组、`total_issues`、`closed_issues`、`open_issues` 字段。
-- `--issues=false` 只显示里程碑元数据，不获取和显示关联 issues。
+- `--json` 输出包含 `issues` 数组、`total_issues`、`closed_issues`、`open_issues` 字段；计数按里程碑完整标题查询关联 Issue 后计算，避免依赖服务端可能滞后的聚合字段。
+- `--issues=false` 不显示关联 issues；与 `--json` 同用时仍会查询关联 Issue 以保证计数准确。
 - `--json` 不能与 `--web` 同时使用。
 
 ### milestone edit - 编辑里程碑

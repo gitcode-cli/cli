@@ -4,6 +4,7 @@ package list
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -74,6 +75,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# Filter by milestone
 			$ gc issue list --milestone "v1.0"
+			$ gc issue list --milestone 123
 
 			# Filter by assignee
 			$ gc issue list --assignee username
@@ -117,7 +119,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of issues to list")
 	cmd.Flags().StringVarP(&opts.Labels, "label", "l", "", "Filter by labels (comma separated)")
 	cmd.Flags().StringVarP(&opts.Assignee, "assignee", "a", "", "Filter by assignee username")
-	cmd.Flags().StringVarP(&opts.Milestone, "milestone", "m", "", "Filter by milestone title")
+	cmd.Flags().StringVarP(&opts.Milestone, "milestone", "m", "", "Filter by milestone title or number")
 	cmd.Flags().StringVar(&opts.Creator, "creator", "", "Filter by creator username")
 	cmd.Flags().StringVar(&opts.Sort, "sort", "created", "Sort by (created/updated)")
 	cmdutil.SetFlagEnum(cmd, "sort", "created", "updated")
@@ -176,13 +178,18 @@ func listRun(opts *ListOptions) error {
 		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
 	}
 
+	milestone, err := resolveMilestoneFilter(client, owner, repo, opts.Milestone)
+	if err != nil {
+		return err
+	}
+
 	// List issues
 	issues, err := api.ListRepoIssues(client, owner, repo, &api.IssueListOptions{
 		State:         opts.State,
 		Labels:        opts.Labels,
 		PerPage:       opts.Limit,
 		Page:          opts.Page,
-		Milestone:     opts.Milestone,
+		Milestone:     milestone,
 		Assignee:      opts.Assignee,
 		Creator:       opts.Creator,
 		Sort:          opts.Sort,
@@ -234,6 +241,23 @@ func listRun(opts *ListOptions) error {
 	}
 
 	return printer.Print(opts.IO.Out, issues)
+}
+
+func resolveMilestoneFilter(client *api.Client, owner, repo, value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+
+	number, err := strconv.Atoi(value)
+	if err != nil {
+		return value, nil
+	}
+
+	milestone, err := api.GetMilestone(client, owner, repo, number)
+	if err != nil {
+		return "", cmdutil.WrapNotFound(err, "milestone #%d not found in %s/%s", number, owner, repo)
+	}
+	return milestone.Title, nil
 }
 
 func parseRepo(repo string) (string, string, error) {

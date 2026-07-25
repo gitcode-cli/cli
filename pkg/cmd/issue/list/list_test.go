@@ -277,3 +277,119 @@ func TestListRunAllowsTemplateOutputForEmptyResults(t *testing.T) {
 		t.Fatalf("stdout = %q, want %q", got, "0 issues")
 	}
 }
+
+func TestListRunUsesMilestoneTitleWithoutExtraRequest(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	var requests int
+	ioStreams, _, stdout, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				requests++
+				if req.URL.Path != "/api/v5/repos/owner/repo/issues" {
+					t.Fatalf("unexpected path: %s", req.URL.Path)
+				}
+				if got := req.URL.Query().Get("milestone"); got != "v1.0" {
+					t.Fatalf("milestone query = %q, want %q", got, "v1.0")
+				}
+				return jsonResponse(http.StatusOK, `[]`), nil
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Milestone:  "v1.0",
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	if requests != 1 {
+		t.Fatalf("requests = %d, want 1", requests)
+	}
+	if stdout.String() != "[]\n" {
+		t.Fatalf("stdout = %q, want empty JSON array", stdout.String())
+	}
+}
+
+func TestListRunResolvesMilestoneNumberToTitle(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	var requests []string
+	ioStreams, _, stdout, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				requests = append(requests, req.URL.Path)
+				switch req.URL.Path {
+				case "/api/v5/repos/owner/repo/milestones/123":
+					return jsonResponse(http.StatusOK, `{"number":123,"title":"v1.0"}`), nil
+				case "/api/v5/repos/owner/repo/issues":
+					if got := req.URL.Query().Get("milestone"); got != "v1.0" {
+						t.Fatalf("milestone query = %q, want resolved title v1.0", got)
+					}
+					return jsonResponse(http.StatusOK, `[]`), nil
+				default:
+					t.Fatalf("unexpected path: %s", req.URL.Path)
+					return nil, nil
+				}
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Milestone:  "123",
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	wantRequests := []string{
+		"/api/v5/repos/owner/repo/milestones/123",
+		"/api/v5/repos/owner/repo/issues",
+	}
+	if strings.Join(requests, "\n") != strings.Join(wantRequests, "\n") {
+		t.Fatalf("requests = %#v, want %#v", requests, wantRequests)
+	}
+	if stdout.String() != "[]\n" {
+		t.Fatalf("stdout = %q, want empty JSON array", stdout.String())
+	}
+}
+
+func TestListRunReturnsNotFoundForUnknownMilestoneNumber(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, _, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				if req.URL.Path != "/api/v5/repos/owner/repo/milestones/999" {
+					t.Fatalf("unexpected path: %s", req.URL.Path)
+				}
+				return jsonResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Milestone:  "999",
+		JSON:       true,
+	}
+
+	err := listRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "milestone #999 not found") {
+		t.Fatalf("listRun() error = %v, want milestone not found error", err)
+	}
+}
+
+func jsonResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Status:     http.StatusText(status),
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}

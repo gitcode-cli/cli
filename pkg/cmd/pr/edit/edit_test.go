@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -302,6 +303,137 @@ func editTestResponse(body string) *http.Response {
 		Status:     http.StatusText(http.StatusOK),
 		Header:     make(http.Header),
 		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}
+
+func TestEditRunJSONFetchesCompleteUpdatedPR(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	var requests []string
+	var getCount int
+	ioStreams, _, out, _ := iostreams.Test()
+	opts := &EditOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				requests = append(requests, req.Method+" "+req.URL.Path)
+
+				var body string
+				switch req.Method {
+				case http.MethodPatch:
+					body = `{"title":"updated","labels":null}`
+					formBody, err := io.ReadAll(req.Body)
+					if err != nil {
+						t.Fatalf("read PATCH body: %v", err)
+					}
+					values, err := url.ParseQuery(string(formBody))
+					if err != nil {
+						t.Fatalf("parse PATCH body: %v", err)
+					}
+					if got := values.Get("labels"); got != "type/bug,type/feature" {
+						t.Fatalf("PATCH labels = %q, want preserved and added labels", got)
+					}
+				case http.MethodGet:
+					getCount++
+					if getCount == 1 {
+						body = `{"number":123,"labels":[{"id":1,"name":"type/bug","color":"#428BCA"}]}`
+					} else {
+						body = `{
+							"id":456,
+							"number":123,
+							"title":"updated",
+							"labels":[
+								{"id":1,"name":"type/bug","color":"#428BCA"},
+								{"id":2,"name":"type/feature","color":"#428BCA"}
+							]
+						}`
+					}
+				default:
+					t.Fatalf("unexpected request method: %s", req.Method)
+				}
+
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Status:     http.StatusText(http.StatusOK),
+					Header:     make(http.Header),
+					Body:       io.NopCloser(strings.NewReader(body)),
+				}, nil
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Number:     123,
+		Title:      "updated",
+		AddLabels:  []string{"type/feature"},
+		JSON:       true,
+	}
+
+	if err := editRun(opts); err != nil {
+		t.Fatalf("editRun() error = %v", err)
+	}
+
+	wantRequests := []string{
+		"GET /api/v5/repos/owner/repo/pulls/123",
+		"PATCH /api/v5/repos/owner/repo/pulls/123",
+		"GET /api/v5/repos/owner/repo/pulls/123",
+	}
+	if strings.Join(requests, "\n") != strings.Join(wantRequests, "\n") {
+		t.Fatalf("requests = %#v, want %#v", requests, wantRequests)
+	}
+
+	var result struct {
+		ID     interface{} `json:"id"`
+		Number int         `json:"number"`
+		Labels []struct {
+			Name string `json:"name"`
+		} `json:"labels"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("output is not valid JSON: %v; output=%q", err, out.String())
+	}
+	if result.ID == nil || result.Number != 123 {
+		t.Fatalf("incomplete PR identity: %#v", result)
+	}
+	if len(result.Labels) != 2 ||
+		result.Labels[0].Name != "type/bug" ||
+		result.Labels[1].Name != "type/feature" {
+		t.Fatalf("labels = %#v, want updated labels", result.Labels)
+	}
+}
+
+func TestEditRunJSONReturnsErrorWhenFinalStateCannotBeFetched(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, out, _ := iostreams.Test()
+	opts := &EditOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				status := http.StatusOK
+				body := `{"title":"updated"}`
+				if req.Method == http.MethodGet {
+					status = http.StatusInternalServerError
+					body = `{"message":"temporary failure"}`
+				}
+				return &http.Response{
+					StatusCode: status,
+					Status:     http.StatusText(status),
+					Header:     make(http.Header),
+					Body:       io.NopCloser(strings.NewReader(body)),
+				}, nil
+			})}, nil
+		},
+		Repository: "owner/repo",
+		Number:     123,
+		Title:      "updated",
+		JSON:       true,
+	}
+
+	err := editRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "failed to fetch updated PR") {
+		t.Fatalf("editRun() error = %v, want final state fetch error", err)
+	}
+	if out.Len() != 0 {
+		t.Fatalf("stdout = %q, want no partial JSON", out.String())
 	}
 }
 

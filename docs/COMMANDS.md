@@ -1317,6 +1317,7 @@ gc pr edit 1 --title "新标题" -R infra-test/gctest1 --json
 - `--add-label` 和 `--remove-label` 可同时使用，均会保留未指定的现有标签，并对最终标签列表去重。
 - `--replace-labels` 会替换全部标签，不能与 `--labels`、`--add-label` 或 `--remove-label` 同时使用。
 - 全量替换默认要求输入 `replace-labels` 确认；非交互环境必须显式传入 `--yes`，空值可用于清空全部标签。
+- `--json` 会在更新成功后读取并输出完整的最终 PR 状态，`id`、`number`、`labels` 等字段可直接供脚本和 AI 代理判断结果。
 
 ### pr label - 管理 PR 标签
 

@@ -227,6 +227,10 @@ func editRun(opts *EditOptions) error {
 	}
 
 	if opts.JSON {
+		pr, err = api.GetPullRequest(client, owner, repo, opts.Number)
+		if err != nil {
+			return fmt.Errorf("failed to fetch updated PR: %w", err)
+		}
 		return cmdutil.WriteJSON(opts.IO.Out, pr)
 	}
 

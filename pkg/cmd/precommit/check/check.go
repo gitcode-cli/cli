@@ -35,16 +35,16 @@ func NewCmdCheck(f *cmdutil.Factory, runF func(*CheckOptions) error) *cobra.Comm
 
 	cmd := &cobra.Command{
 		Use:   "check",
-		Short: "Check pre-commit configuration and local environment before committing",
+		Short: "Check pre-commit configuration before committing or pushing",
 		Long: heredoc.Doc(`
 			Check whether the current repository configures pre-commit and whether the
-			local environment is ready to run it before committing code.
+			local environment is ready before committing or pushing code.
 
 			The command:
 			  1. Detects a .pre-commit-config.yaml (or .yml) in the repository root.
 			  2. Verifies the pre-commit tool is installed.
-			  3. Verifies the git pre-commit hook is initialized.
-			  4. Optionally runs the hooks with --run.
+			  3. Verifies the git pre-commit and pre-push hooks are initialized.
+			  4. Optionally runs both hook stages with --run.
 
 			When something is missing it auto-installs/initializes in an interactive
 			terminal. In a non-interactive (non-TTY) environment, pass --yes to allow
@@ -73,8 +73,8 @@ func NewCmdCheck(f *cmdutil.Factory, runF func(*CheckOptions) error) *cobra.Comm
 		},
 	}
 
-	cmd.Flags().BoolVar(&opts.Run, "run", false, "Run pre-commit hooks (pre-commit run --all-files) after verifying")
-	cmd.Flags().BoolVar(&opts.NoInstall, "no-install", false, "Only diagnose; never install the tool or hook")
+	cmd.Flags().BoolVar(&opts.Run, "run", false, "Run pre-commit and pre-push stages across all files after verifying")
+	cmd.Flags().BoolVar(&opts.NoInstall, "no-install", false, "Only diagnose; never install the tool or hooks")
 	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Allow environment changes (install/init) in non-interactive mode")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
@@ -156,7 +156,8 @@ func printResult(opts *CheckOptions, res precommit.Result, allowInstall bool) {
 	} else {
 		fmt.Fprintf(out, "%s pre-commit tool not installed\n", mark(false))
 	}
-	fmt.Fprintf(out, "%s git hook initialized\n", mark(res.HookInstalled))
+	fmt.Fprintf(out, "%s git pre-commit hook initialized\n", mark(res.PreCommitHookInstalled))
+	fmt.Fprintf(out, "%s git pre-push hook initialized\n", mark(res.PrePushHookInstalled))
 
 	for _, a := range res.ActionsTaken {
 		fmt.Fprintf(out, "  - %s\n", a)
@@ -164,9 +165,9 @@ func printResult(opts *CheckOptions, res precommit.Result, allowInstall bool) {
 
 	switch res.RunResult {
 	case "passed":
-		fmt.Fprintf(out, "%s pre-commit run passed\n", mark(true))
+		fmt.Fprintf(out, "%s pre-commit and pre-push runs passed\n", mark(true))
 	case "failed":
-		fmt.Fprintf(out, "%s pre-commit run failed\n", mark(false))
+		fmt.Fprintf(out, "%s pre-commit or pre-push run failed\n", mark(false))
 	default:
 		// No --run was requested; nothing to report for the run step.
 	}
@@ -178,7 +179,7 @@ func printResult(opts *CheckOptions, res precommit.Result, allowInstall bool) {
 	// The environment is ready but the hooks themselves failed: that is a
 	// check failure, not an unready environment. Keep the two cases distinct so
 	// users don't chase the wrong problem.
-	envReady := res.ConfigFound && res.ToolInstalled && res.HookInstalled
+	envReady := res.ConfigFound && res.ToolInstalled && res.HooksInstalled
 	if envReady && res.RunResult == "failed" {
 		fmt.Fprintf(opts.IO.ErrOut, "\npre-commit checks failed.\n")
 		if res.RunOutput != "" {
@@ -189,12 +190,15 @@ func printResult(opts *CheckOptions, res precommit.Result, allowInstall bool) {
 
 	fmt.Fprintf(opts.IO.ErrOut, "\nEnvironment not ready.\n")
 	// Auto-install was wanted (not --no-install) but couldn't run: non-TTY without --yes.
-	if !allowInstall && !opts.NoInstall && (!res.ToolInstalled || !res.HookInstalled) {
+	if !allowInstall && !opts.NoInstall && (!res.ToolInstalled || !res.HooksInstalled) {
 		fmt.Fprintf(opts.IO.ErrOut, "Re-run in a terminal, or pass --yes to auto-install/initialize.\n")
 	}
 	if !res.ToolInstalled {
 		fmt.Fprintf(opts.IO.ErrOut, "Install pre-commit, e.g.: pipx install pre-commit (or pip install --user pre-commit).\n")
-	} else if !res.HookInstalled {
-		fmt.Fprintf(opts.IO.ErrOut, "Initialize hooks: pre-commit install\n")
+	} else if !res.HooksInstalled {
+		fmt.Fprintf(
+			opts.IO.ErrOut,
+			"Initialize hooks: pre-commit install --hook-type pre-commit --hook-type pre-push\n",
+		)
 	}
 }

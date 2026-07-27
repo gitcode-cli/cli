@@ -2,6 +2,7 @@ package precommit
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -16,7 +17,9 @@ const (
 	// ReasonToolMissing: the pre-commit tool is not installed (and was not, or
 	// could not be, installed).
 	ReasonToolMissing = "tool_missing"
-	// ReasonHookMissing: the git pre-commit hook is not initialized.
+	// ReasonConfigInvalid: pre-commit rejected the repository configuration.
+	ReasonConfigInvalid = "config_invalid"
+	// ReasonHookMissing: a required git hook is not initialized.
 	ReasonHookMissing = "hook_missing"
 	// ReasonRunFailed: the environment is ready but `pre-commit run` failed.
 	ReasonRunFailed = "run_failed"
@@ -34,28 +37,35 @@ type Options struct {
 	// Root is the git repository root directory.
 	Root string
 	// AllowInstall permits mutating the environment (installing the tool and/or
-	// the git hook) when something is missing.
+	// the required git hooks) when something is missing.
 	AllowInstall bool
-	// Run, when true, executes `pre-commit run --all-files` after the environment
-	// is confirmed ready.
+	// Run, when true, executes every required pre-commit hook stage across all
+	// files after the environment is confirmed ready.
 	Run bool
 }
 
 // Result is the structured outcome of a Check. JSON tags match docs/COMMANDS.md.
 //
-// OK means "nothing blocks committing": it is true when the repository has no
-// pre-commit config (nothing to check), or when the config is present and the
-// tool, hook, and any requested --run all succeeded. Always read OK together
-// with ConfigFound to distinguish "ready" from "no config, skipped".
+// OK means "nothing blocks committing or pushing": it is true when the
+// repository has no pre-commit config (nothing to check), or when the config is
+// present and the tool, hooks, and any requested --run all succeeded. Always
+// read OK together with ConfigFound to distinguish "ready" from "no config,
+// skipped".
 type Result struct {
-	ConfigFound   bool     `json:"config_found"`
-	ToolInstalled bool     `json:"tool_installed"`
-	ToolVersion   string   `json:"tool_version,omitempty"`
-	HookInstalled bool     `json:"hook_installed"`
-	ActionsTaken  []string `json:"actions_taken"`
-	RunResult     string   `json:"run_result,omitempty"` // "passed" | "failed" | ""
-	RunOutput     string   `json:"run_output,omitempty"` // pre-commit run output when RunResult == "failed"
-	OK            bool     `json:"ok"`
+	ConfigFound   bool   `json:"config_found"`
+	ToolInstalled bool   `json:"tool_installed"`
+	ToolVersion   string `json:"tool_version,omitempty"`
+	// HookInstalled preserves the original pre-commit-specific JSON contract.
+	HookInstalled          bool     `json:"hook_installed"`
+	HooksInstalled         bool     `json:"hooks_installed"`
+	PreCommitHookInstalled bool     `json:"pre_commit_hook_installed"`
+	PrePushHookInstalled   bool     `json:"pre_push_hook_installed"`
+	ActionsTaken           []string `json:"actions_taken"`
+	RunResult              string   `json:"run_result,omitempty"` // aggregate: "passed" | "failed" | ""
+	RunOutput              string   `json:"run_output,omitempty"` // failed stage output
+	PreCommitRunResult     string   `json:"pre_commit_run_result,omitempty"`
+	PrePushRunResult       string   `json:"pre_push_run_result,omitempty"`
+	OK                     bool     `json:"ok"`
 	// Reason is a stable, machine-readable classification of the outcome (one of
 	// the Reason* constants), or "" when the environment is fully ready.
 	Reason string `json:"reason,omitempty"`
@@ -72,7 +82,8 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 	res := Result{ActionsTaken: []string{}}
 
 	// 1. Config detection — absence is a clean skip, not an error.
-	if _, found := ConfigFile(opts.Root); !found {
+	configPath, found := ConfigFile(opts.Root)
+	if !found {
 		res.OK = true
 		res.Reason = ReasonNoConfig
 		return res, nil
@@ -105,34 +116,45 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 		return res, nil // not ready; OK stays false
 	}
 
-	// 3. Hook detection + optional install.
-	hookOK := HookInstalled(r, opts.Root)
-	if !hookOK && opts.AllowInstall {
+	// 3. Configuration validation.
+	if out, err := r.Run(opts.Root, "pre-commit", "validate-config", configPath); err != nil {
+		res.Reason = ReasonConfigInvalid
+		return res, fmt.Errorf("pre-commit config validation failed: %w: %s", err, strings.TrimSpace(out))
+	}
+
+	// 4. Hook detection + optional install.
+	setHookStatus(r, opts.Root, &res)
+	if !res.HooksInstalled && opts.AllowInstall {
 		action, err := InstallHook(r, opts.Root)
+		setHookStatus(r, opts.Root, &res)
 		if err != nil {
+			res.Reason = ReasonInstallFailed
 			return res, err
+		}
+		if !res.HooksInstalled {
+			res.Reason = ReasonInstallFailed
+			return res, errors.New("pre-commit install completed but required hooks are still missing")
 		}
 		if action != "" {
 			res.ActionsTaken = append(res.ActionsTaken, action)
 		}
-		hookOK = HookInstalled(r, opts.Root)
 	}
-	res.HookInstalled = hookOK
-	if !hookOK {
+	if !res.HooksInstalled {
 		res.Reason = ReasonHookMissing
 		return res, nil
 	}
 
-	// 4. Environment is ready.
+	// 5. Environment is ready.
 	res.OK = true
 
-	// 5. Optional: actually run the checks. Capture the output so a failure
-	// surfaces why, instead of only reporting "failed".
+	// 6. Optional: run every configured git-hook stage.
 	if opts.Run {
-		out, err := r.Run(opts.Root, "pre-commit", "run", "--all-files")
-		if err != nil {
+		outputs, runErrors := runRequiredHookStages(r, opts.Root)
+		res.PreCommitRunResult = runResult(runErrors[HookTypePreCommit])
+		res.PrePushRunResult = runResult(runErrors[HookTypePrePush])
+		if hasRunFailure(runErrors) {
 			res.RunResult = "failed"
-			res.RunOutput = strings.TrimSpace(out)
+			res.RunOutput = failedRunOutput(outputs, runErrors)
 			res.OK = false
 			res.Reason = ReasonRunFailed
 		} else {
@@ -141,4 +163,59 @@ func Check(r CommandRunner, opts Options) (Result, error) {
 	}
 
 	return res, nil
+}
+
+func setHookStatus(r CommandRunner, root string, res *Result) {
+	statuses := make(map[HookType]bool, len(requiredHookTypes))
+	res.HooksInstalled = true
+	for _, hookType := range requiredHookTypes {
+		statuses[hookType] = HookTypeInstalled(r, root, hookType)
+		res.HooksInstalled = res.HooksInstalled && statuses[hookType]
+	}
+	res.PreCommitHookInstalled = statuses[HookTypePreCommit]
+	res.PrePushHookInstalled = statuses[HookTypePrePush]
+	res.HookInstalled = res.PreCommitHookInstalled
+}
+
+func runHookStage(r CommandRunner, root string, hookType HookType) (string, error) {
+	return r.Run(
+		root,
+		"pre-commit",
+		"run", "--all-files", "--hook-stage", string(hookType),
+	)
+}
+
+func runRequiredHookStages(r CommandRunner, root string) (map[HookType]string, map[HookType]error) {
+	outputs := make(map[HookType]string, len(requiredHookTypes))
+	runErrors := make(map[HookType]error, len(requiredHookTypes))
+	for _, hookType := range requiredHookTypes {
+		outputs[hookType], runErrors[hookType] = runHookStage(r, root, hookType)
+	}
+	return outputs, runErrors
+}
+
+func hasRunFailure(runErrors map[HookType]error) bool {
+	for _, hookType := range requiredHookTypes {
+		if runErrors[hookType] != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func runResult(err error) string {
+	if err != nil {
+		return "failed"
+	}
+	return "passed"
+}
+
+func failedRunOutput(outputs map[HookType]string, runErrors map[HookType]error) string {
+	var failures []string
+	for _, hookType := range requiredHookTypes {
+		if runErrors[hookType] != nil {
+			failures = append(failures, string(hookType)+":\n"+strings.TrimSpace(outputs[hookType]))
+		}
+	}
+	return strings.Join(failures, "\n\n")
 }

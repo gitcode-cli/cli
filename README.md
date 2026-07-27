@@ -200,7 +200,7 @@ unset GC_TOKEN
 gitcode auth login --web
 ```
 
-当前 `--web` 会打开个人令牌页面，生成令牌后仍需回到终端粘贴。当前版本不会隐藏输入，因此必须由用户本人在私有、未录制且不由 AI 控制的本地终端中执行。
+当前 `--web` 会打开 GitCode 的新建访问令牌页面，生成令牌后仍需回到终端粘贴。当前版本不会隐藏输入，因此必须由用户本人在私有、未录制且不由 AI 控制的本地终端中执行。
 
 **方式二：交互式 Token 登录**
 
@@ -224,8 +224,8 @@ gitcode auth login
 
 **获取 Token：**
 1. 登录 [GitCode](https://gitcode.com)
-2. 进入 设置 -> 私人令牌
-3. 点击"生成新令牌"，选择所需权限
+2. 进入 个人设置 -> 访问令牌
+3. 点击“新建访问令牌”，选择所需权限
 4. 复制生成的 Token
 
 **验证认证：**
@@ -403,5 +403,5 @@ make run
 ## 相关链接
 
 - [GitCode](https://gitcode.com) - GitCode 平台
-- [API 文档](https://gitcode.com/docs/api) - GitCode API 参考
+- [API 文档](https://docs.gitcode.com/docs/apis/) - GitCode API 参考
 - [问题反馈](https://gitcode.com/gitcode-cli/cli/issues) - 提交 Bug 或建议

@@ -123,7 +123,7 @@ func (p *PRListPrinter) stateLabel(pr api.PullRequest, width int) string {
 
 func (p *PRListPrinter) stateText(pr api.PullRequest) string {
 	switch {
-	case pr.Merged || pr.State == "merged":
+	case pr.IsMerged():
 		return "merged"
 	case pr.State == "closed":
 		return "closed"
@@ -145,7 +145,7 @@ func prReviewStatus(pr api.PullRequest) string {
 	switch {
 	case pr.Draft:
 		return "draft"
-	case pr.Merged || pr.State == "merged":
+	case pr.IsMerged():
 		return "merged"
 	case len(pr.Reviewers) > 0:
 		return "requested"

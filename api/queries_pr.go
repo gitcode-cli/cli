@@ -39,6 +39,13 @@ type PullRequest struct {
 	Milestone    *Milestone   `json:"milestone"`
 }
 
+// IsMerged reports whether the pull request has been merged. GitCode may
+// return merged as null, so state and merged_at are authoritative fallbacks.
+func (pr PullRequest) IsMerged() bool {
+	return pr.Merged || strings.EqualFold(pr.State, "merged") ||
+		(pr.MergedAt != nil && strings.TrimSpace(*pr.MergedAt) != "")
+}
+
 // PRBranch represents a branch in a PR
 type PRBranch struct {
 	Label string      `json:"label"`
@@ -272,6 +279,7 @@ func normalizePullRequest(pr *PullRequest) {
 	if pr == nil {
 		return
 	}
+	pr.Merged = pr.IsMerged()
 	if pr.Body == "" && pr.Description != "" {
 		pr.Body = pr.Description
 	}
@@ -416,6 +424,7 @@ func MergePullRequest(client *Client, owner, repo string, number int, opts *Merg
 	if err != nil {
 		return nil, err
 	}
+	normalizePullRequest(&pr)
 	return &pr, nil
 }
 

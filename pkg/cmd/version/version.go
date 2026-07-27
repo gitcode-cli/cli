@@ -29,7 +29,7 @@ func NewCmdVersion(ver, commit, date string, commandName ...string) *cobra.Comma
 		Use:   "version",
 		Short: fmt.Sprintf("Print %s version", displayName),
 		Long:  fmt.Sprintf("Print the version information of %s.", displayName),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
 
 			if jsonOutput {
@@ -39,14 +39,14 @@ func NewCmdVersion(ver, commit, date string, commandName ...string) *cobra.Comma
 					Built:   date,
 					URL:     "https://gitcode.com/gitcode-cli/cli",
 				}
-				_ = cmdutil.WriteJSON(out, info)
-				return
+				return cmdutil.WriteJSON(out, info)
 			}
 
 			fmt.Fprintf(out, "%s version %s\n", displayName, ver)
 			fmt.Fprintf(out, "  commit: %s\n", commit)
 			fmt.Fprintf(out, "  built:  %s\n", date)
 			fmt.Fprintln(out, "https://gitcode.com/gitcode-cli/cli")
+			return nil
 		},
 	}
 

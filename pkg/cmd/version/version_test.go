@@ -3,9 +3,19 @@ package version
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 )
+
+type errorWriter struct {
+	err error
+}
+
+func (w errorWriter) Write([]byte) (int, error) {
+	return 0, w.err
+}
 
 func TestNewCmdVersion(t *testing.T) {
 	tests := []struct {
@@ -122,5 +132,42 @@ func TestVersionOutputUsesCommandName(t *testing.T) {
 	}
 	if cmd.Short != "Print gitcode version" {
 		t.Fatalf("NewCmdVersion().Short = %q, want %q", cmd.Short, "Print gitcode version")
+	}
+}
+
+func TestVersionJSONOutput(t *testing.T) {
+	cmd := NewCmdVersion("v1.0.0", "abc123", "2026-07-13")
+	cmd.SetArgs([]string{"--json"})
+
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("cmd.Execute() error = %v", err)
+	}
+
+	var got VersionInfo
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v, output = %q", err, out.String())
+	}
+	want := VersionInfo{
+		Version: "v1.0.0",
+		Commit:  "abc123",
+		Built:   "2026-07-13",
+		URL:     "https://gitcode.com/gitcode-cli/cli",
+	}
+	if got != want {
+		t.Fatalf("version JSON = %+v, want %+v", got, want)
+	}
+}
+
+func TestVersionJSONReturnsWriteError(t *testing.T) {
+	wantErr := errors.New("write failed")
+	cmd := NewCmdVersion("v1.0.0", "abc123", "2026-07-13")
+	cmd.SetArgs([]string{"--json"})
+	cmd.SetOut(errorWriter{err: wantErr})
+
+	err := cmd.Execute()
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("cmd.Execute() error = %v, want %v", err, wantErr)
 	}
 }

@@ -389,6 +389,55 @@ func TestPullRequestUnmarshal(t *testing.T) {
 	}
 }
 
+func TestNormalizePullRequestMergedState(t *testing.T) {
+	mergedAt := "2026-07-27T17:31:13+08:00"
+	emptyMergedAt := ""
+	tests := []struct {
+		name string
+		pr   PullRequest
+		want bool
+	}{
+		{name: "explicit merged flag", pr: PullRequest{Merged: true}, want: true},
+		{name: "merged state", pr: PullRequest{State: "merged"}, want: true},
+		{name: "merged state case insensitive", pr: PullRequest{State: "MERGED"}, want: true},
+		{name: "merged timestamp", pr: PullRequest{State: "closed", MergedAt: &mergedAt}, want: true},
+		{name: "empty merged timestamp", pr: PullRequest{State: "closed", MergedAt: &emptyMergedAt}, want: false},
+		{name: "open pull request", pr: PullRequest{State: "open"}, want: false},
+		{name: "closed unmerged pull request", pr: PullRequest{State: "closed"}, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			normalizePullRequest(&tt.pr)
+			if tt.pr.Merged != tt.want {
+				t.Fatalf("Merged = %v, want %v", tt.pr.Merged, tt.want)
+			}
+			if tt.pr.IsMerged() != tt.want {
+				t.Fatalf("IsMerged() = %v, want %v", tt.pr.IsMerged(), tt.want)
+			}
+		})
+	}
+}
+
+func TestGetPullRequestNormalizesNullMergedField(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `{
+			"number":123,
+			"state":"merged",
+			"merged":null,
+			"merged_at":"2026-07-27T17:31:13+08:00"
+		}`), nil
+	})
+
+	pr, err := GetPullRequest(client, "owner", "repo", 123)
+	if err != nil {
+		t.Fatalf("GetPullRequest() error = %v", err)
+	}
+	if !pr.Merged {
+		t.Fatalf("Merged = false, want true: %#v", pr)
+	}
+}
+
 func TestGetPullRequestNormalizesDescription(t *testing.T) {
 	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
 		if req.URL.Path != "/api/v5/repos/owner/repo/pulls/123" {

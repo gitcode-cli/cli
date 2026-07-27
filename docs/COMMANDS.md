@@ -1765,7 +1765,7 @@ gc milestone delete 1 -R infra-test/gctest1 --yes
 
 ## Pre-commit 命令 (precommit)
 
-`precommit` 命令组用于在提交代码前检查仓库的 pre-commit 配置与本地环境，确保提交时能正常拉起 pre-commit 检查。跨平台支持 Windows、Linux（x86/arm）、macOS。
+`precommit` 命令组用于在提交或推送代码前检查仓库的 pre-commit 配置与本地环境，确保 Git 能正常拉起 pre-commit 与 pre-push 检查。跨平台支持 Windows、Linux（x86/arm）、macOS。
 
 ### precommit check - 检查 pre-commit 配置与环境
 
@@ -1773,10 +1773,11 @@ gc milestone delete 1 -R infra-test/gctest1 --yes
 
 1. 检测仓库根是否存在 `.pre-commit-config.yaml`（或 `.yml`）。无配置时视为"无需检查"，退出码 `0`。
 2. 检测本地 `pre-commit` 工具是否安装。
-3. 检测 git pre-commit hook 是否已初始化。
-4. 可选：使用 `--run` 实际执行 `pre-commit run --all-files`。
+3. 执行 `pre-commit validate-config`，验证配置格式与最低版本要求。
+4. 分别检测 git pre-commit 与 pre-push hook 是否已初始化；任一缺失时环境未就绪。
+5. 可选：使用 `--run` 分别执行 pre-commit 与 pre-push 两个 stage 的全文件检查。
 
-环境缺失时，在交互式终端（stdin 为 TTY）下会自动安装并初始化；在非交互环境下需显式传 `--yes` 才会修改环境，否则仅诊断并报错。`--no-install` 表示只诊断、绝不修改环境。
+环境缺失时，在交互式终端（stdin 为 TTY）下会自动安装并初始化两种 hook；在非交互环境下需显式传 `--yes` 才会修改环境，否则仅诊断并报错。`--no-install` 表示只诊断、绝不修改环境。
 
 ```bash
 # 检查环境是否就绪
@@ -1797,16 +1798,19 @@ gc precommit check --json
 
 说明：
 
-- 支持 `--json`：输出写入 stdout，字段为 `config_found`、`tool_installed`、`tool_version`、`hook_installed`、`actions_taken`、`run_result`、`run_output`、`ok`、`reason`、`install_failure_categories`（`run_output` 仅在 `run_result` 为 `failed` 时携带 `pre-commit run` 输出）。即使自动安装失败（退出码 `1`），`--json` 仍会输出结构化结果体（`reason=install_failed`），不会只剩退出码与 stderr 文本。
+- 支持 `--json`：输出写入 stdout。兼容字段 `hook_installed` 保持原语义，表示 pre-commit hook 是否已安装；新增聚合字段 `hooks_installed` 仅在 pre-commit 与 pre-push 均已安装时为 `true`，独立状态字段为 `pre_commit_hook_installed`、`pre_push_hook_installed`。`--run` 的聚合结果仍由 `run_result`、`run_output` 表示，分阶段结果由 `pre_commit_run_result`、`pre_push_run_result` 表示。其余字段为 `config_found`、`tool_installed`、`tool_version`、`actions_taken`、`ok`、`reason`、`install_failure_categories`。即使自动安装失败（退出码 `1`），`--json` 仍会输出结构化结果体（`reason=install_failed`），不会只剩退出码与 stderr 文本。
 - `reason` 是稳定、机器可读的结果分类，便于脚本/agent 直接分支，取值：
   - `no_config`：仓库未配置 pre-commit（`ok=true`，属正常跳过）。
   - `tool_missing`：`pre-commit` 工具未安装（且未尝试 / 未授权安装）。
-  - `hook_missing`：git pre-commit hook 未初始化。
-  - `run_failed`：环境就绪但 `pre-commit run` 失败。
-  - `install_failed`：已授权自动安装，但未能产出可用工具（安装尝试失败，或无可用安装器）；具体失败类型见 `install_failure_categories`。
+  - `config_invalid`：当前 `pre-commit` 无法加载仓库配置，例如版本低于配置声明的 `minimum_pre_commit_version` 或配置格式无效。
+  - `hook_missing`：git pre-commit 或 pre-push hook 未初始化。
+  - `run_failed`：环境就绪但 pre-commit 或 pre-push stage 检查失败。
+  - `install_failed`：已授权自动安装，但未能产出可用的 pre-commit 工具或完整 hooks；包括工具安装失败、hook 初始化命令失败，以及命令成功但复检仍缺少 hook。可结合 `tool_installed`、`hooks_installed`、`pre_commit_hook_installed`、`pre_push_hook_installed` 定位失败阶段；工具安装的具体失败类型见 `install_failure_categories`。
   - `not_in_repo`：当前目录不在 git 仓库内。
   - 环境完全就绪（且 `--run` 通过或未请求）时 `reason` 省略（为空）。
 - `install_failure_categories` 仅在 `reason=install_failed` 时出现，为机器可读的失败类型数组（按首次出现顺序去重）：`permission`（权限不足）/ `network`（网络失败）/ `toolchain`（缺少 Python/pip 工具链）。无法归类的失败不计入该数组（可能为空）。
+- 仓库声明 `minimum_pre_commit_version: 3.2.0`，以支持与 Git hook 同名的 `pre-commit`/`pre-push` stage；检查命令会先执行 `pre-commit validate-config`，旧版本或无效配置不会被报告为 ready。
+- Git 配置了自定义 `core.hooksPath` 时，`pre-commit install` 可能拒绝自动初始化；此时返回 `reason=install_failed`，请按错误提示处理或移除该配置后重试。
 - `--no-install` 与 `--yes` 互斥；hooks 本身运行失败时报"pre-commit checks failed"（区别于"环境未就绪"）。
 - 退出码：`0` 就绪或无配置；`1` 环境未就绪 / 检查失败 / 非 Git 仓库 / 非交互且未授权修改环境；`2` 用法错误。
 - 自动安装按工具可用性择优：`pipx` → `python3 -m pip install --user` → `python -m pip install --user`；都不可用时给出各平台手动安装指引。安装失败时按错误类型给出针对性指引（权限不足 / 网络失败 / 工具链缺失）。

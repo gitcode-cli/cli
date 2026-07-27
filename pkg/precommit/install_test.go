@@ -49,7 +49,11 @@ func TestEnsureToolNoPython(t *testing.T) {
 
 func TestInstallHook(t *testing.T) {
 	r := newFakeRunner()
-	r.responses[key("pre-commit", "install")] = fakeResp{out: "pre-commit installed at .git/hooks/pre-commit"}
+	r.responses[key(
+		"pre-commit", "install",
+		"--hook-type", "pre-commit",
+		"--hook-type", "pre-push",
+	)] = fakeResp{out: "hooks installed"}
 	action, err := InstallHook(r, "/repo")
 	if err != nil {
 		t.Fatalf("InstallHook() error = %v", err)
@@ -57,8 +61,12 @@ func TestInstallHook(t *testing.T) {
 	if action == "" {
 		t.Fatal("expected non-empty action")
 	}
-	if !r.called("pre-commit", "install") {
-		t.Fatal("expected pre-commit install to be called")
+	if !r.called(
+		"pre-commit", "install",
+		"--hook-type", "pre-commit",
+		"--hook-type", "pre-push",
+	) {
+		t.Fatal("expected both pre-commit and pre-push hooks to be installed")
 	}
 }
 

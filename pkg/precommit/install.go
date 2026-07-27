@@ -200,12 +200,16 @@ func (cs *categorySet) guidance() string {
 	return strings.Join(hints, " ")
 }
 
-// InstallHook runs `pre-commit install` in root to set up the git hook.
+// InstallHook installs every hook required by the repository.
 func InstallHook(r CommandRunner, root string) (string, error) {
-	if out, err := r.Run(root, "pre-commit", "install"); err != nil {
+	args := []string{"install"}
+	for _, hookType := range requiredHookTypes {
+		args = append(args, "--hook-type", string(hookType))
+	}
+	if out, err := r.Run(root, "pre-commit", args...); err != nil {
 		return "", fmt.Errorf("pre-commit install failed: %w: %s", err, strings.TrimSpace(out))
 	}
-	return "ran pre-commit install", nil
+	return "installed pre-commit and pre-push hooks", nil
 }
 
 func manualInstallHint() string {

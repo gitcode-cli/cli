@@ -62,6 +62,61 @@ func TestCheckRunNotReadyReturnsExit1(t *testing.T) {
 	}
 }
 
+func TestCheckRunReportsMissingPrePushHook(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir)
+	writeInstalledHookNamed(t, dir, "pre-commit")
+	io, _, out, errOut := iostreams.Test()
+	opts := &CheckOptions{
+		IO:        io,
+		GitRoot:   func() (string, error) { return dir, nil },
+		Runner:    &stubRunner{version: "pre-commit 3.7.0\n"},
+		NoInstall: true,
+	}
+
+	err := checkRun(opts)
+	if err == nil {
+		t.Fatal("expected error when pre-push hook is missing")
+	}
+	if !strings.Contains(out.String(), "✓ git pre-commit hook initialized") {
+		t.Fatalf("expected installed pre-commit status, got %q", out.String())
+	}
+	if !strings.Contains(out.String(), "✗ git pre-push hook initialized") {
+		t.Fatalf("expected missing pre-push status, got %q", out.String())
+	}
+	if !strings.Contains(errOut.String(), "--hook-type pre-commit --hook-type pre-push") {
+		t.Fatalf("expected complete install guidance, got %q", errOut.String())
+	}
+}
+
+func TestCheckRunJSONPreservesLegacyHookField(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir)
+	writeInstalledHookNamed(t, dir, "pre-commit")
+	io, _, out, _ := iostreams.Test()
+	opts := &CheckOptions{
+		IO:        io,
+		GitRoot:   func() (string, error) { return dir, nil },
+		Runner:    &stubRunner{version: "pre-commit 3.7.0\n"},
+		NoInstall: true,
+		JSON:      true,
+	}
+
+	if err := checkRun(opts); err == nil {
+		t.Fatal("expected error when pre-push hook is missing")
+	}
+	var got precommit.Result
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatalf("output is not valid JSON: %v; raw=%q", err, out.String())
+	}
+	if !got.HookInstalled || !got.PreCommitHookInstalled {
+		t.Fatalf("legacy hook_installed should preserve pre-commit state, got %+v", got)
+	}
+	if got.HooksInstalled || got.PrePushHookInstalled || got.OK {
+		t.Fatalf("aggregate readiness should require pre-push, got %+v", got)
+	}
+}
+
 func TestCheckRunJSON(t *testing.T) {
 	dir := t.TempDir()
 	writeConfig(t, dir)
@@ -81,7 +136,8 @@ func TestCheckRunJSON(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
 		t.Fatalf("output is not valid JSON: %v; raw=%q", err, out.String())
 	}
-	if !got.OK || !got.ConfigFound || !got.ToolInstalled || !got.HookInstalled {
+	if !got.OK || !got.ConfigFound || !got.ToolInstalled || !got.HookInstalled || !got.HooksInstalled ||
+		!got.PreCommitHookInstalled || !got.PrePushHookInstalled {
 		t.Fatalf("unexpected result: %+v", got)
 	}
 }
@@ -214,6 +270,66 @@ func TestCheckRunInstallFailureJSON(t *testing.T) {
 	}
 }
 
+func TestCheckRunHookInstallFailureJSON(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir)
+	writeInstalledHookNamed(t, dir, "pre-commit")
+	io, _, out, _ := iostreams.Test()
+	opts := &CheckOptions{
+		IO:      io,
+		GitRoot: func() (string, error) { return dir, nil },
+		Runner:  hookInstallFailRunner{},
+		Yes:     true,
+		JSON:    true,
+	}
+
+	err := checkRun(opts)
+	if err == nil {
+		t.Fatal("expected error when hook installation fails")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitError)
+	}
+	var got precommit.Result
+	if jerr := json.Unmarshal(out.Bytes(), &got); jerr != nil {
+		t.Fatalf("output is not valid JSON: %v; raw=%q", jerr, out.String())
+	}
+	if got.OK || got.Reason != precommit.ReasonInstallFailed {
+		t.Fatalf("want ok=false reason=%q, got %+v", precommit.ReasonInstallFailed, got)
+	}
+	if !got.HookInstalled || got.HooksInstalled ||
+		!got.PreCommitHookInstalled || got.PrePushHookInstalled {
+		t.Fatalf("unexpected hook status after failed install: %+v", got)
+	}
+}
+
+func TestCheckRunConfigInvalidJSON(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir)
+	io, _, out, _ := iostreams.Test()
+	opts := &CheckOptions{
+		IO:      io,
+		GitRoot: func() (string, error) { return dir, nil },
+		Runner:  configInvalidRunner{},
+		JSON:    true,
+	}
+
+	err := checkRun(opts)
+	if err == nil {
+		t.Fatal("expected invalid configuration to fail")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitError)
+	}
+	var got precommit.Result
+	if jerr := json.Unmarshal(out.Bytes(), &got); jerr != nil {
+		t.Fatalf("stdout is not clean JSON: %v; raw=%q", jerr, out.String())
+	}
+	if got.OK || got.Reason != precommit.ReasonConfigInvalid {
+		t.Fatalf("want ok=false reason=%q, got %+v", precommit.ReasonConfigInvalid, got)
+	}
+}
+
 func TestCheckMutuallyExclusiveFlags(t *testing.T) {
 	f := cmdutil.TestFactory()
 	cmd := NewCmdCheck(f, func(*CheckOptions) error { return nil })
@@ -240,8 +356,8 @@ func TestCheckRunFlagSuccess(t *testing.T) {
 	if err := checkRun(opts); err != nil {
 		t.Fatalf("checkRun() error = %v", err)
 	}
-	if !strings.Contains(out.String(), "pre-commit run passed") {
-		t.Fatalf("expected run passed output, got %q", out.String())
+	if !strings.Contains(out.String(), "pre-commit and pre-push runs passed") {
+		t.Fatalf("expected both runs passed output, got %q", out.String())
 	}
 }
 
@@ -256,11 +372,18 @@ func writeConfig(t *testing.T, root string) {
 
 func writeInstalledHook(t *testing.T, root string) {
 	t.Helper()
+	writeInstalledHookNamed(t, root, "pre-commit")
+	writeInstalledHookNamed(t, root, "pre-push")
+}
+
+func writeInstalledHookNamed(t *testing.T, root, name string) {
+	t.Helper()
 	hooks := filepath.Join(root, ".git", "hooks")
 	if err := os.MkdirAll(hooks, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(hooks, "pre-commit"), []byte("# File generated by pre-commit\n"), 0o755); err != nil {
+	content := []byte("# File generated by pre-commit\nARGS=(hook-impl --hook-type=" + name + ")\n")
+	if err := os.WriteFile(filepath.Join(hooks, name), content, 0o755); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -318,3 +441,43 @@ func (installFailRunner) RunStdout(_ string, _ string, _ ...string) (string, err
 }
 
 var _ precommit.CommandRunner = installFailRunner{}
+
+type hookInstallFailRunner struct{}
+
+func (hookInstallFailRunner) Look(string) bool { return true }
+
+func (hookInstallFailRunner) Run(_ string, name string, args ...string) (string, error) {
+	if name == "pre-commit" && len(args) > 0 && args[0] == "install" {
+		return "permission denied", errStub{}
+	}
+	return "", nil
+}
+
+func (hookInstallFailRunner) RunStdout(_ string, name string, args ...string) (string, error) {
+	if name == "pre-commit" && len(args) == 1 && args[0] == "--version" {
+		return "pre-commit 3.7.0\n", nil
+	}
+	return "", nil
+}
+
+var _ precommit.CommandRunner = hookInstallFailRunner{}
+
+type configInvalidRunner struct{}
+
+func (configInvalidRunner) Look(string) bool { return true }
+
+func (configInvalidRunner) Run(_ string, name string, args ...string) (string, error) {
+	if name == "pre-commit" && len(args) > 0 && args[0] == "validate-config" {
+		return "pre-commit version 3.2.0 is required", errStub{}
+	}
+	return "", nil
+}
+
+func (configInvalidRunner) RunStdout(_ string, name string, args ...string) (string, error) {
+	if name == "pre-commit" && len(args) == 1 && args[0] == "--version" {
+		return "pre-commit 3.1.0\n", nil
+	}
+	return "", nil
+}
+
+var _ precommit.CommandRunner = configInvalidRunner{}

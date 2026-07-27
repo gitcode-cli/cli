@@ -391,6 +391,40 @@ func TestListRunEmptyJSON(t *testing.T) {
 	}
 }
 
+// TestListRunPaginateEmptyResultsEmitsEmptyArray guards against #456: the
+// paginate path accumulates into `var all []api.WorkflowRun`, which stays nil
+// when every page is empty. Without normalization that marshals as `null`
+// instead of `[]`, breaking --json consumers.
+func TestListRunPaginateEmptyResultsEmitsEmptyArray(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					// Every page returns an empty result set.
+					return listTestResponse(http.StatusOK, `{"total_count":0,"workflow_runs":[]}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		Paginate:   true,
+		PerPage:    100,
+		PerPageSet: true,
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	if out.String() != "[]\n" {
+		t.Fatalf("paginate empty result = %q, want `[]\\n` (regression of #456: was `null`)", out.String())
+	}
+}
+
 func TestListRunInvalidLimit(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

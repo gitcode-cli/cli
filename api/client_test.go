@@ -207,6 +207,104 @@ func contains(s, substr string) bool {
 	return false
 }
 
+func TestDecodeAPIError(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       string
+		statusCode int
+		status     string
+		wantMsg    string
+		wantAPIErr bool
+	}{
+		{
+			name:       "message field",
+			body:       `{"message":"Not Found"}`,
+			statusCode: 404,
+			status:     "404 Not Found",
+			wantMsg:    "Not Found",
+			wantAPIErr: true,
+		},
+		{
+			name:       "error_message field",
+			body:       `{"error_message":"Internal Server Error"}`,
+			statusCode: 500,
+			status:     "500 Internal Server Error",
+			wantMsg:    "Internal Server Error",
+			wantAPIErr: true,
+		},
+		{
+			name:       "error field",
+			body:       `{"error":"unauthorized"}`,
+			statusCode: 401,
+			status:     "401 Unauthorized",
+			wantMsg:    "unknown error",
+			wantAPIErr: true,
+		},
+		{
+			name:       "error_code_name field",
+			body:       `{"error_code_name":"NOT_FOUND"}`,
+			statusCode: 404,
+			status:     "404 Not Found",
+			wantMsg:    "unknown error",
+			wantAPIErr: true,
+		},
+		{
+			name:       "non-JSON body returns generic error",
+			body:       `plain text error`,
+			statusCode: 502,
+			status:     "502 Bad Gateway",
+			wantMsg:    "502 Bad Gateway",
+			wantAPIErr: true,
+		},
+		{
+			name:       "JSON but no error fields",
+			body:       `{"data":"ok"}`,
+			statusCode: 400,
+			status:     "400 Bad Request",
+			wantMsg:    "400 Bad Request",
+			wantAPIErr: true,
+		},
+		{
+			name:       "multiple error fields",
+			body:       `{"message":"Forbidden","error":"forbidden","error_code":403}`,
+			statusCode: 403,
+			status:     "403 Forbidden",
+			wantMsg:    "Forbidden",
+			wantAPIErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := decodeAPIError([]byte(tt.body), tt.statusCode, tt.status)
+			if err == nil {
+				t.Fatal("decodeAPIError() returned nil")
+			}
+
+			if tt.wantAPIErr {
+				var apiErr *APIError
+				if !errors.As(err, &apiErr) {
+					t.Fatalf("expected *APIError, got %T", err)
+				}
+				if apiErr.StatusCode != tt.statusCode {
+					t.Errorf("StatusCode = %d, want %d", apiErr.StatusCode, tt.statusCode)
+				}
+				if !contains(apiErr.Error(), tt.wantMsg) {
+					t.Errorf("Error() = %q, want containing %q", apiErr.Error(), tt.wantMsg)
+				}
+			} else {
+				var apiErr *APIError
+				if errors.As(err, &apiErr) {
+					t.Errorf("expected generic error, got *APIError")
+				}
+				if !contains(err.Error(), tt.wantMsg) {
+					t.Errorf("Error() = %q, want containing %q", err.Error(), tt.wantMsg)
+				}
+			}
+		})
+	}
+}
+
 func TestRawREST(t *testing.T) {
 	handler := testutil.MockAPIHandler()
 	mockClient := testutil.NewTestHTTPClient(handler)

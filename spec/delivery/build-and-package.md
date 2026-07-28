@@ -115,9 +115,32 @@ make release-snapshot
 
 ```bash
 go mod tidy
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.40.0
 pip install --upgrade build wheel setuptools
 ```
+
+也可以直接使用宿主机依赖安装脚本。默认安装日常构建、测试、lint 和
+secret scan 所需的核心验证依赖；打包和发布验证需要显式开启打包依赖：
+
+```bash
+# Linux / macOS
+bash scripts/dev-setup.sh --with-packaging
+
+# Windows
+powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1 -WithPackaging
+
+# Make 已可用后的跨平台核心验证入口
+make dev-setup
+make dev-doctor
+```
+
+说明：
+
+- 脚本只安装工具链，不读取也不打印 `GC_TOKEN` / `GITCODE_TOKEN`
+- `--check` / `-Check` 只做检查，存在缺口时返回非零退出码
+- 全新宿主机应先直接运行平台脚本，因为此时可能还没有 Make
+- `.devcontainer/` 提供隔离、可复现的完整环境；宿主机脚本提供无需容器的本地验证路径
+- 默认宿主机安装不含打包工具；使用 `--with-packaging` / `-WithPackaging` 后才安装 `nfpm`、`goreleaser` 和 Python build 工具
 
 ## 6. 本地构建验证
 

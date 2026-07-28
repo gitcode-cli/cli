@@ -31,9 +31,9 @@ jobs:
           version: "1.22"
 
       - name: Run golangci-lint
-        run: >-
-          go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
-          run --disable=errcheck --disable=staticcheck
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+          "$(go env GOPATH)/bin/golangci-lint" run --disable=errcheck --disable=staticcheck
 
   test:
     name: Test
@@ -59,7 +59,7 @@ jobs:
       - name: Upload coverage
         uses: upload-artifact
         with:
-          name: coverage-linux
+          name: coverage-linux-${{ atomgit.run_id }}
           path: coverage.out
 
   build:
@@ -89,7 +89,7 @@ jobs:
       - name: Upload binary
         uses: upload-artifact
         with:
-          name: gc-ubuntu
+          name: gc-ubuntu-${{ atomgit.run_id }}
           path: bin/gc
 
   docker:

@@ -9,6 +9,10 @@ on:
 permissions:
   repository: read
 
+env:
+  # Fall back on any proxy error so hosted runners are not tied to one endpoint.
+  GOPROXY: "https://goproxy.cn|https://mirrors.aliyun.com/goproxy/|direct"
+
 defaults:
   run:
     shell: bash

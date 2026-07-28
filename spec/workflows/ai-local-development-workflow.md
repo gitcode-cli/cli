@@ -39,7 +39,8 @@ AI 接到任务后，按以下顺序建立上下文：
 - 命令行为：看 `docs/COMMANDS.md`
 - 单个 issue / PR 当前状态：看远端 GitCode 平台
 - 是否已主干合入：看 merged PR 和 `origin/main`
-- CI 运行状态与结果：看 GitHub Actions（通过 `gh run view` 获取）
+- GitCode 原生 CI 状态与结果：通过 `gc actions run/job` 获取
+- GitHub 镜像 CI 状态与结果：通过 `gh run view` 获取
 - 阶段背景或收口说明：可参考 `issues-plan/PROGRESS.md`
 - 外部项目 AI 使用说明：`docs/AI-GUIDE.md`，不适用于本仓库内部开发规则
 
@@ -54,7 +55,8 @@ AI 接到任务后，按以下顺序建立上下文：
 → 开发实现
 → 本地测试与构建
 → 真实命令验证
-→ 推送分支 + 远端 CI 自动验证（PR 触发）
+→ 推送分支 + GitCode 原生 CI 自动验证（PR 触发）
+→ 有 GitHub 镜像 PR 时补跨平台 CI 验证
 → 安全审查
 → 文档同步
 → 风险分级
@@ -139,28 +141,34 @@ go test -tags=system ./tests/system
 
 ### 5bis. 远端 CI 验证
 
-本地验证通过后，推送分支到远端并创建 PR。CI 在 PR 提交时自动触发（`on: pull_request`）。AI 通过 `gh` CLI 监控结果：
+本地验证通过后，推送分支到 GitCode 并创建 PR。GitCode 原生 CI 在 PR 提交时自动触发
+（`on: pull_request`），AI 通过 `gc actions` 核验结果：
 
 ```bash
-# 查看 PR 分支的最新 CI 运行
+# 查看 GitCode PR 的 CI 运行、详情和 Jobs
+gc actions run list -R gitcode-cli/cli --pr <pr-number> --workflow "CI" --json
+gc actions run view <run-id> -R gitcode-cli/cli --json
+gc actions job list <run-id> -R gitcode-cli/cli --json
+```
+
+如果存在对应的 GitHub 镜像 PR，再通过 `gh` 核验跨平台 CI：
+
+```bash
 gh run list --workflow=ci.yml --branch <pr-branch> --limit 1
-
-# 监控 CI 运行直到完成
 gh run watch $(gh run list --workflow=ci.yml --branch <pr-branch> --limit 1 --json databaseId --jq '.[0].databaseId')
-
-# 获取结论
 CONCLUSION=$(gh run view <run-id> --json conclusion --jq '.conclusion')
 echo "CI conclusion: $CONCLUSION"
 ```
 
 CI 通过标准：
 
-- 所有 Job（lint / test / build / docker）通过
-- `test` 和 `build` Job 在所有平台（ubuntu / macos / windows）通过
+- GitCode 原生 Job（lint / test / build / docker）全部通过
+- 有 GitHub 镜像 PR 时，GitHub 所有 Job 通过，且 `test` / `build` 覆盖 ubuntu / macOS / Windows
 
 CI 失败处理：
 
-- 获取失败日志：`gh run view <run-id> --log --job=<job-id>`
+- GitCode：通过 `gc actions job log <run-id> <job-id> -R gitcode-cli/cli --output job-log.zip` 获取失败日志
+- GitHub：通过 `gh run view <run-id> --log --job=<job-id>` 获取失败日志
 - 分析根因并修复，修复后重新推送并重新触发 CI
 - 如是环境/平台偶发问题（非代码问题），在自检中记录后仍可继续
 

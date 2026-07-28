@@ -61,7 +61,7 @@
 
 只有通过上一层门禁，才进入下一层。
 
-远端 CI 验证由 AI 通过 `gh` CLI 触发，详细规范见 `spec/delivery/ci-workflows.md`。
+远端 CI 验证由 AI 通过 `gc actions` 和 `gh` 核验，详细规范见 `spec/delivery/ci-workflows.md`。
 
 ## 3. 本地开发门禁
 
@@ -135,14 +135,14 @@ gofmt -w <files>
 
 ### 3.7 远端 CI 验证
 
-本地门禁通过后，分支推送到远端并创建 PR 时，GitHub Actions CI 自动触发（`on: pull_request`）。AI 通过 `gh` CLI 查看结果：
+本地门禁通过后，分支推送到 GitCode 并创建 PR 时，GitCode Actions 原生 CI 自动触发
+（`on: pull_request`）。有对应 GitHub 镜像 PR 时，GitHub Actions 跨平台 CI 同时作为补充证据。
 
 CI 通过的判定标准：
 
-- `lint` Job 通过
-- `test` Job 在所有平台（ubuntu/macos/windows）通过
-- `build` Job 在所有平台通过
-- `docker` Job 通过
+- GitCode 原生 `lint` / `test` / `build` / `docker` Linux Job 通过
+- 有 GitHub 镜像 PR 时，GitHub `test` / `build` 在 ubuntu / macOS / Windows 通过
+- 有 GitHub 镜像 PR 时，GitHub `lint` / `docker` Linux Job 通过
 
 CI 失败时不得进入 PR 门禁，除非失败原因已明确判定为环境/平台偶发问题（需在自检中记录）。
 
@@ -306,11 +306,11 @@ python3 scripts/classify-change-risk.py --base origin/main
 当前仓库的执行基线为：
 
 1. 本地开发门禁必须执行
-2. 远端 CI 验证由 AI 通过 `gh` CLI 触发，作为自动化证据补充（非代码改动可跳过）
+2. 远端 CI 验证由 AI 通过 `gc actions` / `gh` 核验，作为自动化证据补充（非代码改动可跳过）
 3. PR 门禁必须留下结构化自检证据（含 CI 结果）
 4. `low` 与大多数 `medium` 风险改动可走双 AI 闭环，但必须依赖独立执行主体评审、本地验证和 CI 结果
 5. `high` 风险改动必须追加人工最终确认
-6. CI 自动化已基于 GitHub Actions 落地，PR 提交时自动触发（`on: pull_request`），详见 `spec/delivery/ci-workflows.md`
+6. CI 自动化已同时基于 GitCode Actions 与 GitHub Actions 落地，PR 提交时自动触发，详见 `spec/delivery/ci-workflows.md`
 
 ## 下一步去看哪里
 

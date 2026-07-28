@@ -174,6 +174,17 @@ Token 来源: 环境变量或运行时输入
 
 ## CI/CD 安全
 
+### GitCode Actions
+
+日常 CI 显式声明最小只读权限：
+
+```yaml
+permissions:
+  repository: read
+```
+
+需要敏感信息时使用项目或组织级 Secrets，通过 `${{ secrets.NAME }}` 引用；Fork PR 默认不得访问 Secret。
+
 ### GitHub Actions
 
 使用 Secrets 存储敏感信息：

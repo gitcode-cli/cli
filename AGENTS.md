@@ -159,6 +159,9 @@ make classify-change-risk BASE=origin/main           # 改动风险分级
 make verify-remote-facts REPO=owner/repo [ISSUE=1] [PR=2] [HEAD_SHA=<sha>]
 ```
 
+宿主机脚本不安装打包/发布工具；`nfpm`、`goreleaser`、Python build 等完整
+打包依赖继续使用 `.devcontainer/` 或发布流程中记录的手工安装路径。
+
 ### 3.6 远端 CI（GitCode 原生 + GitHub 镜像）
 
 CI 同时运行在 **GitCode Actions**（主仓 `gitcode.com/gitcode-cli/cli`）和 **GitHub Actions**

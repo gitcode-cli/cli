@@ -75,20 +75,19 @@ Before contributing, please read the following documentation:
 
 The dev container below is convenient for IDE workflows, but local verification
 does not require one. The host scripts install the core build, test, lint, and
-secret-scanning baseline directly on the host. Packaging tools are opt-in:
+secret-scanning baseline directly on the host. Packaging and release tooling
+remains in the dev container and the documented release workflow:
 
 ```bash
 # Linux / macOS
 bash scripts/dev-setup.sh                    # install what is missing, then verify
 bash scripts/dev-setup.sh --check            # report gaps only, install nothing
-bash scripts/dev-setup.sh --with-packaging   # also add nfpm / goreleaser / python build
 ```
 
 ```powershell
 # Windows (PowerShell)
 powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1
 powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1 -Check
-powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1 -WithPackaging
 ```
 
 After Make is available, the following convenience targets pick the right
@@ -103,31 +102,46 @@ On a fresh host, invoke the platform script directly first. `make dev-setup`
 cannot bootstrap Make itself because Make is needed to enter that target.
 
 Both scripts are idempotent and install tooling only. They never read, write,
-or print `GC_TOKEN` / `GITCODE_TOKEN`; authentication stays a manual step. Use
-`--with-packaging` / `-WithPackaging` when validating package or release paths;
-that adds `nfpm`, `goreleaser`, and the Python build toolchain.
+or print `GC_TOKEN` / `GITCODE_TOKEN`; the variables are removed from the
+script process before package managers, compilers, or installed tools run.
+Authentication stays a separate manual step.
+
+Project-managed tools are isolated from shared user tool directories:
+
+- Linux/macOS: `~/.local/share/gitcode-cli/dev-tools/bin`. The script does not
+  edit shell profiles; add this directory to `PATH` manually when desired.
+- Windows: `%LOCALAPPDATA%\gitcode-cli\dev-tools\bin`.
+
+Neither script edits shell profiles or the user `PATH`. Add the managed tools
+directory to `PATH` manually when desired. Managed wrappers are never written
+over files outside the dedicated directory, and the script refuses to replace
+an unrecognized wrapper inside it.
+
+`--check` / `-Check` is offline and makes no persistent changes. It may return
+non-zero on a clean host to report tools that the install mode would add.
 
 #### Windows notes
 
-Windows needs three fixups that `dev-setup.ps1` applies automatically. They are
+Windows needs two fixups that `dev-setup.ps1` applies automatically. They are
 listed here because they also bite when setting up by hand:
 
 - GNU Make defaults to `cmd.exe` as `SHELL`, which breaks every shell-based
-  recipe in the `Makefile`. The script writes a `make.cmd` wrapper that forces
-  Git bash via an 8.3 short path (Make cannot handle the space in
-  `Program Files`).
+  recipe in the `Makefile`. The script writes a managed `make.cmd` wrapper that
+  forces Git bash via an 8.3 short path.
 - `python3` resolves to a WindowsApps stub that exits with code `9009` instead
-  of running, so `make validate-ai-*` fails. The script installs a real shim.
-- `$(shell date -u ...)` in the `Makefile` needs Git's `usr\bin` on `PATH`,
-  otherwise `make build` injects an empty build date.
+  of running, so `make validate-ai-*` fails. The script creates a managed
+  wrapper for the real Python interpreter.
+
+The core setup also checks for a C compiler and runs a race-enabled Go test,
+because the repository's standard test target uses `go test -race`.
 
 Also build `./gc.exe` rather than `./gc` on Windows; PowerShell refuses to
 execute an extensionless binary. When running `scripts/regression-core.sh`
 under Git bash, point `GC_BIN` at the built executable.
 
-If a download stalls behind a slow network, note that `winget` fetches Go and
-`gh` from `go.dev` and `github.com` directly. Installing from a closer mirror,
-or setting `GOPROXY`, is usually faster than retrying.
+If a download stalls behind a slow network, use the standard package manager
+again or configure `GOPROXY`; do not pass project credentials to alternate
+download scripts.
 
 ### Dev Container
 

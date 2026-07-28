@@ -45,6 +45,16 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
+      - name: Validate host setup check mode (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: bash scripts/test-dev-setup.sh
+
+      - name: Validate host setup check mode (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-dev-setup.ps1
+
       - name: Run tests
         shell: bash
         run: go test -v -race -coverprofile=coverage.out ./...

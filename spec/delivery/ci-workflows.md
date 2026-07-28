@@ -97,7 +97,7 @@ GitHub 工作流 `.github/workflows/ci.yml` 保留原有跨平台覆盖：
 | Job | 运行环境 | 内容 |
 |-----|---------|------|
 | `lint` | ubuntu-latest | golangci-lint |
-| `test` | ubuntu-latest / macos-14 / windows-latest | release version 脚本校验 + 单元测试 + 竞态检测 + 覆盖率 |
+| `test` | ubuntu-latest / macos-14 / windows-latest | release version 脚本校验 + 宿主机 setup 只检查模式验证 + 单元测试 + 竞态检测 + 覆盖率 |
 | `build` | ubuntu-latest / macos-14 / windows-latest | 跨平台 `go build` + `gc version` |
 | `docker` | ubuntu-latest | Docker 构建 + shell 补全 + wheel 入口冒烟 |
 
@@ -121,6 +121,7 @@ test ──┬──→ build
 |-------------|----------------|----------------|
 | `go test ./...` | Linux `test`（`-race`） | 3 OS `test`（`-race`） |
 | release workflow 版本输入校验 | Linux `test` | 3 OS `test` |
+| 宿主机 setup 检查模式无持久化副作用 | 不覆盖 | 3 OS `test` 运行 `scripts/test-dev-setup.*` |
 | `go build` | Linux `build` | 3 OS `build` |
 | 格式/规范检查 | Linux `lint` | Linux `lint` |
 | Docker / wheel 入口 | Linux `docker` | Linux `docker` |

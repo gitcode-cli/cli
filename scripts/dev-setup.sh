@@ -1,150 +1,65 @@
 #!/usr/bin/env bash
-# Install and verify local development dependencies on the host.
-#
-# This is the container-free path: it installs the core verification baseline
-# into the host so AI agents and contributors can work without pulling an
-# image. Pass --with-packaging to add the container's packaging toolchain.
+# Install and verify the core host toolchain without a dev container.
 #
 # Usage:
-#   ./scripts/dev-setup.sh            # install missing dependencies, then verify
-#   ./scripts/dev-setup.sh --check    # verify only, install nothing (exit 1 if gaps)
-#   ./scripts/dev-setup.sh --with-packaging   # also install nfpm / goreleaser / python build
+#   bash scripts/dev-setup.sh          # install missing tools, then verify
+#   bash scripts/dev-setup.sh --check  # offline verification; no persistent changes
 #
-# Scope: this script installs tooling only. It never touches credentials and
-# never reads or prints GC_TOKEN / GITCODE_TOKEN.
+# Packaging and release tools remain in .devcontainer/ and the documented
+# release workflow. This script never needs GitCode credentials.
 
 set -euo pipefail
+
+unset GC_TOKEN GITCODE_TOKEN
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 GO_MIN_MAJOR=1
 GO_MIN_MINOR=22
-NFPM_VERSION="v2.40.0"
 GOLANGCI_VERSION="v2.12.2"
 GITLEAKS_VERSION="v8.30.1"
-GORELEASER_VERSION="v2.17.1"
 PRE_COMMIT_VERSION="4.6.1"
-
+TOOLS_ROOT="${GC_DEV_TOOLS_DIR:-$HOME/.local/share/gitcode-cli/dev-tools}"
+MANAGED_BIN="$TOOLS_ROOT/bin"
+PRE_COMMIT_VENV="$TOOLS_ROOT/pre-commit"
 CHECK_ONLY=0
-WITH_PACKAGING=0
-
-for arg in "$@"; do
-    case "$arg" in
-        --check) CHECK_ONLY=1 ;;
-        --with-packaging) WITH_PACKAGING=1 ;;
-        -h|--help)
-            sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
-            exit 0
-            ;;
-        *)
-            echo "unknown argument: $arg" >&2
-            exit 2
-            ;;
-    esac
-done
-
 MISSING=()
+
+# Managed tools are available to this process only. No profile is modified.
+export PATH="$MANAGED_BIN:$PATH"
+
+case "${1:-}" in
+    "") ;;
+    --check) CHECK_ONLY=1 ;;
+    -h|--help) sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
+esac
+[[ $# -le 1 ]] || { echo "too many arguments" >&2; exit 2; }
 
 info() { printf '  %s\n' "$1"; }
 ok() { printf 'ok   %s\n' "$1"; }
 gap() { printf 'MISS %s\n' "$1"; MISSING+=("$1"); }
 section() { printf '\n[%s]\n' "$1"; }
-
 have() { command -v "$1" >/dev/null 2>&1; }
+
+managed_or_path() {
+    local name="$1"
+    if [[ -x "$MANAGED_BIN/$name" ]]; then
+        printf '%s\n' "$MANAGED_BIN/$name"
+    else
+        command -v "$name" 2>/dev/null || true
+    fi
+}
 
 run_as_root() {
     if [[ "$(id -u)" -eq 0 ]]; then
         "$@"
     elif have sudo; then
-        sudo "$@"
+        sudo -- "$@"
     else
         gap "sudo (required to install system packages)"
         return 1
-    fi
-}
-
-install_system_dependencies() {
-    local missing=0
-    for tool in go git make bash python3; do
-        have "$tool" || missing=1
-    done
-    if have go && ! go_version_ok; then
-        missing=1
-    fi
-    (( missing )) || return 0
-    (( CHECK_ONLY )) && return 0
-
-    section "System dependencies"
-    if [[ "$(uname -s)" == "Darwin" ]]; then
-        if ! have brew; then
-            gap "Homebrew (install from https://brew.sh, then rerun this script)"
-            return 0
-        fi
-        info "installing Go, Git, Make, Bash, Python, and pipx with Homebrew"
-        brew install go git make bash python pipx
-        make_gnubin="$(brew --prefix make)/libexec/gnubin"
-        [[ -d "$make_gnubin" ]] && persist_path_dir "$make_gnubin"
-        return 0
-    fi
-
-    if have apt-get; then
-        info "installing base tools with apt-get"
-        run_as_root apt-get update
-        run_as_root apt-get install -y golang-go git make bash python3 python3-pip curl ca-certificates
-        run_as_root apt-get install -y pipx >/dev/null 2>&1 || true
-    elif have dnf; then
-        info "installing base tools with dnf"
-        run_as_root dnf install -y golang git make bash python3 python3-pip curl ca-certificates
-        run_as_root dnf install -y pipx >/dev/null 2>&1 || true
-    elif have yum; then
-        info "installing base tools with yum"
-        run_as_root yum install -y golang git make bash python3 python3-pip curl ca-certificates
-    elif have pacman; then
-        info "installing base tools with pacman"
-        run_as_root pacman -Sy --needed --noconfirm go git make bash python python-pip curl ca-certificates
-        run_as_root pacman -S --needed --noconfirm python-pipx >/dev/null 2>&1 || true
-    elif have zypper; then
-        info "installing base tools with zypper"
-        run_as_root zypper --non-interactive install go git make bash python3 python3-pip curl ca-certificates
-    else
-        gap "supported package manager (apt, dnf, yum, pacman, zypper, or brew)"
-    fi
-}
-
-persist_path_dir() {
-    local dir="$1" profile="$HOME/.profile" line
-    [[ "$(uname -s)" == "Darwin" ]] && profile="$HOME/.zprofile"
-    line="export PATH=\"$dir:\$PATH\""
-    touch "$profile"
-    grep -Fqx "$line" "$profile" || printf '\n%s\n' "$line" >>"$profile"
-    case ":$PATH:" in
-        *":$dir:"*) ;;
-        *) export PATH="$dir:$PATH" ;;
-    esac
-}
-
-go_bin_dir() {
-    local gobin
-    gobin="$(go env GOBIN 2>/dev/null || true)"
-    if [[ -n "$gobin" ]]; then
-        printf '%s\n' "$gobin"
-    else
-        printf '%s/bin\n' "$(go env GOPATH)"
-    fi
-}
-
-# Go tools land in GOPATH/bin, which is often absent from PATH on fresh hosts.
-ensure_go_bin_on_path() {
-    local dir
-    dir="$(go_bin_dir)"
-    if (( CHECK_ONLY )); then
-        case ":$PATH:" in
-            *":$dir:"*) ;;
-            *) export PATH="$dir:$PATH" ;;
-        esac
-    else
-        persist_path_dir "$dir"
     fi
 }
 
@@ -153,33 +68,111 @@ go_version_ok() {
     raw="$(go env GOVERSION 2>/dev/null || true)"
     raw="${raw#go}"
     major="${raw%%.*}"
-    minor="${raw#*.}"
-    minor="${minor%%.*}"
-    [[ -n "$major" && -n "$minor" ]] || return 1
-    (( major > GO_MIN_MAJOR )) && return 0
-    (( major == GO_MIN_MAJOR && minor >= GO_MIN_MINOR ))
+    minor="${raw#*.}"; minor="${minor%%.*}"
+    [[ "$major" =~ ^[0-9]+$ && "$minor" =~ ^[0-9]+$ ]] || return 1
+    (( major > GO_MIN_MAJOR || (major == GO_MIN_MAJOR && minor >= GO_MIN_MINOR) ))
 }
 
-install_go_tool() {
-    local name="$1" module="$2"
-    if have "$name"; then
-        ok "$name ($(command -v "$name"))"
-        return 0
+compiler_available() {
+    have cc || have gcc || have clang
+}
+
+install_system_dependencies() {
+    (( CHECK_ONLY )) && return 0
+
+    local need=0
+    for tool in go git make bash python3; do have "$tool" || need=1; done
+    compiler_available || need=1
+    (( need )) || return 0
+
+    section "System dependencies"
+    case "$(uname -s)" in
+        Darwin)
+            if ! have brew; then
+                gap "Homebrew (install from https://brew.sh)"
+                return
+            fi
+            info "installing Go, Git, GNU Make, Bash, and Python with Homebrew"
+            brew install go git make bash python
+            if ! have make && have gmake; then
+                mkdir -p "$MANAGED_BIN"
+                ln -sfn "$(command -v gmake)" "$MANAGED_BIN/make"
+            fi
+            compiler_available || gap "C compiler (run: xcode-select --install)"
+            ;;
+        *)
+            if have apt-get; then
+                run_as_root apt-get update
+                run_as_root apt-get install -y golang-go git make bash python3 python3-venv build-essential ca-certificates
+            elif have dnf; then
+                run_as_root dnf install -y golang git make bash python3 gcc gcc-c++ ca-certificates
+            elif have yum; then
+                run_as_root yum install -y golang git make bash python3 gcc gcc-c++ ca-certificates
+            elif have pacman; then
+                # Do not use pacman -Sy: partial upgrades are unsupported.
+                run_as_root pacman -S --needed --noconfirm go git make bash python base-devel ca-certificates
+            elif have zypper; then
+                run_as_root zypper --non-interactive install go git make bash python3 gcc gcc-c++ ca-certificates
+            else
+                gap "supported package manager (apt, dnf, yum, pacman, zypper, or brew)"
+            fi
+            ;;
+    esac
+}
+
+go_tool_version() {
+    local binary="$1" module="$2"
+    go version -m "$binary" 2>/dev/null | awk -v module="$module" '$1 == "mod" && $2 == module { print $3; exit }'
+}
+
+ensure_go_tool() {
+    local name="$1" module="$2" version="$3" binary current
+    binary="$(managed_or_path "$name")"
+    current=""
+    [[ -n "$binary" ]] && current="$(go_tool_version "$binary" "$module")"
+    if [[ "$current" == "$version" ]]; then
+        ok "$name $version ($binary)"
+        return
     fi
     if (( CHECK_ONLY )); then
-        gap "$name"
-        return 0
+        gap "$name $version${current:+ (found $current)}"
+        return
     fi
-    info "installing $name from $module"
-    if go install "$module"; then
-        ensure_go_bin_on_path
-        if have "$name"; then
-            ok "$name ($(command -v "$name"))"
-        else
-            gap "$name (installed but not on PATH; add $(go_bin_dir) to PATH)"
-        fi
+    mkdir -p "$MANAGED_BIN"
+    info "installing $name $version into $MANAGED_BIN"
+    if GOBIN="$MANAGED_BIN" go install "$module@$version"; then
+        ok "$name $version ($MANAGED_BIN/$name)"
     else
-        gap "$name (go install failed)"
+        gap "$name $version (go install failed)"
+    fi
+}
+
+pre_commit_version() {
+    local binary="$1"
+    "$binary" --version 2>/dev/null | awk '{print $2}'
+}
+
+ensure_pre_commit() {
+    local binary current
+    binary="$(managed_or_path pre-commit)"
+    current=""
+    [[ -n "$binary" ]] && current="$(pre_commit_version "$binary")"
+    if [[ "$current" == "$PRE_COMMIT_VERSION" ]]; then
+        ok "pre-commit $PRE_COMMIT_VERSION ($binary)"
+        return
+    fi
+    if (( CHECK_ONLY )); then
+        gap "pre-commit $PRE_COMMIT_VERSION${current:+ (found $current)}"
+        return
+    fi
+    mkdir -p "$TOOLS_ROOT" "$MANAGED_BIN"
+    info "installing pre-commit $PRE_COMMIT_VERSION into $PRE_COMMIT_VENV"
+    if python3 -m venv "$PRE_COMMIT_VENV" &&
+        "$PRE_COMMIT_VENV/bin/python" -m pip install --disable-pip-version-check "pre-commit==$PRE_COMMIT_VERSION" >/dev/null; then
+        ln -sfn "$PRE_COMMIT_VENV/bin/pre-commit" "$MANAGED_BIN/pre-commit"
+        ok "pre-commit $PRE_COMMIT_VERSION ($MANAGED_BIN/pre-commit)"
+    else
+        gap "pre-commit $PRE_COMMIT_VERSION (venv install failed)"
     fi
 }
 
@@ -187,155 +180,70 @@ install_system_dependencies
 
 section "Go toolchain"
 if ! have go; then
-    gap "go (install Go ${GO_MIN_MAJOR}.${GO_MIN_MINOR}+ from https://go.dev/dl/ or your package manager)"
+    gap "go ${GO_MIN_MAJOR}.${GO_MIN_MINOR}+ (install from https://go.dev/dl/)"
 elif ! go_version_ok; then
-    gap "go $(go env GOVERSION) is older than ${GO_MIN_MAJOR}.${GO_MIN_MINOR}; upgrade from https://go.dev/dl/ or your package manager"
+    if (( ! CHECK_ONLY )) && [[ "$(uname -s)" == "Darwin" ]] && have brew; then
+        brew upgrade go || true
+    fi
+    go_version_ok || gap "go $(go env GOVERSION) is older than ${GO_MIN_MAJOR}.${GO_MIN_MINOR}; upgrade from https://go.dev/dl/"
 else
     ok "go $(go env GOVERSION) ($(command -v go))"
-    ensure_go_bin_on_path
 fi
 
-if have go; then
+GO_READY=0
+if have go && go_version_ok; then GO_READY=1; fi
+
+if (( GO_READY )); then
     section "Module dependencies"
     if (( CHECK_ONLY )); then
-        if GOPROXY=off go list -mod=readonly -deps ./... >/dev/null 2>&1; then
-            ok "module dependencies resolved"
-        else
-            gap "module dependencies (run: go mod download)"
-        fi
+        GOPROXY=off go list -mod=readonly -deps ./... >/dev/null 2>&1 \
+            && ok "module dependencies resolved" \
+            || gap "module dependencies (run without --check to download)"
     else
-        info "go mod download"
-        go mod download
-        ok "module dependencies resolved"
+        go mod download && ok "module dependencies resolved"
     fi
 
-    section "Lint tooling"
-    install_go_tool golangci-lint \
-        "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${GOLANGCI_VERSION}"
-
-    section "Secret scanning"
-    install_go_tool gitleaks "github.com/zricethezav/gitleaks/v8@${GITLEAKS_VERSION}"
-
-    if (( WITH_PACKAGING )); then
-        section "Packaging tooling"
-        install_go_tool nfpm "github.com/goreleaser/nfpm/v2/cmd/nfpm@${NFPM_VERSION}"
-        install_go_tool goreleaser "github.com/goreleaser/goreleaser/v2@${GORELEASER_VERSION}"
-    fi
+    section "Verification tools"
+    ensure_go_tool golangci-lint github.com/golangci/golangci-lint/v2 "$GOLANGCI_VERSION"
+    ensure_go_tool gitleaks github.com/zricethezav/gitleaks/v8 "$GITLEAKS_VERSION"
 fi
 
-section "Shell and build utilities"
-for tool in git make bash; do
-    if have "$tool"; then
-        ok "$tool ($(command -v "$tool"))"
-    else
-        gap "$tool (install via your package manager)"
-    fi
+section "System tools"
+for tool in git make bash python3; do
+    have "$tool" && ok "$tool ($(command -v "$tool"))" || gap "$tool"
 done
+compiler_available && ok "C compiler" || gap "C compiler (required by go test -race)"
 
-section "Python tooling"
-PY=""
 if have python3; then
-    PY="python3"
-elif have python; then
-    PY="python"
-fi
-
-if [[ -z "$PY" ]]; then
-    gap "python3 (required by scripts/validate-ai-record.py and friends)"
+    ensure_pre_commit
 else
-    ok "$PY ($("$PY" --version 2>&1))"
-    if "$PY" -m pre_commit --version >/dev/null 2>&1 || have pre-commit; then
-        ok "pre-commit"
-    elif (( CHECK_ONLY )); then
-        gap "pre-commit"
-    else
-        info "installing pre-commit"
-        if have pipx && pipx install --force "pre-commit==${PRE_COMMIT_VERSION}" >/dev/null 2>&1; then
-            have pre-commit || persist_path_dir "$HOME/.local/bin"
-            ok "pre-commit"
-        elif "$PY" -m pip install --user --upgrade "pre-commit==${PRE_COMMIT_VERSION}" >/dev/null 2>&1; then
-            user_bin="$($PY -c 'import site,os; print(os.path.join(site.USER_BASE, "bin"))')"
-            persist_path_dir "$user_bin"
-            ok "pre-commit"
-        else
-            gap "pre-commit (pip install failed; try pipx install pre-commit)"
-        fi
-    fi
-
-    if (( WITH_PACKAGING )); then
-        if "$PY" -m build --version >/dev/null 2>&1; then
-            ok "python build"
-        elif (( CHECK_ONLY )); then
-            gap "python build"
-        else
-            info "installing build/wheel/setuptools"
-            if "$PY" -m pip install --user --upgrade build wheel setuptools >/dev/null 2>&1; then
-                ok "python build"
-            else
-                gap "python build (pip install failed)"
-            fi
-        fi
-    fi
+    gap "pre-commit (Python 3 unavailable)"
 fi
-
-section "Optional tooling"
-check_optional() {
-    local tool="$1" why="$2"
-    if have "$tool"; then
-        ok "$tool ($(command -v "$tool"))"
-    else
-        info "optional: $tool not found ($why)"
-    fi
-}
-check_optional gh "needed to inspect CI runs"
-check_optional docker "needed for make docker-* targets"
-check_optional rpmbuild "needed for local RPM packaging"
 
 section "Verification"
-if have go && go_version_ok; then
-    smoke_bin="$(mktemp "${TMPDIR:-/tmp}/gc-dev-setup.XXXXXX")"
-    trap 'rm -f "$smoke_bin"' EXIT
-    info "go build -o $smoke_bin ./cmd/gc"
+if (( GO_READY )); then
+    smoke_dir="$(mktemp -d "${TMPDIR:-/tmp}/gc-dev-setup.XXXXXX")"
+    trap 'rm -rf "$smoke_dir"' EXIT
     if (( CHECK_ONLY )); then
-        build_cmd=(env GOPROXY=off go build -mod=readonly -o "$smoke_bin" ./cmd/gc)
+        build_cmd=(env GOPROXY=off go build -mod=readonly -o "$smoke_dir/gc" ./cmd/gc)
+        race_cmd=(env GOPROXY=off go test -mod=readonly -race ./pkg/config)
     else
-        build_cmd=(go build -o "$smoke_bin" ./cmd/gc)
+        build_cmd=(go build -o "$smoke_dir/gc" ./cmd/gc)
+        race_cmd=(go test -race ./pkg/config)
     fi
-    if "${build_cmd[@]}"; then
-        ok "build"
-        if "$smoke_bin" version >/dev/null 2>&1; then
-            ok "gc version"
-        else
-            gap "gc version failed to run"
-        fi
-        rm -f "$smoke_bin"
-        trap - EXIT
-    else
-        gap "go build failed"
-    fi
-else
-    info "skipped (Go unavailable)"
+    "${build_cmd[@]}" && "$smoke_dir/gc" version >/dev/null && ok "build and gc version" || gap "build or gc version"
+    compiler_available && "${race_cmd[@]}" >/dev/null && ok "race-enabled test" || gap "race-enabled test"
+    rm -rf "$smoke_dir"; trap - EXIT
 fi
 
 printf '\n'
-if (( ${#MISSING[@]} > 0 )); then
+if (( ${#MISSING[@]} )); then
     printf 'incomplete: %d dependency gap(s)\n' "${#MISSING[@]}"
-    for item in "${MISSING[@]}"; do
-        printf '  - %s\n' "$item"
-    done
-    printf '\nGo tools install into %s; make sure it is on PATH.\n' \
-        "$(have go && go_bin_dir || echo '$(go env GOPATH)/bin')"
+    printf '  - %s\n' "${MISSING[@]}"
+    printf '\nManaged tools directory: %s\n' "$MANAGED_BIN"
+    printf 'Add it to PATH manually if you want these tools in future shells.\n'
     exit 1
 fi
 
-cat <<'EOF'
-dev environment ready.
-
-Next steps:
-  go test ./...
-  go build -o ./gc ./cmd/gc && ./gc version
-  ./scripts/regression-core.sh
-
-Real command verification needs GC_TOKEN (or GITCODE_TOKEN) exported by hand
-and must target infra-test/* repositories only.
-EOF
+printf 'dev environment ready.\nManaged tools: %s\n' "$MANAGED_BIN"
+printf 'This script made no shell profile changes. Add that directory to PATH manually if desired.\n'

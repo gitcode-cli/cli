@@ -142,38 +142,44 @@ make classify-change-risk BASE=origin/main           # 改动风险分级
 make verify-remote-facts REPO=owner/repo [ISSUE=1] [PR=2] [HEAD_SHA=<sha>]
 ```
 
-### 3.6 远端 CI（GitHub 镜像仓）
+### 3.6 远端 CI（GitCode 原生 + GitHub 镜像）
 
-CI 运行在 **GitHub Actions**（GitHub 镜像仓 `github.com/gitcode-cli/cli`），GitCode 主仓不作为 CI 平台。工作流定义在 `.github/workflows/ci.yml` 与 `release.yml`，正式规范见 [spec/delivery/ci-workflows.md](./spec/delivery/ci-workflows.md)。
+CI 同时运行在 **GitCode Actions**（主仓 `gitcode.com/gitcode-cli/cli`）和 **GitHub Actions**
+（镜像仓 `github.com/gitcode-cli/cli`）。GitCode 原生工作流定义在 `.gitcode/workflows/ci.yml`，
+对齐 GitHub CI 的 Linux 路径；GitHub 工作流定义在 `.github/workflows/ci.yml`，继续承担
+Linux/macOS/Windows 跨平台验证。正式规范见 [spec/delivery/ci-workflows.md](./spec/delivery/ci-workflows.md)。
 
 **触发**：PR 提交或更新到 `main` 时自动触发（`on: pull_request: branches: [main]`），无需手动操作。
 
-**Job 映射**（`.github/workflows/ci.yml`）：
+**Job 映射**：
 
-| Job | 运行环境 | 内容 | 对应门禁 |
-|-----|---------|------|---------|
-| `lint` | ubuntu-latest | golangci-lint | 编码规范 |
-| `test` | ubuntu / macos / windows | release 版本校验脚本 + `go test -v -race -coverprofile` | 单元测试 + 竞态 + 覆盖率 |
-| `build` | ubuntu / macos / windows | `go build` + `gc version` | 跨平台构建 |
-| `docker` | ubuntu-latest | Docker 构建 + shell 补全生成 | 容器化构建 |
+| Job | GitCode Actions | GitHub Actions | 对应门禁 |
+|-----|-----------------|----------------|---------|
+| `lint` | Ubuntu 24 | Ubuntu | 编码规范 |
+| `test` | Ubuntu 24 | Ubuntu / macOS / Windows | 单元测试 + 竞态 + 覆盖率 |
+| `build` | Ubuntu 24 | Ubuntu / macOS / Windows | Linux / 跨平台构建 |
+| `docker` | Ubuntu 24 | Ubuntu | Docker + 补全 + wheel 入口冒烟 |
 
 依赖：`lint` 与 `test` 并行 → `build`、`docker` 等 `test` 通过后执行；任一 Job 失败即整体失败。
 
-**AI 通过 `gh` CLI 监控**（操作对象是 GitHub 镜像仓，GitCode 平台操作仍用 `gc`）：
+**AI 通过 `gc` / `gh` 监控**：
 
 ```bash
-# 列出最新 CI 运行
+# GitCode 主仓原生 CI
+gc actions run list -R gitcode-cli/cli --pr <pr-number> --workflow "CI" --json
+gc actions run view <run-id> -R gitcode-cli/cli --json
+gc actions job list <run-id> -R gitcode-cli/cli --json
+
+# GitHub 镜像仓跨平台 CI
 gh run list --workflow=ci.yml --branch <pr-branch> --limit 1
-
-# 实时等待完成
 gh run watch $(gh run list --workflow=ci.yml --branch <pr-branch> --limit 1 --json databaseId --jq '.[0].databaseId')
-
-# 查看结论与失败日志
 gh run view <run-id> --json conclusion --jq '.conclusion'
 gh run view <run-id> --log --job=<job-id>
 ```
 
-**证据纳入**：PR 自检须包含 CI run ID/URL、结论、各 Job 状态摘要；失败时记录原因与修复过程。CI 不覆盖真实命令验证、安全审查、文档同步、独立执行主体评审。docs-only 改动可跳过 CI，但须在自检中说明。
+**证据纳入**：PR 自检须分别记录已执行平台的 CI run ID/URL、PR head SHA、结论和各 Job
+状态摘要；失败时记录原因与修复过程。CI 不覆盖真实命令验证、安全审查、文档同步、独立执行主体
+评审。docs-only 改动可跳过 CI，但须在自检中说明。
 
 **Release CI**：`.github/workflows/release.yml` 由 AI 在发布流程中通过 `gh workflow run release.yml -f version=vX.Y.Z` 触发，详见 [spec/delivery/release-process.md](./spec/delivery/release-process.md)。
 

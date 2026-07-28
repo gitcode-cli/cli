@@ -326,20 +326,21 @@ skill 分为两类：
 
 ### 阶段 6：CI 自动化 ✅
 
-目标：在 GitHub 镜像仓 CI 环境具备后落地自动化约束。
+目标：在 GitCode 主仓与 GitHub 镜像仓 CI 环境落地自动化约束。
 
 交付物：
 
 - `spec/delivery/ci-workflows.md` ✅
+- `.gitcode/workflows/ci.yml` ✅
 - `.github/workflows/ci.yml` ✅
 - `.github/workflows/release.yml` ✅
 - 质量门禁的 CI 映射 ✅
 
 验收标准：
 
-- CI 规范基于真实环境（GitHub Actions），而不是纸面设计 ✅
+- CI 规范基于 GitCode Actions 与 GitHub Actions 真实环境，而不是纸面设计 ✅
 - 本地门禁和 CI 门禁保持一致 ✅
-- AI 通过 `gh` CLI 编排查触发与监控 ✅
+- AI 通过 `gc actions` / `gh` 查询运行与日志 ✅
 
 ## 9. 当前执行原则
 
@@ -349,7 +350,7 @@ skill 分为两类：
 
 1. 保持 `foundations/`、`workflows/`、`delivery/`、`governance/` 的边界稳定
 2. 同步更新入口文档和 skills 中的规范路径
-3. CI 规范已基于 GitHub Actions 真实环境落地，AI 通过 `gh` CLI 编排查触发与监控
+3. CI 规范已基于 GitCode Actions 与 GitHub Actions 真实环境落地，AI 通过 `gc actions` / `gh` 查询运行与日志
 
 ## 下一步去看哪里
 

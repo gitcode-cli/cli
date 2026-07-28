@@ -171,11 +171,11 @@ Issue 创建/受理
 | 6 | 实际命令验证 | 至少一条真实命令，仅限 `infra-test/*` 仓库 | [测试流程](./test-workflow.md) | ✅ 可跳过 |
 | 7 | 回归测试 | `./scripts/regression-core.sh` 通过（核心冒烟回归） | [测试流程](./test-workflow.md) | ✅ 可跳过 |
 | 8 | 系统测试 | `go test -tags=system ./tests/system` 通过（只读路径，需本地认证） | [测试指南](../foundations/testing-guide.md) | ✅ 可跳过 |
-| 9 | 远端 CI | 通过 GitHub Actions CI 全部 Job（lint/test/build/docker） | [CI 工作流规范](../delivery/ci-workflows.md) | ✅ 可跳过 |
+| 9 | 远端 CI | 通过 GitCode 原生 Linux CI；有 GitHub 镜像 PR 时同时通过跨平台 CI | [CI 工作流规范](../delivery/ci-workflows.md) | ✅ 可跳过 |
 | 10 | 风险分级 | 运行 `scripts/classify-change-risk.py --base origin/main` | [AI 本地开发流程](./ai-local-development-workflow.md) | — |
 
 docs-only 改动可跳过门禁 2-4、6-9，但必须在自检中说明跳过理由。
-CI 因环境原因（如 GitHub 镜像仓不可达）无法执行时，必须在自检中明确记录原因。
+CI 因环境原因（如 GitCode Actions 或 GitHub 镜像仓不可达）无法执行时，必须在自检中明确记录原因。
 
 > **AI 协作者提示**：`/loop` 或 `/goal` 执行本阶段时，应逐项对照此表，每项完成后在对话中留下证据，未完成不得进入 5.5 自检。此表是 development-workflow.md 的权威门禁清单，其他文档的补充说明不得与此表冲突。
 

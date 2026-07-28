@@ -143,7 +143,7 @@ status/draft → status/self-checked → status/ready-for-review → status/appr
 |------|------|---------|
 | `go test ./...` + `go build` | 本地自动化 | AI 或人工 |
 | 真实命令验证（`infra-test/*`） | 本地自动化 | AI 或人工 |
-| CI（GitHub Actions） | 远端自动化 | 系统自动 + AI 监控 |
+| CI（GitCode Actions + GitHub Actions） | 远端自动化 | 系统自动 + AI 监控 |
 | 安全审查 | 本地半自动 | AI（grep + 规则检查） |
 | 文档同步 | 本地手动 | AI 或人工 |
 | 风险分级 | 本地半自动 | AI（脚本 + 策略判断） |
@@ -246,21 +246,24 @@ CI 等待与诊断             中         有         /loop ✅
 
 ### 2.1 双平台分工
 
-本项目托管在 GitCode，CI 运行在 GitHub 镜像仓：
+本项目托管在 GitCode，并同时使用 GitCode 原生 CI 与 GitHub 镜像跨平台 CI：
 
 ```
 GitCode (gitcode.com/gitcode-cli/cli)     GitHub (github.com/gitcode-cli/cli)
 ───────────────────────────────           ───────────────────────────────
 gc issue / gc pr / gc release             gh run list / gh run watch / gh run view --log
+gc actions run / job
     ↑                                          ↑
-  代码托管、PR、Issue、标签                    CI（lint / test / build / docker）
+  代码托管、PR、Issue、标签                    镜像跨平台 CI
+  原生 Linux CI
 ```
 
 详见 [spec/delivery/ci-workflows.md](../spec/delivery/ci-workflows.md)。
 
 ### 2.2 这对 `/loop` 和 `/goal` 意味着什么
 
-**`/loop`** 天然支持双平台——它拥有完整的 bash 工具权限，可以同时调用 `gc` 和 `gh`，并直接读取两者的真实输出。不存在"评估器盲区"问题。
+**`/loop`** 天然支持双平台——它拥有完整的 bash 工具权限，可以调用 `gc actions` 和 `gh`，
+并直接读取两者的真实输出。不存在"评估器盲区"问题。
 
 **`/goal`** 的评估器（Haiku）只阅读对话文本，不能执行命令。如果 AI 工作报告"CI 通过了"但实际失败了，评估器无法发现。因此 `/goal` 更适合**终点可在本地验证**的阶段。
 
@@ -494,7 +497,18 @@ Issue Verified        →  /goal (开发+测试)      10-30 min
 
 ### 6.1 `/loop` 中的 CI 监控逻辑
 
-当 `/loop` 检测到已 push 到 GitHub 镜像仓后，应执行：
+当 `/loop` 检测到已 push 并创建 GitCode PR 后，先核验原生 CI：
+
+```bash
+gc actions run list -R gitcode-cli/cli --pr <pr-number> --workflow "CI" --json
+gc actions run view <run-id> -R gitcode-cli/cli --json
+gc actions job list <run-id> -R gitcode-cli/cli --json
+
+# 如果失败，下载对应 Job 日志归档
+gc actions job log <run-id> <job-id> -R gitcode-cli/cli --output job-log.zip
+```
+
+存在 GitHub 镜像 PR 时，再核验跨平台 CI：
 
 ```bash
 # 获取最新 CI run
@@ -516,12 +530,14 @@ gh run view <run-id> --log --job=<job-id> 2>&1 | head -200
 ```bash
 # ⚠️ /goal 不能直接验证 CI，但可以这样写终点：
 /goal until:
-  - CI run ID 已记录到自检
-  - CI conclusion 为 success（从 gh run view 输出确认）
+  - GitCode Actions run ID 已记录到自检
+  - GitCode 原生 CI status 为 COMPLETED（从 gc actions 输出确认）
+  - 有 GitHub 镜像 PR 时，GitHub CI conclusion 为 success（从 gh run view 输出确认）
   - 所有 Job 状态已填入自检模板
 ```
 
-关键提示：`/goal` 的评估器看不到 `gh` 的真实输出，它只能看 AI 是否**声称**已检查。因此 CI 监控优先用 `/loop`。
+关键提示：`/goal` 的评估器看不到 `gc actions` 或 `gh` 的真实输出，它只能看 AI 是否**声称**已检查。
+因此 CI 监控优先用 `/loop`。
 
 ---
 
@@ -583,9 +599,9 @@ Agent(subagent_type="general-purpose", description="文档审查")
 ### Q6: `gc` 和 `gh` 混用会有什么问题？
 
 不会有问题，它们是独立的 CLI 工具操作不同平台。但注意：
-- `gc pr create` 在 GitCode 创建 PR，**不会**自动触发 GitHub CI
-- 需要同时 `git push github <branch>` 才能让 GitHub Actions 触发 CI
-- 或者说，PR 的触发是基于 GitHub 镜像仓的 PR，不是 GitCode 的 PR
+- `gc pr create` 在 GitCode 创建 PR，会自动触发 `.gitcode/workflows/ci.yml` 的原生 Linux CI
+- `gc actions` 查询 GitCode 原生 CI；`gh` 查询 GitHub 镜像 CI
+- GitHub Actions 仍依赖 GitHub 镜像仓的 PR，只有存在镜像 PR 时才会自动触发
 
 ---
 
@@ -597,7 +613,7 @@ Agent(subagent_type="general-purpose", description="文档审查")
 | `/loop` 中跳过自检直接请求评审 | 违反状态机，自检是评审的前置条件 | 让 `/loop` 补齐自检后再手动触发评审 |
 | `/goal until all review passed` | 评估器不能替代独立执行主体判断 | 评审必须手动触发（TeamCreate + Agent） |
 | 在 `main` 分支启动 `/loop` | 项目规范禁止在 main 直接开发 | 先创建功能分支 |
-| 不告诉 `/loop` 双平台上下文 | AI 可能只用 `gc` 查询 CI（不存在） | 明确告知 GitCode + GitHub 分工 |
+| 只查询一个 CI 平台 | 会遗漏 GitCode 原生 Linux 或 GitHub 跨平台结果 | 按 `spec/delivery/ci-workflows.md` 核验对应平台 |
 
 ---
 
@@ -636,7 +652,7 @@ Agent(subagent_type="general-purpose", description="文档审查")
 | [spec/workflows/pr-workflow.md](../spec/workflows/pr-workflow.md) | PR 生命周期与自检要求 |
 | [spec/workflows/review-workflow.md](../spec/workflows/review-workflow.md) | 多角色评审规范 |
 | [spec/workflows/ai-local-development-workflow.md](../spec/workflows/ai-local-development-workflow.md) | AI 本地开发闭环编排 |
-| [spec/delivery/ci-workflows.md](../spec/delivery/ci-workflows.md) | CI 工作流与 gh CLI 用法 |
+| [spec/delivery/ci-workflows.md](../spec/delivery/ci-workflows.md) | CI 工作流与 `gc actions` / `gh` 用法 |
 | [spec/governance/docs-governance.md](../spec/governance/docs-governance.md) | 文档分层与治理规范 |
 | [docs/COMMANDS.md](./COMMANDS.md) | 命令行为手册 |
 

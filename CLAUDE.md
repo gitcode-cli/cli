@@ -36,6 +36,7 @@
 - 补测试或做真实命令验证：`spec/foundations/testing-guide.md`、`spec/workflows/test-workflow.md`
 - 提交 PR / 做 review：`spec/workflows/pr-workflow.md`、`spec/workflows/review-workflow.md`
 - 改构建 / 打包 / 发布：`spec/delivery/build-and-package.md`、`spec/delivery/release-process.md`
+- 改 CI 工作流：`spec/delivery/ci-workflows.md`、`spec/foundations/code-quality-gates.md`
 
 具体流程任务再进入：
 
@@ -61,6 +62,7 @@ Claude 在本仓库中必须遵守：
 - 如果 issue 已关闭但没有 merged PR 或 `origin/main` 不包含对应代码，必须明确判定为"未完成主干合入"
 - 外部项目使用 AI 操作 GitCode 的说明以 `docs/AI-GUIDE.md` 为准，但该文档不定义本仓库内部开发流程
 - 代码或流程变化后必须同步检查相关文档
+- GitCode 原生 CI 使用 `gc actions` 核验，GitHub 镜像 CI 使用 `gh` 核验；两者边界以 `spec/delivery/ci-workflows.md` 为准
 - 实际命令测试只能使用 `infra-test/*`
 - 不得在 `main` 直接开发
 - 不得提交构建产物、评估输出或真实凭证

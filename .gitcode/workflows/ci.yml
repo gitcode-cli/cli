@@ -16,7 +16,7 @@ defaults:
 jobs:
   lint:
     name: Lint
-    runs-on: [codearts-hosted, ubuntu-24, x64, small]
+    runs-on: [codearts-hosted, ubuntu-latest, x64, small]
     steps:
       - name: Checkout
         uses: checkout
@@ -34,7 +34,7 @@ jobs:
 
   test:
     name: Test
-    runs-on: [codearts-hosted, ubuntu-24, x64, small]
+    runs-on: [codearts-hosted, ubuntu-latest, x64, small]
     steps:
       - name: Checkout
         uses: checkout
@@ -61,7 +61,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: [codearts-hosted, ubuntu-24, x64, small]
+    runs-on: [codearts-hosted, ubuntu-latest, x64, small]
     needs:
       - test
     steps:
@@ -91,7 +91,7 @@ jobs:
 
   docker:
     name: Docker
-    runs-on: [codearts-hosted, ubuntu-24, x64, medium]
+    runs-on: [codearts-hosted, ubuntu-latest, x64, medium]
     needs:
       - test
     steps:

@@ -87,10 +87,10 @@ GitCode 原生工作流 `.gitcode/workflows/ci.yml` 对齐 GitHub CI 的 Linux �
 
 | Job | 运行环境 | 内容 | 对应质量门禁 |
 |-----|---------|------|-------------|
-| `lint` | ubuntu-24 / x64 / small | golangci-lint v2.12.2 | 代码规范检查（`coding-standards.md`） |
-| `test` | ubuntu-24 / x64 / small | release version 脚本校验 + `go test -v -race -coverprofile` + 覆盖率制品 | 发布输入脚本回归 + 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
-| `build` | ubuntu-24 / x64 / small | Linux `go build` + `gc version` + 二进制制品 | Linux 构建验证（`build-and-package.md`） |
-| `docker` | ubuntu-24 / x64 / medium | 补全生成 + Linux 二进制 + Docker 构建 + wheel 入口冒烟 | 容器化与 wheel 入口验证 |
+| `lint` | codearts-hosted / ubuntu-latest / x64 / small | golangci-lint v2.12.2 | 代码规范检查（`coding-standards.md`） |
+| `test` | codearts-hosted / ubuntu-latest / x64 / small | release version 脚本校验 + `go test -v -race -coverprofile` + 覆盖率制品 | 发布输入脚本回归 + 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
+| `build` | codearts-hosted / ubuntu-latest / x64 / small | Linux `go build` + `gc version` + 二进制制品 | Linux 构建验证（`build-and-package.md`） |
+| `docker` | codearts-hosted / ubuntu-latest / x64 / medium | 补全生成 + Linux 二进制 + Docker 构建 + wheel 入口冒烟 | 容器化与 wheel 入口验证 |
 
 GitHub 工作流 `.github/workflows/ci.yml` 保留原有跨平台覆盖：
 

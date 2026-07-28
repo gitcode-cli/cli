@@ -155,10 +155,10 @@ Linux/macOS/Windows 跨平台验证。正式规范见 [spec/delivery/ci-workflow
 
 | Job | GitCode Actions | GitHub Actions | 对应门禁 |
 |-----|-----------------|----------------|---------|
-| `lint` | Ubuntu 24 | Ubuntu | 编码规范 |
-| `test` | Ubuntu 24 | Ubuntu / macOS / Windows | 单元测试 + 竞态 + 覆盖率 |
-| `build` | Ubuntu 24 | Ubuntu / macOS / Windows | Linux / 跨平台构建 |
-| `docker` | Ubuntu 24 | Ubuntu | Docker + 补全 + wheel 入口冒烟 |
+| `lint` | Ubuntu latest | Ubuntu | 编码规范 |
+| `test` | Ubuntu latest | Ubuntu / macOS / Windows | 单元测试 + 竞态 + 覆盖率 |
+| `build` | Ubuntu latest | Ubuntu / macOS / Windows | Linux / 跨平台构建 |
+| `docker` | Ubuntu latest | Ubuntu | Docker + 补全 + wheel 入口冒烟 |
 
 依赖：`lint` 与 `test` 并行 → `build`、`docker` 等 `test` 通过后执行；任一 Job 失败即整体失败。
 

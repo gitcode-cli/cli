@@ -124,16 +124,8 @@ jobs:
           mkdir -p gc_cli/bin
           cp gc gc_cli/bin/gc-linux-amd64
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          tags: gitcode/gc:latest
-          platforms: linux/amd64
+        run: docker build --platform linux/amd64 -t gitcode/gc:latest .
 
       - name: Wheel entrypoint smoke test
         run: |

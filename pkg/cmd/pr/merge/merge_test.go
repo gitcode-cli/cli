@@ -78,7 +78,7 @@ func TestMergeRunJSONWritesMergeResult(t *testing.T) {
 		case 1:
 			return mergeResponse(http.StatusOK, `{"number":123,"title":"Fix","head":{"ref":"feature/test","repo":{"full_name":"source-owner/source-repo"}}}`), nil
 		case 2:
-			return mergeResponse(http.StatusOK, `{"number":123,"state":"merged","title":"Fix","html_url":"https://gitcode.com/owner/repo/merge_requests/123"}`), nil
+			return mergeResponse(http.StatusOK, `{"number":123,"state":"merged","merged":null,"title":"Fix","html_url":"https://gitcode.com/owner/repo/merge_requests/123"}`), nil
 		case 3:
 			return mergeResponse(http.StatusNoContent, ``), nil
 		default:
@@ -113,8 +113,12 @@ func TestMergeRunJSONWritesMergeResult(t *testing.T) {
 	if got["number"] != float64(123) || got["merged"] != true {
 		t.Fatalf("JSON output = %#v", got)
 	}
-	if _, ok := got["pull_request"].(map[string]interface{}); !ok {
+	pullRequest, ok := got["pull_request"].(map[string]interface{})
+	if !ok {
 		t.Fatalf("JSON output missing pull_request: %#v", got)
+	}
+	if pullRequest["merged"] != true || pullRequest["state"] != "merged" {
+		t.Fatalf("pull_request merge state is contradictory: %#v", pullRequest)
 	}
 	if strings.Contains(string(out), "Merged PR") || strings.Contains(string(out), "Deleted branch") {
 		t.Fatalf("JSON output contains text banner: %q", string(out))

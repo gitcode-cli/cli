@@ -136,6 +136,43 @@ func TestListRunPaginatesUntilLimit(t *testing.T) {
 	}
 }
 
+func TestListRunJSONNormalizesNullMergedField(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	ioStreams, _, out, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return listTestResponse(http.StatusOK, `[{
+						"number":13,
+						"state":"merged",
+						"merged":null,
+						"merged_at":"2026-04-30T22:43:31+08:00"
+					}]`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		State:      "merged",
+		Limit:      30,
+		JSON:       true,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	var prs []map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &prs); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if len(prs) != 1 || prs[0]["state"] != "merged" || prs[0]["merged"] != true {
+		t.Fatalf("merged state is contradictory: %#v", prs)
+	}
+}
+
 // TestListRunPaginateEmptyResultsEmitsEmptyArray guards against #456: the
 // paginate path accumulates into `var all []api.PullRequest`, which stays nil
 // when every page is empty. Without normalization that marshals as `null`

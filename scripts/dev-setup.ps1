@@ -69,6 +69,19 @@ function Restore-EnvironmentVariable {
     }
 }
 
+function Invoke-NativeQuietly {
+    param([string]$Path, [string[]]$Arguments)
+    $oldErrorAction = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & $Path @Arguments *> $null
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldErrorAction
+    }
+    return $exitCode
+}
+
 function Test-IsManagedPath {
     param([string]$Path)
     if (-not $Path) { return $false }
@@ -695,14 +708,7 @@ try {
     if ($goReady) {
         Write-Section 'Module dependencies'
         $go = Get-SystemCommandPath go
-        $oldErrorAction = $ErrorActionPreference
-        try {
-            $ErrorActionPreference = 'Continue'
-            & $go list -mod=readonly -deps ./... *> $null
-            $listExit = $LASTEXITCODE
-        } finally {
-            $ErrorActionPreference = $oldErrorAction
-        }
+        $listExit = Invoke-NativeQuietly $go @('list', '-mod=readonly', '-deps', './...')
         if ($listExit -eq 0) { Write-Ok 'module dependencies resolved' }
         elseif ($Check) { Write-Gap 'module dependencies (run without -Check to download)' }
         else {
@@ -780,15 +786,22 @@ try {
         try {
             $go = Get-SystemCommandPath go
             $smokeBinary = Join-Path $smokeDir 'gc.exe'
-            & $go build -mod=readonly -o $smokeBinary ./cmd/gc
-            $buildExit = $LASTEXITCODE
-            if ($buildExit -eq 0) { & $smokeBinary version > $null 2>&1 }
-            if ($buildExit -eq 0 -and $LASTEXITCODE -eq 0) {
+            $buildExit = Invoke-NativeQuietly $go @(
+                'build', '-mod=readonly', '-o', $smokeBinary, './cmd/gc'
+            )
+            $smokeExit = if ($buildExit -eq 0) {
+                Invoke-NativeQuietly $smokeBinary @('version')
+            } else {
+                1
+            }
+            if ($buildExit -eq 0 -and $smokeExit -eq 0) {
                 Write-Ok 'build and gc version'
             } else { Write-Gap 'build or gc version' }
             if ($compiler) {
-                & $go test -mod=readonly -race ./pkg/config > $null 2>&1
-                if ($LASTEXITCODE -eq 0) { Write-Ok 'race-enabled test' }
+                $raceExit = Invoke-NativeQuietly $go @(
+                    'test', '-mod=readonly', '-race', './pkg/config'
+                )
+                if ($raceExit -eq 0) { Write-Ok 'race-enabled test' }
                 else { Write-Gap 'race-enabled test' }
             }
         } finally {

@@ -234,7 +234,13 @@ if ($Tool -eq 'go') {
         Copy-Item -LiteralPath $env:GC_TEST_STUB_EXE -Destination $OutputPath -Force
         exit 0
     }
-    if ($Arguments[0] -eq 'test') { exit 0 }
+    if ($Arguments[0] -eq 'test') {
+        if ($env:GC_TEST_GO_TEST_STDERR) {
+            [Console]::Error.WriteLine($env:GC_TEST_GO_TEST_STDERR)
+        }
+        if ($env:GC_TEST_GO_TEST_EXIT) { exit [int]$env:GC_TEST_GO_TEST_EXIT }
+        exit 0
+    }
     exit 14
 }
 
@@ -390,6 +396,17 @@ exit 0
         'native stderr aborted check mode before the module gap was recorded'
     Assert-True ($moduleGap.Output -match 'incomplete: 1 dependency gap') `
         'module cache miss did not reach the final gap summary'
+
+    $raceGap = Invoke-Setup -ToolsRoot $installTools -LogPath $installLog -Check `
+        -ExtraEnvironment @{
+            GC_TEST_GO_TEST_EXIT = '18'
+            GC_TEST_GO_TEST_STDERR = 'race module cache miss'
+        }
+    Assert-Equal 1 $raceGap.Status "race failure did not produce a gap`n$($raceGap.Output)"
+    Assert-True ($raceGap.Output -match 'race-enabled test') `
+        'native stderr aborted check mode before the race gap was recorded'
+    Assert-True ($raceGap.Output -match 'incomplete: 1 dependency gap') `
+        'race failure did not reach the final gap summary'
 
     $missingTools = Join-Path $tempRoot 'missing-tools'
     $missing = Invoke-Setup -ToolsRoot $missingTools -LogPath (Join-Path $tempRoot 'missing.log') `

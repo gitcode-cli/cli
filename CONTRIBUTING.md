@@ -71,6 +71,86 @@ Before contributing, please read the following documentation:
 - Docker (optional)
 - GoReleaser (optional, for releases)
 
+### Host Setup (no container)
+
+The dev container below is convenient for IDE workflows, but local verification
+does not require one. The host scripts install the core build, test, lint, and
+secret-scanning baseline directly on the host. Packaging and release tooling
+remains in the dev container and the documented release workflow:
+
+```bash
+# Linux / macOS
+bash scripts/dev-setup.sh                    # install what is missing, then verify
+bash scripts/dev-setup.sh --check            # report gaps only, install nothing
+```
+
+```powershell
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1
+powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1 -Check
+```
+
+After Make is available, the following convenience targets pick the right
+script for the platform:
+
+```bash
+make dev-setup    # install host dependencies
+make dev-doctor   # check only, exits non-zero when gaps remain
+```
+
+On a fresh host, invoke the platform script directly first. `make dev-setup`
+cannot bootstrap Make itself because Make is needed to enter that target.
+
+On Linux, install Go 1.22 or newer from
+[go.dev/dl](https://go.dev/dl/) when it is not already available. The script
+does not install a distribution `golang-go` package because supported
+distribution releases may provide an older, unsupported Go version.
+
+Both scripts are idempotent and install tooling only. They never read, write,
+or print `GC_TOKEN` / `GITCODE_TOKEN`; the variables are removed from the
+script process before package managers, compilers, or installed tools run.
+Authentication stays a separate manual step.
+
+Project-managed tools are isolated from shared user tool directories:
+
+- Linux/macOS: `~/.local/share/gitcode-cli/dev-tools/bin`. The script does not
+  edit shell profiles; add this directory to `PATH` before using managed tools
+  in a later shell:
+  `export PATH="$HOME/.local/share/gitcode-cli/dev-tools/bin:$PATH"`.
+- Windows: `%LOCALAPPDATA%\gitcode-cli\dev-tools\bin`.
+
+Neither script edits shell profiles or the user `PATH`. On Windows, add the
+managed tools for the current shell with
+`$env:Path = "$env:LOCALAPPDATA\gitcode-cli\dev-tools\bin;$env:Path"`.
+Managed wrappers are never written over files outside the dedicated directory,
+and the script refuses to replace an unrecognized wrapper inside it.
+
+`--check` / `-Check` is offline and makes no persistent changes. It may return
+non-zero on a clean host to report tools that the install mode would add.
+
+#### Windows notes
+
+Windows needs two fixups that `dev-setup.ps1` applies automatically. They are
+listed here because they also bite when setting up by hand:
+
+- GNU Make defaults to `cmd.exe` as `SHELL`, which breaks every shell-based
+  recipe in the `Makefile`. The script writes a managed `make.cmd` wrapper that
+  forces Git bash via an 8.3 short path.
+- `python3` resolves to a WindowsApps stub that exits with code `9009` instead
+  of running, so `make validate-ai-*` fails. The script creates a managed
+  wrapper for the real Python interpreter.
+
+The core setup also checks for a C compiler and runs a race-enabled Go test,
+because the repository's standard test target uses `go test -race`.
+
+Also build `./gc.exe` rather than `./gc` on Windows; PowerShell refuses to
+execute an extensionless binary. When running `scripts/regression-core.sh`
+under Git bash, point `GC_BIN` at the built executable.
+
+If a download stalls behind a slow network, use the standard package manager
+again or configure `GOPROXY`; do not pass project credentials to alternate
+download scripts.
+
 ### Dev Container
 
 If you use VS Code Dev Containers or GitHub Codespaces, the repository now includes

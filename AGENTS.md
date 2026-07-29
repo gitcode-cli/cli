@@ -131,7 +131,23 @@ docker compose up gc
 
 ### 3.5 开发辅助
 
+全新宿主机先直接运行平台脚本（此时可能还没有 Make）：
+
 ```bash
+# Linux / macOS：安装核心验证依赖
+bash scripts/dev-setup.sh
+```
+
+```powershell
+# Windows PowerShell：安装核心验证依赖
+powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1
+```
+
+Make 已可用后，可使用统一入口：
+
+```bash
+make dev-setup         # 宿主机安装核心验证依赖（无需容器，跨平台）
+make dev-doctor        # 只检查依赖，不安装；有缺口时非零退出
 make deps              # go mod download + tidy
 make update-deps       # go mod tidy + go get -u ./...
 make dev               # go run ./cmd/gc
@@ -142,6 +158,9 @@ make validate-ai-record FILE=... KIND=...            # 校验单条 AI 记录
 make classify-change-risk BASE=origin/main           # 改动风险分级
 make verify-remote-facts REPO=owner/repo [ISSUE=1] [PR=2] [HEAD_SHA=<sha>]
 ```
+
+宿主机脚本不安装打包/发布工具；`nfpm`、`goreleaser`、Python build 等完整
+打包依赖继续使用 `.devcontainer/` 或发布流程中记录的手工安装路径。
 
 ### 3.6 远端 CI（GitCode 原生 + GitHub 镜像）
 

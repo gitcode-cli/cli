@@ -59,7 +59,7 @@ jobs:
       - name: Upload coverage
         uses: upload-artifact
         with:
-          name: coverage-linux
+          name: coverage-linux-${{ atomgit.run_id }}
           path: coverage.out
 
   build:
@@ -89,12 +89,12 @@ jobs:
       - name: Upload binary
         uses: upload-artifact
         with:
-          name: gc-ubuntu
+          name: gc-ubuntu-${{ atomgit.run_id }}
           path: bin/gc
 
-  docker:
-    name: Docker
-    runs-on: [codearts-hosted, ubuntu-latest, x64, medium]
+  package:
+    name: Package
+    runs-on: [codearts-hosted, ubuntu-latest, x64, small]
     needs:
       - test
     steps:
@@ -124,17 +124,6 @@ jobs:
           mkdir -p gc_cli/bin
           cp gc gc_cli/bin/gc-linux-amd64
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          tags: gitcode/gc:latest
-          platforms: linux/amd64
-
       - name: Wheel entrypoint smoke test
         run: |
           set -euo pipefail
@@ -144,3 +133,9 @@ jobs:
           echo "=== gc version ===" && gc version
           echo "=== gitcode version ===" && gitcode version
           echo "=== python -m gc_cli version ===" && python -m gc_cli version
+
+      - name: Upload wheel
+        uses: upload-artifact
+        with:
+          name: gc-wheel-${{ atomgit.run_id }}
+          path: dist/*.whl

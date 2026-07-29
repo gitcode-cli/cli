@@ -49,7 +49,9 @@ gitcode schema
 
 案例中的 `推荐 skill` 字段用于提示 AI 客户端优先加载哪个 skill。即使未安装 skill，也可以直接复制 prompt 给 AI 执行，AI 应按 prompt 中的 GitCode CLI 命令约束完成任务。
 
-> **注意**：案例中引用的 skill 名称（如 `gitcode-pr-review`、`gitcode-issue-create` 等）均指向 skills 项目中的对应目录，每个 skill 自包含、可独立安装。如果案例涉及 gitcode-cli/cli 项目内部开发 skill（如 `pr-reviewer`、`gc-dev-setup`），这些是 CLI 项目自身的 AI 开发工具，不在 skills 项目中。
+> **注意**：案例中引用的 Skill 名称（如 `gitcode-pr-review`、`gitcode-issue-create` 等）
+> 均指向独立 Skills 项目中的对应目录，每个 Skill 自包含、可独立安装。本仓库不再维护
+> 项目内 Skill 副本；CLI 项目自身的开发规则以 `spec/` 为准。
 
 ## 案例索引
 
@@ -74,8 +76,8 @@ gitcode schema
 | [Issue 生命周期管理](./cases/issue-lifecycle.md) | 维护者、开发者、AI 代理 | `gitcode-issue` | Issue 从创建到关闭的完整生命周期操作 | 写权限 | 写 |
 | [Release 直接操作](./cases/release-direct-ops.md) | 维护者、测试人员、DevOps | `gitcode-release` | 直接操作 release 的查看、编辑、资产上传下载和删除 | 管理权限 | 读写 |
 | [批量代码审查评论](./cases/batch-review-comments.md) | Reviewer、维护者、自动化审查工具 | `gitcode-review` | 对多个 PR/commit 批量添加审查评论和行级注释 | 评论权限 | 写 |
-| [AI 全流程交付——从 Issue 到合并的标准化闭环](./cases/ai-full-delivery-workflow.md) | AI 代理、项目维护者、流程设计者 | `superpowers:writing-plans`、`pr-reviewer`、`gc-dev-setup` | 展示 AI 代理如何按 spec 规范的 15 阶段管线完成代码交付（以 bugfix #250 为实例） | CLI 开发环境、GC_TOKEN、了解 spec/ | 流程 |
-| [Team Agent 多角色并行评审——PR #221 评审全流程](./cases/team-agent-multi-role-review.md) | AI 代理、维护者、评审流程设计者 | `pr-reviewer`、`gitcode-cli` | 通过 TeamCreate + 4 Agent 并行执行 Code/Security/Test/Documentation 评审（以 PR #221 为实例） | GC_TOKEN、gh CLI、了解 spec/workflows/review-workflow.md | 流程 |
+| [AI 全流程交付——从 Issue 到合并的标准化闭环](./cases/ai-full-delivery-workflow.md) | AI 代理、项目维护者、流程设计者 | `gitcode-issue-review`、`gitcode-pr-create`、`gitcode-pr-review`、`gitcode-security-check` | 展示 AI 代理如何按 spec 规范的 15 阶段管线完成代码交付（以 bugfix #250 为实例） | CLI 开发环境、GC_TOKEN、了解 spec/ | 流程 |
+| [Team Agent 多角色并行评审——PR #221 评审全流程](./cases/team-agent-multi-role-review.md) | AI 代理、维护者、评审流程设计者 | `gitcode-pr-review`、`gitcode-pr-inline-review`、`gitcode-pr-apply-feedback` | 通过 TeamCreate + 4 Agent 并行执行 Code/Security/Test/Documentation 评审（以 PR #221 为实例） | GC_TOKEN、gh CLI、了解 spec/workflows/review-workflow.md | 流程 |
 
 ## 推荐阅读路径
 

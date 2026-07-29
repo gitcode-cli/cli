@@ -32,7 +32,7 @@
 
 ## 同步要求
 
-- 门禁变化时同步 `AGENTS.md`、`CLAUDE.md` 和相关 skills
+- 门禁变化时同步 `AGENTS.md`、`CLAUDE.md`，并检查独立 Skills 仓是否需要单独更新
 - docs-only 规则变化时同步相关工作流说明
 
 ## 不负责什么
@@ -106,7 +106,7 @@ gofmt -w <files>
 - `spec/*`
 - `AGENTS.md`
 - `CLAUDE.md`
-- 相关 skills
+- 独立 Skills 仓中的相关 Skill（如受影响，单独提交）
 
 如果改动影响命令输出、确认行为、错误语义或 schema，还必须检查：
 
@@ -296,7 +296,8 @@ python3 scripts/classify-change-risk.py --base origin/main
 这意味着：
 
 - `AGENTS.md` 和 `CLAUDE.md` 只能解释入口，不得降低门禁
-- `.claude/skills/` 和 `.codex/skills/` 不能定义低于本文件的交付标准
+- 独立 `gitcode-cli/skills` 仓中的 Skill 不能定义低于本文件的交付标准
+- 用户本地 `.claude/skills/` 和 `.codex/skills/` 只是安装副本，不是项目规则源
 - AI 生成的结果必须像人工提交一样接受同一套门禁
 - AI 不能把缺少证据的“完成声明”视为通过门禁
 - 作者与评审必须是不同执行主体

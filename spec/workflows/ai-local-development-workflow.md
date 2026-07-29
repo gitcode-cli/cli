@@ -20,7 +20,7 @@
 ## 不适用场景
 
 - 外部项目通过 AI 使用 `gc` 操作 GitCode
-- 外部项目安装或分发 `gc-core`
+- 外部项目安装或使用 `gitcode-cli/skills`
 - 不涉及本仓库开发的纯使用咨询
 
 ## 先看什么
@@ -31,7 +31,7 @@ AI 接到任务后，按以下顺序建立上下文：
 2. [spec/README.md](../README.md)
 3. 与任务直接相关的 `spec/foundations/*`、`spec/workflows/*`、`spec/delivery/*`
 4. 如涉及命令行为，继续看 [../../docs/COMMANDS.md](../../docs/COMMANDS.md)
-5. 如涉及共享 AI 场景，继续看 [../../.ai/skills/README.md](../../.ai/skills/README.md)
+5. 如需 GitCode CLI Skill，进入独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)
 
 ## 事实判定边界
 
@@ -204,7 +204,8 @@ AI 或脚本消费 `gc` 时，应优先使用：
 - 流程或门禁变化：`spec/*`、`AGENTS.md`、`CLAUDE.md`
 - agent-friendly CLI 变化：`spec/foundations/agent-friendly-cli.md`、`docs/REGRESSION.md`
 - 构建打包变化：`spec/delivery/*`、`docs/PACKAGING.md`
-- AI 协作边界变化：`.ai/skills/*` 与适配层
+- AI 协作边界变化：`spec/governance/*`、`AGENTS.md`、`CLAUDE.md`
+- Skill 行为需要变化：在独立 `gitcode-cli/skills` 仓单独建立 Issue / PR
 
 ### 9. 风险分级
 

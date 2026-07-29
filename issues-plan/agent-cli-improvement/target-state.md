@@ -1,5 +1,10 @@
 # 目标状态
 
+> **历史规划快照：** 本文记录 Agent-Friendly CLI 阶段的目标设计，不是当前 Skill
+> 架构说明。仓内 `.ai/skills/`、`.claude/skills/`、`.codex/skills/` 已废弃，
+> 当前 Skills 真相源为独立仓库
+> [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)。
+
 ## 1. 总体目标
 
 将 `gitcode-cli` 从“功能可用的人工 CLI”升级为“同时面向人类与 AI 代理稳定可消费的 CLI”。

@@ -22,7 +22,7 @@
 
 - 只改代码不检查文档同步
 - 在 AI 文档中定义与 `spec/` 冲突的规则
-- 把 `.claude/skills/` 当成跨 AI 的唯一 skill 来源
+- 把已废弃的 `.ai/skills/` 或客户端本地 `.claude/skills/`、`.codex/skills/` 当成项目 Skill 真相源
 
 ## 同步要求
 
@@ -106,15 +106,14 @@ AI 协作入口层由以下文件组成：
 
 ### 2.6 AI skill 层
 
-AI skill 采用三层结构：
+GitCode CLI Skills 采用独立仓库治理：
 
-- `.ai/skills/`：跨 AI 的共享 skill 真相源
-- `.ai/distribution/`：可分发的通用 skill 包
-- `.claude/skills/`：Claude 适配层
-- `.codex/skills/`：Codex 适配层
+- [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)：Skill 真相源、版本管理和分发入口
+- `~/.claude/skills/`：Claude 用户本地安装目录
+- `~/.codex/skills/`：Codex 用户本地安装目录
 
-当前仓库已补齐 `.ai/skills/`、`.claude/skills/` 和 `.codex/skills/` 的分层结构。
-同时，`.ai/distribution/` 用于承载可脱离本仓库复用的 `gc` 通用 skill。
+本仓库不追踪 Skill 副本，也不提供从仓内目录生成客户端适配层的同步脚本。
+项目开发规则仍由 `spec/` 定义，独立 Skills 仓不得覆盖本仓库规则。
 
 ## 3. 唯一真相源
 
@@ -125,7 +124,7 @@ AI skill 采用三层结构：
 - 项目正式规范：`spec/`
 - 真相源边界说明：`spec/governance/source-of-truth-matrix.md`
 - 项目阶段说明：`issues-plan/PROGRESS.md`
-- AI 共享 skill 真相源：`.ai/skills/`
+- GitCode CLI Skills 真相源：[gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)
 - Codex 项目级入口：`AGENTS.md`
 - Claude 项目级入口：`CLAUDE.md`
 
@@ -137,10 +136,9 @@ AI skill 采用三层结构：
 2. `docs/COMMANDS.md` 定义命令行为
 3. `spec/governance/source-of-truth-matrix.md` 定义不同信息类型的事实边界
 4. `AGENTS.md` / `CLAUDE.md` 定义 AI 入口
-5. `.ai/skills/` 定义共享场景技能
-6. `.claude/skills/` / `.codex/skills/` 定义客户端适配
+5. 独立仓库 `gitcode-cli/skills` 定义可安装的命令与工作流 Skills
 
-`AGENTS.md`、`CLAUDE.md`、`.claude/skills/`、`.codex/skills/` 不得定义与 `spec/` 冲突的项目规则。
+`AGENTS.md`、`CLAUDE.md` 和独立 Skills 仓不得定义与 `spec/` 冲突的项目规则。
 `issues-plan/PROGRESS.md` 只能作为阶段说明，不得作为单个 issue / PR 实时状态真相源。
 
 ## 4. 多 AI 协作规则
@@ -152,40 +150,25 @@ AI skill 采用三层结构：
 - 任何开发流程、测试要求、安全要求都以 `spec/` 为准
 - `AGENTS.md` 负责 Codex 侧入口说明
 - `CLAUDE.md` 负责 Claude 侧入口说明
-- `.claude/skills/` 不是跨 AI 的唯一 skill 来源
-- `.codex/skills/` 必须与共享真相源保持一致
+- GitCode CLI Skills 从独立仓库安装
+- 用户本地 Skill 安装目录不得提交到本仓库
 
 AI 协作文档属于正式项目文档，行为变更后必须纳入同步检查。
 
 ## 5. skill 体系设计
 
-skill 分为两类：
+独立 Skills 仓中的 Skill 分为两类：
 
-- 项目专属 skill：仅适用于 gitcode-cli 仓库
-- `gc` 通用 skill：可用于其他使用 `gc` 的项目
+- 核心命令 Skill：描述认证、仓库、Issue、PR、Release 等命令族
+- 工作流 Skill：描述 Issue、PR、评审、发布、安全检查等端到端任务
 
-后续治理方向是：
+治理边界是：
 
-- `.ai/skills/` 存放共享 skill 真相源
-- `.claude/skills/` 存放 Claude 适配版本
-- `.codex/skills/` 存放 Codex 适配版本
-
-用户本地安装目录仅作为运行时副本，不作为项目规则真相源。
-
-此外，需要明确区分两类 skill：
-
-- 仓库协作 skill：服务 gitcode-cli 仓库自身开发，可依赖仓库内 `spec/`、`docs/` 和目录结构
-- 通用 `gc` skill：服务外部项目使用 `gc`，不得依赖本仓库私有文档路径
-
-当前仓库已提供最小同步工具：
-
-- `scripts/sync-ai-skills.sh`
-
-当前脚本边界：
-
-- 会基于共享源更新 `.codex/skills/*` 的基础适配文件
-- 只会为缺失的 `.claude/skills/*` 生成占位入口
-- 不会覆盖现有 Claude skill 正文
+- 本仓库维护产品代码、命令文档和项目开发规范
+- `gitcode-cli/skills` 维护可安装 Skills
+- Skill 不得依赖本仓库私有或不稳定的内部路径
+- 用户本地安装目录仅作为运行时副本，不作为项目规则真相源
+- 命令或流程变化影响 Skill 时，应在独立仓库建立对应 Issue / PR，不在本仓库复制修改
 
 ## 6. 文档同步规则
 
@@ -197,7 +180,7 @@ skill 分为两类：
 - `docs/COMMANDS.md`
 - `AGENTS.md`
 - `CLAUDE.md`
-- 相关 AI skills
+- 独立 Skills 仓中的相关 Skill（如受影响，单独提交）
 
 ### 6.2 开发流程变化
 
@@ -206,7 +189,7 @@ skill 分为两类：
 - `spec/*`
 - `AGENTS.md`
 - `CLAUDE.md`
-- 相关 AI skills
+- 独立 Skills 仓中的相关工作流 Skill（如受影响，单独提交）
 
 ### 6.3 审查流程变化
 
@@ -215,7 +198,7 @@ skill 分为两类：
 - `spec/workflows/review-workflow.md`
 - `AGENTS.md`
 - `CLAUDE.md`
-- 审查相关 skills
+- 独立 Skills 仓中的审查相关 Skill（如受影响，单独提交）
 
 ### 6.4 构建、打包、发布规则变化
 
@@ -225,7 +208,7 @@ skill 分为两类：
 - `spec/delivery/release-process.md`
 - `AGENTS.md`
 - `CLAUDE.md`
-- 相关 AI skills
+- 独立 Skills 仓中的发布相关 Skill（如受影响，单独提交）
 
 ### 6.5 状态变化
 
@@ -276,9 +259,9 @@ skill 分为两类：
 - `docs/` 和 `spec/` 的边界清晰
 - AI 协作入口清晰
 
-### 阶段 3：AI skill 体系重构
+### 阶段 3：AI skill 体系重构（历史）
 
-目标：建立共享真相源和客户端适配层。
+该阶段曾在本仓库建立共享源和客户端适配层，现已被独立 Skills 仓替代。
 
 交付物：
 
@@ -287,11 +270,7 @@ skill 分为两类：
 - 新增 `.codex/skills/`
 - 梳理 `.claude/skills/`
 
-验收标准：
-
-- skill 真相源明确
-- Claude 和 Codex 都有项目级适配层
-- skill 体系支持跨项目复用
+这些目录只用于解释历史演进，不再是当前交付物或验收标准。
 
 ### 阶段 4：内容去重与迁移
 
@@ -310,19 +289,11 @@ skill 分为两类：
 - 命令行为只在 `docs/COMMANDS.md` 定义
 - AI 文档不再复制通用规范
 
-### 阶段 5：分发与同步工具
+### 阶段 5：分发与同步工具（历史）
 
-目标：让团队成员稳定复用同一套 skill 资产。
+该阶段曾通过仓内同步脚本复用 Skill，现已由独立仓库的版本管理和安装说明替代。
 
-交付物：
-
-- `scripts/sync-ai-skills.sh`
-- 本地安装与同步说明
-
-验收标准：
-
-- 共享 skill 可同步到客户端适配层
-- 多人环境下可复用、可版本化、可审查
+仓内同步脚本和适配层不再保留。
 
 ### 阶段 6：CI 自动化 ✅
 
@@ -342,14 +313,30 @@ skill 分为两类：
 - 本地门禁和 CI 门禁保持一致 ✅
 - AI 通过 `gc actions` / `gh` 查询运行与日志 ✅
 
+### 阶段 7：Skills 独立仓迁移 ✅
+
+目标：消除仓内 Skill 副本与客户端适配层漂移。
+
+交付物：
+
+- 独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)
+- `docs/AI-GUIDE.md` 安装说明
+- 用户本地 Claude / Codex Skill 安装目录
+
+验收标准：
+
+- 本仓库不追踪 `.ai/skills/`、`.claude/skills/` 或 `.codex/skills/`
+- 本仓库不保留 Skill 分发副本或同步生成脚本
+- 现行规范统一指向独立 Skills 仓
+
 ## 9. 当前执行原则
 
-当前 6 阶段整改已全部完成。
+当前 7 阶段整改已全部完成。
 
 当前优先级固定为：
 
 1. 保持 `foundations/`、`workflows/`、`delivery/`、`governance/` 的边界稳定
-2. 同步更新入口文档和 skills 中的规范路径
+2. 同步更新入口文档；需要更新 Skill 时在独立仓库单独交付
 3. CI 规范已基于 GitCode Actions 与 GitHub Actions 真实环境落地，AI 通过 `gc actions` / `gh` 查询运行与日志
 
 ## 下一步去看哪里

@@ -100,7 +100,7 @@ gitcode auth status
 
 ## 4. 安装 GitCode CLI Skills
 
-面向外部项目的通用 skills 已独立维护在 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)，不再从本仓库内的 `.ai/distribution` 安装。
+面向外部项目的通用 Skills 只在独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 维护和分发，本仓库不保留 Skill 副本。
 
 该仓库将 skills 分为两类：
 

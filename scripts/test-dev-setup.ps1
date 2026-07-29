@@ -77,7 +77,11 @@ function Invoke-Setup {
     $saved = @{}
     foreach ($name in $variables.Keys) {
         $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
-        Set-Item "Env:$name" $variables[$name]
+        if ($null -eq $variables[$name]) {
+            Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+        } else {
+            Set-Item "Env:$name" $variables[$name]
+        }
     }
 
     try {
@@ -134,6 +138,11 @@ public static class Program
         }
         if (args.Length > 0 && args[0] == "--version")
         {
+            if (executable.StartsWith("pre-commit", StringComparison.OrdinalIgnoreCase) &&
+                Environment.GetEnvironmentVariable("PYTHONDONTWRITEBYTECODE") != "1")
+            {
+                return 91;
+            }
             string version = Environment.GetEnvironmentVariable("GC_TEST_PRECOMMIT_VERSION");
             Console.WriteLine(String.IsNullOrEmpty(version) ? "pre-commit 4.6.1" : version);
         }
@@ -191,7 +200,12 @@ if ($Tool -eq 'go') {
         Write-Output "`tmod`t$module`t$version"
         exit 0
     }
-    if ($Arguments[0] -eq 'list') { exit [int]$env:GC_TEST_GO_LIST_EXIT }
+    if ($Arguments[0] -eq 'list') {
+        if ($env:GC_TEST_GO_LIST_STDERR) {
+            [Console]::Error.WriteLine($env:GC_TEST_GO_LIST_STDERR)
+        }
+        exit [int]$env:GC_TEST_GO_LIST_EXIT
+    }
     if ($Arguments[0] -eq 'mod' -and $Arguments[1] -eq 'download') { exit 0 }
     if ($Arguments[0] -eq 'install') {
         $spec = $Arguments[1]
@@ -339,6 +353,44 @@ exit 0
     Assert-Equal $checkModCacheEntriesBefore `
         @(Get-ChildItem -Force -Recurse -LiteralPath $checkModCache).Count `
         'check mode mutated the original module cache'
+
+    $persistedGoPath = Join-Path $tempRoot 'persisted go#path'
+    $persistedModCache = Join-Path $tempRoot 'persisted mod#cache'
+    $persistedDownloadCache = Join-Path $persistedModCache 'cache\download'
+    $persistedGoEnv = Join-Path $tempRoot 'persisted-go-env'
+    New-Item -ItemType Directory -Force -Path $persistedDownloadCache | Out-Null
+    Set-TestFile $persistedGoEnv @(
+        "GOPATH=$persistedGoPath"
+        "GOMODCACHE=$persistedModCache"
+    )
+    $persistedGoEnvBefore = Get-Content -Raw -LiteralPath $persistedGoEnv
+    $beforePersistedCheck = @(Get-Content -LiteralPath $installLog).Count
+    $persistedCheck = Invoke-Setup -ToolsRoot $installTools -LogPath $installLog -Check `
+        -ExtraEnvironment @{
+            GOENV = $persistedGoEnv
+            GOPATH = $null
+            GOMODCACHE = $null
+        }
+    Assert-Equal 0 $persistedCheck.Status "persisted Go env check failed`n$($persistedCheck.Output)"
+    $persistedLines = Get-NewLogLines $installLog $beforePersistedCheck
+    $expectedPersistedProxy = ([Uri]::new([IO.Path]::GetFullPath($persistedDownloadCache))).AbsoluteUri
+    Assert-True ([bool]($persistedLines -match
+        ("\|GOPROXY={0}\|" -f [regex]::Escape($expectedPersistedProxy)))) `
+        'check mode ignored persisted GOMODCACHE'
+    Assert-Equal $persistedGoEnvBefore (Get-Content -Raw -LiteralPath $persistedGoEnv) `
+        'check mode modified the persisted Go env file'
+
+    $moduleGap = Invoke-Setup -ToolsRoot $installTools -LogPath $installLog -Check `
+        -ExtraEnvironment @{
+            GC_TEST_GO_LIST_EXIT = '17'
+            GC_TEST_GO_LIST_STDERR = 'module cache miss'
+        }
+    Assert-Equal 1 $moduleGap.Status "module cache miss did not produce a gap`n$($moduleGap.Output)"
+    Assert-True ($moduleGap.Output -match 'module dependencies \(run without -Check to download\)') `
+        'native stderr aborted check mode before the module gap was recorded'
+    Assert-True ($moduleGap.Output -match 'incomplete: 1 dependency gap') `
+        'module cache miss did not reach the final gap summary'
+
     $missingTools = Join-Path $tempRoot 'missing-tools'
     $missing = Invoke-Setup -ToolsRoot $missingTools -LogPath (Join-Path $tempRoot 'missing.log') `
         -SystemPath $emptyBin -Check

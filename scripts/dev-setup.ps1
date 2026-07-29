@@ -272,6 +272,29 @@ function Install-WingetPackage {
     Refresh-SystemPath -IncludePersistent
 }
 
+function Get-PersistedGoEnvValue {
+    param([string]$Name)
+    if ($OldGoEnv -eq 'off') { return '' }
+    $envFile = if ($OldGoEnv) {
+        $OldGoEnv
+    } else {
+        $configRoot = if ($OldAppData) {
+            $OldAppData
+        } else {
+            [Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)
+        }
+        Join-Path $configRoot 'go\env'
+    }
+    if (-not (Test-Path -LiteralPath $envFile -PathType Leaf)) { return '' }
+    $value = ''
+    foreach ($line in Get-Content -LiteralPath $envFile) {
+        if ($line.StartsWith("$Name=", [StringComparison]::Ordinal)) {
+            $value = $line.Substring($Name.Length + 1)
+        }
+    }
+    return $value
+}
+
 function Initialize-CheckEnvironment {
     if (-not $Check) { return }
     $script:CheckTempRoot = Join-Path ([IO.Path]::GetTempPath()) "gc-dev-check-$([guid]::NewGuid().ToString('N'))"
@@ -281,10 +304,20 @@ function Initialize-CheckEnvironment {
     $goPath = Join-Path $script:CheckTempRoot 'gopath'
     $goModCache = Join-Path $script:CheckTempRoot 'modcache'
     New-Item -ItemType Directory -Force -Path $cache, $tmp, $appData, $goPath, $goModCache | Out-Null
-    $effectiveGoPath = if ($OldGoPath) { $OldGoPath } else { Join-Path $env:USERPROFILE 'go' }
+    $persistedGoPath = Get-PersistedGoEnvValue GOPATH
+    $persistedGoModCache = Get-PersistedGoEnvValue GOMODCACHE
+    $effectiveGoPath = if ($OldGoPath) {
+        $OldGoPath
+    } elseif ($persistedGoPath) {
+        $persistedGoPath
+    } else {
+        Join-Path $env:USERPROFILE 'go'
+    }
     $firstGoPath = ($effectiveGoPath -split ';')[0]
     $effectiveGoModCache = if ($OldGoModCache) {
         $OldGoModCache
+    } elseif ($persistedGoModCache) {
+        $persistedGoModCache
     } else {
         Join-Path $firstGoPath 'pkg\mod'
     }
@@ -541,8 +574,15 @@ function Test-ReparseFreeTree {
 function Get-PreCommitVersion {
     param([string]$Path)
     if (-not (Get-PathItem $Path) -or (Test-IsReparsePoint $Path)) { return '' }
-    $output = @(& $Path --version 2>$null)
-    if ($LASTEXITCODE -ne 0 -or $output.Count -ne 1) { return '' }
+    $oldBytecodeSetting = $env:PYTHONDONTWRITEBYTECODE
+    try {
+        $env:PYTHONDONTWRITEBYTECODE = '1'
+        $output = @(& $Path --version 2>$null)
+        $exitCode = $LASTEXITCODE
+    } finally {
+        Restore-EnvironmentVariable PYTHONDONTWRITEBYTECODE $oldBytecodeSetting
+    }
+    if ($exitCode -ne 0 -or $output.Count -ne 1) { return '' }
     return [string]$output[0]
 }
 
@@ -655,8 +695,14 @@ try {
     if ($goReady) {
         Write-Section 'Module dependencies'
         $go = Get-SystemCommandPath go
-        & $go list -mod=readonly -deps ./... > $null 2>&1
-        $listExit = $LASTEXITCODE
+        $oldErrorAction = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            & $go list -mod=readonly -deps ./... *> $null
+            $listExit = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $oldErrorAction
+        }
         if ($listExit -eq 0) { Write-Ok 'module dependencies resolved' }
         elseif ($Check) { Write-Gap 'module dependencies (run without -Check to download)' }
         else {

@@ -91,6 +91,7 @@ if [[ "${1:-} ${2:-}" == "-m pip" ]]; then
     printf '#!%s\n# pre-commit console script\n' "$0" >"$target"
     chmod +x "$target"
 elif [[ "${1:-}" == */pre-commit ]]; then
+    [[ "${PYTHONDONTWRITEBYTECODE:-}" == 1 ]] || exit 91
     printf 'pre-commit 4.6.1\n'
 fi
 PYTHON
@@ -155,6 +156,29 @@ set -e
 ! grep -F "$TMP_ROOT/outside-gopath" "$CACHE_LOG"
 ! grep -F "$TMP_ROOT/outside-modcache|" "$CACHE_LOG"
 grep -F "file://$TMP_ROOT/outside-modcache/cache/download" "$CACHE_LOG" >/dev/null
+
+PERSISTED_GO_ENV="$TMP_ROOT/go-env"
+PERSISTED_GOPATH="$TMP_ROOT/persisted go#path"
+PERSISTED_MODCACHE="$TMP_ROOT/persisted mod#cache"
+mkdir -p "$PERSISTED_MODCACHE/cache/download"
+printf 'GOPATH=%s\nGOMODCACHE=%s\n' "$PERSISTED_GOPATH" "$PERSISTED_MODCACHE" >"$PERSISTED_GO_ENV"
+persisted_go_env_before="$(cat "$PERSISTED_GO_ENV")"
+: >"$CACHE_LOG"
+set +e
+persisted_output="$(
+    env -u GOPATH -u GOMODCACHE \
+        PATH="$STUB_BIN:/usr/bin:/bin" \
+        GC_DEV_TOOLS_DIR="$TOOLS_DIR" \
+        CALL_LOG="$CALL_LOG" TOKEN_LEAK="$TOKEN_LEAK" CACHE_LOG="$CACHE_LOG" \
+        HOME="$TMP_ROOT/outside-home" GOENV="$PERSISTED_GO_ENV" \
+        bash "$ROOT_DIR/scripts/dev-setup.sh" --check 2>&1
+)"
+persisted_status=$?
+set -e
+[[ $persisted_status -eq 0 ]]
+[[ "$persisted_output" == *"dev environment ready."* ]]
+grep -F "file://$TMP_ROOT/persisted%20mod%23cache/cache/download" "$CACHE_LOG" >/dev/null
+[[ "$(cat "$PERSISTED_GO_ENV")" == "$persisted_go_env_before" ]]
 
 MANAGED_HIJACK="$TMP_ROOT/managed-go-was-run"
 cat >"$TOOLS_DIR/bin/go" <<EOF

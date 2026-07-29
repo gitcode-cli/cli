@@ -66,15 +66,59 @@ cleanup_smoke_dir() {
     rm -rf "$SMOKE_DIR"
 }
 
+go_env_file() {
+    if [[ "${GOENV:-}" == "off" ]]; then
+        return
+    fi
+    if [[ -n "${GOENV:-}" ]]; then
+        printf '%s\n' "$GOENV"
+        return
+    fi
+    if [[ "$HOST_OS" == "Darwin" ]]; then
+        printf '%s\n' "${HOME:-}/Library/Application Support/go/env"
+        return
+    fi
+    printf '%s\n' "${XDG_CONFIG_HOME:-${HOME:-}/.config}/go/env"
+}
+
+persisted_go_env_value() {
+    local key="$1" file line value=""
+    file="$(go_env_file)"
+    [[ -n "$file" && -f "$file" ]] || return 0
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" == "$key="* ]] && value="${line#*=}"
+    done <"$file"
+    printf '%s\n' "$value"
+}
+
+file_uri() {
+    local path="$1" uri="" char escaped
+    local LC_ALL=C
+    local i
+    for ((i = 0; i < ${#path}; i++)); do
+        char="${path:i:1}"
+        case "$char" in
+            [a-zA-Z0-9._~/-]) uri+="$char" ;;
+            *)
+                printf -v escaped '%%%02X' "'$char"
+                uri+="$escaped"
+                ;;
+        esac
+    done
+    printf 'file://%s\n' "$uri"
+}
+
 if (( CHECK_ONLY )); then
     SMOKE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gc-dev-setup.XXXXXX")"
     trap cleanup_smoke_dir EXIT
     original_home="${HOME:-}"
-    original_gopath="${GOPATH:-$original_home/go}"
-    original_modcache="${GOMODCACHE:-${original_gopath%%:*}/pkg/mod}"
+    persisted_gopath="$(persisted_go_env_value GOPATH)"
+    persisted_modcache="$(persisted_go_env_value GOMODCACHE)"
+    original_gopath="${GOPATH:-${persisted_gopath:-$original_home/go}}"
+    original_modcache="${GOMODCACHE:-${persisted_modcache:-${original_gopath%%:*}/pkg/mod}}"
     export GOPATH="$SMOKE_DIR/gopath"
     export GOMODCACHE="$SMOKE_DIR/modcache"
-    export GOPROXY="file://$original_modcache/cache/download"
+    export GOPROXY="$(file_uri "$original_modcache/cache/download")"
     export GOENV=off
     export HOME="$SMOKE_DIR/home"
     export XDG_CONFIG_HOME="$SMOKE_DIR/config"
@@ -327,7 +371,7 @@ managed_pre_commit() {
 
 pre_commit_version() {
     local binary="$1"
-    "$binary" --version 2>/dev/null | awk '{print $2}'
+    PYTHONDONTWRITEBYTECODE=1 "$binary" --version 2>/dev/null | awk '{print $2}'
 }
 
 ensure_pre_commit() {

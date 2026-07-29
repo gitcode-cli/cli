@@ -140,6 +140,7 @@ make dev-doctor
 - 脚本运行前从子进程环境移除 `GC_TOKEN` / `GITCODE_TOKEN`
 - `--check` / `-Check` 离线检查且不做持久化修改，存在缺口时返回非零退出码
 - 全新宿主机应先直接运行平台脚本，因为此时可能还没有 Make
+- Linux 缺少 Go 时须从 `https://go.dev/dl/` 安装 Go 1.22+；脚本不安装发行版中可能过旧的 `golang-go`
 - `.devcontainer/` 提供隔离、可复现的完整环境；宿主机脚本提供无需容器的本地验证路径
 - 宿主机脚本不安装打包/发布工具；`nfpm`、`goreleaser` 和 Python build 工具继续按本节手工命令或 `.devcontainer/` 管理
 - 两个平台脚本都不自动修改 shell profile 或用户 `PATH`；后续 shell 使用受管工具前，必须按脚本输出手工加入项目专属受管工具目录

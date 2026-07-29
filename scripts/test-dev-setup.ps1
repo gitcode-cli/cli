@@ -51,6 +51,7 @@ function Invoke-Setup {
         [string]$LogPath,
         [string]$SystemPath = $stubBin,
         [string]$GoVersion = 'go1.22.5',
+        [hashtable]$ExtraEnvironment = @{},
         [switch]$Check
     )
 
@@ -65,9 +66,14 @@ function Invoke-Setup {
         GOCACHE = 'parent-gocache-sentinel'
         GOTMPDIR = 'parent-gotmp-sentinel'
         GOPROXY = 'http://127.0.0.1:1'
+        APPDATA = (Join-Path $tempRoot 'default-outside-appdata')
+        GOENV = 'outside-goenv-sentinel'
+        GOPATH = (Join-Path $tempRoot 'module-gopath')
+        GOMODCACHE = (Join-Path $tempRoot 'module-gopath\pkg\mod')
         LOCALAPPDATA = $fakeLocalAppData
         Path = "$SystemPath;$env:SystemRoot\System32;$env:SystemRoot"
     }
+    foreach ($name in $ExtraEnvironment.Keys) { $variables[$name] = $ExtraEnvironment[$name] }
     $saved = @{}
     foreach ($name in $variables.Keys) {
         $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
@@ -113,12 +119,28 @@ public static class Program
             string legacy = Environment.GetEnvironmentVariable("GITCODE_TOKEN") ?? "";
             string cache = Environment.GetEnvironmentVariable("GOCACHE") ?? "";
             string tmp = Environment.GetEnvironmentVariable("GOTMPDIR") ?? "";
+            string appData = Environment.GetEnvironmentVariable("APPDATA") ?? "";
+            string goEnv = Environment.GetEnvironmentVariable("GOENV") ?? "";
             File.AppendAllText(log, "exe|GC=" + token + "|LEGACY=" + legacy +
-                "|CACHE=" + cache + "|TMP=" + tmp + Environment.NewLine);
+                "|CACHE=" + cache + "|TMP=" + tmp + "|APPDATA=" + appData +
+                "|GOENV=" + goEnv + Environment.NewLine);
+        }
+        string executable = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
+        string wingetMarker = Environment.GetEnvironmentVariable("GC_TEST_WINGET_MARKER");
+        if (String.Equals(executable, "winget.exe", StringComparison.OrdinalIgnoreCase) &&
+            !String.IsNullOrEmpty(wingetMarker))
+        {
+            File.WriteAllText(wingetMarker, "executed");
         }
         if (args.Length > 0 && args[0] == "--version")
         {
-            Console.WriteLine("pre-commit 4.6.1");
+            string version = Environment.GetEnvironmentVariable("GC_TEST_PRECOMMIT_VERSION");
+            Console.WriteLine(String.IsNullOrEmpty(version) ? "pre-commit 4.6.1" : version);
+        }
+        if (args.Length > 1 && args[0] == "-m" && args[1] == "pip" &&
+            Environment.GetEnvironmentVariable("GC_TEST_PRECOMMIT_PIP_FAIL") == "1")
+        {
+            return 23;
         }
         return 0;
     }
@@ -140,10 +162,16 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $record = "$Tool|$($Arguments -join ' ')|GC=$env:GC_TOKEN|LEGACY=$env:GITCODE_TOKEN" +
-    "|CACHE=$env:GOCACHE|TMP=$env:GOTMPDIR|GOBIN=$env:GOBIN"
+    "|CACHE=$env:GOCACHE|TMP=$env:GOTMPDIR|APPDATA=$env:APPDATA|GOENV=$env:GOENV" +
+    "|GOPATH=$env:GOPATH|GOMODCACHE=$env:GOMODCACHE|GOBIN=$env:GOBIN"
 Add-Content -LiteralPath $env:GC_TEST_CHILD_LOG -Value $record
 
 if ($Tool -eq 'go') {
+    if ($env:GC_TEST_WRITE_GO_CONFIG -eq '1') {
+        $telemetry = Join-Path $env:APPDATA 'go\telemetry'
+        New-Item -ItemType Directory -Force -Path $telemetry | Out-Null
+        Set-Content -LiteralPath (Join-Path $telemetry 'stub-write') -Value 'isolated'
+    }
     if ($Arguments[0] -eq 'version' -and $Arguments.Count -eq 1) {
         Write-Output "go version $env:GC_TEST_GO_VERSION windows/amd64"
         exit 0
@@ -242,23 +270,48 @@ exit 0
     Assert-True ([bool]($installLines -match
         '^go\|install github\.com/zricethezav/gitleaks/v8@v8\.30\.1\|')) `
         'gitleaks install package was not used'
+    Assert-True ([bool]($installLines -match
+        ('^python3\|-m venv {0}\\pre-commit-4\.6\.1\|' -f [regex]::Escape($installTools)))) `
+        'pre-commit was not created in its versioned final venv'
     foreach ($name in @('golangci-lint.exe', 'gitleaks.exe', 'make.cmd', 'python3.cmd', 'pre-commit.cmd')) {
         Assert-True (Test-Path (Join-Path $installTools "bin\$name")) "missing managed artifact: $name"
     }
     $goInstallCount = @($installLines -match '^go\|install ').Count
+    $venvInstallCount = @($installLines -match '^python3\|-m venv ').Count
     $second = Invoke-Setup -ToolsRoot $installTools -LogPath $installLog
     Assert-Equal 0 $second.Status "second installation failed`n$($second.Output)"
     $secondInstallCount = @((Get-Content -LiteralPath $installLog) -match '^go\|install ').Count
     Assert-Equal $goInstallCount $secondInstallCount 'second installation was not idempotent'
+    $secondVenvCount = @((Get-Content -LiteralPath $installLog) -match '^python3\|-m venv ').Count
+    Assert-Equal $venvInstallCount $secondVenvCount 'second installation rebuilt the pre-commit venv'
     $leftovers = @(Get-ChildItem -Force -Recurse -LiteralPath $installTools |
-        Where-Object { $_.Name -like '.*-install-*' -or $_.Name -like '*.tmp' })
+        Where-Object {
+            $_.Name -like '.*-install-*' -or $_.Name -like '.pre-commit-backup-*' -or
+            $_.Name -like '*.tmp'
+        })
     Assert-Equal 0 $leftovers.Count 'temporary publish files were left behind'
 
     Write-Host '[test] complete and incomplete check mode'
     $beforeCheck = @(Get-Content -LiteralPath $installLog).Count
-    $complete = Invoke-Setup -ToolsRoot $installTools -LogPath $installLog -Check
+    $outsideAppData = Join-Path $tempRoot 'outside-check-appdata'
+    $checkGoPath = Join-Path $tempRoot 'check-gopath'
+    $checkModCache = Join-Path $tempRoot 'check-modcache'
+    New-Item -ItemType Directory -Force -Path $outsideAppData | Out-Null
+    $complete = Invoke-Setup -ToolsRoot $installTools -LogPath $installLog -Check -ExtraEnvironment @{
+        APPDATA = $outsideAppData
+        GOENV = 'outside-goenv-sentinel'
+        GOPATH = $checkGoPath
+        GOMODCACHE = $checkModCache
+        GC_TEST_WRITE_GO_CONFIG = '1'
+    }
     Assert-Equal 0 $complete.Status "complete check mode failed`n$($complete.Output)"
     $checkLines = Get-NewLogLines $installLog $beforeCheck
+    $checkChildLines = @($checkLines | Where-Object { $_ -match '\|APPDATA=' })
+    Assert-True ($checkChildLines.Count -gt 0) 'check mode did not launch any observable child process'
+    foreach ($line in $checkChildLines) {
+        Assert-True ($line -match '\|APPDATA=([^|]*gc-dev-check-[^|]*\\appdata)\|GOENV=off') `
+            "check child did not observe isolated APPDATA/GOENV: $line"
+    }
     $goCheckLines = @($checkLines | Where-Object { $_ -like 'go|*' })
     Assert-True ($goCheckLines.Count -gt 0) 'check mode did not invoke the Go stub'
     foreach ($line in $goCheckLines) {
@@ -266,7 +319,15 @@ exit 0
             "check mode did not isolate Go cache/temp: $line"
         Assert-True (-not (Test-Path $Matches[1])) "isolated GOCACHE was not removed: $($Matches[1])"
         Assert-True (-not (Test-Path $Matches[2])) "isolated GOTMPDIR was not removed: $($Matches[2])"
+        Assert-True ($line -match '\|APPDATA=([^|]*gc-dev-check-[^|]*\\appdata)\|GOENV=off\|') `
+            "check mode did not isolate APPDATA/GOENV: $line"
+        Assert-True (-not (Test-Path $Matches[1])) "isolated APPDATA was not removed: $($Matches[1])"
+        Assert-True ($line -match ("\|GOPATH={0}\|GOMODCACHE={1}\|" -f
+            [regex]::Escape($checkGoPath), [regex]::Escape($checkModCache))) `
+            "check mode did not preserve explicit module paths: $line"
     }
+    Assert-Equal 0 @(Get-ChildItem -Force -LiteralPath $outsideAppData).Count `
+        'check mode wrote Go user config outside the isolated APPDATA'
     $missingTools = Join-Path $tempRoot 'missing-tools'
     $missing = Invoke-Setup -ToolsRoot $missingTools -LogPath (Join-Path $tempRoot 'missing.log') `
         -SystemPath $emptyBin -Check
@@ -278,6 +339,98 @@ exit 0
     Assert-True ($allLog -notmatch [regex]::Escape($tokenSentinel)) 'GC_TOKEN reached a child process'
     Assert-True ($allLog -notmatch [regex]::Escape($legacyTokenSentinel)) `
         'GITCODE_TOKEN reached a child process'
+
+    Write-Host '[test] forged managed wrapper content'
+    $managedMarker = 'rem Managed by gitcode-cli scripts/dev-setup.ps1'
+    $makeWrapper = Join-Path $installTools 'bin\make.cmd'
+    $savedMakeWrapper = [IO.File]::ReadAllText($makeWrapper, [Text.Encoding]::ASCII)
+    $forgedWrapperMarker = Join-Path $tempRoot 'forged-wrapper-was-run'
+    [IO.File]::WriteAllText($makeWrapper, [string]::Join([Environment]::NewLine, @(
+        $managedMarker
+        '@echo off'
+        "echo forged>>`"$forgedWrapperMarker`""
+    )) + [Environment]::NewLine, [Text.Encoding]::ASCII)
+    try {
+        $forged = Invoke-Setup -ToolsRoot $installTools -LogPath (Join-Path $tempRoot 'forged.log')
+        Assert-Equal 1 $forged.Status "forged wrapper scenario unexpectedly passed`n$($forged.Output)"
+        Assert-True (-not (Test-Path $forgedWrapperMarker)) 'forged marker wrapper was executed'
+        Assert-True ($forged.Output -match 'refusing to overwrite unmanaged wrapper') `
+            'forged wrapper content was not rejected'
+    } finally {
+        [IO.File]::WriteAllText($makeWrapper, $savedMakeWrapper, [Text.Encoding]::ASCII)
+    }
+
+    $preCommitWrapper = Join-Path $installTools 'bin\pre-commit.cmd'
+    $savedPreCommitWrapper = [IO.File]::ReadAllText($preCommitWrapper, [Text.Encoding]::ASCII)
+    $forgedPreCommitMarker = Join-Path $tempRoot 'forged-precommit-was-run'
+    $forgedPreCommitTarget = Join-Path $tempRoot 'forged-precommit.cmd'
+    Set-TestFile $forgedPreCommitTarget @(
+        '@echo off'
+        "echo bad>>`"$forgedPreCommitMarker`""
+        '@echo pre-commit 4.6.1'
+        'exit /b 0'
+    )
+    [IO.File]::WriteAllText($preCommitWrapper, [string]::Join([Environment]::NewLine, @(
+        $managedMarker
+        '@echo off'
+        "`"$forgedPreCommitTarget`" %*"
+    )) + [Environment]::NewLine, [Text.Encoding]::ASCII)
+    try {
+        $forgedPreCommit = Invoke-Setup -ToolsRoot $installTools `
+            -LogPath (Join-Path $tempRoot 'forged-precommit.log')
+        Assert-Equal 1 $forgedPreCommit.Status `
+            "forged pre-commit wrapper unexpectedly passed`n$($forgedPreCommit.Output)"
+        Assert-True (-not (Test-Path $forgedPreCommitMarker)) 'forged pre-commit target was executed'
+        Assert-True ($forgedPreCommit.Output -match 'refusing forged or unmanaged pre-commit wrapper') `
+            'forged pre-commit target was not rejected'
+    } finally {
+        [IO.File]::WriteAllText($preCommitWrapper, $savedPreCommitWrapper, [Text.Encoding]::ASCII)
+    }
+
+    Write-Host '[test] unmanaged and failed pre-commit installation'
+    $unmanagedPreCommitTools = Join-Path $tempRoot 'unmanaged-precommit-tools'
+    $unmanagedVenv = Join-Path $unmanagedPreCommitTools 'pre-commit-4.6.1'
+    New-Item -ItemType Directory -Force -Path $unmanagedVenv | Out-Null
+    Set-TestFile (Join-Path $unmanagedVenv 'keep.txt') @('do-not-modify')
+    $unmanagedPreCommit = Invoke-Setup -ToolsRoot $unmanagedPreCommitTools `
+        -LogPath (Join-Path $tempRoot 'unmanaged-precommit.log')
+    Assert-Equal 1 $unmanagedPreCommit.Status `
+        "unmanaged pre-commit scenario unexpectedly passed`n$($unmanagedPreCommit.Output)"
+    Assert-Equal 'do-not-modify' ((Get-Content -Raw -LiteralPath `
+        (Join-Path $unmanagedVenv 'keep.txt')).Trim()) 'unmanaged pre-commit content was modified'
+    Assert-True ($unmanagedPreCommit.Output -match 'refusing to replace unmanaged pre-commit environment') `
+        'unmanaged pre-commit environment was not rejected'
+
+    $failedPreCommitTools = Join-Path $tempRoot 'failed-precommit-tools'
+    $failedPreCommit = Invoke-Setup -ToolsRoot $failedPreCommitTools `
+        -LogPath (Join-Path $tempRoot 'failed-precommit.log') `
+        -ExtraEnvironment @{ GC_TEST_PRECOMMIT_PIP_FAIL = '1' }
+    Assert-Equal 1 $failedPreCommit.Status `
+        "failed pre-commit installation unexpectedly passed`n$($failedPreCommit.Output)"
+    Assert-True (-not (Test-Path (Join-Path $failedPreCommitTools 'pre-commit-4.6.1'))) `
+        'failed pre-commit install left a final venv'
+    Assert-True (-not (Test-Path (Join-Path $failedPreCommitTools 'bin\pre-commit.cmd'))) `
+        'failed pre-commit install left a wrapper'
+    $failedPreCommitLeftovers = @(Get-ChildItem -Force -LiteralPath $failedPreCommitTools |
+        Where-Object { $_.Name -like '.pre-commit-*' })
+    Assert-Equal 0 $failedPreCommitLeftovers.Count 'failed pre-commit install left staging or backup state'
+
+    Write-Host '[test] nested pre-commit reparse point'
+    $preCommitScripts = Join-Path $installTools 'pre-commit-4.6.1\Scripts'
+    $nestedPreCommitTarget = Join-Path $tempRoot 'nested-precommit-target'
+    [IO.Directory]::Move($preCommitScripts, $nestedPreCommitTarget)
+    New-Item -ItemType Junction -Path $preCommitScripts -Target $nestedPreCommitTarget | Out-Null
+    try {
+        $nestedPreCommit = Invoke-Setup -ToolsRoot $installTools `
+            -LogPath (Join-Path $tempRoot 'nested-precommit.log')
+        Assert-Equal 1 $nestedPreCommit.Status `
+            "nested pre-commit reparse scenario unexpectedly passed`n$($nestedPreCommit.Output)"
+        Assert-True ($nestedPreCommit.Output -match 'pre-commit environment containing a reparse point') `
+            'nested pre-commit reparse point was not rejected'
+    } finally {
+        [IO.Directory]::Delete($preCommitScripts)
+        [IO.Directory]::Move($nestedPreCommitTarget, $preCommitScripts)
+    }
 
     Write-Host '[test] unmanaged artifact protection and system PATH filtering'
     $unmanagedTools = Join-Path $tempRoot 'unmanaged-tools'
@@ -316,11 +469,20 @@ exit 0
     Assert-True ($reparse.Output -match 'refusing to write through reparse point') `
         'reparse-point refusal was not reported'
 
-    Write-Host '[test] old Go without winget guidance'
+    Write-Host '[test] malicious winget path and old Go guidance'
+    $maliciousWingetMarker = Join-Path $tempRoot 'malicious-winget-was-run'
+    $maliciousWinget = Join-Path $stubBin 'winget.exe'
+    Copy-Item -LiteralPath $stubExecutable -Destination $maliciousWinget
     $oldGoTools = Join-Path $tempRoot 'old-go-tools'
     $oldGo = Invoke-Setup -ToolsRoot $oldGoTools -LogPath (Join-Path $tempRoot 'old-go.log') `
-        -GoVersion 'go1.21.13'
+        -GoVersion 'go1.21.13' -ExtraEnvironment @{
+            GC_DEV_WINGET_PATH = $maliciousWinget
+            GC_TEST_WINGET_MARKER = $maliciousWingetMarker
+        }
     Assert-Equal 1 $oldGo.Status "old Go scenario unexpectedly passed`n$($oldGo.Output)"
+    Assert-True (-not (Test-Path $maliciousWingetMarker)) 'untrusted winget from PATH was executed'
+    Assert-True ($oldGo.Output -match 'ignoring untrusted winget path') `
+        'untrusted winget path was not reported'
     Assert-True ($oldGo.Output -match 'winget unavailable; download and install from https://go.dev/dl/') `
         'old Go without winget did not provide actionable guidance'
 

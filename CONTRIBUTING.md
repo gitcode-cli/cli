@@ -101,6 +101,11 @@ make dev-doctor   # check only, exits non-zero when gaps remain
 On a fresh host, invoke the platform script directly first. `make dev-setup`
 cannot bootstrap Make itself because Make is needed to enter that target.
 
+On Linux, install Go 1.22 or newer from
+[go.dev/dl](https://go.dev/dl/) when it is not already available. The script
+does not install a distribution `golang-go` package because supported
+distribution releases may provide an older, unsupported Go version.
+
 Both scripts are idempotent and install tooling only. They never read, write,
 or print `GC_TOKEN` / `GITCODE_TOKEN`; the variables are removed from the
 script process before package managers, compilers, or installed tools run.

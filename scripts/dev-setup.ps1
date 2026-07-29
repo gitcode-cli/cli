@@ -30,7 +30,7 @@ $ToolsRoot = if ($env:GC_DEV_TOOLS_DIR) { $env:GC_DEV_TOOLS_DIR } else {
     Join-Path $env:LOCALAPPDATA 'gitcode-cli\dev-tools'
 }
 $ManagedBin = Join-Path $ToolsRoot 'bin'
-$PreCommitVenv = Join-Path $ToolsRoot 'pre-commit'
+$PreCommitVenv = Join-Path $ToolsRoot "pre-commit-$PreCommitVersion"
 $ManagedMarker = 'rem Managed by gitcode-cli scripts/dev-setup.ps1'
 $ManagedGoTools = @{
     'golangci-lint' = @{
@@ -48,6 +48,10 @@ $ManagedWrappers = @('make.cmd', 'pre-commit.cmd', 'python3.cmd')
 $OldGoCache = $env:GOCACHE
 $OldGoTmpDir = $env:GOTMPDIR
 $OldGoProxy = $env:GOPROXY
+$OldAppData = $env:APPDATA
+$OldGoEnv = $env:GOENV
+$OldGoPath = $env:GOPATH
+$OldGoModCache = $env:GOMODCACHE
 $CheckTempRoot = $null
 $script:Missing = @()
 
@@ -85,6 +89,82 @@ function Get-SystemCommandPath {
         if ($command.Source -and -not (Test-IsManagedPath $command.Source)) {
             return $command.Source
         }
+    }
+    return $null
+}
+
+function Test-PathUnderRoot {
+    param([string]$Path, [string]$Root)
+    try {
+        $fullPath = [IO.Path]::GetFullPath($Path)
+        $fullRoot = [IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
+    } catch {
+        return $false
+    }
+    return $fullPath.Equals($fullRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        $fullPath.StartsWith("$fullRoot\", [StringComparison]::OrdinalIgnoreCase)
+}
+
+function Test-PathComponentsReparseFree {
+    param([string]$Path, [string]$Root)
+    if (-not (Test-PathUnderRoot $Path $Root)) { return $false }
+    $fullRoot = [IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
+    $fullPath = [IO.Path]::GetFullPath($Path)
+    $relative = $fullPath.Substring($fullRoot.Length).TrimStart('\', '/')
+    $current = $fullRoot
+    foreach ($part in $relative -split '[\\/]') {
+        if (-not $part) { continue }
+        $current = Join-Path $current $part
+        if ((Get-PathItem $current) -and (Test-IsReparsePoint $current)) { return $false }
+    }
+    return $true
+}
+
+function Test-TrustedWingetPath {
+    param([string]$Path)
+    if (-not $Path -or [IO.Path]::GetFileName($Path) -ne 'winget.exe') { return $false }
+    $roots = @(
+        [Environment]::GetFolderPath([Environment+SpecialFolder]::Windows),
+        [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)
+    ) | Where-Object { $_ }
+    $trustedRoot = $roots | Where-Object { Test-PathUnderRoot $Path $_ } | Select-Object -First 1
+    if (-not $trustedRoot -or -not (Test-PathComponentsReparseFree $Path $trustedRoot)) { return $false }
+    $item = Get-PathItem $Path
+    if (-not $item -or $item.PSIsContainer) { return $false }
+    try {
+        $signature = Microsoft.PowerShell.Security\Get-AuthenticodeSignature -FilePath $Path
+        return $signature.Status -eq 'Valid' -and $signature.SignerCertificate -and
+            $signature.SignerCertificate.Subject -match '(^|,\s*)O=Microsoft Corporation(,|$)'
+    } catch {
+        return $false
+    }
+}
+
+function Get-TrustedWingetPath {
+    if ($env:GC_DEV_WINGET_PATH) {
+        if (Test-TrustedWingetPath $env:GC_DEV_WINGET_PATH) {
+            return [IO.Path]::GetFullPath($env:GC_DEV_WINGET_PATH)
+        }
+        Write-Info "ignoring untrusted winget path: $($env:GC_DEV_WINGET_PATH)"
+        return $null
+    }
+
+    $candidates = @(
+        (Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)) 'System32\winget.exe')
+    )
+    try {
+        $packages = Appx\Get-AppxPackage -Name Microsoft.DesktopAppInstaller -ErrorAction Stop |
+            Sort-Object Version -Descending
+        foreach ($package in $packages) {
+            if ($package.InstallLocation) {
+                $candidates += Join-Path $package.InstallLocation 'winget.exe'
+            }
+        }
+    } catch {
+        Write-Info 'unable to query the trusted App Installer package'
+    }
+    foreach ($candidate in $candidates) {
+        if (Test-TrustedWingetPath $candidate) { return [IO.Path]::GetFullPath($candidate) }
     }
     return $null
 }
@@ -168,7 +248,7 @@ function Install-WingetPackage {
     param([string]$Name, [string]$PackageId, [string[]]$VersionArguments = @('--version'))
     if (Test-SystemCommandWorks $Name $VersionArguments) { return }
     if ($Check) { return }
-    $winget = Get-SystemCommandPath winget
+    $winget = Get-TrustedWingetPath
     if (-not $winget) {
         Write-Gap "$Name (winget unavailable; install $PackageId manually)"
         return
@@ -185,16 +265,32 @@ function Initialize-CheckEnvironment {
     $script:CheckTempRoot = Join-Path ([IO.Path]::GetTempPath()) "gc-dev-check-$([guid]::NewGuid().ToString('N'))"
     $cache = Join-Path $script:CheckTempRoot 'gocache'
     $tmp = Join-Path $script:CheckTempRoot 'gotmp'
-    New-Item -ItemType Directory -Force -Path $cache, $tmp | Out-Null
+    $appData = Join-Path $script:CheckTempRoot 'appdata'
+    New-Item -ItemType Directory -Force -Path $cache, $tmp, $appData | Out-Null
+    $effectiveGoPath = if ($OldGoPath) { $OldGoPath } else { Join-Path $env:USERPROFILE 'go' }
+    $firstGoPath = ($effectiveGoPath -split ';')[0]
+    $effectiveGoModCache = if ($OldGoModCache) {
+        $OldGoModCache
+    } else {
+        Join-Path $firstGoPath 'pkg\mod'
+    }
     $env:GOCACHE = $cache
     $env:GOTMPDIR = $tmp
     $env:GOPROXY = 'off'
+    $env:APPDATA = $appData
+    $env:GOENV = 'off'
+    $env:GOPATH = $effectiveGoPath
+    $env:GOMODCACHE = $effectiveGoModCache
 }
 
 function Remove-CheckEnvironment {
     Restore-EnvironmentVariable GOCACHE $OldGoCache
     Restore-EnvironmentVariable GOTMPDIR $OldGoTmpDir
     Restore-EnvironmentVariable GOPROXY $OldGoProxy
+    Restore-EnvironmentVariable APPDATA $OldAppData
+    Restore-EnvironmentVariable GOENV $OldGoEnv
+    Restore-EnvironmentVariable GOPATH $OldGoPath
+    Restore-EnvironmentVariable GOMODCACHE $OldGoModCache
     if ($script:CheckTempRoot) {
         Remove-Item -LiteralPath $script:CheckTempRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
@@ -318,6 +414,27 @@ function Find-GitBash {
     return $null
 }
 
+function Get-ManagedWrapperText {
+    param([string[]]$Lines)
+    return [string]::Join([Environment]::NewLine, @($ManagedMarker, '@echo off') + $Lines) +
+        [Environment]::NewLine
+}
+
+function Test-ManagedWrapperContent {
+    param([string]$Path, [string[]]$Lines)
+    $leaf = [IO.Path]::GetFileName($Path)
+    $parent = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($Path))
+    if ($ManagedWrappers -notcontains $leaf -or
+        -not $parent.Equals([IO.Path]::GetFullPath($ManagedBin), [StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+    if (-not (Test-ManagedLocationSafe $Path)) { return $false }
+    $item = Get-PathItem $Path
+    if (-not $item -or $item.PSIsContainer -or (Test-IsReparsePoint $Path)) { return $false }
+    return [IO.File]::ReadAllText($Path, [Text.Encoding]::ASCII) -ceq
+        (Get-ManagedWrapperText $Lines)
+}
+
 function Write-ManagedWrapper {
     param([string]$Path, [string[]]$Lines)
     $leaf = [IO.Path]::GetFileName($Path)
@@ -328,15 +445,13 @@ function Write-ManagedWrapper {
         return $false
     }
     if (-not (Ensure-SafeManagedDirectory $ManagedBin)) { return $false }
-
     $item = Get-PathItem $Path
     if ($item) {
         if (Test-IsReparsePoint $Path) {
             Write-Gap "refusing to replace reparse point: $Path"
             return $false
         }
-        $first = Get-Content -LiteralPath $Path -TotalCount 1
-        if ($first -ne $ManagedMarker) {
+        if (-not (Test-ManagedWrapperContent $Path $Lines)) {
             Write-Gap "refusing to overwrite unmanaged wrapper: $Path"
             return $false
         }
@@ -344,9 +459,10 @@ function Write-ManagedWrapper {
 
     $temporary = Join-Path $ManagedBin ".$leaf-$([guid]::NewGuid().ToString('N')).tmp"
     try {
-        [IO.File]::WriteAllLines($temporary, @($ManagedMarker, '@echo off') + $Lines, [Text.Encoding]::ASCII)
-        if (Test-IsReparsePoint $Path) {
-            Write-Gap "refusing to replace reparse point: $Path"
+        [IO.File]::WriteAllText($temporary, (Get-ManagedWrapperText $Lines), [Text.Encoding]::ASCII)
+        $current = Get-PathItem $Path
+        if ($current -and -not (Test-ManagedWrapperContent $Path $Lines)) {
+            Write-Gap "refusing to replace changed or unmanaged wrapper: $Path"
             return $false
         }
         Publish-FileAtomically $temporary $Path
@@ -359,18 +475,9 @@ function Write-ManagedWrapper {
     return $true
 }
 
-function Test-ManagedWrapperOwnership {
-    param([string]$Path)
-    if (-not (Test-ManagedLocationSafe $Path)) { return $false }
-    if (-not (Get-PathItem $Path) -or (Test-IsReparsePoint $Path)) { return $false }
-    if ($ManagedWrappers -notcontains [IO.Path]::GetFileName($Path)) { return $false }
-    if ((Get-Content -LiteralPath $Path -TotalCount 1) -ne $ManagedMarker) { return $false }
-    return $true
-}
-
 function Test-ManagedWrapper {
-    param([string]$Path, [string[]]$Arguments = @('--version'))
-    if (-not (Test-ManagedWrapperOwnership $Path)) { return $false }
+    param([string]$Path, [string[]]$Lines, [string[]]$Arguments = @('--version'))
+    if (-not (Test-ManagedWrapperContent $Path $Lines)) { return $false }
     & $Path @Arguments > $null 2>&1
     return ($LASTEXITCODE -eq 0)
 }
@@ -391,34 +498,103 @@ function Find-Python {
     return $null
 }
 
+function Test-ReparseFreeTree {
+    param([string]$Root)
+    if (-not (Get-PathItem $Root)) { return $false }
+    if (-not (Test-PathComponentsReparseFree $Root $ToolsRoot)) { return $false }
+    $queue = New-Object 'Collections.Generic.Queue[string]'
+    $queue.Enqueue([IO.Path]::GetFullPath($Root))
+    while ($queue.Count -gt 0) {
+        $current = $queue.Dequeue()
+        $item = Get-PathItem $current
+        if (-not $item -or (Test-IsReparsePoint $current)) { return $false }
+        if (-not $item.PSIsContainer) { continue }
+        try {
+            $children = @(Get-ChildItem -Force -LiteralPath $current)
+        } catch {
+            return $false
+        }
+        foreach ($child in $children) {
+            if (($child.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { return $false }
+            if ($child.PSIsContainer) { $queue.Enqueue($child.FullName) }
+        }
+    }
+    return $true
+}
+
+function Get-PreCommitVersion {
+    param([string]$Path)
+    if (-not (Get-PathItem $Path) -or (Test-IsReparsePoint $Path)) { return '' }
+    $output = @(& $Path --version 2>$null)
+    if ($LASTEXITCODE -ne 0 -or $output.Count -ne 1) { return '' }
+    return [string]$output[0]
+}
+
 function Ensure-PreCommit {
     param([string]$Python)
-    $binary = Join-Path $ManagedBin 'pre-commit.cmd'
-    $current = ''
-    if (Test-ManagedWrapperOwnership $binary) {
-        $current = ((& $binary --version 2>$null) -split '\s+')[-1]
+    $wrapper = Join-Path $ManagedBin 'pre-commit.cmd'
+    $target = Join-Path $PreCommitVenv 'Scripts\pre-commit.exe'
+    $wrapperLines = @("`"$target`" %*")
+    $wrapperItem = Get-PathItem $wrapper
+    $wrapperManaged = $wrapperItem -and (Test-ManagedWrapperContent $wrapper $wrapperLines)
+    if ($wrapperItem -and -not $wrapperManaged) {
+        Write-Gap "refusing forged or unmanaged pre-commit wrapper: $wrapper"
+        return
     }
-    if ($current -eq $PreCommitVersion) { Write-Ok "pre-commit $PreCommitVersion ($binary)"; return }
-    if ($Check) { Write-Gap "pre-commit $PreCommitVersion$(if($current){" (found $current)"})"; return }
-    if ((Get-PathItem $PreCommitVenv) -and (Test-IsReparsePoint $PreCommitVenv)) {
-        Write-Gap "refusing to write pre-commit through reparse point: $PreCommitVenv"
+
+    $venvItem = Get-PathItem $PreCommitVenv
+    $current = ''
+    if ($venvItem) {
+        if (-not $wrapperManaged) {
+            Write-Gap "refusing to replace unmanaged pre-commit environment: $PreCommitVenv"
+            return
+        }
+        if (-not (Test-ReparseFreeTree $PreCommitVenv)) {
+            Write-Gap "refusing pre-commit environment containing a reparse point: $PreCommitVenv"
+            return
+        }
+        $current = Get-PreCommitVersion $target
+        if ($current -ceq "pre-commit $PreCommitVersion") {
+            Write-Ok "pre-commit $PreCommitVersion ($wrapper)"
+            return
+        }
+        Write-Gap "refusing to overwrite invalid managed pre-commit environment: $PreCommitVenv"
+        return
+    }
+    if ($Check) {
+        Write-Gap "pre-commit $PreCommitVersion$(if($current){" (found $current)"})"
         return
     }
     if (-not (Ensure-SafeManagedDirectory $ToolsRoot)) { return }
-    Write-Info "installing pre-commit $PreCommitVersion into $PreCommitVenv"
-    & $Python -m venv $PreCommitVenv
-    if ($LASTEXITCODE -eq 0) {
+
+    $createdVenv = $false
+    $completed = $false
+    try {
+        New-Item -ItemType Directory -Path $PreCommitVenv -ErrorAction Stop | Out-Null
+        $createdVenv = $true
+        Write-Info "installing pre-commit $PreCommitVersion into $PreCommitVenv"
+        & $Python -m venv $PreCommitVenv
+        if ($LASTEXITCODE -ne 0 -or -not (Test-ReparseFreeTree $PreCommitVenv)) {
+            Write-Gap 'pre-commit venv creation failed or produced a reparse point'
+            return
+        }
         $venvPython = Join-Path $PreCommitVenv 'Scripts\python.exe'
         & $venvPython -m pip install --disable-pip-version-check "pre-commit==$PreCommitVersion" > $null
-    }
-    if ($LASTEXITCODE -ne 0) { Write-Gap 'pre-commit venv install failed'; return }
-    $target = Join-Path $PreCommitVenv 'Scripts\pre-commit.exe'
-    if (-not (Get-PathItem $target) -or (Test-IsReparsePoint $target)) {
-        Write-Gap 'pre-commit installation target is missing or a reparse point'
-        return
-    }
-    if (Write-ManagedWrapper $binary @("`"$target`" %*")) {
-        Write-Ok "pre-commit $PreCommitVersion ($binary)"
+        if ($LASTEXITCODE -ne 0 -or -not (Test-ReparseFreeTree $PreCommitVenv)) {
+            Write-Gap 'pre-commit venv install failed or produced a reparse point'
+            return
+        }
+        if ((Get-PreCommitVersion $target) -cne "pre-commit $PreCommitVersion") {
+            Write-Gap 'pre-commit venv version verification failed'
+            return
+        }
+        if (-not (Write-ManagedWrapper $wrapper $wrapperLines)) { return }
+        $completed = $true
+        Write-Ok "pre-commit $PreCommitVersion ($wrapper)"
+    } finally {
+        if (-not $completed -and $createdVenv -and (Test-ReparseFreeTree $PreCommitVenv)) {
+            Remove-Item -LiteralPath $PreCommitVenv -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -437,7 +613,7 @@ try {
 
     $go = Get-SystemCommandPath go
     if (-not $Check -and $go -and -not (Test-GoVersion)) {
-        $winget = Get-SystemCommandPath winget
+        $winget = Get-TrustedWingetPath
         if ($winget) {
             Write-Info 'upgrading Go with winget'
             & $winget upgrade --id GoLang.Go --exact --source winget `
@@ -492,28 +668,37 @@ try {
         if ($found) { $realMake = $found; break }
     }
     $makeWrapper = Join-Path $ManagedBin 'make.cmd'
-    if ($Check) {
-        if ($gitBash -and (Test-ManagedWrapper $makeWrapper)) {
-            Write-Ok "managed make wrapper ($makeWrapper)"
-        } else { Write-Gap 'managed make wrapper' }
-    } elseif ($realMake -and $gitBash) {
+    $makeWrapperLines = $null
+    if ($realMake -and $gitBash) {
         $fso = New-Object -ComObject Scripting.FileSystemObject
         $shortBash = ($fso.GetFile($gitBash).ShortPath) -replace '\\', '/'
         [void][Runtime.InteropServices.Marshal]::ReleaseComObject($fso)
-        if (Write-ManagedWrapper $makeWrapper @(
+        $makeWrapperLines = @(
             "`"$realMake`" `"SHELL=$shortBash`" `".SHELLFLAGS=-c`" %*"
-        )) { Write-Ok "managed make wrapper ($makeWrapper)" }
+        )
+    }
+    if ($Check) {
+        if ($makeWrapperLines -and (Test-ManagedWrapper $makeWrapper $makeWrapperLines)) {
+            Write-Ok "managed make wrapper ($makeWrapper)"
+        } else { Write-Gap 'managed make wrapper' }
+    } elseif ($makeWrapperLines) {
+        if (Write-ManagedWrapper $makeWrapper $makeWrapperLines) {
+            Write-Ok "managed make wrapper ($makeWrapper)"
+        }
     } else { Write-Gap 'GNU make and Git bash' }
 
     $python = Find-Python
     if ($python) {
         Write-Ok "python ($python)"
         $pythonWrapper = Join-Path $ManagedBin 'python3.cmd'
+        $pythonWrapperLines = @("`"$python`" %*")
         if (-not $Check) {
-            if (Write-ManagedWrapper $pythonWrapper @("`"$python`" %*")) {
+            if (Write-ManagedWrapper $pythonWrapper $pythonWrapperLines) {
                 Write-Ok "managed python3 wrapper ($pythonWrapper)"
             }
-        } elseif (Test-ManagedWrapper $pythonWrapper) { Write-Ok 'managed python3 wrapper' }
+        } elseif (Test-ManagedWrapper $pythonWrapper $pythonWrapperLines) {
+            Write-Ok 'managed python3 wrapper'
+        }
         else { Write-Gap 'managed python3 wrapper' }
         Ensure-PreCommit $python
     } else { Write-Gap 'Python 3' }

@@ -134,12 +134,12 @@ docker compose up gc
 全新宿主机先直接运行平台脚本（此时可能还没有 Make）：
 
 ```bash
-# Linux / macOS：安装核心验证依赖；打包依赖追加 --with-packaging
+# Linux / macOS：安装核心验证依赖
 bash scripts/dev-setup.sh
 ```
 
 ```powershell
-# Windows PowerShell：打包依赖追加 -WithPackaging
+# Windows PowerShell：安装核心验证依赖
 powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1
 ```
 

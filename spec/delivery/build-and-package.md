@@ -115,7 +115,7 @@ make release-snapshot
 
 ```bash
 go mod tidy
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.40.0
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 pip install --upgrade build wheel setuptools
 ```
 
@@ -142,7 +142,7 @@ make dev-doctor
 - 全新宿主机应先直接运行平台脚本，因为此时可能还没有 Make
 - `.devcontainer/` 提供隔离、可复现的完整环境；宿主机脚本提供无需容器的本地验证路径
 - 宿主机脚本不安装打包/发布工具；`nfpm`、`goreleaser` 和 Python build 工具继续按本节手工命令或 `.devcontainer/` 管理
-- 两个平台脚本都不自动修改 shell profile 或用户 `PATH`；需要时由用户手工加入项目专属受管工具目录
+- 两个平台脚本都不自动修改 shell profile 或用户 `PATH`；后续 shell 使用受管工具前，必须按脚本输出手工加入项目专属受管工具目录
 
 ## 6. 本地构建验证
 

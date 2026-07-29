@@ -45,12 +45,12 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Validate host setup check mode (Unix)
+      - name: Validate host setup contract (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: bash scripts/test-dev-setup.sh
 
-      - name: Validate host setup check mode (Windows)
+      - name: Validate host setup contract (Windows)
         if: runner.os == 'Windows'
         shell: powershell
         run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-dev-setup.ps1

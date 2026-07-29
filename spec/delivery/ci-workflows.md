@@ -121,7 +121,7 @@ test ──┬──→ build
 |-------------|----------------|----------------|
 | `go test ./...` | Linux `test`（`-race`） | 3 OS `test`（`-race`） |
 | release workflow 版本输入校验 | Linux `test` | 3 OS `test` |
-| 宿主机 setup 检查模式无持久化副作用 | 不覆盖 | 3 OS `test` 运行 `scripts/test-dev-setup.*` |
+| 宿主机 setup 安装、幂等、隔离与防覆盖契约 | 不覆盖 | 3 OS `test` 运行 `scripts/test-dev-setup.*` |
 | `go build` | Linux `build` | 3 OS `build` |
 | 格式/规范检查 | Linux `lint` | Linux `lint` |
 | Docker / wheel 入口 | Linux `docker` | Linux `docker` |

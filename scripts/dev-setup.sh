@@ -20,14 +20,17 @@ GO_MIN_MINOR=22
 GOLANGCI_VERSION="v2.12.2"
 GITLEAKS_VERSION="v8.30.1"
 PRE_COMMIT_VERSION="4.6.1"
+GOLANGCI_MODULE="github.com/golangci/golangci-lint/v2"
+GOLANGCI_PACKAGE="$GOLANGCI_MODULE/cmd/golangci-lint"
+GITLEAKS_MODULE="github.com/zricethezav/gitleaks/v8"
 TOOLS_ROOT="${GC_DEV_TOOLS_DIR:-$HOME/.local/share/gitcode-cli/dev-tools}"
 MANAGED_BIN="$TOOLS_ROOT/bin"
-PRE_COMMIT_VENV="$TOOLS_ROOT/pre-commit"
+PRE_COMMIT_VENV="$TOOLS_ROOT/pre-commit-$PRE_COMMIT_VERSION"
+MANAGED_WRAPPER_MARKER="# Managed by gitcode-cli scripts/dev-setup.sh"
+SYSTEM_PATH="$PATH"
 CHECK_ONLY=0
 MISSING=()
-
-# Managed tools are available to this process only. No profile is modified.
-export PATH="$MANAGED_BIN:$PATH"
+SMOKE_DIR=""
 
 case "${1:-}" in
     "") ;;
@@ -41,22 +44,43 @@ info() { printf '  %s\n' "$1"; }
 ok() { printf 'ok   %s\n' "$1"; }
 gap() { printf 'MISS %s\n' "$1"; MISSING+=("$1"); }
 section() { printf '\n[%s]\n' "$1"; }
-have() { command -v "$1" >/dev/null 2>&1; }
 
-managed_or_path() {
-    local name="$1"
-    if [[ -x "$MANAGED_BIN/$name" ]]; then
-        printf '%s\n' "$MANAGED_BIN/$name"
-    else
-        command -v "$name" 2>/dev/null || true
-    fi
+system_command() {
+    PATH="$SYSTEM_PATH" command -v "$1" 2>/dev/null || true
+}
+
+have_system() {
+    [[ -n "$(system_command "$1")" ]]
+}
+
+run_system() {
+    local binary
+    binary="$(system_command "$1")"
+    [[ -n "$binary" ]] || return 127
+    shift
+    "$binary" "$@"
+}
+
+safe_managed_dir() {
+    local path
+    for path in "$TOOLS_ROOT" "$MANAGED_BIN"; do
+        if [[ -L "$path" ]]; then
+            gap "refusing managed symlink directory: $path"
+            return 1
+        fi
+    done
+    mkdir -p "$TOOLS_ROOT" "$MANAGED_BIN"
 }
 
 run_as_root() {
+    local sudo_path
     if [[ "$(id -u)" -eq 0 ]]; then
         "$@"
-    elif have sudo; then
-        sudo -- "$@"
+        return
+    fi
+    sudo_path="$(system_command sudo)"
+    if [[ -n "$sudo_path" ]]; then
+        "$sudo_path" -- "$@"
     else
         gap "sudo (required to install system packages)"
         return 1
@@ -64,8 +88,10 @@ run_as_root() {
 }
 
 go_version_ok() {
-    local raw major minor
-    raw="$(go env GOVERSION 2>/dev/null || true)"
+    local go_path raw major minor
+    go_path="$(system_command go)"
+    [[ -n "$go_path" ]] || return 1
+    raw="$("$go_path" env GOVERSION 2>/dev/null || true)"
     raw="${raw#go}"
     major="${raw%%.*}"
     minor="${raw#*.}"; minor="${minor%%.*}"
@@ -74,60 +100,116 @@ go_version_ok() {
 }
 
 compiler_available() {
-    have cc || have gcc || have clang
+    have_system cc || have_system gcc || have_system clang
+}
+
+managed_wrapper_valid() {
+    local path="$1"
+    [[ -f "$path" && ! -L "$path" ]] || return 1
+    [[ "$(head -n 1 "$path" 2>/dev/null || true)" == "$MANAGED_WRAPPER_MARKER" ]]
+}
+
+write_managed_wrapper() {
+    local path="$1" target="$2" tmp
+    if [[ -e "$path" || -L "$path" ]]; then
+        managed_wrapper_valid "$path" || {
+            gap "refusing to overwrite unmanaged wrapper: $path"
+            return 1
+        }
+    fi
+    safe_managed_dir || return 1
+    tmp="$(mktemp "$MANAGED_BIN/.wrapper.XXXXXX")"
+    {
+        printf '%s\n' "$MANAGED_WRAPPER_MARKER"
+        printf 'exec %q "$@"\n' "$target"
+    } >"$tmp"
+    chmod 0755 "$tmp"
+    mv -f "$tmp" "$path"
 }
 
 install_system_dependencies() {
     (( CHECK_ONLY )) && return 0
 
-    local need=0
-    for tool in go git make bash python3; do have "$tool" || need=1; done
+    local need=0 tool package_manager
+    for tool in go git make bash python3; do
+        have_system "$tool" || need=1
+    done
     compiler_available || need=1
     (( need )) || return 0
 
     section "System dependencies"
     case "$(uname -s)" in
         Darwin)
-            if ! have brew; then
+            if ! have_system brew; then
                 gap "Homebrew (install from https://brew.sh)"
                 return
             fi
             info "installing Go, Git, GNU Make, Bash, and Python with Homebrew"
-            brew install go git make bash python
-            if ! have make && have gmake; then
-                mkdir -p "$MANAGED_BIN"
-                ln -sfn "$(command -v gmake)" "$MANAGED_BIN/make"
+            run_system brew install go git make bash python
+            if ! have_system make && have_system gmake; then
+                write_managed_wrapper "$MANAGED_BIN/make" "$(system_command gmake)" || true
             fi
             compiler_available || gap "C compiler (run: xcode-select --install)"
             ;;
         *)
-            if have apt-get; then
-                run_as_root apt-get update
-                run_as_root apt-get install -y golang-go git make bash python3 python3-venv build-essential ca-certificates
-            elif have dnf; then
-                run_as_root dnf install -y golang git make bash python3 gcc gcc-c++ ca-certificates
-            elif have yum; then
-                run_as_root yum install -y golang git make bash python3 gcc gcc-c++ ca-certificates
-            elif have pacman; then
-                # Do not use pacman -Sy: partial upgrades are unsupported.
-                run_as_root pacman -S --needed --noconfirm go git make bash python base-devel ca-certificates
-            elif have zypper; then
-                run_as_root zypper --non-interactive install go git make bash python3 gcc gcc-c++ ca-certificates
-            else
-                gap "supported package manager (apt, dnf, yum, pacman, zypper, or brew)"
-            fi
+            for package_manager in apt-get dnf yum pacman zypper; do
+                have_system "$package_manager" && break
+                package_manager=""
+            done
+            case "$package_manager" in
+                apt-get)
+                    run_as_root "$(system_command apt-get)" update
+                    run_as_root "$(system_command apt-get)" install -y golang-go git make bash python3 python3-venv build-essential ca-certificates
+                    ;;
+                dnf)
+                    run_as_root "$(system_command dnf)" install -y golang git make bash python3 gcc gcc-c++ ca-certificates
+                    ;;
+                yum)
+                    run_as_root "$(system_command yum)" install -y golang git make bash python3 gcc gcc-c++ ca-certificates
+                    ;;
+                pacman)
+                    run_as_root "$(system_command pacman)" -S --needed --noconfirm go git make bash python base-devel ca-certificates
+                    ;;
+                zypper)
+                    run_as_root "$(system_command zypper)" --non-interactive install go git make bash python3 gcc gcc-c++ ca-certificates
+                    ;;
+                *)
+                    gap "supported package manager (apt, dnf, yum, pacman, zypper, or brew)"
+                    ;;
+            esac
             ;;
     esac
 }
 
 go_tool_version() {
-    local binary="$1" module="$2"
-    go version -m "$binary" 2>/dev/null | awk -v module="$module" '$1 == "mod" && $2 == module { print $3; exit }'
+    local binary="$1" module="$2" go_path
+    go_path="$(system_command go)"
+    [[ -n "$go_path" && -f "$binary" && ! -L "$binary" ]] || return 0
+    "$go_path" version -m "$binary" 2>/dev/null |
+        awk -v module="$module" '$1 == "mod" && $2 == module { print $3; exit }'
+}
+
+go_tool_candidate() {
+    local name="$1" module="$2" candidate
+    candidate="$MANAGED_BIN/$name"
+    if [[ -e "$candidate" || -L "$candidate" ]]; then
+        [[ "$(go_tool_version "$candidate" "$module")" != "" ]] && {
+            printf '%s\n' "$candidate"
+            return 0
+        }
+        return 0
+    fi
+    candidate="$(system_command "$name")"
+    [[ -n "$candidate" && "$(go_tool_version "$candidate" "$module")" != "" ]] &&
+        printf '%s\n' "$candidate"
+    return 0
 }
 
 ensure_go_tool() {
-    local name="$1" module="$2" version="$3" binary current
-    binary="$(managed_or_path "$name")"
+    local name="$1" module="$2" package="$3" version="$4"
+    local binary current target temp_dir temp_binary go_path
+    target="$MANAGED_BIN/$name"
+    binary="$(go_tool_candidate "$name" "$module")"
     current=""
     [[ -n "$binary" ]] && current="$(go_tool_version "$binary" "$module")"
     if [[ "$current" == "$version" ]]; then
@@ -138,13 +220,38 @@ ensure_go_tool() {
         gap "$name $version${current:+ (found $current)}"
         return
     fi
-    mkdir -p "$MANAGED_BIN"
-    info "installing $name $version into $MANAGED_BIN"
-    if GOBIN="$MANAGED_BIN" go install "$module@$version"; then
-        ok "$name $version ($MANAGED_BIN/$name)"
-    else
-        gap "$name $version (go install failed)"
+    if [[ -e "$target" || -L "$target" ]]; then
+        [[ -f "$target" && ! -L "$target" && -n "$(go_tool_version "$target" "$module")" ]] || {
+            gap "refusing to overwrite unmanaged tool: $target"
+            return
+        }
     fi
+    safe_managed_dir || return
+    temp_dir="$(mktemp -d "$TOOLS_ROOT/.install-$name.XXXXXX")"
+    temp_binary="$temp_dir/$name"
+    go_path="$(system_command go)"
+    info "installing $name $version into $MANAGED_BIN"
+    if GOBIN="$temp_dir" "$go_path" install "$package@$version" &&
+        [[ "$(go_tool_version "$temp_binary" "$module")" == "$version" ]]; then
+        chmod 0755 "$temp_binary"
+        mv -f "$temp_binary" "$target"
+        ok "$name $version ($target)"
+    else
+        gap "$name $version (verified go install failed)"
+    fi
+    rm -rf "$temp_dir"
+}
+
+system_pre_commit() {
+    system_command pre-commit
+}
+
+managed_pre_commit() {
+    local wrapper="$MANAGED_BIN/pre-commit" expected="$PRE_COMMIT_VENV/bin/pre-commit"
+    [[ -L "$wrapper" && -x "$expected" ]] || return 0
+    [[ "$(readlink "$wrapper" 2>/dev/null || true)" == "$expected" ]] || return 0
+    printf '%s\n' "$expected"
+    return 0
 }
 
 pre_commit_version() {
@@ -153,8 +260,12 @@ pre_commit_version() {
 }
 
 ensure_pre_commit() {
-    local binary current
-    binary="$(managed_or_path pre-commit)"
+    local python_path binary current wrapper expected temp_venv temp_link
+    python_path="$(system_command python3)"
+    wrapper="$MANAGED_BIN/pre-commit"
+    expected="$PRE_COMMIT_VENV/bin/pre-commit"
+    binary="$(managed_pre_commit)"
+    [[ -n "$binary" ]] || binary="$(system_pre_commit)"
     current=""
     [[ -n "$binary" ]] && current="$(pre_commit_version "$binary")"
     if [[ "$current" == "$PRE_COMMIT_VERSION" ]]; then
@@ -165,56 +276,100 @@ ensure_pre_commit() {
         gap "pre-commit $PRE_COMMIT_VERSION${current:+ (found $current)}"
         return
     fi
-    mkdir -p "$TOOLS_ROOT" "$MANAGED_BIN"
+    if [[ -e "$wrapper" || -L "$wrapper" ]]; then
+        [[ -n "$(managed_pre_commit)" ]] || {
+            gap "refusing to overwrite unmanaged wrapper: $wrapper"
+            return
+        }
+    fi
+    if [[ -e "$PRE_COMMIT_VENV" || -L "$PRE_COMMIT_VENV" ]]; then
+        [[ -d "$PRE_COMMIT_VENV" && ! -L "$PRE_COMMIT_VENV" && -x "$expected" ]] || {
+            gap "refusing to overwrite unmanaged pre-commit environment: $PRE_COMMIT_VENV"
+            return
+        }
+        gap "pre-commit $PRE_COMMIT_VERSION (managed environment is invalid)"
+        return
+    fi
+    safe_managed_dir || return
+    temp_venv="$(mktemp -d "$TOOLS_ROOT/.pre-commit.XXXXXX")"
     info "installing pre-commit $PRE_COMMIT_VERSION into $PRE_COMMIT_VENV"
-    if python3 -m venv "$PRE_COMMIT_VENV" &&
-        "$PRE_COMMIT_VENV/bin/python" -m pip install --disable-pip-version-check "pre-commit==$PRE_COMMIT_VERSION" >/dev/null; then
-        ln -sfn "$PRE_COMMIT_VENV/bin/pre-commit" "$MANAGED_BIN/pre-commit"
-        ok "pre-commit $PRE_COMMIT_VERSION ($MANAGED_BIN/pre-commit)"
+    if "$python_path" -m venv "$temp_venv" &&
+        "$temp_venv/bin/python" -m pip install --disable-pip-version-check "pre-commit==$PRE_COMMIT_VERSION" >/dev/null &&
+        [[ "$(pre_commit_version "$temp_venv/bin/pre-commit")" == "$PRE_COMMIT_VERSION" ]]; then
+        mv "$temp_venv" "$PRE_COMMIT_VENV"
+        temp_link="$(mktemp "$MANAGED_BIN/.pre-commit-link.XXXXXX")"
+        rm -f "$temp_link"
+        ln -s "$expected" "$temp_link"
+        [[ -L "$wrapper" ]] && rm -f "$wrapper"
+        mv "$temp_link" "$wrapper"
+        ok "pre-commit $PRE_COMMIT_VERSION ($expected)"
     else
-        gap "pre-commit $PRE_COMMIT_VERSION (venv install failed)"
+        gap "pre-commit $PRE_COMMIT_VERSION (verified venv install failed)"
+        rm -rf "$temp_venv"
     fi
 }
 
 install_system_dependencies
 
 section "Go toolchain"
-if ! have go; then
+if ! have_system go; then
     gap "go ${GO_MIN_MAJOR}.${GO_MIN_MINOR}+ (install from https://go.dev/dl/)"
 elif ! go_version_ok; then
-    if (( ! CHECK_ONLY )) && [[ "$(uname -s)" == "Darwin" ]] && have brew; then
-        brew upgrade go || true
+    if (( ! CHECK_ONLY )) && [[ "$(uname -s)" == "Darwin" ]] && have_system brew; then
+        run_system brew upgrade go || true
     fi
-    go_version_ok || gap "go $(go env GOVERSION) is older than ${GO_MIN_MAJOR}.${GO_MIN_MINOR}; upgrade from https://go.dev/dl/"
+    go_version_ok ||
+        gap "go $("$(system_command go)" env GOVERSION 2>/dev/null || true) is older than ${GO_MIN_MAJOR}.${GO_MIN_MINOR}; upgrade from https://go.dev/dl/"
 else
-    ok "go $(go env GOVERSION) ($(command -v go))"
+    ok "go $("$(system_command go)" env GOVERSION) ($(system_command go))"
 fi
 
 GO_READY=0
-if have go && go_version_ok; then GO_READY=1; fi
+if have_system go && go_version_ok; then
+    GO_READY=1
+    SMOKE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gc-dev-setup.XXXXXX")"
+    trap '[[ -n "$SMOKE_DIR" ]] && rm -rf "$SMOKE_DIR"' EXIT
+    if (( CHECK_ONLY )); then
+        mkdir -p "$SMOKE_DIR/gocache" "$SMOKE_DIR/gotmp"
+        export GOCACHE="$SMOKE_DIR/gocache"
+        export GOTMPDIR="$SMOKE_DIR/gotmp"
+    fi
+fi
 
 if (( GO_READY )); then
+    go_path="$(system_command go)"
     section "Module dependencies"
     if (( CHECK_ONLY )); then
-        GOPROXY=off go list -mod=readonly -deps ./... >/dev/null 2>&1 \
-            && ok "module dependencies resolved" \
-            || gap "module dependencies (run without --check to download)"
+        if GOPROXY=off "$go_path" list -mod=readonly -deps ./... >/dev/null 2>&1; then
+            ok "module dependencies resolved"
+        else
+            gap "module dependencies (run without --check to download)"
+        fi
+    elif "$go_path" mod download; then
+        ok "module dependencies resolved"
     else
-        go mod download && ok "module dependencies resolved"
+        gap "go mod download failed"
     fi
 
     section "Verification tools"
-    ensure_go_tool golangci-lint github.com/golangci/golangci-lint/v2 "$GOLANGCI_VERSION"
-    ensure_go_tool gitleaks github.com/zricethezav/gitleaks/v8 "$GITLEAKS_VERSION"
+    ensure_go_tool golangci-lint "$GOLANGCI_MODULE" "$GOLANGCI_PACKAGE" "$GOLANGCI_VERSION"
+    ensure_go_tool gitleaks "$GITLEAKS_MODULE" "$GITLEAKS_MODULE" "$GITLEAKS_VERSION"
 fi
 
 section "System tools"
-for tool in git make bash python3; do
-    have "$tool" && ok "$tool ($(command -v "$tool"))" || gap "$tool"
+for tool in git bash python3; do
+    have_system "$tool" && ok "$tool ($(system_command "$tool"))" || gap "$tool"
 done
+if have_system make; then
+    ok "make ($(system_command make))"
+elif managed_wrapper_valid "$MANAGED_BIN/make" && "$MANAGED_BIN/make" --version >/dev/null 2>&1; then
+    ok "managed make wrapper ($MANAGED_BIN/make)"
+else
+    gap "make"
+fi
 compiler_available && ok "C compiler" || gap "C compiler (required by go test -race)"
 
-if have python3; then
+if have_system python3; then
     ensure_pre_commit
 else
     gap "pre-commit (Python 3 unavailable)"
@@ -222,28 +377,34 @@ fi
 
 section "Verification"
 if (( GO_READY )); then
-    smoke_dir="$(mktemp -d "${TMPDIR:-/tmp}/gc-dev-setup.XXXXXX")"
-    trap 'rm -rf "$smoke_dir"' EXIT
+    go_path="$(system_command go)"
     if (( CHECK_ONLY )); then
-        build_cmd=(env GOPROXY=off go build -mod=readonly -o "$smoke_dir/gc" ./cmd/gc)
-        race_cmd=(env GOPROXY=off go test -mod=readonly -race ./pkg/config)
+        build_cmd=(env GOPROXY=off "$go_path" build -mod=readonly -o "$SMOKE_DIR/gc" ./cmd/gc)
+        race_cmd=(env GOPROXY=off "$go_path" test -mod=readonly -race ./pkg/config)
     else
-        build_cmd=(go build -o "$smoke_dir/gc" ./cmd/gc)
-        race_cmd=(go test -race ./pkg/config)
+        build_cmd=("$go_path" build -o "$SMOKE_DIR/gc" ./cmd/gc)
+        race_cmd=("$go_path" test -race ./pkg/config)
     fi
-    "${build_cmd[@]}" && "$smoke_dir/gc" version >/dev/null && ok "build and gc version" || gap "build or gc version"
-    compiler_available && "${race_cmd[@]}" >/dev/null && ok "race-enabled test" || gap "race-enabled test"
-    rm -rf "$smoke_dir"; trap - EXIT
+    "${build_cmd[@]}" && "$SMOKE_DIR/gc" version >/dev/null &&
+        ok "build and gc version" || gap "build or gc version"
+    compiler_available && "${race_cmd[@]}" >/dev/null &&
+        ok "race-enabled test" || gap "race-enabled test"
 fi
+
+[[ -n "$SMOKE_DIR" ]] && rm -rf "$SMOKE_DIR"
+SMOKE_DIR=""
+trap - EXIT
 
 printf '\n'
 if (( ${#MISSING[@]} )); then
     printf 'incomplete: %d dependency gap(s)\n' "${#MISSING[@]}"
     printf '  - %s\n' "${MISSING[@]}"
     printf '\nManaged tools directory: %s\n' "$MANAGED_BIN"
-    printf 'Add it to PATH manually if you want these tools in future shells.\n'
+    printf 'After resolving gaps, add it to the current shell PATH:\n'
+    printf '  export PATH=%q:"$PATH"\n' "$MANAGED_BIN"
     exit 1
 fi
 
 printf 'dev environment ready.\nManaged tools: %s\n' "$MANAGED_BIN"
-printf 'This script made no shell profile changes. Add that directory to PATH manually if desired.\n'
+printf 'No shell profile was changed. To use managed tools in this shell, run:\n'
+printf '  export PATH=%q:"$PATH"\n' "$MANAGED_BIN"

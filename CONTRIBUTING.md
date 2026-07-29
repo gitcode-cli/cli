@@ -109,13 +109,16 @@ Authentication stays a separate manual step.
 Project-managed tools are isolated from shared user tool directories:
 
 - Linux/macOS: `~/.local/share/gitcode-cli/dev-tools/bin`. The script does not
-  edit shell profiles; add this directory to `PATH` manually when desired.
+  edit shell profiles; add this directory to `PATH` before using managed tools
+  in a later shell:
+  `export PATH="$HOME/.local/share/gitcode-cli/dev-tools/bin:$PATH"`.
 - Windows: `%LOCALAPPDATA%\gitcode-cli\dev-tools\bin`.
 
-Neither script edits shell profiles or the user `PATH`. Add the managed tools
-directory to `PATH` manually when desired. Managed wrappers are never written
-over files outside the dedicated directory, and the script refuses to replace
-an unrecognized wrapper inside it.
+Neither script edits shell profiles or the user `PATH`. On Windows, add the
+managed tools for the current shell with
+`$env:Path = "$env:LOCALAPPDATA\gitcode-cli\dev-tools\bin;$env:Path"`.
+Managed wrappers are never written over files outside the dedicated directory,
+and the script refuses to replace an unrecognized wrapper inside it.
 
 `--check` / `-Check` is offline and makes no persistent changes. It may return
 non-zero on a clean host to report tools that the install mode would add.

@@ -74,7 +74,8 @@ secrets.yml
 .loop/memory/INDEX.md
 .loop/memory/*-session.md
 
-# Claude Code skills - installed from external source, not committed
+# AI client skills - installed from external source, not committed
 .claude/skills/
 .ai/skills/
+.codex/skills/
 tmp/

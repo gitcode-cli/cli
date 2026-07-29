@@ -87,17 +87,17 @@ GitCode 原生工作流 `.gitcode/workflows/ci.yml` 对齐 GitHub CI 的 Linux �
 
 | Job | 运行环境 | 内容 | 对应质量门禁 |
 |-----|---------|------|-------------|
-| `lint` | ubuntu-24 / x64 / small | golangci-lint v2.12.2 | 代码规范检查（`coding-standards.md`） |
-| `test` | ubuntu-24 / x64 / small | release version 脚本校验 + `go test -v -race -coverprofile` + 覆盖率制品 | 发布输入脚本回归 + 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
-| `build` | ubuntu-24 / x64 / small | Linux `go build` + `gc version` + 二进制制品 | Linux 构建验证（`build-and-package.md`） |
-| `docker` | ubuntu-24 / x64 / medium | 补全生成 + Linux 二进制 + Docker 构建 + wheel 入口冒烟 | 容器化与 wheel 入口验证 |
+| `lint` | codearts-hosted / ubuntu-latest / x64 / small | golangci-lint v2.12.2 | 代码规范检查（`coding-standards.md`） |
+| `test` | codearts-hosted / ubuntu-latest / x64 / small | release version 脚本校验 + `go test -v -race -coverprofile` + 覆盖率制品 | 发布输入脚本回归 + 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
+| `build` | codearts-hosted / ubuntu-latest / x64 / small | Linux `go build` + `gc version` + 二进制制品 | Linux 构建验证（`build-and-package.md`） |
+| `docker` | codearts-hosted / ubuntu-latest / x64 / medium | 补全生成 + Linux 二进制 + Docker 构建 + wheel 入口冒烟 | 容器化与 wheel 入口验证 |
 
 GitHub 工作流 `.github/workflows/ci.yml` 保留原有跨平台覆盖：
 
 | Job | 运行环境 | 内容 |
 |-----|---------|------|
 | `lint` | ubuntu-latest | golangci-lint |
-| `test` | ubuntu-latest / macos-14 / windows-latest | release version 脚本校验 + 单元测试 + 竞态检测 + 覆盖率 |
+| `test` | ubuntu-latest / macos-14 / windows-latest | release version 脚本校验 + 宿主机 setup 安装、幂等、隔离与防覆盖契约 + 单元测试 + 竞态检测 + 覆盖率 |
 | `build` | ubuntu-latest / macos-14 / windows-latest | 跨平台 `go build` + `gc version` |
 | `docker` | ubuntu-latest | Docker 构建 + shell 补全 + wheel 入口冒烟 |
 
@@ -121,6 +121,7 @@ test ──┬──→ build
 |-------------|----------------|----------------|
 | `go test ./...` | Linux `test`（`-race`） | 3 OS `test`（`-race`） |
 | release workflow 版本输入校验 | Linux `test` | 3 OS `test` |
+| 宿主机 setup 安装、幂等、隔离与防覆盖契约 | 不覆盖 | 3 OS `test` 运行 `scripts/test-dev-setup.*` |
 | `go build` | Linux `build` | 3 OS `build` |
 | 格式/规范检查 | Linux `lint` | Linux `lint` |
 | Docker / wheel 入口 | Linux `docker` | Linux `docker` |

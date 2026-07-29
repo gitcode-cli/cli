@@ -158,9 +158,6 @@ func mergeRun(opts *MergeOptions) error {
 			Merged:      true,
 			PullRequest: mergedPR,
 		}
-		if mergedPR != nil && mergedPR.Merged {
-			result.Merged = mergedPR.Merged
-		}
 		if opts.DeleteBranch {
 			result.DeletedBranch = deleteRef
 		}

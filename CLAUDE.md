@@ -52,6 +52,7 @@ Claude 在本仓库中必须遵守：
 - 项目命令固定为 `gc`
 - 项目正式规范以 `spec/` 为准
 - 命令行为以 [docs/COMMANDS.md](./docs/COMMANDS.md) 为准
+- GitCode CLI Skills 以独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 为准，本仓库不维护客户端 Skill 副本
 - 项目阶段说明可参考 [issues-plan/PROGRESS.md](./issues-plan/PROGRESS.md)，但该文档可能滞后，不作为单个 issue / PR 实时状态真相源
 - 流程推进以 `spec/workflows/*` 定义的状态机为准，不能只把 checklist 当完成标准
 - **状态标签必须随流程推进实时更新**（参见 [status-label-checklist.md](./spec/workflows/status-label-checklist.md)）：
@@ -77,7 +78,8 @@ Claude 在本仓库中必须遵守：
 
 - `CLAUDE.md`
 
-历史曾引入 `.ai/skills/` 与 `.claude/skills/` 作为共享 skill 真相源与客户端适配层，但自 commit `a0264be`、`7287d85` 起已停止仓库追踪，改为用户级 `~/.claude/skills/`（worktree-safe）。
+GitCode CLI Skills 已全部迁移到独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)。
+`.ai/skills/` 已废弃；`.claude/skills/` 和 `.codex/skills/` 仅可作为不入库的本地运行时目录。
 
 Claude 应先以 `spec/` 和本文件为主要入口。
 

@@ -1,5 +1,9 @@
 # `gc precommit check` Implementation Plan
 
+> **历史快照：** 本文记录 2026-06-03 的实施计划，功能已经交付，不是当前待执行任务。
+> 文中涉及的仓内 `.ai/skills/`、`.claude/skills/` 或客户端适配步骤已被独立仓库
+> [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 取代。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a `gc precommit check` command that detects pre-commit config, verifies/auto-installs the pre-commit tool, ensures the git hook is initialized, and optionally runs the checks — cross-platform.

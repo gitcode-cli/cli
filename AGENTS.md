@@ -76,10 +76,11 @@
 | `docs/AI-GUIDE.md` | 外部项目通过 AI 使用 `gc` 的说明，不定义本仓库内部流程 |
 | `README.md`、`AGENTS.md`、`CLAUDE.md` | 入口导航，非规则源 |
 | `issues-plan/PROGRESS.md` | 阶段说明，可能滞后 |
-| `.codex/skills/` | Codex 适配层（仍纳入仓库追踪） |
-| `.ai/skills/`、`.claude/skills/` | 历史共享 skill 与客户端适配层（已在 commit `a0264be`、`7287d85` 停止仓库追踪，改为用户级 `~/.claude/skills/`） |
+| `gitcode-cli/skills` | 独立的 GitCode CLI Skills 真相源和分发仓库 |
+| `.ai/skills/` | 已废弃的仓内共享源路径，不再使用或追踪 |
+| `.claude/skills/`、`.codex/skills/` | 客户端本地运行时目录，不纳入本仓库追踪 |
 
-冲突时优先级见 [spec/governance/source-of-truth-matrix.md](./spec/governance/source-of-truth-matrix.md)：`spec/` > `docs/COMMANDS.md` > 远端平台事实/`origin/main` > CI 运行结果 > `.ai/skills/*` > 入口文档。
+冲突时优先级见 [spec/governance/source-of-truth-matrix.md](./spec/governance/source-of-truth-matrix.md)：`spec/` > `docs/COMMANDS.md` > 远端平台事实/`origin/main` > CI 运行结果 > 独立 Skills 仓 > 入口文档。
 
 ## 3. 构建与命令
 
@@ -130,7 +131,23 @@ docker compose up gc
 
 ### 3.5 开发辅助
 
+全新宿主机先直接运行平台脚本（此时可能还没有 Make）：
+
 ```bash
+# Linux / macOS：安装核心验证依赖
+bash scripts/dev-setup.sh
+```
+
+```powershell
+# Windows PowerShell：安装核心验证依赖
+powershell -ExecutionPolicy Bypass -File scripts\dev-setup.ps1
+```
+
+Make 已可用后，可使用统一入口：
+
+```bash
+make dev-setup         # 宿主机安装核心验证依赖（无需容器，跨平台）
+make dev-doctor        # 只检查依赖，不安装；有缺口时非零退出
 make deps              # go mod download + tidy
 make update-deps       # go mod tidy + go get -u ./...
 make dev               # go run ./cmd/gc
@@ -141,6 +158,9 @@ make validate-ai-record FILE=... KIND=...            # 校验单条 AI 记录
 make classify-change-risk BASE=origin/main           # 改动风险分级
 make verify-remote-facts REPO=owner/repo [ISSUE=1] [PR=2] [HEAD_SHA=<sha>]
 ```
+
+宿主机脚本不安装打包/发布工具；`nfpm`、`goreleaser`、Python build 等完整
+打包依赖继续使用 `.devcontainer/` 或发布流程中记录的手工安装路径。
 
 ### 3.6 远端 CI（GitCode 原生 + GitHub 镜像）
 
@@ -155,10 +175,10 @@ Linux/macOS/Windows 跨平台验证。正式规范见 [spec/delivery/ci-workflow
 
 | Job | GitCode Actions | GitHub Actions | 对应门禁 |
 |-----|-----------------|----------------|---------|
-| `lint` | Ubuntu 24 | Ubuntu | 编码规范 |
-| `test` | Ubuntu 24 | Ubuntu / macOS / Windows | 单元测试 + 竞态 + 覆盖率 |
-| `build` | Ubuntu 24 | Ubuntu / macOS / Windows | Linux / 跨平台构建 |
-| `docker` | Ubuntu 24 | Ubuntu | Docker + 补全 + wheel 入口冒烟 |
+| `lint` | Ubuntu latest | Ubuntu | 编码规范 |
+| `test` | Ubuntu latest | Ubuntu / macOS / Windows | 单元测试 + 竞态 + 覆盖率 |
+| `build` | Ubuntu latest | Ubuntu / macOS / Windows | Linux / 跨平台构建 |
+| `docker` | Ubuntu latest | Ubuntu | Docker + 补全 + wheel 入口冒烟 |
 
 依赖：`lint` 与 `test` 并行 → `build`、`docker` 等 `test` 通过后执行；任一 Job 失败即整体失败。
 
@@ -287,6 +307,7 @@ gh run view <run-id> --log --job=<job-id>
 - 项目命令固定为 `gc`
 - 项目正式规范以 `spec/` 为准
 - 命令行为以 [docs/COMMANDS.md](./docs/COMMANDS.md) 为准
+- GitCode CLI Skills 以独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 为准，本仓库不维护客户端 Skill 副本
 - 项目阶段说明可参考 [issues-plan/PROGRESS.md](./issues-plan/PROGRESS.md)，但该文档可能滞后，不作为单个 issue / PR 实时状态真相源
 - 流程推进以 `spec/workflows/*` 定义的状态机为准，不能只把 checklist 当完成标准
 - 判断"某个 issue / 功能是否已合入主干"时，必须以 merged PR 和 `origin/main` 为准，不能只依据 issue 状态、issue comment、release 文案或功能分支存在与否
@@ -309,9 +330,9 @@ gh run view <run-id> --log --job=<job-id>
 当前仓库内的 Codex 项目级入口是：
 
 - `AGENTS.md`
-- `.codex/skills/` Codex 适配层（仍纳入仓库追踪）
 
-历史曾引入 `.ai/skills/` 与 `.claude/skills/` 作为共享 skill 真相源与客户端适配层，但自 commit `a0264be`、`7287d85` 起已停止仓库追踪，改为用户级 `~/.claude/skills/`（worktree-safe）。
+GitCode CLI Skills 已全部迁移到独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)。
+`.ai/skills/` 已废弃；`.codex/skills/` 和 `.claude/skills/` 仅可作为不入库的本地运行时目录。
 
 Codex 应先以 `spec/` 和本文件为主要入口。
 

@@ -9,6 +9,10 @@ on:
 permissions:
   repository: read
 
+env:
+  # Fall back on any proxy error so hosted runners are not tied to one endpoint.
+  GOPROXY: "https://goproxy.cn|https://mirrors.aliyun.com/goproxy/|direct"
+
 defaults:
   run:
     shell: bash
@@ -16,7 +20,7 @@ defaults:
 jobs:
   lint:
     name: Lint
-    runs-on: [codearts-hosted, ubuntu-24, x64, small]
+    runs-on: [codearts-hosted, ubuntu-latest, x64, small]
     steps:
       - name: Checkout
         uses: checkout
@@ -24,17 +28,16 @@ jobs:
       - name: Set up Go
         uses: setup-go
         with:
-          go-version: "1.22"
+          version: "1.22"
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.12.2
-          args: --disable=errcheck --disable=staticcheck
+        run: >-
+          go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+          run --disable=errcheck --disable=staticcheck
 
   test:
     name: Test
-    runs-on: [codearts-hosted, ubuntu-24, x64, small]
+    runs-on: [codearts-hosted, ubuntu-latest, x64, small]
     steps:
       - name: Checkout
         uses: checkout
@@ -42,7 +45,7 @@ jobs:
       - name: Set up Go
         uses: setup-go
         with:
-          go-version: "1.22"
+          version: "1.22"
 
       - name: Validate release version script
         run: bash scripts/test-release-version-validation.sh
@@ -61,7 +64,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: [codearts-hosted, ubuntu-24, x64, small]
+    runs-on: [codearts-hosted, ubuntu-latest, x64, small]
     needs:
       - test
     steps:
@@ -71,7 +74,7 @@ jobs:
       - name: Set up Go
         uses: setup-go
         with:
-          go-version: "1.22"
+          version: "1.22"
 
       - name: Build
         run: |
@@ -91,7 +94,7 @@ jobs:
 
   docker:
     name: Docker
-    runs-on: [codearts-hosted, ubuntu-24, x64, medium]
+    runs-on: [codearts-hosted, ubuntu-latest, x64, medium]
     needs:
       - test
     steps:
@@ -101,7 +104,7 @@ jobs:
       - name: Set up Go
         uses: setup-go
         with:
-          go-version: "1.22"
+          version: "1.22"
 
       - name: Generate completions
         run: |

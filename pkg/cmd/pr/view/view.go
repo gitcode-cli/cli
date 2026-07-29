@@ -330,7 +330,7 @@ func renderPRDetails(out io.Writer, cs *iostreams.ColorScheme, pr *api.PullReque
 	fmt.Fprintf(out, "%s #%d\n", cs.Bold(pr.Title), pr.Number)
 	if pr.Draft {
 		fmt.Fprintf(out, "  State: %s (draft)\n", pr.State)
-	} else if pr.Merged {
+	} else if pr.IsMerged() {
 		fmt.Fprintf(out, "  State: merged\n")
 	} else {
 		fmt.Fprintf(out, "  State: %s\n", pr.State)

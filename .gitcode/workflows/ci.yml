@@ -56,10 +56,14 @@ jobs:
       - name: Run tests
         run: go test -v -race -coverprofile=coverage.out ./...
 
+      - name: Resolve coverage artifact name
+        id: coverage-artifact
+        run: echo "name=coverage-linux-${ATOMGIT_RUN_ID:?}" >> "$ATOMGIT_OUTPUT"
+
       - name: Upload coverage
         uses: upload-artifact
         with:
-          name: coverage-linux-${{ atomgit.run_id }}
+          name: ${{ steps.coverage-artifact.outputs.name }}
           path: coverage.out
 
   build:
@@ -86,10 +90,14 @@ jobs:
           go build -ldflags "${LDFLAGS}" -o bin/gc ./cmd/gc
           bin/gc version
 
+      - name: Resolve binary artifact name
+        id: binary-artifact
+        run: echo "name=gc-ubuntu-${ATOMGIT_RUN_ID:?}" >> "$ATOMGIT_OUTPUT"
+
       - name: Upload binary
         uses: upload-artifact
         with:
-          name: gc-ubuntu-${{ atomgit.run_id }}
+          name: ${{ steps.binary-artifact.outputs.name }}
           path: bin/gc
 
   package:
@@ -134,8 +142,12 @@ jobs:
           echo "=== gitcode version ===" && gitcode version
           echo "=== python -m gc_cli version ===" && python -m gc_cli version
 
+      - name: Resolve wheel artifact name
+        id: wheel-artifact
+        run: echo "name=gc-wheel-${ATOMGIT_RUN_ID:?}" >> "$ATOMGIT_OUTPUT"
+
       - name: Upload wheel
         uses: upload-artifact
         with:
-          name: gc-wheel-${{ atomgit.run_id }}
+          name: ${{ steps.wheel-artifact.outputs.name }}
           path: dist/*.whl

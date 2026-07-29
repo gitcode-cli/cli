@@ -163,7 +163,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $record = "$Tool|$($Arguments -join ' ')|GC=$env:GC_TOKEN|LEGACY=$env:GITCODE_TOKEN" +
     "|CACHE=$env:GOCACHE|TMP=$env:GOTMPDIR|APPDATA=$env:APPDATA|GOENV=$env:GOENV" +
-    "|GOPATH=$env:GOPATH|GOMODCACHE=$env:GOMODCACHE|GOBIN=$env:GOBIN"
+    "|GOPATH=$env:GOPATH|GOMODCACHE=$env:GOMODCACHE|GOPROXY=$env:GOPROXY|GOBIN=$env:GOBIN"
 Add-Content -LiteralPath $env:GC_TEST_CHILD_LOG -Value $record
 
 if ($Tool -eq 'go') {
@@ -296,7 +296,11 @@ exit 0
     $outsideAppData = Join-Path $tempRoot 'outside-check-appdata'
     $checkGoPath = Join-Path $tempRoot 'check-gopath'
     $checkModCache = Join-Path $tempRoot 'check-modcache'
-    New-Item -ItemType Directory -Force -Path $outsideAppData | Out-Null
+    $checkDownloadCache = Join-Path $checkModCache 'cache\download'
+    New-Item -ItemType Directory -Force -Path $outsideAppData, $checkDownloadCache | Out-Null
+    Set-TestFile (Join-Path $checkDownloadCache 'sentinel') @('read-only-source')
+    $checkModCacheEntriesBefore = @(Get-ChildItem -Force -Recurse -LiteralPath $checkModCache).Count
+    $expectedLocalProxy = ([Uri]::new([IO.Path]::GetFullPath($checkDownloadCache))).AbsoluteUri
     $complete = Invoke-Setup -ToolsRoot $installTools -LogPath $installLog -Check -ExtraEnvironment @{
         APPDATA = $outsideAppData
         GOENV = 'outside-goenv-sentinel'
@@ -322,12 +326,19 @@ exit 0
         Assert-True ($line -match '\|APPDATA=([^|]*gc-dev-check-[^|]*\\appdata)\|GOENV=off\|') `
             "check mode did not isolate APPDATA/GOENV: $line"
         Assert-True (-not (Test-Path $Matches[1])) "isolated APPDATA was not removed: $($Matches[1])"
-        Assert-True ($line -match ("\|GOPATH={0}\|GOMODCACHE={1}\|" -f
-            [regex]::Escape($checkGoPath), [regex]::Escape($checkModCache))) `
-            "check mode did not preserve explicit module paths: $line"
+        Assert-True ($line -match
+            '\|GOPATH=([^|]*gc-dev-check-[^|]*\\gopath)\|GOMODCACHE=([^|]*gc-dev-check-[^|]*\\modcache)\|') `
+            "check mode did not isolate GOPATH/GOMODCACHE: $line"
+        Assert-True (-not (Test-Path $Matches[1])) "isolated GOPATH was not removed: $($Matches[1])"
+        Assert-True (-not (Test-Path $Matches[2])) "isolated GOMODCACHE was not removed: $($Matches[2])"
+        Assert-True ($line -match ("\|GOPROXY={0}\|" -f [regex]::Escape($expectedLocalProxy))) `
+            "check mode did not use the original download cache as a local proxy: $line"
     }
     Assert-Equal 0 @(Get-ChildItem -Force -LiteralPath $outsideAppData).Count `
         'check mode wrote Go user config outside the isolated APPDATA'
+    Assert-Equal $checkModCacheEntriesBefore `
+        @(Get-ChildItem -Force -Recurse -LiteralPath $checkModCache).Count `
+        'check mode mutated the original module cache'
     $missingTools = Join-Path $tempRoot 'missing-tools'
     $missing = Invoke-Setup -ToolsRoot $missingTools -LogPath (Join-Path $tempRoot 'missing.log') `
         -SystemPath $emptyBin -Check
@@ -444,8 +455,10 @@ exit 0
         "echo bad>>`"$hijackMarker`""
         'exit /b 77'
     )
+    $unmanagedBinAlias = Join-Path $tempRoot 'unmanaged-bin-alias'
+    New-Item -ItemType Junction -Path $unmanagedBinAlias -Target $unmanagedBin | Out-Null
     $unmanaged = Invoke-Setup -ToolsRoot $unmanagedTools -LogPath (Join-Path $tempRoot 'unmanaged.log') `
-        -SystemPath "$unmanagedBin;$stubBin"
+        -SystemPath "$unmanagedBinAlias;$stubBin"
     Assert-Equal 1 $unmanaged.Status "unmanaged overwrite scenario unexpectedly passed`n$($unmanaged.Output)"
     Assert-Equal 'do-not-overwrite' ((Get-Content -Raw -LiteralPath `
         (Join-Path $unmanagedBin 'golangci-lint.exe')).Trim()) 'unmanaged Go tool was overwritten'

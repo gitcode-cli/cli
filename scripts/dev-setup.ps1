@@ -120,6 +120,18 @@ function Test-PathComponentsReparseFree {
     return $true
 }
 
+function Test-SystemPathEntryAllowed {
+    param([string]$Path)
+    if (-not $Path -or (Test-IsManagedPath $Path)) { return $false }
+    try {
+        $fullPath = [IO.Path]::GetFullPath($Path.Trim('"'))
+        $root = [IO.Path]::GetPathRoot($fullPath)
+    } catch {
+        return $false
+    }
+    return $root -and (Test-PathComponentsReparseFree $fullPath $root)
+}
+
 function Test-TrustedWingetPath {
     param([string]$Path)
     if (-not $Path -or [IO.Path]::GetFileName($Path) -ne 'winget.exe') { return $false }
@@ -185,7 +197,7 @@ function Refresh-SystemPath {
         $paths += [Environment]::GetEnvironmentVariable('Path', 'User')
     }
     $entries = $paths -join ';' -split ';' | Where-Object {
-        $_ -and -not (Test-IsManagedPath $_)
+        $_ -and (Test-SystemPathEntryAllowed $_)
     }
     $env:Path = @($entries | Select-Object -Unique) -join ';'
 }
@@ -266,7 +278,9 @@ function Initialize-CheckEnvironment {
     $cache = Join-Path $script:CheckTempRoot 'gocache'
     $tmp = Join-Path $script:CheckTempRoot 'gotmp'
     $appData = Join-Path $script:CheckTempRoot 'appdata'
-    New-Item -ItemType Directory -Force -Path $cache, $tmp, $appData | Out-Null
+    $goPath = Join-Path $script:CheckTempRoot 'gopath'
+    $goModCache = Join-Path $script:CheckTempRoot 'modcache'
+    New-Item -ItemType Directory -Force -Path $cache, $tmp, $appData, $goPath, $goModCache | Out-Null
     $effectiveGoPath = if ($OldGoPath) { $OldGoPath } else { Join-Path $env:USERPROFILE 'go' }
     $firstGoPath = ($effectiveGoPath -split ';')[0]
     $effectiveGoModCache = if ($OldGoModCache) {
@@ -274,13 +288,15 @@ function Initialize-CheckEnvironment {
     } else {
         Join-Path $firstGoPath 'pkg\mod'
     }
+    $downloadCache = Join-Path $effectiveGoModCache 'cache\download'
+    $localProxy = ([Uri]::new([IO.Path]::GetFullPath($downloadCache))).AbsoluteUri
     $env:GOCACHE = $cache
     $env:GOTMPDIR = $tmp
-    $env:GOPROXY = 'off'
+    $env:GOPROXY = $localProxy
     $env:APPDATA = $appData
     $env:GOENV = 'off'
-    $env:GOPATH = $effectiveGoPath
-    $env:GOMODCACHE = $effectiveGoModCache
+    $env:GOPATH = $goPath
+    $env:GOMODCACHE = $goModCache
 }
 
 function Remove-CheckEnvironment {

@@ -48,6 +48,9 @@ filter_system_path() {
     IFS=:
     for entry in $raw; do
         [[ "${entry%/}" == "${MANAGED_BIN%/}" ]] && continue
+        if [[ -d "$entry" && -d "$MANAGED_BIN" && "$entry" -ef "$MANAGED_BIN" ]]; then
+            continue
+        fi
         filtered="${filtered:+$filtered:}$entry"
     done
     IFS="$old_ifs"
@@ -57,18 +60,27 @@ filter_system_path() {
 SYSTEM_PATH="$(filter_system_path "$RAW_SYSTEM_PATH")"
 export PATH="$SYSTEM_PATH"
 
+cleanup_smoke_dir() {
+    [[ -n "$SMOKE_DIR" ]] || return 0
+    chmod -R u+w "$SMOKE_DIR" 2>/dev/null || true
+    rm -rf "$SMOKE_DIR"
+}
+
 if (( CHECK_ONLY )); then
     SMOKE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gc-dev-setup.XXXXXX")"
-    trap '[[ -n "$SMOKE_DIR" ]] && rm -rf "$SMOKE_DIR"' EXIT
+    trap cleanup_smoke_dir EXIT
     original_home="${HOME:-}"
-    export GOPATH="${GOPATH:-$original_home/go}"
-    export GOMODCACHE="${GOMODCACHE:-$GOPATH/pkg/mod}"
+    original_gopath="${GOPATH:-$original_home/go}"
+    original_modcache="${GOMODCACHE:-${original_gopath%%:*}/pkg/mod}"
+    export GOPATH="$SMOKE_DIR/gopath"
+    export GOMODCACHE="$SMOKE_DIR/modcache"
+    export GOPROXY="file://$original_modcache/cache/download"
     export GOENV=off
     export HOME="$SMOKE_DIR/home"
     export XDG_CONFIG_HOME="$SMOKE_DIR/config"
     export GOCACHE="$SMOKE_DIR/gocache"
     export GOTMPDIR="$SMOKE_DIR/gotmp"
-    mkdir -p "$HOME" "$XDG_CONFIG_HOME" "$GOCACHE" "$GOTMPDIR"
+    mkdir -p "$HOME" "$XDG_CONFIG_HOME" "$GOCACHE" "$GOTMPDIR" "$GOPATH" "$GOMODCACHE"
 fi
 
 info() { printf '  %s\n' "$1"; }
@@ -118,6 +130,8 @@ safe_managed_dir() {
         fi
     done
     mkdir -p "$TOOLS_ROOT" "$MANAGED_BIN"
+    SYSTEM_PATH="$(filter_system_path "$SYSTEM_PATH")"
+    export PATH="$SYSTEM_PATH"
 }
 
 run_as_root() {
@@ -381,7 +395,7 @@ if have_system go && go_version_ok; then
     GO_READY=1
     if (( ! CHECK_ONLY )); then
         SMOKE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gc-dev-setup.XXXXXX")"
-        trap '[[ -n "$SMOKE_DIR" ]] && rm -rf "$SMOKE_DIR"' EXIT
+        trap cleanup_smoke_dir EXIT
     fi
 fi
 
@@ -389,7 +403,7 @@ if (( GO_READY )); then
     go_path="$(system_command go)"
     section "Module dependencies"
     if (( CHECK_ONLY )); then
-        if GOPROXY=off "$go_path" list -mod=readonly -deps ./... >/dev/null 2>&1; then
+        if "$go_path" list -mod=readonly -deps ./... >/dev/null 2>&1; then
             ok "module dependencies resolved"
         else
             gap "module dependencies (run without --check to download)"
@@ -430,8 +444,8 @@ section "Verification"
 if (( GO_READY )); then
     go_path="$(system_command go)"
     if (( CHECK_ONLY )); then
-        build_cmd=(env GOPROXY=off "$go_path" build -mod=readonly -o "$SMOKE_DIR/gc" ./cmd/gc)
-        race_cmd=(env GOPROXY=off "$go_path" test -mod=readonly -race ./pkg/config)
+        build_cmd=("$go_path" build -mod=readonly -o "$SMOKE_DIR/gc" ./cmd/gc)
+        race_cmd=("$go_path" test -mod=readonly -race ./pkg/config)
     else
         build_cmd=("$go_path" build -o "$SMOKE_DIR/gc" ./cmd/gc)
         race_cmd=("$go_path" test -race ./pkg/config)
@@ -442,7 +456,7 @@ if (( GO_READY )); then
         ok "race-enabled test" || gap "race-enabled test"
 fi
 
-[[ -n "$SMOKE_DIR" ]] && rm -rf "$SMOKE_DIR"
+cleanup_smoke_dir
 SMOKE_DIR=""
 trap - EXIT
 

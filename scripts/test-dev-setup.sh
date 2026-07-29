@@ -11,7 +11,7 @@ CALL_LOG="$TMP_ROOT/calls.log"
 TOKEN_LEAK="$TMP_ROOT/token-leak"
 CACHE_LOG="$TMP_ROOT/cache.log"
 MANAGED_WRAPPER_MARKER="# Managed by gitcode-cli scripts/dev-setup.sh"
-mkdir -p "$STUB_BIN"
+mkdir -p "$STUB_BIN" "$TMP_ROOT/outside-modcache/cache/download"
 
 cat >"$STUB_BIN/tool-stub" <<'STUB'
 #!/usr/bin/env bash
@@ -34,14 +34,16 @@ case "$name" in
                 ;;
             "mod download") ;;
             "list -mod=readonly")
-                printf '%s|%s|%s|%s|%s\n' \
+                printf '%s|%s|%s|%s|%s|%s|%s|%s\n' \
                     "${GOCACHE:-}" "${GOTMPDIR:-}" "${HOME:-}" \
-                    "${XDG_CONFIG_HOME:-}" "${GOENV:-}" >>"${CACHE_LOG:?}"
+                    "${XDG_CONFIG_HOME:-}" "${GOENV:-}" "${GOPATH:-}" \
+                    "${GOMODCACHE:-}" "${GOPROXY:-}" >>"${CACHE_LOG:?}"
                 ;;
             "build -mod=readonly"|"build -o")
-                printf '%s|%s|%s|%s|%s\n' \
+                printf '%s|%s|%s|%s|%s|%s|%s|%s\n' \
                     "${GOCACHE:-}" "${GOTMPDIR:-}" "${HOME:-}" \
-                    "${XDG_CONFIG_HOME:-}" "${GOENV:-}" >>"${CACHE_LOG:?}"
+                    "${XDG_CONFIG_HOME:-}" "${GOENV:-}" "${GOPATH:-}" \
+                    "${GOMODCACHE:-}" "${GOPROXY:-}" >>"${CACHE_LOG:?}"
                 out=""
                 while (($#)); do
                     if [[ "$1" == "-o" ]]; then out="$2"; break; fi
@@ -51,9 +53,10 @@ case "$name" in
                 chmod +x "$out"
                 ;;
             "test -mod=readonly"|"test -race")
-                printf '%s|%s|%s|%s|%s\n' \
+                printf '%s|%s|%s|%s|%s|%s|%s|%s\n' \
                     "${GOCACHE:-}" "${GOTMPDIR:-}" "${HOME:-}" \
-                    "${XDG_CONFIG_HOME:-}" "${GOENV:-}" >>"${CACHE_LOG:?}"
+                    "${XDG_CONFIG_HOME:-}" "${GOENV:-}" "${GOPATH:-}" \
+                    "${GOMODCACHE:-}" "${GOPROXY:-}" >>"${CACHE_LOG:?}"
                 ;;
             "install "*)
                 spec="${2:-}"
@@ -109,6 +112,7 @@ run_setup() {
         CALL_LOG="$CALL_LOG" TOKEN_LEAK="$TOKEN_LEAK" CACHE_LOG="$CACHE_LOG" \
         GC_TOKEN="token-sentinel" GITCODE_TOKEN="token-sentinel-2" \
         HOME="$TMP_ROOT/outside-home" XDG_CONFIG_HOME="$TMP_ROOT/outside-config" \
+        GOPATH="$TMP_ROOT/outside-gopath" GOMODCACHE="$TMP_ROOT/outside-modcache" \
         GOCACHE="$TMP_ROOT/outside-cache" GOTMPDIR="$TMP_ROOT/outside-tmp" \
         bash "$ROOT_DIR/scripts/dev-setup.sh" "$@"
 }
@@ -148,7 +152,9 @@ set -e
 ! grep -F "$TMP_ROOT/outside-tmp" "$CACHE_LOG"
 ! grep -F "$TMP_ROOT/outside-home" "$CACHE_LOG"
 ! grep -F "$TMP_ROOT/outside-config" "$CACHE_LOG"
-grep -F '|off' "$CACHE_LOG" >/dev/null
+! grep -F "$TMP_ROOT/outside-gopath" "$CACHE_LOG"
+! grep -F "$TMP_ROOT/outside-modcache|" "$CACHE_LOG"
+grep -F "file://$TMP_ROOT/outside-modcache/cache/download" "$CACHE_LOG" >/dev/null
 
 MANAGED_HIJACK="$TMP_ROOT/managed-go-was-run"
 cat >"$TOOLS_DIR/bin/go" <<EOF
@@ -157,10 +163,12 @@ cat >"$TOOLS_DIR/bin/go" <<EOF
 exit 91
 EOF
 chmod +x "$TOOLS_DIR/bin/go"
+MANAGED_BIN_ALIAS="$TMP_ROOT/managed-bin-alias"
+ln -s "$TOOLS_DIR/bin" "$MANAGED_BIN_ALIAS"
 set +e
 hijack_output="$(
     env \
-        PATH="$TOOLS_DIR/bin:$STUB_BIN:/usr/bin:/bin" \
+        PATH="$MANAGED_BIN_ALIAS:$STUB_BIN:/usr/bin:/bin" \
         GC_DEV_TOOLS_DIR="$TOOLS_DIR" \
         CALL_LOG="$CALL_LOG" TOKEN_LEAK="$TOKEN_LEAK" CACHE_LOG="$CACHE_LOG" \
         HOME="$TMP_ROOT/outside-home" XDG_CONFIG_HOME="$TMP_ROOT/outside-config" \
@@ -171,7 +179,7 @@ set -e
 [[ $hijack_status -eq 0 ]]
 [[ "$hijack_output" == *"dev environment ready."* ]]
 [[ ! -e "$MANAGED_HIJACK" ]]
-rm "$TOOLS_DIR/bin/go"
+rm "$TOOLS_DIR/bin/go" "$MANAGED_BIN_ALIAS"
 
 NO_MAKE_BIN="$TMP_ROOT/no-make"
 mkdir -p "$NO_MAKE_BIN"

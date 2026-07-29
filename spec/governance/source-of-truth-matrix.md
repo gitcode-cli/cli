@@ -22,11 +22,10 @@
 | 命令行为 | `docs/COMMANDS.md` | 是 | `gc` 命令行为唯一真相源 |
 | 测试、门禁、评审规则 | `spec/foundations/*`、`spec/workflows/*` | 是 | 包括测试、状态机、门禁、评审边界 |
 | 构建与打包规则 | `spec/delivery/*` | 是 | 当前本地构建与打包规则以此为准 |
-| AI 共享场景定义 | `.ai/skills/*` | 有条件地是 | 只对共享 skill 场景定义生效，不得覆盖 `spec/` |
+| GitCode CLI Skills | [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) | 有条件地是 | 定义可安装的命令与工作流 Skill，不得覆盖本仓库 `spec/` |
 | 项目入口导航 | `README.md` | 否 | 入口文档，不是规则源 |
 | AI 客户端入口 | `AGENTS.md`、`CLAUDE.md` | 否 | 入口文档，不是规则源 |
 | 外部项目 AI 使用说明 | `docs/AI-GUIDE.md` | 否 | 只服务外部项目通过 AI 使用 `gc` |
-| 外部通用 skill 分发 | `.ai/distribution/gc-core/*` | 否 | 只服务外部项目复用，不定义本仓库开发规则 |
 | 项目阶段说明 | `issues-plan/PROGRESS.md` | 否 | 可能滞后，只能作阶段说明与背景参考 |
 | 单个 issue / PR 的实时状态 | GitCode 远端 issue、PR、label、comment | 是 | 远端平台是实时事实源 |
 | 是否已主干合入 | merged PR + `origin/main` | 是 | 不能只看 issue 状态、comment 或 release 文案 |
@@ -42,7 +41,7 @@
 2. `docs/COMMANDS.md` 定义命令行为
 3. GitCode 远端平台、merged PR 和 `origin/main` 定义实时事实
 4. GitCode Actions 与 GitHub Actions CI 运行结果定义各自平台的自动化验证事实
-5. `.ai/skills/*` 定义共享 AI 场景
+5. 独立仓库 `gitcode-cli/skills` 定义可安装的 GitCode CLI Skills
 6. `README.md`、`AGENTS.md`、`CLAUDE.md`、`issues-plan/PROGRESS.md` 仅作入口、导航或阶段说明
 
 ## 必须
@@ -50,6 +49,7 @@
 - 不得把入口文档当成正式规则源
 - 不得把 `issues-plan/PROGRESS.md` 当成实时状态真相源
 - 不得把 `docs/AI-GUIDE.md` 当成 gitcode-cli 仓库内部开发流程规范
+- 不得把已废弃的 `.ai/skills/` 或客户端本地 `.claude/skills/`、`.codex/skills/` 当成本仓库的规则源
 - 判断交付完成度时，必须检查远端平台事实和 `origin/main`
 
 ## 下一步去看哪里

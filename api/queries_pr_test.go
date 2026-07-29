@@ -408,12 +408,16 @@ func TestNormalizePullRequestMergedState(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			originalState := tt.pr.State
 			normalizePullRequest(&tt.pr)
 			if tt.pr.Merged != tt.want {
 				t.Fatalf("Merged = %v, want %v", tt.pr.Merged, tt.want)
 			}
 			if tt.pr.IsMerged() != tt.want {
 				t.Fatalf("IsMerged() = %v, want %v", tt.pr.IsMerged(), tt.want)
+			}
+			if tt.pr.State != originalState {
+				t.Fatalf("State = %q, want original state %q", tt.pr.State, originalState)
 			}
 		})
 	}

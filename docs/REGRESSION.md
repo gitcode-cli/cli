@@ -236,7 +236,7 @@ issue_number=$(printf '%s\n' "$issue_json" | python3 -c 'import json,sys; print(
 - `issue list --template` 应输出模板结果，并与 `--json`、`--format` 的冲突保持稳定报错。
 - `issue view` 和 `pr view` 的文本输出应保留稳定的详情布局，`--json` 继续输出结构化数据。
 - `pr view --json` 应包含 `body`、`description`、`merged`、`merged_at`，并在远端详情接口统计为 0 时尽量通过 files/commits API 补齐统计。
-- 已合并 PR 的 `pr view --json` 与 `pr list --state merged --json` 应同时返回 `state="merged"` 和 `merged=true`，即使远端原始字段为 `merged: null`。
+- 已合并 PR 的 `pr view --json` 与 `pr list --state merged --json` 应返回 `merged=true`，即使远端原始字段为 `merged: null`；`state` 保留远端返回值，不由 CLI 改写。
 - `gc api` 应输出远端原始响应，不额外混入文本提示。
 - inline `--body`/`--comment`/`--description`/`--notes` 在内容含当前 `GC_TOKEN`/`GITCODE_TOKEN` 值时应被 `ScanContentForSecrets` 拒绝（系统测试 `secret-scan.txtar` 覆盖全部 22 条 inline 路径）。
 

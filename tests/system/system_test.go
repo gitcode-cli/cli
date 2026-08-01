@@ -510,28 +510,101 @@ func cmdDeferDeleteLabel(ts *testscript.TestScript, neg bool, args []string) {
 	gcBin := ts.Getenv("GC_BIN")
 	writeRepo := ts.Getenv("WRITE_REPO")
 	ts.Defer(func() {
-		_ = exec.Command(gcBin, "label", "delete", labelName, "-R", writeRepo, "--yes").Run()
+		run := func(args ...string) ([]byte, error) {
+			return exec.Command(gcBin, args...).CombinedOutput()
+		}
+		if err := deleteLabelIfExists(run, writeRepo, labelName); err != nil {
+			ts.Fatalf("delete label %q during cleanup: %v", labelName, err)
+		}
 	})
+}
+
+type systemCommandRunner func(args ...string) ([]byte, error)
+
+func deleteLabelIfExists(run systemCommandRunner, repo, labelName string) error {
+	const pageSize = 100
+	for page := 1; ; page++ {
+		output, err := run(
+			"label", "list", "-R", repo,
+			"--limit", strconv.Itoa(pageSize), "--page", strconv.Itoa(page), "--json",
+		)
+		if err != nil {
+			return fmt.Errorf("list labels page %d: %w\n%s", page, err, output)
+		}
+		var labels []struct {
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(output, &labels); err != nil {
+			return fmt.Errorf("parse label list page %d: %w", page, err)
+		}
+		for _, label := range labels {
+			if label.Name != labelName {
+				continue
+			}
+			deleteOutput, err := run("label", "delete", labelName, "-R", repo, "--yes")
+			if err != nil {
+				return fmt.Errorf("delete label: %w\n%s", err, deleteOutput)
+			}
+			return nil
+		}
+		if len(labels) < pageSize {
+			return nil
+		}
+	}
 }
 
 func cmdUniqueName(ts *testscript.TestScript, neg bool, args []string) {
 	if neg {
 		ts.Fatalf("unsupported: ! unique-name")
 	}
-	if len(args) != 2 {
-		ts.Fatalf("usage: unique-name VAR prefix")
+	if len(args) < 2 || len(args) > 3 {
+		ts.Fatalf("usage: unique-name VAR prefix [max-length]")
 	}
-	name, err := uniqueName(args[1], ts.Name(), os.Getpid())
+	maxLength := 0
+	if len(args) == 3 {
+		var err error
+		maxLength, err = parsePositiveInt(args[2])
+		if err != nil {
+			ts.Fatalf("invalid max length: %v", err)
+		}
+	}
+	name, err := uniqueName(args[1], ts.Name(), os.Getpid(), maxLength)
 	if err != nil {
 		ts.Fatalf("generate unique name: %v", err)
 	}
 	ts.Setenv(args[0], name)
 }
 
-func uniqueName(prefix, testName string, pid int) (string, error) {
+func parsePositiveInt(value string) (int, error) {
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		return 0, fmt.Errorf("must be a positive integer: %q", value)
+	}
+	return parsed, nil
+}
+
+func uniqueName(prefix, testName string, pid, maxLength int) (string, error) {
 	var nonce [16]byte
 	if _, err := rand.Read(nonce[:]); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s-%s-%d-%s", prefix, testName, pid, hex.EncodeToString(nonce[:])), nil
+	base := prefix + "-" + testName
+	suffix := fmt.Sprintf("-%d-%s", pid, hex.EncodeToString(nonce[:]))
+	if maxLength == 0 {
+		return base + suffix, nil
+	}
+
+	baseRunes := []rune(base)
+	suffixRunes := []rune(suffix)
+	if maxLength <= len(suffixRunes) {
+		return "", fmt.Errorf("max length %d is too small for unique suffix", maxLength)
+	}
+	if available := maxLength - len(suffixRunes); len(baseRunes) > available {
+		baseRunes = baseRunes[:available]
+	}
+	trimmedBase := strings.TrimRight(string(baseRunes), "-")
+	if trimmedBase == "" {
+		return "", fmt.Errorf("max length %d leaves no readable prefix", maxLength)
+	}
+	return trimmedBase + suffix, nil
 }

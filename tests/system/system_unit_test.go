@@ -3,8 +3,11 @@
 package system_test
 
 import (
+	"encoding/json"
+	"errors"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -117,7 +120,7 @@ func TestLookupJSONPathSupportsAssigneeLogin(t *testing.T) {
 }
 
 func TestUniqueNameShape(t *testing.T) {
-	name, err := uniqueName("system-test-label", "label-lifecycle", 1234)
+	name, err := uniqueName("system-test-label", "label-lifecycle", 1234, 0)
 	if err != nil {
 		t.Fatalf("uniqueName returned error: %v", err)
 	}
@@ -127,5 +130,118 @@ func TestUniqueNameShape(t *testing.T) {
 	}
 	if !matched {
 		t.Fatalf("uniqueName returned %q with unexpected shape", name)
+	}
+}
+
+func TestUniqueNameHonorsMaxLength(t *testing.T) {
+	name, err := uniqueName("system-test-label", "label-lifecycle", 1234, 50)
+	if err != nil {
+		t.Fatalf("uniqueName returned error: %v", err)
+	}
+	if got := len([]rune(name)); got > 50 {
+		t.Fatalf("uniqueName length = %d, want at most 50: %q", got, name)
+	}
+	matched, err := regexp.MatchString(`^system-test[^-]*-1234-[0-9a-f]{32}$`, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !matched {
+		t.Fatalf("uniqueName returned %q without the expected prefix and suffix", name)
+	}
+}
+
+func TestUniqueNameRejectsTooSmallMaxLength(t *testing.T) {
+	if _, err := uniqueName("label", "test", 1234, 38); err == nil {
+		t.Fatal("uniqueName error = nil, want max length error")
+	}
+}
+
+func TestParsePositiveInt(t *testing.T) {
+	for _, value := range []string{"", "invalid", "0", "-1"} {
+		if _, err := parsePositiveInt(value); err == nil {
+			t.Fatalf("parsePositiveInt(%q) error = nil", value)
+		}
+	}
+	if got, err := parsePositiveInt("50"); err != nil || got != 50 {
+		t.Fatalf("parsePositiveInt(50) = %d, %v, want 50, nil", got, err)
+	}
+}
+
+func TestDeleteLabelIfExists(t *testing.T) {
+	tests := []struct {
+		name       string
+		listOutput string
+		listErr    error
+		deleteErr  error
+		wantCalls  int
+		wantError  string
+	}{
+		{name: "absent", listOutput: `[{"name":"other"}]`, wantCalls: 1},
+		{name: "present", listOutput: `[{"name":"target"}]`, wantCalls: 2},
+		{name: "list failure", listErr: errors.New("network"), wantCalls: 1, wantError: "list labels"},
+		{name: "malformed response", listOutput: `{`, wantCalls: 1, wantError: "parse label list"},
+		{name: "delete failure", listOutput: `[{"name":"target"}]`, deleteErr: errors.New("denied"), wantCalls: 2, wantError: "delete label"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			calls := 0
+			run := func(args ...string) ([]byte, error) {
+				calls++
+				if calls == 1 {
+					return []byte(tt.listOutput), tt.listErr
+				}
+				return nil, tt.deleteErr
+			}
+			err := deleteLabelIfExists(run, "infra-test/gctest1", "target")
+			if calls != tt.wantCalls {
+				t.Fatalf("calls = %d, want %d", calls, tt.wantCalls)
+			}
+			if tt.wantError == "" && err != nil {
+				t.Fatalf("deleteLabelIfExists returned error: %v", err)
+			}
+			if tt.wantError != "" && (err == nil || !strings.Contains(err.Error(), tt.wantError)) {
+				t.Fatalf("error = %v, want containing %q", err, tt.wantError)
+			}
+		})
+	}
+}
+
+func TestDeleteLabelIfExistsPaginates(t *testing.T) {
+	firstPage := make([]map[string]string, 100)
+	for i := range firstPage {
+		firstPage[i] = map[string]string{"name": "other"}
+	}
+	firstOutput, err := json.Marshal(firstPage)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	calls := 0
+	wantArgs := [][]string{
+		{"label", "list", "-R", "infra-test/gctest1", "--limit", "100", "--page", "1", "--json"},
+		{"label", "list", "-R", "infra-test/gctest1", "--limit", "100", "--page", "2", "--json"},
+		{"label", "delete", "target", "-R", "infra-test/gctest1", "--yes"},
+	}
+	run := func(args ...string) ([]byte, error) {
+		calls++
+		if calls > len(wantArgs) || !reflect.DeepEqual(args, wantArgs[calls-1]) {
+			t.Fatalf("call %d args = %v", calls, args)
+		}
+		switch calls {
+		case 1:
+			return firstOutput, nil
+		case 2:
+			return []byte(`[{"name":"target"}]`), nil
+		case 3:
+			return nil, nil
+		}
+		return nil, nil
+	}
+	if err := deleteLabelIfExists(run, "infra-test/gctest1", "target"); err != nil {
+		t.Fatalf("deleteLabelIfExists returned error: %v", err)
+	}
+	if calls != 3 {
+		t.Fatalf("calls = %d, want 3", calls)
 	}
 }

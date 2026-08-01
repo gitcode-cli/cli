@@ -73,10 +73,10 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 # 从 Releases 下载 .deb 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_0.8.0_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_0.9.0_amd64.deb
 
 # 安装
-sudo dpkg -i gc_0.8.0_amd64.deb
+sudo dpkg -i gc_0.9.0_amd64.deb
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -85,10 +85,10 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 
 ```bash
 # 从 Releases 下载 .rpm 包
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc-0.8.0-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc-0.9.0-1.x86_64.rpm
 
 # 安装
-sudo rpm -i gc-0.8.0-1.x86_64.rpm
+sudo rpm -i gc-0.9.0-1.x86_64.rpm
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -101,10 +101,10 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 # 创建虚拟环境
 python3 -m venv .venv
 source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
+# .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gitcode_cli-0.8.0-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gitcode_cli-0.9.0-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode，避免 gc 被内置 Get-Content 别名覆盖
 gitcode version
@@ -113,7 +113,8 @@ gitcode version
 说明：
 - wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。
 - DEB/RPM 包也会同时安装 `gc` 和 `gitcode`；Linux 上二者功能相同。
-- Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+- Windows 使用 `py -m pip install --user ...` 时，脚本会安装到 Python user scheme 的 `Scripts` 目录。请运行 `py -c "import os, sysconfig; print(sysconfig.get_path('scripts', os.name + '_user'))"` 获取准确路径，将其加入用户 `PATH` 后重新打开终端；配置前可直接运行 `py -m gc_cli version`。
+- Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `py -m gc_cli version`。
 - Windows PowerShell 中通过 `--body-file -` / `--comment-file -` 管道传入中文或其他非 ASCII 正文时，推荐使用 UTF-8 文件；如果必须直接管道，先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。CLI 会拦截疑似已被 PowerShell 损坏成 `???` 的输入并提示正确用法。
 
 ```powershell
@@ -123,14 +124,16 @@ gitcode issue create -R owner/repo --title "标题" --body-file body.md
 
 ### PyPI（备选）
 
+> PyPI 可能晚于 GitCode Release 同步。固定目标版本可避免静默安装旧版本；目标版本暂不可用时，请使用上方 Release wheel。
+
 ```bash
 # 创建虚拟环境
 python3 -m venv .venv
 source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
+# .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 
-# 安装
-pip install gitcode-cli
+# 固定版本安装，避免 PyPI 尚未同步时安装旧版本
+python -m pip install -i https://pypi.org/simple/ gitcode-cli==0.9.0
 
 # Windows PowerShell 中推荐使用 gitcode
 gitcode version

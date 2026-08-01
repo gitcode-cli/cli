@@ -2,7 +2,7 @@
 
 > 项目概述和功能介绍请参阅 [README.md](../README.md)，命令使用请参阅 [COMMANDS.md](./COMMANDS.md)，开发与规范入口请参阅 [spec/README.md](../spec/README.md)。
 
-本文档说明如何在本地构建 DEB/RPM/PyPI 包并使用 `gc` 命令发布 Release。
+本文档说明如何在本地构建验证 DEB/RPM/PyPI 包，以及如何通过标准 workflow 发布并同步 Release。
 
 ---
 
@@ -37,27 +37,27 @@
 使用 `scripts/package.sh` 一键完成版本同步、构建和打包：
 
 ```bash
-# 发布用（构建 DEB + RPM + PyPI，推荐）
-./scripts/package.sh v0.8.0 release
+# 发布前全量打包验证（构建 DEB + RPM + PyPI，推荐）
+./scripts/package.sh v0.9.0 release
 
 # 构建所有包（DEB + RPM + PyPI）
-./scripts/package.sh v0.8.0
+./scripts/package.sh v0.9.0
 
 # 仅构建 Linux 包（DEB + RPM）
-./scripts/package.sh v0.8.0 linux
+./scripts/package.sh v0.9.0 linux
 
 # 仅构建 DEB 包
-./scripts/package.sh v0.8.0 deb
+./scripts/package.sh v0.9.0 deb
 
 # 仅构建 PyPI 包
-./scripts/package.sh v0.8.0 pypi
+./scripts/package.sh v0.9.0 pypi
 ```
 
 ### 构建目标
 
 | 目标 | 说明 | 输出文件 |
 |------|------|----------|
-| `release` | DEB + RPM + PyPI（发布用，推荐） | 全部包 |
+| `release` | DEB + RPM + PyPI（发布前全量验证，推荐） | 全部包 |
 | `all` | 构建所有包（默认） | 全部包 |
 | `linux` | DEB + RPM 包 | `gc_*.deb`, `gc-*.rpm` |
 | `deb` | 仅 DEB 包 | `gc_*.deb` |
@@ -80,14 +80,14 @@
 
 ```bash
 dist/
-├── gc_0.8.0_amd64.deb              # DEB amd64
-├── gc_0.8.0_arm64.deb              # DEB arm64
-├── gc-0.8.0-1.x86_64.rpm           # RPM x86_64
-├── gc-0.8.0-1.aarch64.rpm          # RPM aarch64
+├── gc_0.9.0_amd64.deb              # DEB amd64
+├── gc_0.9.0_arm64.deb              # DEB arm64
+├── gc-0.9.0-1.x86_64.rpm           # RPM x86_64
+├── gc-0.9.0-1.aarch64.rpm          # RPM aarch64
 ├── gc_linux_amd64                  # Linux 二进制 amd64
 ├── gc_linux_arm64                  # Linux 二进制 arm64
-├── gitcode_cli-0.8.0-py3-none-any.whl  # PyPI wheel
-└── gitcode_cli-0.8.0.tar.gz        # PyPI sdist
+├── gitcode_cli-0.9.0-py3-none-any.whl  # PyPI wheel
+└── gitcode_cli-0.9.0.tar.gz        # PyPI sdist
 ```
 
 ---
@@ -99,7 +99,7 @@ dist/
 [nfpm](https://github.com/goreleaser/nfpm) 是 DEB/RPM 包构建工具。
 
 ```bash
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
 ```
 
 > **注意**：`go install` 安装到 `~/go/bin/`，`package.sh` 会自动查找此路径。
@@ -123,112 +123,38 @@ export GC_TOKEN="your_gitcode_token"
 ### 完整发布流程
 
 ```bash
-# 1. 构建所有包
-./scripts/package.sh v0.8.0 release
+# 1. 本地验证所有包；这些制品不得用于正式发布
+./scripts/package.sh v0.9.0 release
 
-# 2. 创建 Release
-gc release create v0.8.0 -R gitcode-cli/cli \
-  --title "GitCode CLI v0.8.0" \
-  --notes "$(cat <<'EOF'
-## 更新内容
+# 2. 发布准备 PR 合入两个远端 main 后，触发正式 workflow
+gh workflow run release.yml -R gitcode-cli/cli -f version=v0.9.0
+gh run watch <run-id> -R gitcode-cli/cli
 
-### 新功能
-- 功能描述
+# 3. workflow 全部成功后，同步同一 tag 到 GitCode（SSH）
+git fetch github tag v0.9.0
+git push origin refs/tags/v0.9.0
 
-### Bug 修复
-- 修复描述
+# 4. 下载 GitHub workflow 生成的正式制品
+mkdir -p dist/github-release
+gh release download v0.9.0 -R gitcode-cli/cli --dir dist/github-release
 
-### 修复的 Issue
-- Fixes Issue XX
+# 5. 验证覆盖全部正式资产的 SHA-256 清单
+cd dist/github-release
+sha256sum -c gc_0.9.0_checksums.txt
+cd ../..
 
-## 安装方式
+# 6. 使用受跟踪的同一份说明创建 GitCode Release
+gc release create v0.9.0 -R gitcode-cli/cli \
+  --title "GitCode CLI v0.9.0" \
+  --notes-file docs/releases/v0.9.0.md \
+  --target main \
+  --json
 
-### Wheel 包（推荐，跨平台）
-
-内置全平台二进制（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64），创建虚拟环境并安装：
-
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gitcode_cli-0.8.0-py3-none-any.whl
-
-Windows 用户激活虚拟环境：
-
-    .venv\Scripts\activate
-
-Windows PowerShell 用户建议运行：
-
-    gitcode version
-
-说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
-
-Command-name behavior by platform (wheel entrypoint):
-
-| 启动方式 | Windows | Linux / macOS |
-|---------|---------|---------------|
-| `gc` | `gc` | `gc` |
-| `gitcode` | `gitcode` | `gitcode` |
-| `python -m gc_cli` | `gitcode` | `gc` |
-
-`python -m gc_cli` 的 argv[0] stem 为 `gc_cli`，不匹配 `gc`/`gitcode`，
-因此回退到平台默认值：Windows → `gitcode`，非 Windows → `gc`。
-
-DEB/RPM packages install `/usr/bin/gc` and `/usr/bin/gitcode`; on Linux they
-are equivalent command entry points.
-
-### DEB (Debian/Ubuntu)
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_0.8.0_amd64.deb
-    sudo dpkg -i gc_0.8.0_amd64.deb
-
-ARM64 设备：
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_0.8.0_arm64.deb
-    sudo dpkg -i gc_0.8.0_arm64.deb
-
-### RPM (RHEL/CentOS/Fedora)
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc-0.8.0-1.x86_64.rpm
-    sudo rpm -i gc-0.8.0-1.x86_64.rpm
-
-ARM64 设备：
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc-0.8.0-1.aarch64.rpm
-    sudo rpm -i gc-0.8.0-1.aarch64.rpm
-
-### Linux 二进制
-
-AMD64：
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_linux_amd64
-    chmod +x gc_linux_amd64
-    sudo mv gc_linux_amd64 /usr/local/bin/gc
-
-ARM64：
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_linux_arm64
-    chmod +x gc_linux_arm64
-    sudo mv gc_linux_arm64 /usr/local/bin/gc
-
-## 验证安装
-
-    gc version
-EOF
-)"
-
-# 3. 上传所有包
-gc release upload v0.8.0 \
-  dist/gc_linux_amd64 \
-  dist/gc_linux_arm64 \
-  dist/gc_0.8.0_amd64.deb \
-  dist/gc_0.8.0_arm64.deb \
-  dist/gc-0.8.0-1.x86_64.rpm \
-  dist/gc-0.8.0-1.aarch64.rpm \
-  dist/gitcode_cli-0.8.0-py3-none-any.whl \
-  dist/gitcode_cli-0.8.0.tar.gz \
-  -R gitcode-cli/cli
+# 7. 将同一批正式制品上传到 GitCode，不得重新构建
+gc release upload v0.9.0 dist/github-release/* -R gitcode-cli/cli --json
 ```
 
-> **注意**：将示例中的版本号 `0.8.0` 替换为实际版本号。
+> **注意**：将示例中的版本号 `0.9.0` 替换为实际版本号。正式制品必须携带准确 commit SHA；本地验证包不得上传。
 
 ### Release Notes 要求
 
@@ -288,49 +214,49 @@ GitCode 会错误渲染代码块内的 `#` 开头行为标题！
 
     python3 -m venv .venv
     source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gitcode_cli-0.8.0-py3-none-any.whl
+    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gitcode_cli-0.9.0-py3-none-any.whl
 
 Windows 用户激活虚拟环境：
 
-    .venv\Scripts\activate
+    .\.venv\Scripts\Activate.ps1
 
 Windows PowerShell 用户建议运行：
 
     gitcode version
 
-说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。Windows 使用 `py -m pip install --user ...` 时，脚本会安装到 Python user scheme 的 `Scripts` 目录；请运行 `py -c "import os, sysconfig; print(sysconfig.get_path('scripts', os.name + '_user'))"` 获取准确路径，将其加入用户 `PATH` 后重新打开终端，配置前可直接运行 `py -m gc_cli version`。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `py -m gc_cli version`。
 
 ### DEB (Debian/Ubuntu)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_0.8.0_amd64.deb
-    sudo dpkg -i gc_0.8.0_amd64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_0.9.0_amd64.deb
+    sudo dpkg -i gc_0.9.0_amd64.deb
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_0.8.0_arm64.deb
-    sudo dpkg -i gc_0.8.0_arm64.deb
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_0.9.0_arm64.deb
+    sudo dpkg -i gc_0.9.0_arm64.deb
 
 ### RPM (RHEL/CentOS/Fedora)
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc-0.8.0-1.x86_64.rpm
-    sudo rpm -i gc-0.8.0-1.x86_64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc-0.9.0-1.x86_64.rpm
+    sudo rpm -i gc-0.9.0-1.x86_64.rpm
 
 ARM64 设备：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc-0.8.0-1.aarch64.rpm
-    sudo rpm -i gc-0.8.0-1.aarch64.rpm
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc-0.9.0-1.aarch64.rpm
+    sudo rpm -i gc-0.9.0-1.aarch64.rpm
 
 ### Linux 二进制
 
 AMD64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_linux_amd64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_linux_amd64
     chmod +x gc_linux_amd64
     sudo mv gc_linux_amd64 /usr/local/bin/gc
 
 ARM64：
 
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_linux_arm64
+    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_linux_arm64
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
@@ -341,7 +267,7 @@ ARM64：
 
 #### 注意事项
 
-1. **版本号替换**：将模板中的 `0.8.0` 替换为实际版本号
+1. **版本号替换**：将模板中的 `0.9.0` 替换为实际版本号
 2. **避免 `#` 字符问题**：GitCode 会错误渲染代码块内的 `#`
    - Issue 引用使用 `Issue XX` 格式，不使用 `#XX`
    - PR 引用使用 `PR XX` 格式，不使用 `#XX`
@@ -352,13 +278,13 @@ ARM64：
 
 ```bash
 # 查看 Release
-gc release view v0.8.0 -R gitcode-cli/cli
+gc release view v0.9.0 -R gitcode-cli/cli
 
 # 列出所有 Releases
 gc release list -R gitcode-cli/cli
 
 # 下载资产
-gc release download v0.8.0 -R gitcode-cli/cli
+gc release download v0.9.0 -R gitcode-cli/cli
 ```
 
 ---
@@ -373,19 +299,19 @@ gc release download v0.8.0 -R gitcode-cli/cli
 python3 -m venv .venv
 source .venv/bin/activate
 
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gitcode_cli-0.8.0-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gitcode_cli-0.9.0-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode
 gitcode version
 ```
 
-说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。Windows 使用 `py -m pip install --user ...` 时，脚本会安装到 Python user scheme 的 `Scripts` 目录；请运行 `py -c "import os, sysconfig; print(sysconfig.get_path('scripts', os.name + '_user'))"` 获取准确路径，将其加入用户 `PATH` 后重新打开终端，配置前可直接运行 `py -m gc_cli version`。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `py -m gc_cli version`。
 
 ### DEB (Debian/Ubuntu)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_0.8.0_amd64.deb
-sudo dpkg -i gc_0.8.0_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_0.9.0_amd64.deb
+sudo dpkg -i gc_0.9.0_amd64.deb
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -393,8 +319,8 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 ### RPM (RHEL/CentOS/Fedora)
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc-0.8.0-1.x86_64.rpm
-sudo rpm -i gc-0.8.0-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc-0.9.0-1.x86_64.rpm
+sudo rpm -i gc-0.9.0-1.x86_64.rpm
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -402,7 +328,7 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 ### Linux 二进制
 
 ```bash
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.8.0/gc_linux_amd64
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_linux_amd64
 chmod +x gc_linux_amd64
 sudo mv gc_linux_amd64 /usr/local/bin/gc
 ```
@@ -435,7 +361,7 @@ gc release create vX.Y.Z -R gitcode-cli/cli --title "vX.Y.Z" --notes "Release no
 ls ~/go/bin/nfpm
 
 # 如果没有，安装
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
 ```
 
 ### Q: 上传失败
@@ -463,7 +389,7 @@ GOOS=linux GOARCH=amd64 go build -o dist/gc_linux_amd64 ./cmd/gc
 GOOS=linux GOARCH=arm64 go build -o dist/gc_linux_arm64 ./cmd/gc
 
 # 2. 更新版本号
-VERSION="0.8.0"
+VERSION="0.9.0"
 sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-amd64.yaml
 sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-arm64.yaml
 
@@ -488,7 +414,7 @@ GOOS=darwin GOARCH=arm64 go build -o gc_cli/bin/gc-darwin-arm64 ./cmd/gc
 GOOS=windows GOARCH=amd64 go build -o gc_cli/bin/gc-windows-amd64.exe ./cmd/gc
 
 # 2. 更新版本号
-VERSION="0.8.0"
+VERSION="0.9.0"
 sed -i "s/version = \".*/version = \"$VERSION\"/" pyproject.toml
 sed -i "s/__version__ = \".*/__version__ = \"$VERSION\"/" gc_cli/__init__.py
 
@@ -509,7 +435,7 @@ python3 -m build --wheel --sdist --outdir dist/
 name: "gc"
 arch: "amd64"
 platform: "linux"
-version: "0.8.0"
+version: "0.9.0"
 maintainer: "gitcode-cli contributors"
 description: "GitCode CLI - Command line tool for GitCode"
 homepage: "https://gitcode.com/gitcode-cli/cli"
@@ -540,7 +466,7 @@ contents:
 
 ```bash
 source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
+# .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 ```
 
 渲染后 `# Windows` 会显示为一级标题，导致格式混乱。
@@ -559,7 +485,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # Windows 用户使用
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 ```
 
 ---

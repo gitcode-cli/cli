@@ -159,36 +159,8 @@ mkdir -p dist
 # ============================================
 prepare_package_assets() {
     info "Preparing gitcode completion aliases..."
-    mkdir -p build/completions
-
-    sed \
-        -e 's/__start_gc/__start_gitcode/g' \
-        -e 's/__gc_/__gitcode_/g' \
-        -e 's/__start_gitcode gc/__start_gitcode gitcode/g' \
-        -e 's/ gc$/ gitcode/g' \
-        -e 's/ for gc / for gitcode /g' \
-        completions/gc.bash > build/completions/gitcode.bash
-
-    sed \
-        -e 's/#compdef gc/#compdef gitcode/' \
-        -e 's/compdef _gc gc/compdef _gitcode gitcode/' \
-        -e 's/_gc/_gitcode/g' \
-        -e 's/__gc_/__gitcode_/g' \
-        -e 's/ for gc / for gitcode /g' \
-        completions/gc.zsh > build/completions/gitcode.zsh
-
-    sed \
-        -e 's/__gc_/__gitcode_/g' \
-        -e 's/ for gc / for gitcode /g' \
-        -e 's/-c gc/-c gitcode/g' \
-        completions/gc.fish > build/completions/gitcode.fish
-
+    bash scripts/prepare-package-assets.sh
     success "Prepared build/completions/gitcode.*"
-
-    info "Preparing package maintainer scripts..."
-    mkdir -p build/scripts
-    sed 's/\r$//' scripts/postinstall.sh > build/scripts/postinstall.sh
-    chmod 755 build/scripts/postinstall.sh
     success "Prepared build/scripts/postinstall.sh"
 }
 
@@ -281,7 +253,7 @@ build_pypi() {
 NFPMPATH=$(command -v nfpm 2>/dev/null || echo "$HOME/go/bin/nfpm")
 if [ ! -x "$NFPMPATH" ]; then
     if [[ "$TARGET" =~ ^(all|deb|rpm|linux|release)$ ]]; then
-        error "nfpm not found. Install it with:\n  go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest"
+        error "nfpm not found. Install it with:\n  go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3"
     fi
 fi
 
@@ -342,24 +314,10 @@ echo "============================================"
 echo "  Next Steps"
 echo "============================================"
 echo ""
-echo "1. Create release:"
+echo "1. Verify the local packages only (do not publish these artifacts):"
 echo "   go build -o ./gc ./cmd/gc"
 echo "   ./gc version"
 echo ""
-echo "2. Create release:"
-echo "   ./gc release create v${VERSION} -R gitcode-cli/cli --title \"v${VERSION}\" --notes \"Release notes\""
-echo ""
-echo "3. Upload packages:"
-echo "   ./gc release upload v${VERSION} \\"
-echo "     dist/gc_linux_amd64 \\"
-echo "     dist/gc_linux_arm64 \\"
-echo "     dist/gc_${VERSION}_amd64.deb \\"
-echo "     dist/gc_${VERSION}_arm64.deb \\"
-echo "     dist/gc-${VERSION}-1.x86_64.rpm \\"
-echo "     dist/gc-${VERSION}-1.aarch64.rpm \\"
-echo "     dist/gitcode_cli-${VERSION}-py3-none-any.whl \\"
-echo "     dist/gitcode_cli-${VERSION}.tar.gz \\"
-echo "     -R gitcode-cli/cli"
-echo ""
-echo "4. Confirm README.md and docs/AI-GUIDE.md version updates"
+echo "2. Merge the release PR into main and run .github/workflows/release.yml."
+echo "   The workflow builds and publishes the authoritative release artifacts."
 echo ""

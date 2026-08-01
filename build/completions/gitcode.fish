@@ -1,27 +1,27 @@
-# fish completion for gc                                   -*- shell-script -*-
+# fish completion for gitcode                                   -*- shell-script -*-
 
-function __gc_debug
+function __gitcode_debug
     set -l file "$BASH_COMP_DEBUG_FILE"
     if test -n "$file"
         echo "$argv" >> $file
     end
 end
 
-function __gc_perform_completion
-    __gc_debug "Starting __gc_perform_completion"
+function __gitcode_perform_completion
+    __gitcode_debug "Starting __gitcode_perform_completion"
 
     # Extract all args except the last one
     set -l args (commandline -opc)
     # Extract the last arg and escape it in case it is a space
     set -l lastArg (string escape -- (commandline -ct))
 
-    __gc_debug "args: $args"
-    __gc_debug "last arg: $lastArg"
+    __gitcode_debug "args: $args"
+    __gitcode_debug "last arg: $lastArg"
 
     # Disable ActiveHelp which is not supported for fish shell
     set -l requestComp "GC_ACTIVE_HELP=0 $args[1] __complete $args[2..-1] $lastArg"
 
-    __gc_debug "Calling $requestComp"
+    __gitcode_debug "Calling $requestComp"
     set -l results (eval $requestComp 2> /dev/null)
 
     # Some programs may output extra empty lines after the directive.
@@ -44,9 +44,9 @@ function __gc_perform_completion
     # completions must be prefixed with the flag
     set -l flagPrefix (string match -r -- '-.*=' "$lastArg")
 
-    __gc_debug "Comps: $comps"
-    __gc_debug "DirectiveLine: $directiveLine"
-    __gc_debug "flagPrefix: $flagPrefix"
+    __gitcode_debug "Comps: $comps"
+    __gitcode_debug "DirectiveLine: $directiveLine"
+    __gitcode_debug "flagPrefix: $flagPrefix"
 
     for comp in $comps
         printf "%s%s\n" "$flagPrefix" "$comp"
@@ -55,84 +55,84 @@ function __gc_perform_completion
     printf "%s\n" "$directiveLine"
 end
 
-# this function limits calls to __gc_perform_completion, by caching the result behind $__gc_perform_completion_once_result
-function __gc_perform_completion_once
-    __gc_debug "Starting __gc_perform_completion_once"
+# this function limits calls to __gitcode_perform_completion, by caching the result behind $__gitcode_perform_completion_once_result
+function __gitcode_perform_completion_once
+    __gitcode_debug "Starting __gitcode_perform_completion_once"
 
-    if test -n "$__gc_perform_completion_once_result"
-        __gc_debug "Seems like a valid result already exists, skipping __gc_perform_completion"
+    if test -n "$__gitcode_perform_completion_once_result"
+        __gitcode_debug "Seems like a valid result already exists, skipping __gitcode_perform_completion"
         return 0
     end
 
-    set --global __gc_perform_completion_once_result (__gc_perform_completion)
-    if test -z "$__gc_perform_completion_once_result"
-        __gc_debug "No completions, probably due to a failure"
+    set --global __gitcode_perform_completion_once_result (__gitcode_perform_completion)
+    if test -z "$__gitcode_perform_completion_once_result"
+        __gitcode_debug "No completions, probably due to a failure"
         return 1
     end
 
-    __gc_debug "Performed completions and set __gc_perform_completion_once_result"
+    __gitcode_debug "Performed completions and set __gitcode_perform_completion_once_result"
     return 0
 end
 
-# this function is used to clear the $__gc_perform_completion_once_result variable after completions are run
-function __gc_clear_perform_completion_once_result
-    __gc_debug ""
-    __gc_debug "========= clearing previously set __gc_perform_completion_once_result variable =========="
-    set --erase __gc_perform_completion_once_result
-    __gc_debug "Successfully erased the variable __gc_perform_completion_once_result"
+# this function is used to clear the $__gitcode_perform_completion_once_result variable after completions are run
+function __gitcode_clear_perform_completion_once_result
+    __gitcode_debug ""
+    __gitcode_debug "========= clearing previously set __gitcode_perform_completion_once_result variable =========="
+    set --erase __gitcode_perform_completion_once_result
+    __gitcode_debug "Successfully erased the variable __gitcode_perform_completion_once_result"
 end
 
-function __gc_requires_order_preservation
-    __gc_debug ""
-    __gc_debug "========= checking if order preservation is required =========="
+function __gitcode_requires_order_preservation
+    __gitcode_debug ""
+    __gitcode_debug "========= checking if order preservation is required =========="
 
-    __gc_perform_completion_once
-    if test -z "$__gc_perform_completion_once_result"
-        __gc_debug "Error determining if order preservation is required"
+    __gitcode_perform_completion_once
+    if test -z "$__gitcode_perform_completion_once_result"
+        __gitcode_debug "Error determining if order preservation is required"
         return 1
     end
 
-    set -l directive (string sub --start 2 $__gc_perform_completion_once_result[-1])
-    __gc_debug "Directive is: $directive"
+    set -l directive (string sub --start 2 $__gitcode_perform_completion_once_result[-1])
+    __gitcode_debug "Directive is: $directive"
 
     set -l shellCompDirectiveKeepOrder 32
     set -l keeporder (math (math --scale 0 $directive / $shellCompDirectiveKeepOrder) % 2)
-    __gc_debug "Keeporder is: $keeporder"
+    __gitcode_debug "Keeporder is: $keeporder"
 
     if test $keeporder -ne 0
-        __gc_debug "This does require order preservation"
+        __gitcode_debug "This does require order preservation"
         return 0
     end
 
-    __gc_debug "This doesn't require order preservation"
+    __gitcode_debug "This doesn't require order preservation"
     return 1
 end
 
 
 # This function does two things:
-# - Obtain the completions and store them in the global __gc_comp_results
+# - Obtain the completions and store them in the global __gitcode_comp_results
 # - Return false if file completion should be performed
-function __gc_prepare_completions
-    __gc_debug ""
-    __gc_debug "========= starting completion logic =========="
+function __gitcode_prepare_completions
+    __gitcode_debug ""
+    __gitcode_debug "========= starting completion logic =========="
 
     # Start fresh
-    set --erase __gc_comp_results
+    set --erase __gitcode_comp_results
 
-    __gc_perform_completion_once
-    __gc_debug "Completion results: $__gc_perform_completion_once_result"
+    __gitcode_perform_completion_once
+    __gitcode_debug "Completion results: $__gitcode_perform_completion_once_result"
 
-    if test -z "$__gc_perform_completion_once_result"
-        __gc_debug "No completion, probably due to a failure"
+    if test -z "$__gitcode_perform_completion_once_result"
+        __gitcode_debug "No completion, probably due to a failure"
         # Might as well do file completion, in case it helps
         return 1
     end
 
-    set -l directive (string sub --start 2 $__gc_perform_completion_once_result[-1])
-    set --global __gc_comp_results $__gc_perform_completion_once_result[1..-2]
+    set -l directive (string sub --start 2 $__gitcode_perform_completion_once_result[-1])
+    set --global __gitcode_comp_results $__gitcode_perform_completion_once_result[1..-2]
 
-    __gc_debug "Completions are: $__gc_comp_results"
-    __gc_debug "Directive is: $directive"
+    __gitcode_debug "Completions are: $__gitcode_comp_results"
+    __gitcode_debug "Directive is: $directive"
 
     set -l shellCompDirectiveError 1
     set -l shellCompDirectiveNoSpace 2
@@ -146,7 +146,7 @@ function __gc_prepare_completions
 
     set -l compErr (math (math --scale 0 $directive / $shellCompDirectiveError) % 2)
     if test $compErr -eq 1
-        __gc_debug "Received error directive: aborting."
+        __gitcode_debug "Received error directive: aborting."
         # Might as well do file completion, in case it helps
         return 1
     end
@@ -154,7 +154,7 @@ function __gc_prepare_completions
     set -l filefilter (math (math --scale 0 $directive / $shellCompDirectiveFilterFileExt) % 2)
     set -l dirfilter (math (math --scale 0 $directive / $shellCompDirectiveFilterDirs) % 2)
     if test $filefilter -eq 1; or test $dirfilter -eq 1
-        __gc_debug "File extension filtering or directory filtering not supported"
+        __gitcode_debug "File extension filtering or directory filtering not supported"
         # Do full file completion instead
         return 1
     end
@@ -162,7 +162,7 @@ function __gc_prepare_completions
     set -l nospace (math (math --scale 0 $directive / $shellCompDirectiveNoSpace) % 2)
     set -l nofiles (math (math --scale 0 $directive / $shellCompDirectiveNoFileComp) % 2)
 
-    __gc_debug "nospace: $nospace, nofiles: $nofiles"
+    __gitcode_debug "nospace: $nospace, nofiles: $nofiles"
 
     # If we want to prevent a space, or if file completion is NOT disabled,
     # we need to count the number of valid completions.
@@ -171,22 +171,22 @@ function __gc_prepare_completions
     # criteria than the prefix.
     if test $nospace -ne 0; or test $nofiles -eq 0
         set -l prefix (commandline -t | string escape --style=regex)
-        __gc_debug "prefix: $prefix"
+        __gitcode_debug "prefix: $prefix"
 
-        set -l completions (string match -r -- "^$prefix.*" $__gc_comp_results)
-        set --global __gc_comp_results $completions
-        __gc_debug "Filtered completions are: $__gc_comp_results"
+        set -l completions (string match -r -- "^$prefix.*" $__gitcode_comp_results)
+        set --global __gitcode_comp_results $completions
+        __gitcode_debug "Filtered completions are: $__gitcode_comp_results"
 
         # Important not to quote the variable for count to work
-        set -l numComps (count $__gc_comp_results)
-        __gc_debug "numComps: $numComps"
+        set -l numComps (count $__gitcode_comp_results)
+        __gitcode_debug "numComps: $numComps"
 
         if test $numComps -eq 1; and test $nospace -ne 0
             # We must first split on \t to get rid of the descriptions to be
             # able to check what the actual completion will be.
             # We don't need descriptions anyway since there is only a single
             # real completion which the shell will expand immediately.
-            set -l split (string split --max 1 \t $__gc_comp_results[1])
+            set -l split (string split --max 1 \t $__gitcode_comp_results[1])
 
             # Fish won't add a space if the completion ends with any
             # of the following characters: @=/:.,
@@ -194,16 +194,16 @@ function __gc_prepare_completions
             if not string match -r -q "[@=/:.,]" -- "$lastChar"
                 # In other cases, to support the "nospace" directive we trick the shell
                 # by outputting an extra, longer completion.
-                __gc_debug "Adding second completion to perform nospace directive"
-                set --global __gc_comp_results $split[1] $split[1].
-                __gc_debug "Completions are now: $__gc_comp_results"
+                __gitcode_debug "Adding second completion to perform nospace directive"
+                set --global __gitcode_comp_results $split[1] $split[1].
+                __gitcode_debug "Completions are now: $__gitcode_comp_results"
             end
         end
 
         if test $numComps -eq 0; and test $nofiles -eq 0
             # To be consistent with bash and zsh, we only trigger file
             # completion when there are no other completions
-            __gc_debug "Requesting file completion"
+            __gitcode_debug "Requesting file completion"
             return 1
         end
     end
@@ -223,13 +223,13 @@ if type -q "gc"
 end
 
 # Remove any pre-existing completions for the program since we will be handling all of them.
-complete -c gc -e
+complete -c gitcode -e
 
-# this will get called after the two calls below and clear the $__gc_perform_completion_once_result global
-complete -c gc -n '__gc_clear_perform_completion_once_result'
-# The call to __gc_prepare_completions will setup __gc_comp_results
+# this will get called after the two calls below and clear the $__gitcode_perform_completion_once_result global
+complete -c gitcode -n '__gitcode_clear_perform_completion_once_result'
+# The call to __gitcode_prepare_completions will setup __gitcode_comp_results
 # which provides the program's completion choices.
 # If this doesn't require order preservation, we don't use the -k flag
-complete -c gc -n 'not __gc_requires_order_preservation && __gc_prepare_completions' -f -a '$__gc_comp_results'
+complete -c gitcode -n 'not __gitcode_requires_order_preservation && __gitcode_prepare_completions' -f -a '$__gitcode_comp_results'
 # otherwise we use the -k flag
-complete -k -c gc -n '__gc_requires_order_preservation && __gc_prepare_completions' -f -a '$__gc_comp_results'
+complete -k -c gitcode -n '__gitcode_requires_order_preservation && __gitcode_prepare_completions' -f -a '$__gitcode_comp_results'

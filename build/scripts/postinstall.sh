@@ -1,3 +1,21 @@
-#!/bin/sh
+#!/bin/bash
+# Post-install script for gc package
+
 set -e
-echo "gitcode-cli: installed gc and gitcode commands"
+
+# Update shell completions if available
+if command -v update-shell-completions &> /dev/null; then
+    update-shell-completions
+fi
+
+# Inform user about setup
+echo "GitCode CLI (gc/gitcode) has been installed successfully!"
+echo ""
+echo "To get started:"
+echo "  1. Run 'gitcode auth login' or 'gc auth login' to authenticate"
+echo "  2. Set your token: export GC_TOKEN=your_token"
+echo ""
+echo "Project README: https://gitcode.com/gitcode-cli/cli"
+echo "Command docs: https://gitcode.com/gitcode-cli/cli/blob/main/docs/COMMANDS.md"
+
+exit 0

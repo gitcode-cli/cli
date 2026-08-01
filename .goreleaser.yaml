@@ -35,6 +35,14 @@ builds:
       - -X main.date={{.Date}}
     overrides:
       - goos: darwin
+        goarch: amd64
+        ldflags:
+          - -w
+          - -X main.version={{.Version}}
+          - -X main.commit={{.Commit}}
+          - -X main.date={{.Date}}
+      - goos: darwin
+        goarch: arm64
         ldflags:
           - -w
           - -X main.version={{.Version}}
@@ -44,10 +52,10 @@ builds:
 archives:
   - id: default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format: tar.gz
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     files:
       - LICENSE
       - README.md
@@ -86,28 +94,8 @@ release:
   draft: false
   prerelease: auto
   mode: replace
-  header: |
-    ## GitCode CLI {{ .Version }}
-
-    A command line tool for GitCode.
   footer: |
     **Full Changelog**: https://gitcode.com/gitcode-cli/cli/compare/{{ .PreviousTag }}...{{ .Tag }}
-
-    ## Installation
-
-    ### Wheel Package (Recommended)
-    Download from Release assets and install:
-    ```bash
-    pip install gitcode_cli-{{ .Version }}-py3-none-any.whl
-    ```
-
-    ### PyPI
-    ```bash
-    pip install gitcode-cli
-    ```
-
-    ### Binary
-    Download the appropriate binary for your platform from the assets below.
 
 announce:
   skip: false

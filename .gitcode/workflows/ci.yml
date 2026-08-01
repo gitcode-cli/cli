@@ -135,12 +135,14 @@ jobs:
       - name: Wheel entrypoint smoke test
         run: |
           set -euo pipefail
-          python3 -m pip install build
-          python3 -m build --wheel --outdir dist/
-          python3 -m pip install dist/*.whl
-          echo "=== gc version ===" && gc version
-          echo "=== gitcode version ===" && gitcode version
-          echo "=== python3 -m gc_cli version ===" && python3 -m gc_cli version
+          VENV="${TMPDIR:-/tmp}/gc-wheel-venv-${ATOMGIT_RUN_ID:?}"
+          python3 -m venv "$VENV"
+          "$VENV/bin/python" -m pip install build
+          "$VENV/bin/python" -m build --wheel --outdir dist/
+          "$VENV/bin/python" -m pip install dist/*.whl
+          echo "=== gc version ===" && "$VENV/bin/gc" version
+          echo "=== gitcode version ===" && "$VENV/bin/gitcode" version
+          echo "=== python -m gc_cli version ===" && "$VENV/bin/python" -m gc_cli version
 
       - name: Resolve wheel artifact name
         id: wheel-artifact

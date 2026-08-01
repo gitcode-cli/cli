@@ -162,7 +162,7 @@ echo "CI conclusion: $CONCLUSION"
 
 CI 通过标准：
 
-- GitCode 原生 Job（lint / test / build / docker）全部通过
+- GitCode 原生 Job（lint / test / build / package）全部通过
 - 有 GitHub 镜像 PR 时，GitHub 所有 Job 通过，且 `test` / `build` 覆盖 ubuntu / macOS / Windows
 
 CI 失败处理：

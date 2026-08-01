@@ -140,7 +140,7 @@ gofmt -w <files>
 
 CI 通过的判定标准：
 
-- GitCode 原生 `lint` / `test` / `build` / `docker` Linux Job 通过
+- GitCode 原生 `lint` / `test` / `build` / `package` Linux Job 通过
 - 有 GitHub 镜像 PR 时，GitHub `test` / `build` 在 ubuntu / macOS / Windows 通过
 - 有 GitHub 镜像 PR 时，GitHub `lint` / `docker` Linux Job 通过
 

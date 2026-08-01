@@ -178,9 +178,10 @@ Linux/macOS/Windows 跨平台验证。正式规范见 [spec/delivery/ci-workflow
 | `lint` | Ubuntu latest | Ubuntu | 编码规范 |
 | `test` | Ubuntu latest | Ubuntu / macOS / Windows | 单元测试 + 竞态 + 覆盖率 |
 | `build` | Ubuntu latest | Ubuntu / macOS / Windows | Linux / 跨平台构建 |
-| `docker` | Ubuntu latest | Ubuntu | Docker + 补全 + wheel 入口冒烟 |
+| `package` / `docker` | Ubuntu latest（package） | Ubuntu（docker） | 补全 + wheel 入口冒烟 / Docker |
 
-依赖：`lint` 与 `test` 并行 → `build`、`docker` 等 `test` 通过后执行；任一 Job 失败即整体失败。
+依赖：`lint` 与 `test` 并行 → GitCode `build`、`package` 和 GitHub `build`、`docker`
+等待 `test` 通过后执行；任一 Job 失败即整体失败。
 
 **AI 通过 `gc` / `gh` 监控**：
 

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version, with optional v prefix (e.g., v1.0.0, 1.0.0, v1.0.0-rc.1)'
+        description: 'Version with required v prefix (e.g., v1.0.0 or v1.0.0-rc.1)'
         required: true
         type: string
 
@@ -12,13 +12,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ inputs.version }}
+  group: release
   cancel-in-progress: false
 
 jobs:
   preflight:
     name: Preflight
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -33,11 +33,11 @@ jobs:
 
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
-          go-version: '1.22'
+          go-version: '1.22.12'
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: '3.11'
+          python-version: '3.11.9'
 
       - name: Validate version input
         id: version
@@ -48,6 +48,7 @@ jobs:
           test "${GITHUB_REF_NAME}" = "main"
           VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION_INPUT}")"
           VERSION_TAG="v${VERSION_NUM}"
+          test "${VERSION_INPUT}" = "${VERSION_TAG}"
           echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
           echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
           echo "HEAD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -130,7 +131,7 @@ jobs:
 
   tag:
     name: Tag
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: preflight
     permissions:
       contents: write
@@ -160,7 +161,7 @@ jobs:
 
   artifacts:
     name: Artifacts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [preflight, tag]
     permissions:
       contents: read
@@ -173,11 +174,11 @@ jobs:
 
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
-          go-version: '1.22'
+          go-version: '1.22.12'
 
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: '3.11'
+          python-version: '3.11.9'
 
       - name: Verify release tag
         env:
@@ -199,6 +200,12 @@ jobs:
           bash scripts/prepare-package-assets.sh
           git diff --exit-code
 
+      - name: Build GoReleaser assets
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          version: 'v2.17.1'
+          args: release --clean --skip=publish
+
       - name: Sync package versions
         env:
           VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
@@ -211,12 +218,6 @@ jobs:
 
       - name: Install nfpm
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
-
-      - name: Build GoReleaser assets
-        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
-        with:
-          version: 'v2.17.1'
-          args: release --clean --skip=publish
 
       - name: Build DEB/RPM and Python packages
         run: |
@@ -286,7 +287,7 @@ jobs:
 
   publish:
     name: GitHub Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [preflight, artifacts]
     permissions:
       contents: write
@@ -313,6 +314,18 @@ jobs:
           cd ..
 
           if gh release view "${VERSION_TAG}" >/dev/null 2>&1; then
+            mkdir existing-release-assets
+            gh release download "${VERSION_TAG}" --dir existing-release-assets
+            diff -u \
+              <(find release-assets -maxdepth 1 -type f -printf '%f\n' | sort) \
+              <(find existing-release-assets -maxdepth 1 -type f -printf '%f\n' | sort)
+            cmp \
+              "release-assets/gc_${VERSION_NUM}_checksums.txt" \
+              "existing-release-assets/gc_${VERSION_NUM}_checksums.txt"
+            (
+              cd existing-release-assets
+              sha256sum -c "gc_${VERSION_NUM}_checksums.txt"
+            )
             gh release edit "${VERSION_TAG}" \
               --title "GitCode CLI ${VERSION_TAG}" \
               --notes-file "docs/releases/${VERSION_TAG}.md"
@@ -327,12 +340,12 @@ jobs:
               release_args+=(--prerelease)
             fi
             gh release create "${release_args[@]}"
+            gh release upload "${VERSION_TAG}" release-assets/*
           fi
-          gh release upload "${VERSION_TAG}" release-assets/* --clobber
 
   pypi:
     name: PyPI
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [preflight, publish]
     permissions:
       contents: read
@@ -351,5 +364,49 @@ jobs:
           mkdir dist
           cp release-assets/*.whl release-assets/gitcode_cli-*.tar.gz dist/
 
+      - name: Verify any existing PyPI distributions
+        env:
+          VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          from urllib.error import HTTPError
+          from urllib.request import urlopen
+
+          version = os.environ["VERSION_NUM"]
+          try:
+              with urlopen(f"https://pypi.org/pypi/gitcode-cli/{version}/json") as response:
+                  release = json.load(response)
+          except HTTPError as error:
+              if error.code == 404:
+                  raise SystemExit(0)
+              raise
+
+          local = {
+              path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+              for path in Path("dist").iterdir()
+              if path.is_file()
+          }
+          remote = {
+              item["filename"]: item["digests"]["sha256"]
+              for item in release["urls"]
+          }
+          unexpected = sorted(remote.keys() - local.keys())
+          mismatched = sorted(
+              name for name in remote.keys() & local.keys()
+              if remote[name] != local[name]
+          )
+          if unexpected or mismatched:
+              raise SystemExit(
+                  f"existing PyPI distributions differ: unexpected={unexpected}, mismatched={mismatched}"
+              )
+          PY
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          skip-existing: true

@@ -16,12 +16,14 @@ func TestReleaseWorkflowOrdersTagBeforeGoReleaser(t *testing.T) {
 	assertOrdered(t, workflow, "- name: Validate release tree", "- name: Create and push tag")
 	assertOrdered(t, workflow, "- name: Preflight packages and wheel", "- name: Create and push tag")
 	assertOrdered(t, workflow, "- name: Create and push tag", "- name: Build GoReleaser assets")
+	assertOrdered(t, workflow, "- name: Build GoReleaser assets", "- name: Sync package versions")
 }
 
 func TestReleaseWorkflowUsesTrackedNotesAndExactTag(t *testing.T) {
 	workflow := readReleaseWorkflow(t)
 	required := []string{
 		`test "${GITHUB_REF_NAME}" = "main"`,
+		`test "${VERSION_INPUT}" = "${VERSION_TAG}"`,
 		`test -f "docs/releases/${VERSION_TAG}.md"`,
 		`git diff --exit-code`,
 		`TAG_SHA="$(git rev-list -n 1 "${VERSION_TAG}")"`,
@@ -40,6 +42,41 @@ func TestReleaseWorkflowUsesTrackedNotesAndExactTag(t *testing.T) {
 	for _, value := range required {
 		if !strings.Contains(workflow, value) {
 			t.Errorf("release workflow missing %q", value)
+		}
+	}
+}
+
+func TestReleaseWorkflowSerializesAndProtectsPublishedAssets(t *testing.T) {
+	workflow := readReleaseWorkflow(t)
+	required := []string{
+		"group: release",
+		`gh release download "${VERSION_TAG}" --dir existing-release-assets`,
+		"find existing-release-assets -maxdepth 1 -type f",
+		`cmp \`,
+		`sha256sum -c "gc_${VERSION_NUM}_checksums.txt"`,
+	}
+	for _, value := range required {
+		if !strings.Contains(workflow, value) {
+			t.Errorf("release workflow missing %q", value)
+		}
+	}
+	for _, forbidden := range []string{"group: release-${{ inputs.version }}", "--clobber"} {
+		if strings.Contains(workflow, forbidden) {
+			t.Errorf("release workflow must not contain %q", forbidden)
+		}
+	}
+}
+
+func TestReleaseWorkflowPinsRunnerAndToolchains(t *testing.T) {
+	workflow := readReleaseWorkflow(t)
+	for _, forbidden := range []string{"ubuntu-latest", "go-version: '1.22'", "python-version: '3.11'"} {
+		if strings.Contains(workflow, forbidden) {
+			t.Errorf("release workflow must not contain floating version %q", forbidden)
+		}
+	}
+	for _, required := range []string{"runs-on: ubuntu-24.04", "go-version: '1.22.12'", "python-version: '3.11.9'"} {
+		if !strings.Contains(workflow, required) {
+			t.Errorf("release workflow missing pinned version %q", required)
 		}
 	}
 }
@@ -80,6 +117,16 @@ func TestReleaseWorkflowConfiguresPyPIPublishing(t *testing.T) {
 	}
 	if !strings.Contains(readReleaseWorkflow(t), "pip install build==1.4.1") {
 		t.Fatal("pypi build tool must be pinned to build 1.4.1")
+	}
+	workflow := readReleaseWorkflow(t)
+	for _, required := range []string{
+		"Verify any existing PyPI distributions",
+		`remote[name] != local[name]`,
+		"skip-existing: true",
+	} {
+		if !strings.Contains(workflow, required) {
+			t.Errorf("pypi rerun protection missing %q", required)
+		}
 	}
 }
 

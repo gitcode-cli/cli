@@ -33,6 +33,7 @@ func TestReleaseWorkflowUsesTrackedNotesAndExactTag(t *testing.T) {
 		`persist-credentials: false`,
 		`bash scripts/prepare-package-assets.sh`,
 		`name: release-assets`,
+		`! -name "gc_${VERSION_NUM}_checksums.txt"`,
 		`xargs -0 sha256sum`,
 		`sha256sum -c "gc_${VERSION_NUM}_checksums.txt"`,
 	}

@@ -272,7 +272,8 @@ jobs:
           cp dist/gc_linux_amd64 dist/gc_linux_arm64 release-assets/
           cp dist/*.whl dist/gitcode_cli-*.tar.gz release-assets/
           cd release-assets
-          find . -maxdepth 1 -type f -printf '%f\0' | sort -z | xargs -0 sha256sum > "gc_${VERSION_NUM}_checksums.txt"
+          find . -maxdepth 1 -type f ! -name "gc_${VERSION_NUM}_checksums.txt" -printf '%f\0' \
+            | sort -z | xargs -0 sha256sum > "gc_${VERSION_NUM}_checksums.txt"
           sha256sum -c "gc_${VERSION_NUM}_checksums.txt"
 
       - name: Upload release assets

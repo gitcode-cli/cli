@@ -115,7 +115,7 @@ make release-snapshot
 
 ```bash
 go mod tidy
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
 pip install --upgrade build wheel setuptools
 ```
 

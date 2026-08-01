@@ -99,7 +99,7 @@ dist/
 [nfpm](https://github.com/goreleaser/nfpm) 是 DEB/RPM 包构建工具。
 
 ```bash
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
 ```
 
 > **注意**：`go install` 安装到 `~/go/bin/`，`package.sh` 会自动查找此路径。
@@ -123,112 +123,33 @@ export GC_TOKEN="your_gitcode_token"
 ### 完整发布流程
 
 ```bash
-# 1. 构建所有包
+# 1. 本地验证所有包；这些制品不得用于正式发布
 ./scripts/package.sh v0.9.0 release
 
-# 2. 创建 Release
+# 2. 发布准备 PR 合入两个远端 main 后，触发正式 workflow
+gh workflow run release.yml -R gitcode-cli/cli -f version=v0.9.0
+gh run watch <run-id> -R gitcode-cli/cli
+
+# 3. workflow 全部成功后，同步同一 tag 到 GitCode（SSH）
+git fetch github tag v0.9.0
+git push origin refs/tags/v0.9.0
+
+# 4. 下载 GitHub workflow 生成的正式制品
+mkdir -p dist/github-release
+gh release download v0.9.0 -R gitcode-cli/cli --dir dist/github-release
+
+# 5. 使用受跟踪的同一份说明创建 GitCode Release
 gc release create v0.9.0 -R gitcode-cli/cli \
   --title "GitCode CLI v0.9.0" \
-  --notes "$(cat <<'EOF'
-## 更新内容
+  --notes-file docs/releases/v0.9.0.md \
+  --target main \
+  --json
 
-### 新功能
-- 功能描述
-
-### Bug 修复
-- 修复描述
-
-### 修复的 Issue
-- Fixes Issue XX
-
-## 安装方式
-
-### Wheel 包（推荐，跨平台）
-
-内置全平台二进制（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64），创建虚拟环境并安装：
-
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gitcode_cli-0.9.0-py3-none-any.whl
-
-Windows 用户激活虚拟环境：
-
-    .venv\Scripts\activate
-
-Windows PowerShell 用户建议运行：
-
-    gitcode version
-
-说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。Windows 未使用虚拟环境时也可能因 Python 的 `Scripts` 目录不在 `PATH` 而找不到 `gitcode`；请使用同一个 `python` 执行安装和 `python -c "import sysconfig; print(sysconfig.get_path('scripts'))"`，将输出目录加入用户 `PATH` 后重新打开终端，配置前可直接运行 `python -m gc_cli version`。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
-
-Command-name behavior by platform (wheel entrypoint):
-
-| 启动方式 | Windows | Linux / macOS |
-|---------|---------|---------------|
-| `gc` | `gc` | `gc` |
-| `gitcode` | `gitcode` | `gitcode` |
-| `python -m gc_cli` | `gitcode` | `gc` |
-
-`python -m gc_cli` 的 argv[0] stem 为 `gc_cli`，不匹配 `gc`/`gitcode`，
-因此回退到平台默认值：Windows → `gitcode`，非 Windows → `gc`。
-
-DEB/RPM packages install `/usr/bin/gc` and `/usr/bin/gitcode`; on Linux they
-are equivalent command entry points.
-
-### DEB (Debian/Ubuntu)
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_0.9.0_amd64.deb
-    sudo dpkg -i gc_0.9.0_amd64.deb
-
-ARM64 设备：
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_0.9.0_arm64.deb
-    sudo dpkg -i gc_0.9.0_arm64.deb
-
-### RPM (RHEL/CentOS/Fedora)
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc-0.9.0-1.x86_64.rpm
-    sudo rpm -i gc-0.9.0-1.x86_64.rpm
-
-ARM64 设备：
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc-0.9.0-1.aarch64.rpm
-    sudo rpm -i gc-0.9.0-1.aarch64.rpm
-
-### Linux 二进制
-
-AMD64：
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_linux_amd64
-    chmod +x gc_linux_amd64
-    sudo mv gc_linux_amd64 /usr/local/bin/gc
-
-ARM64：
-
-    wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_linux_arm64
-    chmod +x gc_linux_arm64
-    sudo mv gc_linux_arm64 /usr/local/bin/gc
-
-## 验证安装
-
-    gc version
-EOF
-)"
-
-# 3. 上传所有包
-gc release upload v0.9.0 \
-  dist/gc_linux_amd64 \
-  dist/gc_linux_arm64 \
-  dist/gc_0.9.0_amd64.deb \
-  dist/gc_0.9.0_arm64.deb \
-  dist/gc-0.9.0-1.x86_64.rpm \
-  dist/gc-0.9.0-1.aarch64.rpm \
-  dist/gitcode_cli-0.9.0-py3-none-any.whl \
-  dist/gitcode_cli-0.9.0.tar.gz \
-  -R gitcode-cli/cli
+# 6. 将同一批正式制品上传到 GitCode，不得重新构建
+gc release upload v0.9.0 dist/github-release/* -R gitcode-cli/cli --json
 ```
 
-> **注意**：将示例中的版本号 `0.9.0` 替换为实际版本号。
+> **注意**：将示例中的版本号 `0.9.0` 替换为实际版本号。正式制品必须携带准确 commit SHA；本地验证包不得上传。
 
 ### Release Notes 要求
 
@@ -292,7 +213,7 @@ GitCode 会错误渲染代码块内的 `#` 开头行为标题！
 
 Windows 用户激活虚拟环境：
 
-    .venv\Scripts\activate
+    .\.venv\Scripts\Activate.ps1
 
 Windows PowerShell 用户建议运行：
 
@@ -435,7 +356,7 @@ gc release create vX.Y.Z -R gitcode-cli/cli --title "vX.Y.Z" --notes "Release no
 ls ~/go/bin/nfpm
 
 # 如果没有，安装
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
 ```
 
 ### Q: 上传失败
@@ -540,7 +461,7 @@ contents:
 
 ```bash
 source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
+# .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 ```
 
 渲染后 `# Windows` 会显示为一级标题，导致格式混乱。
@@ -559,7 +480,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # Windows 用户使用
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 ```
 
 ---

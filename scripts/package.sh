@@ -281,7 +281,7 @@ build_pypi() {
 NFPMPATH=$(command -v nfpm 2>/dev/null || echo "$HOME/go/bin/nfpm")
 if [ ! -x "$NFPMPATH" ]; then
     if [[ "$TARGET" =~ ^(all|deb|rpm|linux|release)$ ]]; then
-        error "nfpm not found. Install it with:\n  go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest"
+        error "nfpm not found. Install it with:\n  go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3"
     fi
 fi
 

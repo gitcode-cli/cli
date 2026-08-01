@@ -82,13 +82,13 @@ MAJOR.MINOR.PATCH-PRERELEASE
 
 1. 切换到最新 `main`
 2. 运行测试与本地构建验证
-3. 准备 release notes
+3. 在 `docs/releases/vX.Y.Z.md` 准备并评审 release notes
 4. 同步文档版本号
-5. 使用标准脚本构建发布产物
-6. 创建 tag
-7. 创建 release
-8. 上传 release 产物
-9. 执行发布后验证
+5. 使用标准脚本在本地验证发布产物
+6. 将发布准备 PR 合入 GitCode 与 GitHub 的 `main`，确认 tree hash 一致
+7. 触发 GitHub release workflow，创建 tag、GitHub Release、正式产物并发布 PyPI
+8. 通过 SSH 将同一 tag 推送到 GitCode，并把同一批正式产物上传到 GitCode Release
+9. 对两个平台、PyPI 和安装入口执行发布后验证
 
 ### 6.1 获取最新主线
 
@@ -115,6 +115,8 @@ go build -o ./gc ./cmd/gc
 ./scripts/package.sh <version> release
 ```
 
+这一步用于本地发布前验证。制品中的版本、commit SHA 或来源不可追溯时不得上传；正式发布制品必须来自合入后 `main` 的标准 release workflow。
+
 ### 6.4 同步文档版本号
 
 `README.md` 与 `docs/PACKAGING.md` 含版本号绑定的下载 URL 与示例，必须随发版同步，否则滞后（见 #314）。使用专用脚本自动探测当前版本串并替换为目标版本，幂等，替换后校验无残留：
@@ -125,23 +127,39 @@ go build -o ./gc ./cmd/gc
 
 脚本支持 `--dry-run` 预览。同步后提交到 `main`，再创建 tag，使 tag 指向的提交包含正确的文档版本引用。下载 URL 指向的 release 产物在 release 创建与上传完成后（§6.5）即生效。
 
-### 6.5 创建 release
+### 6.5 创建正式 tag、GitHub Release 与 PyPI 包
 
-当前仓库的 CLI 路径为：
-
-```bash
-gc release create <tag> -R gitcode-cli/cli --title "<title>" --notes "<notes>"
-gc release upload <tag> <files...> -R gitcode-cli/cli
-```
-
-### 6.6 创建 tag
+发布准备改动合入两个远端的 `main` 且 tree hash 一致后，触发标准 workflow：
 
 ```bash
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push origin vX.Y.Z
+gh workflow run release.yml -R gitcode-cli/cli -f version=vX.Y.Z
+gh run watch <run-id> -R gitcode-cli/cli
 ```
 
-如果当前发布依赖平台或流程限制，允许先完成 release 说明和产物验证，再执行推送动作，但不得跳过验证。
+workflow 必须先校验 `docs/releases/vX.Y.Z.md`，再创建指向当前 `main` 的 tag，然后运行 GoReleaser。已有 tag 仅在其 commit 与当前 workflow HEAD 完全一致时允许复用。workflow 负责 GitHub Release、正式制品与 PyPI 发布。
+
+### 6.6 同步 GitCode tag、Release 与正式制品
+
+GitHub workflow 全部成功后，通过 SSH 将同一 tag 推送到 GitCode，并下载 GitHub Release 的正式制品：
+
+```bash
+git fetch github tag vX.Y.Z
+git push origin refs/tags/vX.Y.Z
+gh release download vX.Y.Z -R gitcode-cli/cli --dir dist/github-release
+```
+
+使用受跟踪的同一份 release notes 创建 GitCode Release，再上传下载得到的同一批制品：
+
+```bash
+gc release create vX.Y.Z -R gitcode-cli/cli \
+  --title "GitCode CLI vX.Y.Z" \
+  --notes-file docs/releases/vX.Y.Z.md \
+  --target main \
+  --json
+gc release upload vX.Y.Z dist/github-release/* -R gitcode-cli/cli --json
+```
+
+禁止在 GitCode 侧重新构建另一套正式制品。不得提取 `gh` 或 `gc` 保存的 token 再交给脚本或 `curl`；认证必须由 CLI 自身封装。
 
 ## 7. Release Notes 规则
 
@@ -168,6 +186,9 @@ release notes 必须满足：
 - 下载链接可访问
 - 至少抽样验证一个安装路径
 - `gc version` 可正常输出版本信息
+- GitCode 与 GitHub tag 指向同一 commit，两个 `main` 的 tree hash 一致
+- GitCode 与 GitHub Release 的同名资产校验和一致
+- PyPI 返回目标版本，且 wheel 内置二进制的版本和 commit SHA 可追溯
 
 若发布包含 DEB / RPM / wheel，建议至少各抽样验证一种常用安装路径。
 

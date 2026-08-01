@@ -1520,21 +1520,16 @@ gc release edit v1.0.0 --title "New title" -R infra-test/gctest1 --json
 - 若只修改标题或只修改说明，API 会保留未修改字段的原始值。
 - 支持包含斜杠的 tag 名称（如 `release/v1.0.0`）。
 
-### release delete - 删除 Release
+### release delete - 预演删除 Release（平台暂不支持实际删除）
 
 ```bash
-# 删除 Release
-gc release delete v1.0.0 -R infra-test/gctest1
-
 # 预演删除
 gc release delete v1.0.0 -R infra-test/gctest1 --dry-run
-
-# 非交互执行
-gc release delete v1.0.0 -R infra-test/gctest1 --yes
 ```
 
 说明：
-- `release delete` 优先使用 tag 端点直接删除；若 tag 端点不可用，自动回退到 ID 方式删除。
+- GitCode 官方 OpenAPI 当前没有 Release 删除接口，实际删除请求会返回 `405 Method Not Allowed`。
+- `--dry-run` 仅预览目标和参数，不执行删除；需要删除时请使用仓库 Release 页面。
 
 ---
 

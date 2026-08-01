@@ -32,7 +32,7 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 # 创建虚拟环境
 python3 -m venv .venv
 source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
+# .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 
 # 安装（一行命令）
 pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gitcode_cli-0.9.0-py3-none-any.whl
@@ -50,16 +50,16 @@ gitcode version
 
 **PyPI（备选）:**
 
-> ⚠️ **注意**: PyPI 官方源可能有同步延迟，推荐使用上方 wheel 包下载
+> **注意**：PyPI 官方源可能有同步延迟。固定目标版本可避免静默安装旧版本；目标版本暂不可用时，请使用上方 Release wheel。
 
 ```bash
 # 创建虚拟环境
 python3 -m venv .venv
 source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
+# .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 
-# 使用官方 PyPI 源安装
-pip install -i https://pypi.org/simple/ gitcode-cli
+# 固定版本安装，避免 PyPI 尚未同步时安装旧版本
+python -m pip install -i https://pypi.org/simple/ gitcode-cli==0.9.0
 
 # Windows PowerShell 中推荐使用 gitcode
 gitcode version

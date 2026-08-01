@@ -19,12 +19,12 @@ jobs:
       version: ${{ steps.version.outputs.VERSION_TAG }}
       package_version: ${{ steps.version.outputs.VERSION_NUM }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: '1.22'
 
@@ -34,25 +34,57 @@ jobs:
           VERSION_INPUT: ${{ inputs.version }}
         run: |
           set -euo pipefail
+          test "${GITHUB_REF_NAME}" = "main"
           VERSION="${VERSION_INPUT}"
           VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
           VERSION_TAG="v${VERSION_NUM}"
           echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
           echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
 
+      - name: Validate release notes
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
+        run: |
+          set -euo pipefail
+          test -f "docs/releases/${VERSION_TAG}.md"
+
       - name: Generate completions
         run: |
+          set -euo pipefail
           go build -o /tmp/gc ./cmd/gc
           mkdir -p completions
           /tmp/gc completion bash > completions/gc.bash
           /tmp/gc completion zsh > completions/gc.zsh
           /tmp/gc completion fish > completions/gc.fish
 
+      - name: Validate release tree
+        run: |
+          set -euo pipefail
+          go mod tidy
+          go generate ./...
+          git diff --exit-code
+
+      - name: Create and push tag
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          if git rev-parse --verify --quiet "refs/tags/${VERSION_TAG}" >/dev/null; then
+            TAG_SHA="$(git rev-list -n 1 "${VERSION_TAG}")"
+            test "${TAG_SHA}" = "${HEAD_SHA}"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
+            git push origin "refs/tags/${VERSION_TAG}"
+          fi
+
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
-          version: '~> v2'
-          args: release --clean
+          version: 'v2.17.1'
+          args: release --clean --release-notes=docs/releases/${{ steps.version.outputs.VERSION_TAG }}.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -67,7 +99,7 @@ jobs:
           sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
 
       - name: Install nfpm
-        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
 
       - name: Build DEB/RPM packages
         env:
@@ -89,7 +121,7 @@ jobs:
           ~/go/bin/nfpm package -f nfpm-arm64.yaml -p rpm -t dist
 
       - name: Upload DEB/RPM artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: packages
           path: |
@@ -97,44 +129,36 @@ jobs:
             dist/*.deb
           retention-days: 90
 
-      - name: Create and push tag
-        env:
-          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
-        run: |
-          set -euo pipefail
-          if git rev-parse --verify --quiet "refs/tags/${VERSION_TAG}" >/dev/null; then
-            echo "Tag ${VERSION_TAG} already exists, using it"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
-            git push origin "refs/tags/${VERSION_TAG}"
-          fi
-
       - name: Upload packages to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
         run: |
           set -euo pipefail
-          gh release upload "${VERSION_TAG}" dist/*.deb dist/*.rpm --clobber
+          gh release upload "${VERSION_TAG}" \
+            dist/*.deb \
+            dist/*.rpm \
+            dist/gc_linux_amd64 \
+            dist/gc_linux_arm64 \
+            --clobber
 
   pypi:
     name: PyPI
     runs-on: ubuntu-latest
     needs: build
     permissions:
+      contents: read
       id-token: write
     environment:
       name: pypi
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.11'
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: '1.22'
 
@@ -184,7 +208,7 @@ jobs:
           cd $GITHUB_WORKSPACE
 
       - name: Install build tools
-        run: pip install build
+        run: pip install build==1.4.1
 
       - name: Build Python package
         run: python -m build --wheel --sdist --outdir dist/
@@ -198,4 +222,4 @@ jobs:
           gh release upload "${VERSION_TAG}" dist/*.whl dist/*.tar.gz --clobber
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1

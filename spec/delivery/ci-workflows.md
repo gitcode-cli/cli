@@ -261,6 +261,18 @@ CI 是现有质量门禁的自动化实现，不得引入高于 `spec/foundation
 - 在 PR 中说明变更理由
 - 变更后至少在对应平台成功运行一次 CI 作为自验证
 
+### 5.4 GitCode 工作流契约回归
+
+`tests/contracts/ci_workflow_test.go` 使用 YAML 解析器校验 GitCode 日常 CI 的语义契约，包括：
+
+- 只包含 `lint`、`test`、`build`、`package` 四个 Job
+- `build` 和 `package` 依赖 `test`，且不依赖 Docker daemon
+- `package` 使用官方 `setup-python` 并覆盖 wheel 三入口冒烟
+- coverage、binary、wheel 制品通过运行时 `ATOMGIT_RUN_ID` 和 step output 唯一化
+
+该契约测试随 `go test ./...` 在本地和两个 CI 平台执行。修改 `.gitcode/workflows/ci.yml` 时必须同步更新契约测试；
+不得通过删除或放宽断言绕过已记录的托管 runner 约束。
+
 ---
 
 ## 6. Release CI
@@ -282,4 +294,4 @@ Release CI 规范详见 `spec/delivery/release-process.md`。
 
 ---
 
-**最后更新**: 2026-07-28
+**最后更新**: 2026-08-01

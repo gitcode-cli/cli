@@ -1,5 +1,5 @@
 require-infra $WRITE_REPO
-unique-name LABEL_NAME system-test-label
+unique-name LABEL_NAME system-test-label 50
 
 exec $GC_BIN label create $LABEL_NAME -R $WRITE_REPO --color '#3366cc' --description 'Created by tests/system testscript; safe to delete.' --json
 json-ok stdout

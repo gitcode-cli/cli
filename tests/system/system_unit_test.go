@@ -117,7 +117,7 @@ func TestLookupJSONPathSupportsAssigneeLogin(t *testing.T) {
 }
 
 func TestUniqueNameShape(t *testing.T) {
-	name, err := uniqueName("system-test-label", "label-lifecycle", 1234)
+	name, err := uniqueName("system-test-label", "label-lifecycle", 1234, 0)
 	if err != nil {
 		t.Fatalf("uniqueName returned error: %v", err)
 	}
@@ -127,5 +127,39 @@ func TestUniqueNameShape(t *testing.T) {
 	}
 	if !matched {
 		t.Fatalf("uniqueName returned %q with unexpected shape", name)
+	}
+}
+
+func TestUniqueNameHonorsMaxLength(t *testing.T) {
+	name, err := uniqueName("system-test-label", "label-lifecycle", 1234, 50)
+	if err != nil {
+		t.Fatalf("uniqueName returned error: %v", err)
+	}
+	if got := len([]rune(name)); got > 50 {
+		t.Fatalf("uniqueName length = %d, want at most 50: %q", got, name)
+	}
+	matched, err := regexp.MatchString(`^system-test[^-]*-1234-[0-9a-f]{32}$`, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !matched {
+		t.Fatalf("uniqueName returned %q without the expected prefix and suffix", name)
+	}
+}
+
+func TestUniqueNameRejectsTooSmallMaxLength(t *testing.T) {
+	if _, err := uniqueName("label", "test", 1234, 38); err == nil {
+		t.Fatal("uniqueName error = nil, want max length error")
+	}
+}
+
+func TestParsePositiveInt(t *testing.T) {
+	for _, value := range []string{"", "invalid", "0", "-1"} {
+		if _, err := parsePositiveInt(value); err == nil {
+			t.Fatalf("parsePositiveInt(%q) error = nil", value)
+		}
+	}
+	if got, err := parsePositiveInt("50"); err != nil || got != 50 {
+		t.Fatalf("parsePositiveInt(50) = %d, %v, want 50, nil", got, err)
 	}
 }

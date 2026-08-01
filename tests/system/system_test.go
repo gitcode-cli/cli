@@ -518,20 +518,54 @@ func cmdUniqueName(ts *testscript.TestScript, neg bool, args []string) {
 	if neg {
 		ts.Fatalf("unsupported: ! unique-name")
 	}
-	if len(args) != 2 {
-		ts.Fatalf("usage: unique-name VAR prefix")
+	if len(args) < 2 || len(args) > 3 {
+		ts.Fatalf("usage: unique-name VAR prefix [max-length]")
 	}
-	name, err := uniqueName(args[1], ts.Name(), os.Getpid())
+	maxLength := 0
+	if len(args) == 3 {
+		var err error
+		maxLength, err = parsePositiveInt(args[2])
+		if err != nil {
+			ts.Fatalf("invalid max length: %v", err)
+		}
+	}
+	name, err := uniqueName(args[1], ts.Name(), os.Getpid(), maxLength)
 	if err != nil {
 		ts.Fatalf("generate unique name: %v", err)
 	}
 	ts.Setenv(args[0], name)
 }
 
-func uniqueName(prefix, testName string, pid int) (string, error) {
+func parsePositiveInt(value string) (int, error) {
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		return 0, fmt.Errorf("must be a positive integer: %q", value)
+	}
+	return parsed, nil
+}
+
+func uniqueName(prefix, testName string, pid, maxLength int) (string, error) {
 	var nonce [16]byte
 	if _, err := rand.Read(nonce[:]); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s-%s-%d-%s", prefix, testName, pid, hex.EncodeToString(nonce[:])), nil
+	base := prefix + "-" + testName
+	suffix := fmt.Sprintf("-%d-%s", pid, hex.EncodeToString(nonce[:]))
+	if maxLength == 0 {
+		return base + suffix, nil
+	}
+
+	baseRunes := []rune(base)
+	suffixRunes := []rune(suffix)
+	if maxLength <= len(suffixRunes) {
+		return "", fmt.Errorf("max length %d is too small for unique suffix", maxLength)
+	}
+	if available := maxLength - len(suffixRunes); len(baseRunes) > available {
+		baseRunes = baseRunes[:available]
+	}
+	trimmedBase := strings.TrimRight(string(baseRunes), "-")
+	if trimmedBase == "" {
+		return "", fmt.Errorf("max length %d leaves no readable prefix", maxLength)
+	}
+	return trimmedBase + suffix, nil
 }

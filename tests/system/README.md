@@ -54,7 +54,9 @@ Custom testscript commands:
 - `defer-close-issue <number>`: close a created write-test issue during cleanup.
 - `defer-close-issue-title <title>`: close matching open issues during cleanup.
 - `defer-delete-label <name>`: delete a created write-test label during cleanup.
-- `unique-name <name> <prefix>`: create a process/test scoped resource name.
+- `unique-name <name> <prefix> [max-length]`: create a process/test scoped resource name;
+  when set, the maximum length truncates only the readable prefix and preserves
+  the complete PID and random suffix.
 
 Supported `json-assert` types are `present`, `string`, `nonempty-string`,
 `number`, `bool`, `object`, `array`, and `null`. Paths support object keys and

@@ -3,8 +3,10 @@
 package system_test
 
 import (
+	"errors"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -161,5 +163,44 @@ func TestParsePositiveInt(t *testing.T) {
 	}
 	if got, err := parsePositiveInt("50"); err != nil || got != 50 {
 		t.Fatalf("parsePositiveInt(50) = %d, %v, want 50, nil", got, err)
+	}
+}
+
+func TestDeleteLabelIfExists(t *testing.T) {
+	tests := []struct {
+		name       string
+		listOutput string
+		listErr    error
+		deleteErr  error
+		wantCalls  int
+		wantError  string
+	}{
+		{name: "absent", listOutput: `[{"name":"other"}]`, wantCalls: 1},
+		{name: "present", listOutput: `[{"name":"target"}]`, wantCalls: 2},
+		{name: "list failure", listErr: errors.New("network"), wantCalls: 1, wantError: "list labels"},
+		{name: "delete failure", listOutput: `[{"name":"target"}]`, deleteErr: errors.New("denied"), wantCalls: 2, wantError: "delete label"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			calls := 0
+			run := func(args ...string) ([]byte, error) {
+				calls++
+				if calls == 1 {
+					return []byte(tt.listOutput), tt.listErr
+				}
+				return nil, tt.deleteErr
+			}
+			err := deleteLabelIfExists(run, "infra-test/gctest1", "target")
+			if calls != tt.wantCalls {
+				t.Fatalf("calls = %d, want %d", calls, tt.wantCalls)
+			}
+			if tt.wantError == "" && err != nil {
+				t.Fatalf("deleteLabelIfExists returned error: %v", err)
+			}
+			if tt.wantError != "" && (err == nil || !strings.Contains(err.Error(), tt.wantError)) {
+				t.Fatalf("error = %v, want containing %q", err, tt.wantError)
+			}
+		})
 	}
 }

@@ -510,8 +510,39 @@ func cmdDeferDeleteLabel(ts *testscript.TestScript, neg bool, args []string) {
 	gcBin := ts.Getenv("GC_BIN")
 	writeRepo := ts.Getenv("WRITE_REPO")
 	ts.Defer(func() {
-		_ = exec.Command(gcBin, "label", "delete", labelName, "-R", writeRepo, "--yes").Run()
+		run := func(args ...string) ([]byte, error) {
+			return exec.Command(gcBin, args...).CombinedOutput()
+		}
+		if err := deleteLabelIfExists(run, writeRepo, labelName); err != nil {
+			ts.Fatalf("delete label %q during cleanup: %v", labelName, err)
+		}
 	})
+}
+
+type systemCommandRunner func(args ...string) ([]byte, error)
+
+func deleteLabelIfExists(run systemCommandRunner, repo, labelName string) error {
+	output, err := run("label", "list", "-R", repo, "--limit", "100", "--json")
+	if err != nil {
+		return fmt.Errorf("list labels: %w\n%s", err, output)
+	}
+	var labels []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(output, &labels); err != nil {
+		return fmt.Errorf("parse label list: %w", err)
+	}
+	for _, label := range labels {
+		if label.Name != labelName {
+			continue
+		}
+		deleteOutput, err := run("label", "delete", labelName, "-R", repo, "--yes")
+		if err != nil {
+			return fmt.Errorf("delete label: %w\n%s", err, deleteOutput)
+		}
+		return nil
+	}
+	return nil
 }
 
 func cmdUniqueName(ts *testscript.TestScript, neg bool, args []string) {

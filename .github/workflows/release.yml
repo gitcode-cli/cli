@@ -119,8 +119,9 @@ jobs:
           extract_gc dist/gc_*_darwin_arm64.tar.gz gc_cli/bin/gc-darwin-arm64
           unzip -p dist/gc_*_windows_amd64.zip gc.exe > gc_cli/bin/gc-windows-amd64.exe
 
-          python -m pip install build==1.4.1
-          python -m build --wheel --sdist --outdir dist
+          python -m venv /tmp/gc-build-venv
+          /tmp/gc-build-venv/bin/pip install build==1.4.1
+          /tmp/gc-build-venv/bin/python -m build --wheel --sdist --outdir dist
           python -m venv /tmp/gc-release-venv
           /tmp/gc-release-venv/bin/pip install dist/*.whl
           /tmp/gc-release-venv/bin/gitcode version --json
@@ -242,8 +243,9 @@ jobs:
           extract_gc dist/gc_*_darwin_amd64.tar.gz gc_cli/bin/gc-darwin-amd64
           extract_gc dist/gc_*_darwin_arm64.tar.gz gc_cli/bin/gc-darwin-arm64
           unzip -p dist/gc_*_windows_amd64.zip gc.exe > gc_cli/bin/gc-windows-amd64.exe
-          python -m pip install build==1.4.1
-          python -m build --wheel --sdist --outdir dist
+          python -m venv /tmp/gc-build-venv
+          /tmp/gc-build-venv/bin/pip install build==1.4.1
+          /tmp/gc-build-venv/bin/python -m build --wheel --sdist --outdir dist
 
       - name: Verify release entry points
         run: |

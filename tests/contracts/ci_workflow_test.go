@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -15,8 +16,11 @@ type workflowDocument struct {
 }
 
 type workflowJob struct {
-	Needs stringList     `yaml:"needs"`
-	Steps []workflowStep `yaml:"steps"`
+	Needs     stringList     `yaml:"needs"`
+	Steps     []workflowStep `yaml:"steps"`
+	Env       map[string]any `yaml:"env"`
+	Services  map[string]any `yaml:"services"`
+	Container any            `yaml:"container"`
 }
 
 type stringList []string
@@ -47,6 +51,7 @@ type workflowStep struct {
 	Uses string         `yaml:"uses"`
 	Run  string         `yaml:"run"`
 	With map[string]any `yaml:"with"`
+	Env  map[string]any `yaml:"env"`
 }
 
 type artifactContract struct {
@@ -77,10 +82,13 @@ func TestGitCodeWorkflowContractRejectsRegressions(t *testing.T) {
 	}{
 		{name: "missing package job", mutate: removePackageJob, want: "missing required job"},
 		{name: "docker command", mutate: addDockerCommand, want: "must not depend on Docker"},
+		{name: "docker action", mutate: addDockerAction, want: "must not depend on Docker"},
+		{name: "docker service", mutate: addDockerService, want: "must not depend on Docker"},
 		{name: "static resolver output", mutate: makeCoverageResolverStatic, want: "resolver"},
 		{name: "static upload name", mutate: makeCoverageUploadStatic, want: "upload name"},
 		{name: "missing setup-python", mutate: removePythonSetup, want: "setup-python"},
 		{name: "missing wheel install", mutate: removeWheelInstall, want: "wheel entrypoints"},
+		{name: "echo-only entrypoints", mutate: removeEntrypointExecutions, want: "wheel entrypoints"},
 		{name: "late setup-python", mutate: movePythonSetupAfterSmoke, want: "before wheel smoke test"},
 	}
 
@@ -102,6 +110,16 @@ func TestWorkflowNeedsAcceptsScalarForm(t *testing.T) {
 	}
 	if len(job.Needs) != 1 || job.Needs[0] != "test" {
 		t.Fatalf("scalar needs = %#v, want [test]", job.Needs)
+	}
+}
+
+func TestDockerDisabledMessageIsAllowed(t *testing.T) {
+	doc := readWorkflow(t)
+	job := doc.Jobs["package"]
+	job.Steps = append(job.Steps, workflowStep{Run: `echo "Docker is disabled on this runner"`})
+	doc.Jobs["package"] = job
+	if containsProblem(validateWorkflow(doc), "Docker") {
+		t.Fatal("validator treated a Docker-disabled message as a daemon dependency")
 	}
 }
 
@@ -229,25 +247,31 @@ func hasArtifactUpload(steps []workflowStep, name, path string) bool {
 }
 
 func hasWheelSmoke(run string) bool {
-	commands := []string{
+	requiredLines := []string{
 		"python -m build --wheel --outdir dist/",
 		"python -m pip install dist/*.whl",
-		"gc version",
-		"gitcode version",
-		"python -m gc_cli version",
+		`echo "=== gc version ===" && gc version`,
+		`echo "=== gitcode version ===" && gitcode version`,
+		`echo "=== python -m gc_cli version ===" && python -m gc_cli version`,
 	}
-	lastIndex := -1
-	for _, command := range commands {
-		index := strings.Index(run, command)
-		if index <= lastIndex {
+	lines := scriptLines(run)
+	lastLine := -1
+	for _, required := range requiredLines {
+		index := indexOfLine(lines, required)
+		if index <= lastLine {
 			return false
 		}
-		lastIndex = index
+		lastLine = index
 	}
 	return true
 }
 
 func isExactScript(script, want string) bool {
+	commands := scriptLines(script)
+	return len(commands) == 1 && commands[0] == want
+}
+
+func scriptLines(script string) []string {
 	var commands []string
 	for _, line := range strings.Split(script, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -255,16 +279,85 @@ func isExactScript(script, want string) bool {
 			commands = append(commands, trimmed)
 		}
 	}
-	return len(commands) == 1 && commands[0] == want
+	return commands
+}
+
+func indexOfLine(lines []string, want string) int {
+	for i, line := range lines {
+		if line == want {
+			return i
+		}
+	}
+	return -1
 }
 
 func jobUsesDocker(job workflowJob) bool {
+	if containsDockerDaemonReference(job.Env) || containsDockerDaemonReference(job.Services) ||
+		containsDockerDaemonReference(job.Container) {
+		return true
+	}
 	for _, step := range job.Steps {
-		if strings.Contains(strings.ToLower(step.Uses+"\n"+step.Run), "docker") {
+		if isDockerAction(step.Uses) || shellUsesDocker(step.Run) || containsDockerDaemonReference(step.With) ||
+			containsDockerDaemonReference(step.Env) {
 			return true
 		}
 	}
 	return false
+}
+
+var (
+	dockerCommandPattern  = regexp.MustCompile(`^(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*(?:sudo\s+)?(?:\S*/)?(?:docker|dockerd|docker-compose)\b`)
+	shellSeparatorPattern = regexp.MustCompile(`&&|\|\||;`)
+)
+
+func shellUsesDocker(script string) bool {
+	for _, line := range scriptLines(script) {
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		for _, segment := range shellSeparatorPattern.Split(line, -1) {
+			trimmed := strings.TrimSpace(segment)
+			if strings.HasPrefix(trimmed, "echo ") || strings.HasPrefix(trimmed, "printf ") {
+				continue
+			}
+			if dockerCommandPattern.MatchString(trimmed) || strings.Contains(strings.ToLower(trimmed), "/var/run/docker.sock") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isDockerAction(uses string) bool {
+	lower := strings.ToLower(strings.TrimSpace(uses))
+	return strings.HasPrefix(lower, "docker/") || strings.Contains(lower, "/docker/")
+}
+
+func containsDockerDaemonReference(value any) bool {
+	switch typed := value.(type) {
+	case string:
+		return isDockerDaemonMarker(typed)
+	case map[string]any:
+		for key, item := range typed {
+			if isDockerDaemonMarker(key) || containsDockerDaemonReference(item) {
+				return true
+			}
+		}
+	case []any:
+		for _, item := range typed {
+			if containsDockerDaemonReference(item) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isDockerDaemonMarker(value string) bool {
+	lower := strings.ToLower(value)
+	return lower == "docker" || strings.HasPrefix(lower, "docker:") || strings.Contains(lower, "dockerd") ||
+		strings.Contains(lower, "docker.sock") || strings.Contains(lower, "docker_host") ||
+		strings.Contains(lower, "docker daemon")
 }
 
 func contains(values []string, want string) bool {
@@ -299,6 +392,18 @@ func removePackageJob(doc *workflowDocument) {
 func addDockerCommand(doc *workflowDocument) {
 	job := doc.Jobs["package"]
 	job.Steps = append(job.Steps, workflowStep{Name: "Build Docker image", Run: "docker build ."})
+	doc.Jobs["package"] = job
+}
+
+func addDockerAction(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	job.Steps = append(job.Steps, workflowStep{Uses: "docker/setup-buildx-action@v3"})
+	doc.Jobs["package"] = job
+}
+
+func addDockerService(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	job.Services = map[string]any{"docker": map[string]any{"image": "docker:27-dind"}}
 	doc.Jobs["package"] = job
 }
 
@@ -338,6 +443,21 @@ func removeWheelInstall(doc *workflowDocument) {
 	job := doc.Jobs["package"]
 	for i := range job.Steps {
 		job.Steps[i].Run = strings.ReplaceAll(job.Steps[i].Run, "python -m pip install dist/*.whl\n", "")
+	}
+	doc.Jobs["package"] = job
+}
+
+func removeEntrypointExecutions(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	replacements := map[string]string{
+		`echo "=== gc version ===" && gc version`:                             `echo "=== gc version ==="`,
+		`echo "=== gitcode version ===" && gitcode version`:                   `echo "=== gitcode version ==="`,
+		`echo "=== python -m gc_cli version ===" && python -m gc_cli version`: `echo "=== python -m gc_cli version ==="`,
+	}
+	for i := range job.Steps {
+		for command, titleOnly := range replacements {
+			job.Steps[i].Run = strings.ReplaceAll(job.Steps[i].Run, command, titleOnly)
+		}
 	}
 	doc.Jobs["package"] = job
 }

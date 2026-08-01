@@ -57,8 +57,6 @@ vMAJOR.MINOR.PATCH[-PRERELEASE]
 ```text
 vMAJOR.MINOR.PATCH
 vMAJOR.MINOR.PATCH-PRERELEASE
-MAJOR.MINOR.PATCH
-MAJOR.MINOR.PATCH-PRERELEASE
 ```
 
 其中 `PRERELEASE` 只允许包版本兼容的 `alpha.N`、`beta.N`、`rc.N` 形式，`N` 为非负整数且不能带多余前导零，例如 `beta.1`、`rc.2`。

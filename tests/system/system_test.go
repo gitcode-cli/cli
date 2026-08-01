@@ -522,27 +522,35 @@ func cmdDeferDeleteLabel(ts *testscript.TestScript, neg bool, args []string) {
 type systemCommandRunner func(args ...string) ([]byte, error)
 
 func deleteLabelIfExists(run systemCommandRunner, repo, labelName string) error {
-	output, err := run("label", "list", "-R", repo, "--limit", "100", "--json")
-	if err != nil {
-		return fmt.Errorf("list labels: %w\n%s", err, output)
-	}
-	var labels []struct {
-		Name string `json:"name"`
-	}
-	if err := json.Unmarshal(output, &labels); err != nil {
-		return fmt.Errorf("parse label list: %w", err)
-	}
-	for _, label := range labels {
-		if label.Name != labelName {
-			continue
-		}
-		deleteOutput, err := run("label", "delete", labelName, "-R", repo, "--yes")
+	const pageSize = 100
+	for page := 1; ; page++ {
+		output, err := run(
+			"label", "list", "-R", repo,
+			"--limit", strconv.Itoa(pageSize), "--page", strconv.Itoa(page), "--json",
+		)
 		if err != nil {
-			return fmt.Errorf("delete label: %w\n%s", err, deleteOutput)
+			return fmt.Errorf("list labels page %d: %w\n%s", page, err, output)
 		}
-		return nil
+		var labels []struct {
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(output, &labels); err != nil {
+			return fmt.Errorf("parse label list page %d: %w", page, err)
+		}
+		for _, label := range labels {
+			if label.Name != labelName {
+				continue
+			}
+			deleteOutput, err := run("label", "delete", labelName, "-R", repo, "--yes")
+			if err != nil {
+				return fmt.Errorf("delete label: %w\n%s", err, deleteOutput)
+			}
+			return nil
+		}
+		if len(labels) < pageSize {
+			return nil
+		}
 	}
-	return nil
 }
 
 func cmdUniqueName(ts *testscript.TestScript, neg bool, args []string) {

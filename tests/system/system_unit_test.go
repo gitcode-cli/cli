@@ -3,6 +3,7 @@
 package system_test
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"regexp"
@@ -178,6 +179,7 @@ func TestDeleteLabelIfExists(t *testing.T) {
 		{name: "absent", listOutput: `[{"name":"other"}]`, wantCalls: 1},
 		{name: "present", listOutput: `[{"name":"target"}]`, wantCalls: 2},
 		{name: "list failure", listErr: errors.New("network"), wantCalls: 1, wantError: "list labels"},
+		{name: "malformed response", listOutput: `{`, wantCalls: 1, wantError: "parse label list"},
 		{name: "delete failure", listOutput: `[{"name":"target"}]`, deleteErr: errors.New("denied"), wantCalls: 2, wantError: "delete label"},
 	}
 
@@ -202,5 +204,44 @@ func TestDeleteLabelIfExists(t *testing.T) {
 				t.Fatalf("error = %v, want containing %q", err, tt.wantError)
 			}
 		})
+	}
+}
+
+func TestDeleteLabelIfExistsPaginates(t *testing.T) {
+	firstPage := make([]map[string]string, 100)
+	for i := range firstPage {
+		firstPage[i] = map[string]string{"name": "other"}
+	}
+	firstOutput, err := json.Marshal(firstPage)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	calls := 0
+	wantArgs := [][]string{
+		{"label", "list", "-R", "infra-test/gctest1", "--limit", "100", "--page", "1", "--json"},
+		{"label", "list", "-R", "infra-test/gctest1", "--limit", "100", "--page", "2", "--json"},
+		{"label", "delete", "target", "-R", "infra-test/gctest1", "--yes"},
+	}
+	run := func(args ...string) ([]byte, error) {
+		calls++
+		if calls > len(wantArgs) || !reflect.DeepEqual(args, wantArgs[calls-1]) {
+			t.Fatalf("call %d args = %v", calls, args)
+		}
+		switch calls {
+		case 1:
+			return firstOutput, nil
+		case 2:
+			return []byte(`[{"name":"target"}]`), nil
+		case 3:
+			return nil, nil
+		}
+		return nil, nil
+	}
+	if err := deleteLabelIfExists(run, "infra-test/gctest1", "target"); err != nil {
+		t.Fatalf("deleteLabelIfExists returned error: %v", err)
+	}
+	if calls != 3 {
+		t.Fatalf("calls = %d, want 3", calls)
 	}
 }

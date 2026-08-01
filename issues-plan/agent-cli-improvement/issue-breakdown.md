@@ -1,5 +1,9 @@
 # Issue 拆分建议
 
+> **历史规划快照：** 本文记录 Agent-Friendly CLI 阶段的 Issue 拆分，不是当前 Skill
+> 架构说明。涉及仓内 Skill 目录的条目已由独立仓库
+> [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 取代。
+
 ## 1. 拆分原则
 
 不建议只建一个“大而全”的总 issue。

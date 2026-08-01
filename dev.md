@@ -54,29 +54,20 @@ spec/
 
 ## 3. Skills 体系（AI 自动化）
 
-项目定义了 5 个核心 Skill，位于 `.claude/skills/` 目录。
+GitCode CLI Skills 已迁移到独立仓库：
 
-### Skill 列表
+- Web：[gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)
+- SSH：`git@gitcode.com:gitcode-cli/skills.git`
 
-| Skill | 功能 | 触发条件 |
-|-------|------|---------|
-| `issue-reviewer` | 自动评审 Issue、添加评论和标签 | "评审Issue"、"分析Issue" |
-| `pr-reviewer` | 检查代码质量、安全问题、规范合规性 | "评审PR"、"审查PR"、"代码审查" |
-| `gitcode-cmd-generator` | 生成命令代码模板和测试文件 | "创建新命令"、"生成命令模板" |
-| `gc-dev-setup` | 初始化本地开发环境 | "初始化开发环境"、"搭建环境" |
-| `gitcode-cli` | GitCode CLI 命令使用指南 | GitCode 仓库操作 |
+该仓库提供核心命令 Skill 和端到端工作流 Skill，包括认证、仓库、Issue、PR、Review、
+Release、回归测试、安全检查和流水线分析等场景。完整清单和安装方式以其 `README.md` 为准。
 
-### 调用方式
+本仓库不再追踪 `.ai/skills/`、`.claude/skills/` 或 `.codex/skills/` 副本。项目内部开发规则
+仍以 `spec/` 为准，Skill 只提供执行方法。
 
 ```bash
-# 直接调用
-/issue-reviewer
-/pr-reviewer
-/gitcode-cmd-generator
-
-# 带参数调用
-/issue-reviewer 54
-/gitcode-cmd-generator 创建 gc commit view 命令
+# 克隆到 CLI 工作树之外，避免把外部仓库误加入当前提交
+git clone git@gitcode.com:gitcode-cli/skills.git ../gitcode-cli-skills
 ```
 
 ---
@@ -265,11 +256,11 @@ Team Lead (orchestrator)
 ### 自动化触发路径
 
 ```
-用户请求 → Skill 触发
-    → /issue-reviewer → Issue 分析 + 标签建议
-    → /pr-reviewer → 代码审查 + 安全检查
-    → /gitcode-cmd-generator → 生成命令代码模板
-    → /gc-dev-setup → 环境初始化
+用户请求 → 读取 AGENTS.md / CLAUDE.md 与相关 spec
+    → gitcode-issue-review → Issue 分析
+    → gitcode-pr-create → PR 创建
+    → gitcode-pr-review → 工程评审
+    → gitcode-security-check → 安全检查
 ```
 
 ---
@@ -293,11 +284,11 @@ Team Lead (orchestrator)
 ### 自动化开发流程
 
 ```
-用户提出需求 → 创建 Issue → 调用 /issue-reviewer 评审
+用户提出需求 → 创建 Issue → 按 spec 完成验证
     ↓
-打标签 → 创建分支 → 调用 /gitcode-cmd-generator 生成代码
+打标签 → 创建分支 → 按命令模板开发与测试
     ↓
-本地开发 → 运行测试 → 调用 /pr-reviewer 审查
+本地开发 → 运行测试 → 使用 gitcode-pr-review 辅助独立评审
     ↓
 提交 PR → 合并 → 调用打包脚本发布 Release
 ```
@@ -312,9 +303,7 @@ Team Lead (orchestrator)
 | 规范索引 | `spec/README.md` |
 | 开发流程 | `spec/workflows/development-workflow.md` |
 | 命令模板 | `spec/foundations/command-template.md` |
-| Issue Skill | `.claude/skills/issue-reviewer/SKILL.md` |
-| PR Skill | `.claude/skills/pr-reviewer/SKILL.md` |
-| 命令生成 Skill | `.claude/skills/gitcode-cmd-generator/SKILL.md` |
+| GitCode CLI Skills | `https://gitcode.com/gitcode-cli/skills` |
 | 需求总清单 | `issues-plan/01-requirements-overview.md` |
 | 进度跟踪 | `issues-plan/PROGRESS.md` |
 | CI 配置 | `.github/workflows/ci.yml` |

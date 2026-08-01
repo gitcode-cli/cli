@@ -995,6 +995,7 @@ gc pr list -R infra-test/gctest1 --format table
 - `--per-page` 控制单页大小，未显式传 `--limit` 时默认每页 100；显式传 `--limit` 时会在本地截断到指定数量。
 - `--commit-message` 会读取每个候选 PR 的提交列表并按提交信息子串匹配，适合从提交标题反查关联 PR。
 - `--json` 输出结构化数组写入 stdout；空结果输出 `[]`（不会输出 `null`）。
+- GitCode API 可能对已合并 PR 返回 `merged: null`；CLI 会根据 `state=merged` 或非空 `merged_at` 将 JSON 中的 `merged` 归一化为 `true`。
 
 ### pr view - 查看 PR
 
@@ -1023,7 +1024,7 @@ gc pr view 1 -R infra-test/gctest1 --time-format relative
 - 文本输出包含里程碑信息（如果 PR 关联了里程碑）。
 - `--time-format absolute|relative` 只影响文本详情和评论区中的时间展示，不改变 `--json` 结构。
 - 如果 PR 详情 API 返回的 `additions`、`deletions`、`changed_files` 或 `commits` 为 0，CLI 会尝试通过 PR files/commits API 补齐统计；补齐失败时会给出 warning，但不阻断查看。补齐失败时返回非零退出码（按底层 API 错误映射：401→4、404→3、409→5、其他→1），PR 详情仍输出到 stdout。多个补齐源同时失败时，退出码按首个失败 API 的状态码映射。
-- `--json` 路径保持结构化输出，milestone、body、description、merged_at 等字段会自动包含在 JSON 中；其中 `body` 与 `description` 会基于远端返回互相补齐。`--comments --json` 在评论获取失败时仍写入 `{"pull_request": ..., "comments": null}` 并返回非零退出码，与文本模式"渲染已有数据 + 信号不完整"的行为一致。
+- `--json` 路径保持结构化输出，milestone、body、description、merged、merged_at 等字段会自动包含在 JSON 中；其中 `body` 与 `description` 会基于远端返回互相补齐。GitCode API 对已合并 PR 返回 `merged: null` 时，CLI 会根据 `state=merged` 或非空 `merged_at` 将 `merged` 归一化为 `true`。`--comments --json` 在评论获取失败时仍写入 `{"pull_request": ..., "comments": null}` 并返回非零退出码，与文本模式"渲染已有数据 + 信号不完整"的行为一致。
 
 ### pr issues - 查看 PR 关联的 Issues
 

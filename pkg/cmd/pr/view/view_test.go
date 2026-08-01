@@ -266,6 +266,48 @@ func TestViewRunEnrichesZeroStatsAndDescription(t *testing.T) {
 	}
 }
 
+func TestViewRunJSONNormalizesNullMergedField(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, out, _ := testutil.NewTestIOStreams()
+	client := testutil.NewTestHTTPClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v5/repos/owner/repo/pulls/123":
+			_, _ = w.Write([]byte(`{
+				"number":123,
+				"state":"merged",
+				"merged":null,
+				"merged_at":"2026-07-27T17:31:13+08:00",
+				"additions":1,
+				"commits":1
+			}`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+
+	err := viewRun(&ViewOptions{
+		IO:         io,
+		HttpClient: func() (*http.Client, error) { return client, nil },
+		BaseRepo:   func() (string, error) { return "owner/repo", nil },
+		Number:     123,
+		JSON:       true,
+		TimeFormat: "absolute",
+	})
+	if err != nil {
+		t.Fatalf("viewRun() error = %v", err)
+	}
+
+	var pr map[string]interface{}
+	if err := json.Unmarshal(out.Bytes(), &pr); err != nil {
+		t.Fatalf("output is not JSON: %v; output=%q", err, out.String())
+	}
+	if pr["state"] != "merged" || pr["merged"] != true {
+		t.Fatalf("merged state is contradictory: %#v", pr)
+	}
+}
+
 func TestViewRunEnrichFailureReturnsErrorButOutputsPR(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

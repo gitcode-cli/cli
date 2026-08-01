@@ -15,16 +15,17 @@ gitcode-cli 项目的评审规范（`spec/workflows/review-workflow.md`）要求
 
 ## 推荐 skill
 
-本案例涉及两类 skill，来源不同：
+本案例可结合独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 中的工作流 Skill：
 
-**gitcode-cli 项目内部开发 skill**（位于 `.claude/skills/` 和 `.ai/skills/`）：
-- `pr-reviewer` — 独立代码评审 skill（评审规约、checklist、结构化输出）
-- `gitcode-cli` — GitCode CLI 命令参考（gc 命令用法、双平台 CI 适配）
+- `gitcode-pr-review` — 工程评审、验证和结论提交
+- `gitcode-pr-inline-review` — 提交行级评审意见
+- `gitcode-pr-apply-feedback` — 接收、修复并回复评审反馈
 
 **Superpowers 通用 skill**：
 - `superpowers:verification-before-completion` — 评审结论发布前强制验证
 
-> 注意：`pr-reviewer`、`gitcode-cli` 是 gitcode-cli/cli 项目自身的 AI 开发工具，不在 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 项目中。两者互补：skills 项目面向 GitCode 平台用户，CLI 内部 skill 面向 CLI 工具开发者。
+> 注意：本仓库的多角色评审边界仍以 `spec/workflows/review-workflow.md` 为准。
+> 独立 Skill 提供执行方法，不替代项目正式规范。
 
 ## 适用人群
 

@@ -1,5 +1,9 @@
 # 设计:`gc precommit check`(提交前 pre-commit 配置与环境校验)
 
+> **历史快照：** 本文记录 2026-06-03 的设计状态。文中涉及的仓内 `.ai/skills/`、
+> `.claude/skills/` 或客户端适配步骤已被独立仓库
+> [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 取代。
+
 - 关联 Issue: gitcode-cli/cli #258(后续跟踪 #260)
 - 日期: 2026-06-03(后续跟踪项更新于 2026-06-04)
 - 状态: 已实现(PR #220);#260 跟踪 JSON `reason` 字段 / 安装失败分类 / 版本探测改用 stdout-only

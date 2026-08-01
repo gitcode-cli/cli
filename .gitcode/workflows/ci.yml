@@ -56,10 +56,14 @@ jobs:
       - name: Run tests
         run: go test -v -race -coverprofile=coverage.out ./...
 
+      - name: Resolve coverage artifact name
+        id: coverage-artifact
+        run: echo "name=coverage-linux-${ATOMGIT_RUN_ID:?}" >> "$ATOMGIT_OUTPUT"
+
       - name: Upload coverage
         uses: upload-artifact
         with:
-          name: coverage-linux-${{ atomgit.run_id }}
+          name: ${{ steps.coverage-artifact.outputs.name }}
           path: coverage.out
 
   build:
@@ -86,15 +90,19 @@ jobs:
           go build -ldflags "${LDFLAGS}" -o bin/gc ./cmd/gc
           bin/gc version
 
+      - name: Resolve binary artifact name
+        id: binary-artifact
+        run: echo "name=gc-ubuntu-${ATOMGIT_RUN_ID:?}" >> "$ATOMGIT_OUTPUT"
+
       - name: Upload binary
         uses: upload-artifact
         with:
-          name: gc-ubuntu-${{ atomgit.run_id }}
+          name: ${{ steps.binary-artifact.outputs.name }}
           path: bin/gc
 
-  docker:
-    name: Docker
-    runs-on: [codearts-hosted, ubuntu-latest, x64, medium]
+  package:
+    name: Package
+    runs-on: [codearts-hosted, ubuntu-latest, x64, small]
     needs:
       - test
     steps:
@@ -105,6 +113,11 @@ jobs:
         uses: setup-go
         with:
           version: "1.22"
+
+      - name: Set up Python
+        uses: setup-python
+        with:
+          python-version: "3.12"
 
       - name: Generate completions
         run: |
@@ -124,9 +137,6 @@ jobs:
           mkdir -p gc_cli/bin
           cp gc gc_cli/bin/gc-linux-amd64
 
-      - name: Build Docker image
-        run: docker build --platform linux/amd64 -t gitcode/gc:latest .
-
       - name: Wheel entrypoint smoke test
         run: |
           set -euo pipefail
@@ -136,3 +146,13 @@ jobs:
           echo "=== gc version ===" && gc version
           echo "=== gitcode version ===" && gitcode version
           echo "=== python -m gc_cli version ===" && python -m gc_cli version
+
+      - name: Resolve wheel artifact name
+        id: wheel-artifact
+        run: echo "name=gc-wheel-${ATOMGIT_RUN_ID:?}" >> "$ATOMGIT_OUTPUT"
+
+      - name: Upload wheel
+        uses: upload-artifact
+        with:
+          name: ${{ steps.wheel-artifact.outputs.name }}
+          path: dist/*.whl

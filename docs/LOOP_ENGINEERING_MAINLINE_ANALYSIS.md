@@ -9,6 +9,11 @@
 - 主干提交：`0607e2802763f6b8c5010559090d2afcbb87a573`
 - 分析日期：2026-06-17
 
+> 历史快照：本文保留 2026-06-17 时主干与演进分支的分析语境。文中出现的
+> `.ai/skills/`、`.claude/skills/`、`.codex/skills/` 和仓内适配层均为当时状态；
+> 当前 GitCode CLI Skills 真相源与分发入口以独立仓库
+> [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 为准。
+
 ## 摘要
 
 当前主干并不是“没有 Loop Engineering”，而是已经进入了 **Implicit Loop Engineering** 阶段：流程、证据、事实源、AI 入口、CI、自检、评审和主干完成判定都已经存在，只是这些能力仍分散在 `AGENTS.md`、`CLAUDE.md`、`spec/workflows/*`、`spec/governance/*`、`spec/delivery/ci-workflows.md`、`.ai/skills/*` 等位置。

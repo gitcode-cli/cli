@@ -26,6 +26,7 @@ GOMOD := $(GOCMD) mod
 .PHONY: release release-local release-snapshot
 .PHONY: completions validate-ai-template validate-ai-record validate-ai-templates
 .PHONY: classify-change-risk verify-remote-facts
+.PHONY: deps update-deps dev-setup dev-doctor
 
 all: build
 
@@ -152,6 +153,21 @@ deps:
 	$(GOMOD) download
 	$(GOMOD) tidy
 
+# Host development environment (container-free)
+dev-setup:
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-setup.ps1
+else
+	@bash scripts/dev-setup.sh
+endif
+
+dev-doctor:
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-setup.ps1 -Check
+else
+	@bash scripts/dev-setup.sh --check
+endif
+
 # Update
 update-deps:
 	$(GOMOD) tidy
@@ -162,6 +178,9 @@ help:
 	@echo "GitCode CLI Makefile"
 	@echo ""
 	@echo "Usage:"
+	@echo "  make dev-setup      Install core host verification dependencies"
+	@echo "  make dev-doctor     Check core host dependencies, install nothing"
+	@echo "  make deps           Download and tidy Go module dependencies"
 	@echo "  make build          Build the binary for current platform"
 	@echo "  make build-all      Build binaries for all platforms"
 	@echo "  make run            Run the application"

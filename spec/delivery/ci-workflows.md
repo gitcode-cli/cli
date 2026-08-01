@@ -90,29 +90,31 @@ GitCode 原生工作流 `.gitcode/workflows/ci.yml` 对齐 GitHub CI 的 Linux �
 | `lint` | codearts-hosted / ubuntu-latest / x64 / small | golangci-lint v2.12.2 | 代码规范检查（`coding-standards.md`） |
 | `test` | codearts-hosted / ubuntu-latest / x64 / small | release version 脚本校验 + `go test -v -race -coverprofile` + 覆盖率制品 | 发布输入脚本回归 + 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
 | `build` | codearts-hosted / ubuntu-latest / x64 / small | Linux `go build` + `gc version` + 二进制制品 | Linux 构建验证（`build-and-package.md`） |
-| `docker` | codearts-hosted / ubuntu-latest / x64 / medium | 补全生成 + Linux 二进制 + Docker 构建 + wheel 入口冒烟 | 容器化与 wheel 入口验证 |
+| `package` | codearts-hosted / ubuntu-latest / x64 / small | 补全生成 + Linux 二进制 + wheel 构建、三入口冒烟与制品上传 | 打包与 wheel 入口验证 |
 
 GitHub 工作流 `.github/workflows/ci.yml` 保留原有跨平台覆盖：
 
 | Job | 运行环境 | 内容 |
 |-----|---------|------|
 | `lint` | ubuntu-latest | golangci-lint |
-| `test` | ubuntu-latest / macos-14 / windows-latest | release version 脚本校验 + 单元测试 + 竞态检测 + 覆盖率 |
+| `test` | ubuntu-latest / macos-14 / windows-latest | release version 脚本校验 + 宿主机 setup 安装、幂等、隔离与防覆盖契约 + 单元测试 + 竞态检测 + 覆盖率 |
 | `build` | ubuntu-latest / macos-14 / windows-latest | 跨平台 `go build` + `gc version` |
 | `docker` | ubuntu-latest | Docker 构建 + shell 补全 + wheel 入口冒烟 |
 
-GitCode 原生工作流生成 `coverage.out` 并作为制品保存，不复用 GitHub 仓的 `CODECOV_TOKEN`；Codecov 外部上报仍由 GitHub Linux `test` Job 承担。
+GitCode 托管 runner 不提供 Docker daemon，因此 Docker 构建由 GitHub Linux `docker` Job 承担。GitCode
+原生工作流生成 `coverage.out`、Linux 二进制和 wheel，并使用 run ID 隔离制品名称；它不复用 GitHub
+仓的 `CODECOV_TOKEN`，Codecov 外部上报仍由 GitHub Linux `test` Job 承担。
 
 ### 2.2 Job 依赖关系
 
 ```
 lint
 test ──┬──→ build
-       └──→ docker
+       └──→ package
 ```
 
 - `lint` 和 `test` 并行启动
-- `build` 和 `docker` 等待 `test` 通过后执行
+- GitCode `build`、`package` 等待 `test` 通过后执行
 - 任何 Job 失败即整体 CI 失败
 
 ### 2.3 与质量门禁的映射
@@ -121,9 +123,10 @@ test ──┬──→ build
 |-------------|----------------|----------------|
 | `go test ./...` | Linux `test`（`-race`） | 3 OS `test`（`-race`） |
 | release workflow 版本输入校验 | Linux `test` | 3 OS `test` |
+| 宿主机 setup 安装、幂等、隔离与防覆盖契约 | 不覆盖 | 3 OS `test` 运行 `scripts/test-dev-setup.*` |
 | `go build` | Linux `build` | 3 OS `build` |
 | 格式/规范检查 | Linux `lint` | Linux `lint` |
-| Docker / wheel 入口 | Linux `docker` | Linux `docker` |
+| Docker / wheel 入口 | Linux `package` 覆盖 wheel；不覆盖 Docker | Linux `docker` |
 | 跨平台兼容 | 不覆盖 | ubuntu / macOS / Windows |
 
 CI **不覆盖**的质量门禁（仍需本地或人工执行）：
@@ -215,7 +218,7 @@ PR 作者自检中至少包含：
   - lint: ✅
   - test: ✅
   - build: ✅
-  - docker: ✅
+  - package: ✅
 - GitHub Actions:
   - Run URL: https://github.com/gitcode-cli/cli/actions/runs/<run-id>
   - 结论: success

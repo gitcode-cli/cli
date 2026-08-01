@@ -100,7 +100,7 @@ gitcode auth status
 
 ## 4. 安装 GitCode CLI Skills
 
-面向外部项目的通用 skills 已独立维护在 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)，不再从本仓库内的 `.ai/distribution` 安装。
+面向外部项目的通用 Skills 只在独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 维护和分发，本仓库不保留 Skill 副本。
 
 该仓库将 skills 分为两类：
 
@@ -195,6 +195,7 @@ gitcode release upload v1.0.0 app.zip -R owner/repo --json
 - AI 代理/脚本可显式传 `--no-interactive` 主动声明非交互模式，等价于强制非 TTY 的确认行为；破坏性命令仍需 `--yes` 才能执行。
 - 当前默认文本输出仍保留；代理和脚本应优先使用 `--json`。
 - `repo log --json` 适合按文件和分支追踪提交历史；`pr list --paginate` 适合跨页扫描，`--commit-message` 适合从提交信息反查 PR。
+- PR JSON 中的 `merged` 已按 `state` / `merged_at` 归一化；代理可直接用该布尔值判断是否已合并，无需处理 GitCode API 的 `merged: null`。
 - `gitcode api` 输出远端原始响应，适合 typed command 尚未覆盖的 API；使用含 `&` 的查询参数时建议整体加引号。
 - 写路径 `--json` 只在操作成功后输出结构化结果；执行失败时不要从 stdout 解析半成品结果。
 - `pr create --json` 会尽量回读新建 PR 以补齐创建响应缺失的正文；如果远端仍未返回 body，会在 stderr 给 warning，并保持 JSON 中的远端事实为空，脚本可再运行 `gitcode pr view <number> -R owner/repo --json` 核验。

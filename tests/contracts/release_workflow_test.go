@@ -54,13 +54,18 @@ func TestReleaseWorkflowSerializesAndProtectsPublishedAssets(t *testing.T) {
 		"find existing-release-assets -maxdepth 1 -type f",
 		`cmp \`,
 		`sha256sum -c "gc_${VERSION_NUM}_checksums.txt"`,
+		`gh release create "${release_args[@]}" release-assets/*`,
 	}
 	for _, value := range required {
 		if !strings.Contains(workflow, value) {
 			t.Errorf("release workflow missing %q", value)
 		}
 	}
-	for _, forbidden := range []string{"group: release-${{ inputs.version }}", "--clobber"} {
+	for _, forbidden := range []string{
+		"group: release-${{ inputs.version }}",
+		"--clobber",
+		"gh release upload",
+	} {
 		if strings.Contains(workflow, forbidden) {
 			t.Errorf("release workflow must not contain %q", forbidden)
 		}

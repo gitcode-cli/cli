@@ -339,8 +339,7 @@ jobs:
             if [[ "${VERSION_NUM}" == *-* ]]; then
               release_args+=(--prerelease)
             fi
-            gh release create "${release_args[@]}"
-            gh release upload "${VERSION_TAG}" release-assets/*
+            gh release create "${release_args[@]}" release-assets/*
           fi
 
   pypi:

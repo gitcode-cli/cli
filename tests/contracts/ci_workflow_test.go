@@ -15,8 +15,30 @@ type workflowDocument struct {
 }
 
 type workflowJob struct {
-	Needs []string       `yaml:"needs"`
+	Needs stringList     `yaml:"needs"`
 	Steps []workflowStep `yaml:"steps"`
+}
+
+type stringList []string
+
+func (values *stringList) UnmarshalYAML(node *yaml.Node) error {
+	switch node.Kind {
+	case yaml.ScalarNode:
+		var value string
+		if err := node.Decode(&value); err != nil {
+			return err
+		}
+		*values = []string{value}
+	case yaml.SequenceNode:
+		var decoded []string
+		if err := node.Decode(&decoded); err != nil {
+			return err
+		}
+		*values = decoded
+	default:
+		return fmt.Errorf("needs must be a string or list of strings")
+	}
+	return nil
 }
 
 type workflowStep struct {
@@ -54,9 +76,12 @@ func TestGitCodeWorkflowContractRejectsRegressions(t *testing.T) {
 		want   string
 	}{
 		{name: "missing package job", mutate: removePackageJob, want: "missing required job"},
-		{name: "docker job", mutate: addDockerJob, want: "unexpected job"},
-		{name: "static artifact name", mutate: makeCoverageArtifactStatic, want: "upload name"},
+		{name: "docker command", mutate: addDockerCommand, want: "must not depend on Docker"},
+		{name: "static resolver output", mutate: makeCoverageResolverStatic, want: "resolver"},
+		{name: "static upload name", mutate: makeCoverageUploadStatic, want: "upload name"},
 		{name: "missing setup-python", mutate: removePythonSetup, want: "setup-python"},
+		{name: "missing wheel install", mutate: removeWheelInstall, want: "wheel entrypoints"},
+		{name: "late setup-python", mutate: movePythonSetupAfterSmoke, want: "before wheel smoke test"},
 	}
 
 	for _, tt := range tests {
@@ -67,6 +92,16 @@ func TestGitCodeWorkflowContractRejectsRegressions(t *testing.T) {
 				t.Fatalf("validator accepted regression; wanted problem containing %q", tt.want)
 			}
 		})
+	}
+}
+
+func TestWorkflowNeedsAcceptsScalarForm(t *testing.T) {
+	var job workflowJob
+	if err := yaml.Unmarshal([]byte("needs: test\n"), &job); err != nil {
+		t.Fatalf("parse scalar needs: %v", err)
+	}
+	if len(job.Needs) != 1 || job.Needs[0] != "test" {
+		t.Fatalf("scalar needs = %#v, want [test]", job.Needs)
 	}
 }
 
@@ -131,21 +166,24 @@ func validatePackage(doc workflowDocument) []string {
 	if !ok {
 		return nil
 	}
-	var hasPythonSetup, hasSmoke bool
-	for _, step := range job.Steps {
+	setupIndex, smokeIndex := -1, -1
+	for i, step := range job.Steps {
 		if step.Uses == "setup-python" && stringValue(step.With["python-version"]) == "3.12" {
-			hasPythonSetup = true
+			setupIndex = i
 		}
-		if strings.Contains(step.Run, "python -m build") && hasEntrypointSmoke(step.Run) {
-			hasSmoke = true
+		if hasWheelSmoke(step.Run) {
+			smokeIndex = i
 		}
 	}
 	var problems []string
-	if !hasPythonSetup {
+	if setupIndex < 0 {
 		problems = append(problems, "package job must use setup-python 3.12")
 	}
-	if !hasSmoke {
-		problems = append(problems, "package job must smoke-test all wheel entrypoints")
+	if smokeIndex < 0 {
+		problems = append(problems, "package job must build, install, and smoke-test all wheel entrypoints")
+	}
+	if setupIndex >= 0 && smokeIndex >= 0 && setupIndex > smokeIndex {
+		problems = append(problems, "setup-python must run before wheel smoke test")
 	}
 	return problems
 }
@@ -160,8 +198,8 @@ func validateArtifact(doc workflowDocument, contract artifactContract) []string 
 		return []string{fmt.Sprintf("job %q missing artifact resolver %q", contract.jobID, contract.stepID)}
 	}
 	var problems []string
-	if !strings.Contains(resolve.Run, contract.nameBase+"${ATOMGIT_RUN_ID:?}") ||
-		!strings.Contains(resolve.Run, "$ATOMGIT_OUTPUT") {
+	expectedResolver := fmt.Sprintf(`echo "name=%s${ATOMGIT_RUN_ID:?}" >> "$ATOMGIT_OUTPUT"`, contract.nameBase)
+	if !isExactScript(resolve.Run, expectedResolver) {
 		problems = append(problems, fmt.Sprintf("resolver %q must use runtime run ID and output file", contract.stepID))
 	}
 	expectedName := fmt.Sprintf("${{ steps.%s.outputs.name }}", contract.stepID)
@@ -190,13 +228,34 @@ func hasArtifactUpload(steps []workflowStep, name, path string) bool {
 	return false
 }
 
-func hasEntrypointSmoke(run string) bool {
-	for _, command := range []string{"gc version", "gitcode version", "python -m gc_cli version"} {
-		if !strings.Contains(run, command) {
+func hasWheelSmoke(run string) bool {
+	commands := []string{
+		"python -m build --wheel --outdir dist/",
+		"python -m pip install dist/*.whl",
+		"gc version",
+		"gitcode version",
+		"python -m gc_cli version",
+	}
+	lastIndex := -1
+	for _, command := range commands {
+		index := strings.Index(run, command)
+		if index <= lastIndex {
 			return false
 		}
+		lastIndex = index
 	}
 	return true
+}
+
+func isExactScript(script, want string) bool {
+	var commands []string
+	for _, line := range strings.Split(script, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed != "" {
+			commands = append(commands, trimmed)
+		}
+	}
+	return len(commands) == 1 && commands[0] == want
 }
 
 func jobUsesDocker(job workflowJob) bool {
@@ -237,11 +296,23 @@ func removePackageJob(doc *workflowDocument) {
 	delete(doc.Jobs, "package")
 }
 
-func addDockerJob(doc *workflowDocument) {
-	doc.Jobs["docker"] = workflowJob{}
+func addDockerCommand(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	job.Steps = append(job.Steps, workflowStep{Name: "Build Docker image", Run: "docker build ."})
+	doc.Jobs["package"] = job
 }
 
-func makeCoverageArtifactStatic(doc *workflowDocument) {
+func makeCoverageResolverStatic(doc *workflowDocument) {
+	job := doc.Jobs["test"]
+	for i := range job.Steps {
+		if job.Steps[i].ID == "coverage-artifact" {
+			job.Steps[i].Run = "echo \"name=coverage-linux\" >> \"$ATOMGIT_OUTPUT\""
+		}
+	}
+	doc.Jobs["test"] = job
+}
+
+func makeCoverageUploadStatic(doc *workflowDocument) {
 	job := doc.Jobs["test"]
 	for i := range job.Steps {
 		if job.Steps[i].Uses == "upload-artifact" {
@@ -260,5 +331,36 @@ func removePythonSetup(doc *workflowDocument) {
 		}
 	}
 	job.Steps = filtered
+	doc.Jobs["package"] = job
+}
+
+func removeWheelInstall(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	for i := range job.Steps {
+		job.Steps[i].Run = strings.ReplaceAll(job.Steps[i].Run, "python -m pip install dist/*.whl\n", "")
+	}
+	doc.Jobs["package"] = job
+}
+
+func movePythonSetupAfterSmoke(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	setupIndex, smokeIndex := -1, -1
+	for i, step := range job.Steps {
+		if step.Uses == "setup-python" {
+			setupIndex = i
+		}
+		if hasWheelSmoke(step.Run) {
+			smokeIndex = i
+		}
+	}
+	if setupIndex < 0 || smokeIndex < 0 {
+		return
+	}
+	setup := job.Steps[setupIndex]
+	job.Steps = append(job.Steps[:setupIndex], job.Steps[setupIndex+1:]...)
+	if setupIndex < smokeIndex {
+		smokeIndex--
+	}
+	job.Steps = append(job.Steps[:smokeIndex+1], append([]workflowStep{setup}, job.Steps[smokeIndex+1:]...)...)
 	doc.Jobs["package"] = job
 }

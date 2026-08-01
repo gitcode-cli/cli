@@ -22,7 +22,7 @@
 - release 产物上传
 - 发布后验证
 
-本规范不定义 CI 自动发布细节。当前 GitCode CI 条件未具备，CI 相关内容留到最后阶段单独定义。
+本规范定义正式发布的流程边界；GitCode 与 GitHub CI 的门禁细节以 `spec/delivery/ci-workflows.md` 和对应 workflow 文件为准。
 
 ## 3. 权威边界
 
@@ -136,7 +136,7 @@ gh workflow run release.yml -R gitcode-cli/cli -f version=vX.Y.Z
 gh run watch <run-id> -R gitcode-cli/cli
 ```
 
-workflow 必须先校验 `docs/releases/vX.Y.Z.md`，再创建指向当前 `main` 的 tag，然后运行 GoReleaser。已有 tag 仅在其 commit 与当前 workflow HEAD 完全一致时允许复用。workflow 负责 GitHub Release、正式制品与 PyPI 发布。
+workflow 必须先在只读权限下校验 `docs/releases/vX.Y.Z.md`、执行 GoReleaser snapshot、nFPM、wheel/sdist 和入口冒烟；全部预检通过后，独立的最小写权限 job 才能创建指向当前 `main` 的 tag。正式制品从该 tag 在只读 job 中构建并生成覆盖全部资产的 SHA-256 清单，再由独立 job 发布 GitHub Release。PyPI job 只下载已验证制品并执行 Trusted Publishing，不参与构建，也不修改 Release。已有 tag 仅在其 commit 与当前 workflow HEAD 完全一致时允许复用。
 
 ### 6.6 同步 GitCode tag、Release 与正式制品
 
@@ -146,6 +146,9 @@ GitHub workflow 全部成功后，通过 SSH 将同一 tag 推送到 GitCode，�
 git fetch github tag vX.Y.Z
 git push origin refs/tags/vX.Y.Z
 gh release download vX.Y.Z -R gitcode-cli/cli --dir dist/github-release
+cd dist/github-release
+sha256sum -c gc_X.Y.Z_checksums.txt
+cd ../..
 ```
 
 使用受跟踪的同一份 release notes 创建 GitCode Release，再上传下载得到的同一批制品：
@@ -159,7 +162,7 @@ gc release create vX.Y.Z -R gitcode-cli/cli \
 gc release upload vX.Y.Z dist/github-release/* -R gitcode-cli/cli --json
 ```
 
-禁止在 GitCode 侧重新构建另一套正式制品。不得提取 `gh` 或 `gc` 保存的 token 再交给脚本或 `curl`；认证必须由 CLI 自身封装。
+上传 GitCode 前必须先通过完整校验和验证。禁止在 GitCode 侧重新构建另一套正式制品。不得提取 `gh` 或 `gc` 保存的 token 再交给脚本或 `curl`；认证必须由 CLI 自身封装。
 
 ## 7. Release Notes 规则
 
@@ -217,9 +220,10 @@ release notes 必须满足：
 
 ## 11. 当前执行基线
 
-在当前无 GitCode CI 环境的前提下，发布执行基线为：
+当前发布执行基线为：
 
-1. 以本地验证为主
-2. 以脚本化构建为主
-3. 以人工确认 release notes 和产物一致性为主
-4. CI 自动化规则放到后续阶段单独补齐
+1. 本地 Windows 与 WSL Linux 门禁、真实命令验证全部通过
+2. GitCode 原生 CI 与 GitHub 镜像跨平台 CI 对发布提交全部通过
+3. GitHub release workflow 从已同步的 `main` 创建 tag、正式制品、GitHub Release 与 PyPI 包
+4. GitCode 复用同一 tag、release notes 与正式制品，不在平台侧重复构建
+5. 人工核对双端 tag、main tree、同名资产校验和及安装结果

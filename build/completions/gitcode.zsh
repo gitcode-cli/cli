@@ -1,9 +1,9 @@
-#compdef gc
-compdef _gc gc
+#compdef gitcode
+compdef _gitcode gitcode
 
-# zsh completion for gc                                   -*- shell-script -*-
+# zsh completion for gitcode                                   -*- shell-script -*-
 
-__gc_debug()
+__gitcode_debug()
 {
     local file="$BASH_COMP_DEBUG_FILE"
     if [[ -n ${file} ]]; then
@@ -11,7 +11,7 @@ __gc_debug()
     fi
 }
 
-_gc()
+_gitcode()
 {
     local shellCompDirectiveError=1
     local shellCompDirectiveNoSpace=2
@@ -23,19 +23,19 @@ _gc()
     local lastParam lastChar flagPrefix requestComp out directive comp lastComp noSpace keepOrder
     local -a completions
 
-    __gc_debug "\n========= starting completion logic =========="
-    __gc_debug "CURRENT: ${CURRENT}, words[*]: ${words[*]}"
+    __gitcode_debug "\n========= starting completion logic =========="
+    __gitcode_debug "CURRENT: ${CURRENT}, words[*]: ${words[*]}"
 
     # The user could have moved the cursor backwards on the command-line.
     # We need to trigger completion from the $CURRENT location, so we need
     # to truncate the command-line ($words) up to the $CURRENT location.
     # (We cannot use $CURSOR as its value does not work when a command is an alias.)
     words=("${=words[1,CURRENT]}")
-    __gc_debug "Truncated words[*]: ${words[*]},"
+    __gitcode_debug "Truncated words[*]: ${words[*]},"
 
     lastParam=${words[-1]}
     lastChar=${lastParam[-1]}
-    __gc_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
+    __gitcode_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
 
     # For zsh, when completing a flag with an = (e.g., gc -n=<TAB>)
     # completions must be prefixed with the flag
@@ -50,22 +50,22 @@ _gc()
     if [ "${lastChar}" = "" ]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go completion code.
-        __gc_debug "Adding extra empty parameter"
+        __gitcode_debug "Adding extra empty parameter"
         requestComp="${requestComp} \"\""
     fi
 
-    __gc_debug "About to call: eval ${requestComp}"
+    __gitcode_debug "About to call: eval ${requestComp}"
 
     # Use eval to handle any environment variables and such
     out=$(eval ${requestComp} 2>/dev/null)
-    __gc_debug "completion output: ${out}"
+    __gitcode_debug "completion output: ${out}"
 
     # Extract the directive integer following a : from the last line
     local lastLine
     while IFS='\n' read -r line; do
         lastLine=${line}
     done < <(printf "%s\n" "${out[@]}")
-    __gc_debug "last line: ${lastLine}"
+    __gitcode_debug "last line: ${lastLine}"
 
     if [ "${lastLine[1]}" = : ]; then
         directive=${lastLine[2,-1]}
@@ -75,16 +75,16 @@ _gc()
         out=${out[1,-$suffix]}
     else
         # There is no directive specified.  Leave $out as is.
-        __gc_debug "No directive found.  Setting do default"
+        __gitcode_debug "No directive found.  Setting do default"
         directive=0
     fi
 
-    __gc_debug "directive: ${directive}"
-    __gc_debug "completions: ${out}"
-    __gc_debug "flagPrefix: ${flagPrefix}"
+    __gitcode_debug "directive: ${directive}"
+    __gitcode_debug "completions: ${out}"
+    __gitcode_debug "flagPrefix: ${flagPrefix}"
 
     if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
-        __gc_debug "Completion received error. Ignoring completions."
+        __gitcode_debug "Completion received error. Ignoring completions."
         return
     fi
 
@@ -95,11 +95,11 @@ _gc()
     while IFS='\n' read -r comp; do
         # Check if this is an activeHelp statement (i.e., prefixed with $activeHelpMarker)
         if [ "${comp[1,$endIndex]}" = "$activeHelpMarker" ];then
-            __gc_debug "ActiveHelp found: $comp"
+            __gitcode_debug "ActiveHelp found: $comp"
             comp="${comp[$startIndex,-1]}"
             if [ -n "$comp" ]; then
                 compadd -x "${comp}"
-                __gc_debug "ActiveHelp will need delimiter"
+                __gitcode_debug "ActiveHelp will need delimiter"
                 hasActiveHelp=1
             fi
 
@@ -116,7 +116,7 @@ _gc()
             local tab="$(printf '\t')"
             comp=${comp//$tab/:}
 
-            __gc_debug "Adding completion: ${comp}"
+            __gitcode_debug "Adding completion: ${comp}"
             completions+=${comp}
             lastComp=$comp
         fi
@@ -127,19 +127,19 @@ _gc()
     # - file completion will be performed (so there will be choices after the activeHelp)
     if [ $hasActiveHelp -eq 1 ]; then
         if [ ${#completions} -ne 0 ] || [ $((directive & shellCompDirectiveNoFileComp)) -eq 0 ]; then
-            __gc_debug "Adding activeHelp delimiter"
+            __gitcode_debug "Adding activeHelp delimiter"
             compadd -x "--"
             hasActiveHelp=0
         fi
     fi
 
     if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
-        __gc_debug "Activating nospace."
+        __gitcode_debug "Activating nospace."
         noSpace="-S ''"
     fi
 
     if [ $((directive & shellCompDirectiveKeepOrder)) -ne 0 ]; then
-        __gc_debug "Activating keep order."
+        __gitcode_debug "Activating keep order."
         keepOrder="-V"
     fi
 
@@ -156,17 +156,17 @@ _gc()
         done
         filteringCmd+=" ${flagPrefix}"
 
-        __gc_debug "File filtering command: $filteringCmd"
+        __gitcode_debug "File filtering command: $filteringCmd"
         _arguments '*:filename:'"$filteringCmd"
     elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
         # File completion for directories only
         local subdir
         subdir="${completions[1]}"
         if [ -n "$subdir" ]; then
-            __gc_debug "Listing directories in $subdir"
+            __gitcode_debug "Listing directories in $subdir"
             pushd "${subdir}" >/dev/null 2>&1
         else
-            __gc_debug "Listing directories in ."
+            __gitcode_debug "Listing directories in ."
         fi
 
         local result
@@ -177,17 +177,17 @@ _gc()
         fi
         return $result
     else
-        __gc_debug "Calling _describe"
+        __gitcode_debug "Calling _describe"
         if eval _describe $keepOrder "completions" completions $flagPrefix $noSpace; then
-            __gc_debug "_describe found some completions"
+            __gitcode_debug "_describe found some completions"
 
             # Return the success of having called _describe
             return 0
         else
-            __gc_debug "_describe did not find completions."
-            __gc_debug "Checking if we should do file completion."
+            __gitcode_debug "_describe did not find completions."
+            __gitcode_debug "Checking if we should do file completion."
             if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
-                __gc_debug "deactivating file completion"
+                __gitcode_debug "deactivating file completion"
 
                 # We must return an error code here to let zsh know that there were no
                 # completions found by _describe; this is what will trigger other
@@ -196,7 +196,7 @@ _gc()
                 return 1
             else
                 # Perform file completion
-                __gc_debug "Activating file completion"
+                __gitcode_debug "Activating file completion"
 
                 # We must return the result of this command, so it must be the
                 # last command, or else we must store its result to return it.
@@ -207,6 +207,6 @@ _gc()
 }
 
 # don't run the completion function when being source-ed or eval-ed
-if [ "$funcstack[1]" = "_gc" ]; then
-    _gc
+if [ "$funcstack[1]" = "_gitcode" ]; then
+    _gitcode
 fi

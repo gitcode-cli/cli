@@ -2,7 +2,7 @@
 
 > 项目概述和功能介绍请参阅 [README.md](../README.md)，命令使用请参阅 [COMMANDS.md](./COMMANDS.md)，开发与规范入口请参阅 [spec/README.md](../spec/README.md)。
 
-本文档说明如何在本地构建 DEB/RPM/PyPI 包并使用 `gc` 命令发布 Release。
+本文档说明如何在本地构建验证 DEB/RPM/PyPI 包，以及如何通过标准 workflow 发布并同步 Release。
 
 ---
 
@@ -37,7 +37,7 @@
 使用 `scripts/package.sh` 一键完成版本同步、构建和打包：
 
 ```bash
-# 发布用（构建 DEB + RPM + PyPI，推荐）
+# 发布前全量打包验证（构建 DEB + RPM + PyPI，推荐）
 ./scripts/package.sh v0.9.0 release
 
 # 构建所有包（DEB + RPM + PyPI）
@@ -57,7 +57,7 @@
 
 | 目标 | 说明 | 输出文件 |
 |------|------|----------|
-| `release` | DEB + RPM + PyPI（发布用，推荐） | 全部包 |
+| `release` | DEB + RPM + PyPI（发布前全量验证，推荐） | 全部包 |
 | `all` | 构建所有包（默认） | 全部包 |
 | `linux` | DEB + RPM 包 | `gc_*.deb`, `gc-*.rpm` |
 | `deb` | 仅 DEB 包 | `gc_*.deb` |
@@ -138,14 +138,19 @@ git push origin refs/tags/v0.9.0
 mkdir -p dist/github-release
 gh release download v0.9.0 -R gitcode-cli/cli --dir dist/github-release
 
-# 5. 使用受跟踪的同一份说明创建 GitCode Release
+# 5. 验证覆盖全部正式资产的 SHA-256 清单
+cd dist/github-release
+sha256sum -c gc_0.9.0_checksums.txt
+cd ../..
+
+# 6. 使用受跟踪的同一份说明创建 GitCode Release
 gc release create v0.9.0 -R gitcode-cli/cli \
   --title "GitCode CLI v0.9.0" \
   --notes-file docs/releases/v0.9.0.md \
   --target main \
   --json
 
-# 6. 将同一批正式制品上传到 GitCode，不得重新构建
+# 7. 将同一批正式制品上传到 GitCode，不得重新构建
 gc release upload v0.9.0 dist/github-release/* -R gitcode-cli/cli --json
 ```
 
@@ -219,7 +224,7 @@ Windows PowerShell 用户建议运行：
 
     gitcode version
 
-说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。Windows 未使用虚拟环境时也可能因 Python 的 `Scripts` 目录不在 `PATH` 而找不到 `gitcode`；请使用同一个 `python` 执行安装和 `python -c "import sysconfig; print(sysconfig.get_path('scripts'))"`，将输出目录加入用户 `PATH` 后重新打开终端，配置前可直接运行 `python -m gc_cli version`。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。Windows 使用 `py -m pip install --user ...` 时，脚本会安装到 Python user scheme 的 `Scripts` 目录；请运行 `py -c "import os, sysconfig; print(sysconfig.get_path('scripts', os.name + '_user'))"` 获取准确路径，将其加入用户 `PATH` 后重新打开终端，配置前可直接运行 `py -m gc_cli version`。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `py -m gc_cli version`。
 
 ### DEB (Debian/Ubuntu)
 
@@ -300,7 +305,7 @@ pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gitcode
 gitcode version
 ```
 
-说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。Windows 未使用虚拟环境时也可能因 Python 的 `Scripts` 目录不在 `PATH` 而找不到 `gitcode`；请使用同一个 `python` 执行安装和 `python -c "import sysconfig; print(sysconfig.get_path('scripts'))"`，将输出目录加入用户 `PATH` 后重新打开终端，配置前可直接运行 `python -m gc_cli version`。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+说明：wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。Windows 使用 `py -m pip install --user ...` 时，脚本会安装到 Python user scheme 的 `Scripts` 目录；请运行 `py -c "import os, sysconfig; print(sysconfig.get_path('scripts', os.name + '_user'))"` 获取准确路径，将其加入用户 `PATH` 后重新打开终端，配置前可直接运行 `py -m gc_cli version`。PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `py -m gc_cli version`。
 
 ### DEB (Debian/Ubuntu)
 

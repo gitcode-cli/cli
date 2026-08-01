@@ -113,8 +113,8 @@ gitcode version
 说明：
 - wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。
 - DEB/RPM 包也会同时安装 `gc` 和 `gitcode`；Linux 上二者功能相同。
-- Windows 未使用虚拟环境时也可能因 Python 的 `Scripts` 目录不在 `PATH` 而找不到 `gitcode`。请使用同一个 `python` 执行安装和 `python -c "import sysconfig; print(sysconfig.get_path('scripts'))"`，将输出目录加入用户 `PATH` 后重新打开终端；配置前可直接运行 `python -m gc_cli version`。
-- Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `python -m gc_cli version`。
+- Windows 使用 `py -m pip install --user ...` 时，脚本会安装到 Python user scheme 的 `Scripts` 目录。请运行 `py -c "import os, sysconfig; print(sysconfig.get_path('scripts', os.name + '_user'))"` 获取准确路径，将其加入用户 `PATH` 后重新打开终端；配置前可直接运行 `py -m gc_cli version`。
+- Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `py -m gc_cli version`。
 - Windows PowerShell 中通过 `--body-file -` / `--comment-file -` 管道传入中文或其他非 ASCII 正文时，推荐使用 UTF-8 文件；如果必须直接管道，先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。CLI 会拦截疑似已被 PowerShell 损坏成 `???` 的输入并提示正确用法。
 
 ```powershell

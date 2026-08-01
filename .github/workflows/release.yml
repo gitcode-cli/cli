@@ -9,24 +9,35 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build
+  preflight:
+    name: Preflight
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.VERSION_TAG }}
       package_version: ${{ steps.version.outputs.VERSION_NUM }}
+      head_sha: ${{ steps.version.outputs.HEAD_SHA }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: '1.22'
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
 
       - name: Validate version input
         id: version
@@ -35,20 +46,18 @@ jobs:
         run: |
           set -euo pipefail
           test "${GITHUB_REF_NAME}" = "main"
-          VERSION="${VERSION_INPUT}"
-          VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
+          VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION_INPUT}")"
           VERSION_TAG="v${VERSION_NUM}"
           echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
           echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
+          echo "HEAD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Validate release notes
         env:
           VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
-        run: |
-          set -euo pipefail
-          test -f "docs/releases/${VERSION_TAG}.md"
+        run: test -f "docs/releases/${VERSION_TAG}.md"
 
-      - name: Generate completions
+      - name: Generate completions and package assets
         run: |
           set -euo pipefail
           go build -o /tmp/gc ./cmd/gc
@@ -56,6 +65,7 @@ jobs:
           /tmp/gc completion bash > completions/gc.bash
           /tmp/gc completion zsh > completions/gc.zsh
           /tmp/gc completion fish > completions/gc.fish
+          bash scripts/prepare-package-assets.sh
 
       - name: Validate release tree
         run: |
@@ -64,31 +74,7 @@ jobs:
           go generate ./...
           git diff --exit-code
 
-      - name: Create and push tag
-        env:
-          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
-        run: |
-          set -euo pipefail
-          HEAD_SHA="$(git rev-parse HEAD)"
-          if git rev-parse --verify --quiet "refs/tags/${VERSION_TAG}" >/dev/null; then
-            TAG_SHA="$(git rev-list -n 1 "${VERSION_TAG}")"
-            test "${TAG_SHA}" = "${HEAD_SHA}"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
-            git push origin "refs/tags/${VERSION_TAG}"
-          fi
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
-        with:
-          version: 'v2.17.1'
-          args: release --clean --release-notes=docs/releases/${{ steps.version.outputs.VERSION_TAG }}.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Sync version across configs
+      - name: Sync preflight versions
         env:
           VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
         run: |
@@ -101,125 +87,266 @@ jobs:
       - name: Install nfpm
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
 
-      - name: Build DEB/RPM packages
-        env:
-          VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
+      - name: Preflight GoReleaser
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          version: 'v2.17.1'
+          args: release --snapshot --clean --skip=publish
+
+      - name: Preflight packages and wheel
         run: |
           set -euo pipefail
+          extract_gc() {
+            archive="$1"
+            target="$2"
+            temp_dir="$(mktemp -d)"
+            tar -xzf "${archive}" -C "${temp_dir}"
+            mv "${temp_dir}/gc" "${target}"
+            rm -rf "${temp_dir}"
+          }
 
-          # Extract GoReleaser linux binaries
-          tar -xzf dist/gc_*_linux_amd64.tar.gz -C dist
-          mv dist/gc dist/gc_linux_amd64
-
-          tar -xzf dist/gc_*_linux_arm64.tar.gz -C dist
-          mv dist/gc dist/gc_linux_arm64
-
-          # Build packages
+          extract_gc dist/gc_*_linux_amd64.tar.gz dist/gc_linux_amd64
+          extract_gc dist/gc_*_linux_arm64.tar.gz dist/gc_linux_arm64
           ~/go/bin/nfpm package -f nfpm-amd64.yaml -p deb -t dist
           ~/go/bin/nfpm package -f nfpm-amd64.yaml -p rpm -t dist
           ~/go/bin/nfpm package -f nfpm-arm64.yaml -p deb -t dist
           ~/go/bin/nfpm package -f nfpm-arm64.yaml -p rpm -t dist
 
-      - name: Upload DEB/RPM artifacts
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-        with:
-          name: packages
-          path: |
-            dist/*.rpm
-            dist/*.deb
-          retention-days: 90
+          mkdir -p gc_cli/bin
+          cp dist/gc_linux_amd64 gc_cli/bin/gc-linux-amd64
+          cp dist/gc_linux_arm64 gc_cli/bin/gc-linux-arm64
+          extract_gc dist/gc_*_darwin_amd64.tar.gz gc_cli/bin/gc-darwin-amd64
+          extract_gc dist/gc_*_darwin_arm64.tar.gz gc_cli/bin/gc-darwin-arm64
+          unzip -p dist/gc_*_windows_amd64.zip gc.exe > gc_cli/bin/gc-windows-amd64.exe
 
-      - name: Upload packages to release
+          python -m pip install build==1.4.1
+          python -m build --wheel --sdist --outdir dist
+          python -m venv /tmp/gc-release-venv
+          /tmp/gc-release-venv/bin/pip install dist/*.whl
+          /tmp/gc-release-venv/bin/gitcode version --json
+          /tmp/gc-release-venv/bin/gc version --json
+          /tmp/gc-release-venv/bin/python -m gc_cli version --json
+
+  tag:
+    name: Tag
+    runs-on: ubuntu-latest
+    needs: preflight
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push tag
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
+          EXPECTED_HEAD_SHA: ${{ needs.preflight.outputs.head_sha }}
+          VERSION_TAG: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
-          gh release upload "${VERSION_TAG}" \
-            dist/*.deb \
-            dist/*.rpm \
-            dist/gc_linux_amd64 \
-            dist/gc_linux_arm64 \
-            --clobber
+          HEAD_SHA="$(git rev-parse HEAD)"
+          test "${HEAD_SHA}" = "${EXPECTED_HEAD_SHA}"
+          if git rev-parse --verify --quiet "refs/tags/${VERSION_TAG}" >/dev/null; then
+            TAG_SHA="$(git rev-list -n 1 "${VERSION_TAG}")"
+            test "${TAG_SHA}" = "${HEAD_SHA}"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
+            git push origin "refs/tags/${VERSION_TAG}"
+          fi
+
+  artifacts:
+    name: Artifacts
+    runs-on: ubuntu-latest
+    needs: [preflight, tag]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.version }}
+
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.22'
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+
+      - name: Verify release tag
+        env:
+          EXPECTED_HEAD_SHA: ${{ needs.preflight.outputs.head_sha }}
+          VERSION_TAG: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD_SHA}"
+          test "$(git rev-list -n 1 "${VERSION_TAG}")" = "${EXPECTED_HEAD_SHA}"
+
+      - name: Generate package assets
+        run: |
+          set -euo pipefail
+          go build -o /tmp/gc ./cmd/gc
+          mkdir -p completions
+          /tmp/gc completion bash > completions/gc.bash
+          /tmp/gc completion zsh > completions/gc.zsh
+          /tmp/gc completion fish > completions/gc.fish
+          bash scripts/prepare-package-assets.sh
+          git diff --exit-code
+
+      - name: Sync package versions
+        env:
+          VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
+        run: |
+          set -euo pipefail
+          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-amd64.yaml
+          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-arm64.yaml
+          sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
+          sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
+
+      - name: Install nfpm
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
+
+      - name: Build GoReleaser assets
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          version: 'v2.17.1'
+          args: release --clean --skip=publish
+
+      - name: Build DEB/RPM and Python packages
+        run: |
+          set -euo pipefail
+          extract_gc() {
+            archive="$1"
+            target="$2"
+            temp_dir="$(mktemp -d)"
+            tar -xzf "${archive}" -C "${temp_dir}"
+            mv "${temp_dir}/gc" "${target}"
+            rm -rf "${temp_dir}"
+          }
+
+          extract_gc dist/gc_*_linux_amd64.tar.gz dist/gc_linux_amd64
+          extract_gc dist/gc_*_linux_arm64.tar.gz dist/gc_linux_arm64
+          ~/go/bin/nfpm package -f nfpm-amd64.yaml -p deb -t dist
+          ~/go/bin/nfpm package -f nfpm-amd64.yaml -p rpm -t dist
+          ~/go/bin/nfpm package -f nfpm-arm64.yaml -p deb -t dist
+          ~/go/bin/nfpm package -f nfpm-arm64.yaml -p rpm -t dist
+
+          mkdir -p gc_cli/bin
+          cp dist/gc_linux_amd64 gc_cli/bin/gc-linux-amd64
+          cp dist/gc_linux_arm64 gc_cli/bin/gc-linux-arm64
+          extract_gc dist/gc_*_darwin_amd64.tar.gz gc_cli/bin/gc-darwin-amd64
+          extract_gc dist/gc_*_darwin_arm64.tar.gz gc_cli/bin/gc-darwin-arm64
+          unzip -p dist/gc_*_windows_amd64.zip gc.exe > gc_cli/bin/gc-windows-amd64.exe
+          python -m pip install build==1.4.1
+          python -m build --wheel --sdist --outdir dist
+
+      - name: Verify release entry points
+        run: |
+          set -euo pipefail
+          dist/gc_linux_amd64 version --json
+          python -m venv /tmp/gc-release-venv
+          /tmp/gc-release-venv/bin/pip install dist/*.whl
+          /tmp/gc-release-venv/bin/gitcode version --json
+          /tmp/gc-release-venv/bin/gc version --json
+          /tmp/gc-release-venv/bin/python -m gc_cli version --json
+
+      - name: Assemble release assets and checksums
+        env:
+          VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
+        run: |
+          set -euo pipefail
+          mkdir release-assets
+          cp dist/gc_*_linux_amd64.tar.gz release-assets/
+          cp dist/gc_*_linux_arm64.tar.gz release-assets/
+          cp dist/gc_*_darwin_amd64.tar.gz release-assets/
+          cp dist/gc_*_darwin_arm64.tar.gz release-assets/
+          cp dist/gc_*_windows_amd64.zip release-assets/
+          cp dist/*.deb dist/*.rpm release-assets/
+          cp dist/gc_linux_amd64 dist/gc_linux_arm64 release-assets/
+          cp dist/*.whl dist/gitcode_cli-*.tar.gz release-assets/
+          cd release-assets
+          find . -maxdepth 1 -type f -printf '%f\0' | sort -z | xargs -0 sha256sum > "gc_${VERSION_NUM}_checksums.txt"
+          sha256sum -c "gc_${VERSION_NUM}_checksums.txt"
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: release-assets
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 90
+
+  publish:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs: [preflight, artifacts]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ needs.preflight.outputs.version }}
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets
+          path: release-assets
+
+      - name: Verify and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
+          VERSION_TAG: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd release-assets
+          sha256sum -c "gc_${VERSION_NUM}_checksums.txt"
+          cd ..
+
+          if gh release view "${VERSION_TAG}" >/dev/null 2>&1; then
+            gh release edit "${VERSION_TAG}" \
+              --title "GitCode CLI ${VERSION_TAG}" \
+              --notes-file "docs/releases/${VERSION_TAG}.md"
+          else
+            release_args=(
+              "${VERSION_TAG}"
+              --verify-tag
+              --title "GitCode CLI ${VERSION_TAG}"
+              --notes-file "docs/releases/${VERSION_TAG}.md"
+            )
+            if [[ "${VERSION_NUM}" == *-* ]]; then
+              release_args+=(--prerelease)
+            fi
+            gh release create "${release_args[@]}"
+          fi
+          gh release upload "${VERSION_TAG}" release-assets/* --clobber
 
   pypi:
     name: PyPI
     runs-on: ubuntu-latest
-    needs: build
+    needs: [preflight, publish]
     permissions:
       contents: read
       id-token: write
     environment:
       name: pypi
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          python-version: '3.11'
+          name: release-assets
+          path: release-assets
 
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
-        with:
-          go-version: '1.22'
-
-      - name: Setup version
-        id: version
-        env:
-          VERSION_FROM_BUILD: ${{ needs.build.outputs.version }}
+      - name: Select Python distributions
         run: |
           set -euo pipefail
-          VERSION="${VERSION_FROM_BUILD}"
-          VERSION_NUM="$(./scripts/validate-release-version.sh "${VERSION}")"
-          VERSION_TAG="v${VERSION_NUM}"
-          echo "VERSION_TAG=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
-          echo "VERSION_NUM=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
-
-      - name: Sync version in configs
-        env:
-          VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
-        run: |
-          set -euo pipefail
-          sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
-          sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
-
-      - name: Download release binaries
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
-        run: |
-          set -euo pipefail
-          gh release download "${VERSION_TAG}" \
-            --pattern 'gc_*_linux_amd64.tar.gz' \
-            --pattern 'gc_*_linux_arm64.tar.gz' \
-            --pattern 'gc_*_darwin_amd64.tar.gz' \
-            --pattern 'gc_*_darwin_arm64.tar.gz' \
-            --pattern 'gc_*_windows_amd64.zip' \
-            --dir /tmp
-
-      - name: Extract binaries for PyPI
-        run: |
-          mkdir -p gc_cli/bin
-          cd /tmp
-          tar -xzf gc_*_linux_amd64.tar.gz && mv gc $GITHUB_WORKSPACE/gc_cli/bin/gc-linux-amd64
-          tar -xzf gc_*_linux_arm64.tar.gz && mv gc $GITHUB_WORKSPACE/gc_cli/bin/gc-linux-arm64
-          tar -xzf gc_*_darwin_amd64.tar.gz && mv gc $GITHUB_WORKSPACE/gc_cli/bin/gc-darwin-amd64
-          tar -xzf gc_*_darwin_arm64.tar.gz && mv gc $GITHUB_WORKSPACE/gc_cli/bin/gc-darwin-arm64
-          unzip -o gc_*_windows_amd64.zip && mv gc.exe $GITHUB_WORKSPACE/gc_cli/bin/gc-windows-amd64.exe
-          cd $GITHUB_WORKSPACE
-
-      - name: Install build tools
-        run: pip install build==1.4.1
-
-      - name: Build Python package
-        run: python -m build --wheel --sdist --outdir dist/
-
-      - name: Upload wheel and sdist to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION_TAG: ${{ steps.version.outputs.VERSION_TAG }}
-        run: |
-          set -euo pipefail
-          gh release upload "${VERSION_TAG}" dist/*.whl dist/*.tar.gz --clobber
+          mkdir dist
+          cp release-assets/*.whl release-assets/gitcode_cli-*.tar.gz dist/
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1

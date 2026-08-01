@@ -83,6 +83,9 @@ func TestGitCodeWorkflowContractRejectsRegressions(t *testing.T) {
 		{name: "missing package job", mutate: removePackageJob, want: "missing required job"},
 		{name: "docker command", mutate: addDockerCommand, want: "must not depend on Docker"},
 		{name: "docker action", mutate: addDockerAction, want: "must not depend on Docker"},
+		{name: "docker container action", mutate: addDockerContainerAction, want: "must not depend on Docker"},
+		{name: "generic container", mutate: addGenericContainer, want: "must not depend on Docker"},
+		{name: "generic service", mutate: addGenericService, want: "must not depend on Docker"},
 		{name: "docker service", mutate: addDockerService, want: "must not depend on Docker"},
 		{name: "static resolver output", mutate: makeCoverageResolverStatic, want: "resolver"},
 		{name: "static upload name", mutate: makeCoverageUploadStatic, want: "upload name"},
@@ -292,8 +295,7 @@ func indexOfLine(lines []string, want string) int {
 }
 
 func jobUsesDocker(job workflowJob) bool {
-	if containsDockerDaemonReference(job.Env) || containsDockerDaemonReference(job.Services) ||
-		containsDockerDaemonReference(job.Container) {
+	if containsDockerDaemonReference(job.Env) || len(job.Services) > 0 || hasConfiguredValue(job.Container) {
 		return true
 	}
 	for _, step := range job.Steps {
@@ -330,7 +332,23 @@ func shellUsesDocker(script string) bool {
 
 func isDockerAction(uses string) bool {
 	lower := strings.ToLower(strings.TrimSpace(uses))
-	return strings.HasPrefix(lower, "docker/") || strings.Contains(lower, "/docker/")
+	return strings.HasPrefix(lower, "docker://") || strings.HasPrefix(lower, "docker/") ||
+		strings.Contains(lower, "/docker/")
+}
+
+func hasConfiguredValue(value any) bool {
+	switch typed := value.(type) {
+	case nil:
+		return false
+	case string:
+		return strings.TrimSpace(typed) != ""
+	case map[string]any:
+		return len(typed) > 0
+	case []any:
+		return len(typed) > 0
+	default:
+		return true
+	}
 }
 
 func containsDockerDaemonReference(value any) bool {
@@ -398,6 +416,24 @@ func addDockerCommand(doc *workflowDocument) {
 func addDockerAction(doc *workflowDocument) {
 	job := doc.Jobs["package"]
 	job.Steps = append(job.Steps, workflowStep{Uses: "docker/setup-buildx-action@v3"})
+	doc.Jobs["package"] = job
+}
+
+func addDockerContainerAction(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	job.Steps = append(job.Steps, workflowStep{Uses: "docker://alpine:latest"})
+	doc.Jobs["package"] = job
+}
+
+func addGenericContainer(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	job.Container = "ubuntu:22.04"
+	doc.Jobs["package"] = job
+}
+
+func addGenericService(doc *workflowDocument) {
+	job := doc.Jobs["package"]
+	job.Services = map[string]any{"database": map[string]any{"image": "postgres:16"}}
 	doc.Jobs["package"] = job
 }
 

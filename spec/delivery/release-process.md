@@ -63,7 +63,9 @@ MAJOR.MINOR.PATCH-PRERELEASE
 
 其中 `PRERELEASE` 只允许包版本兼容的 `alpha.N`、`beta.N`、`rc.N` 形式，`N` 为非负整数且不能带多余前导零，例如 `beta.1`、`rc.2`。
 
-工作流不得把未验证的 `${{ inputs.version }}` 直接拼接进 shell 脚本文本中。应通过 `env` 传入 shell，再调用仓库脚本 `scripts/validate-release-version.sh` 完成校验和归一化。脚本输出去掉可选前缀 `v` 后的包版本号；release workflow 必须再派生出带 `v` 前缀的规范 tag，不能用原始输入创建 tag 或 release。
+工作流不得把未验证的 `${{ inputs.version }}` 直接拼接进 shell 脚本文本中。应通过 `env` 传入 shell，再调用仓库脚本 `scripts/validate-release-version.sh` 完成校验和归一化。校验脚本可接受可选前缀 `v`，便于本地复用；正式 release workflow 只接受带 `v` 前缀的规范版本输入，并必须校验输入与派生 tag 完全一致，不能用未规范化的原始输入创建 tag 或 release。
+
+正式 release workflow 必须串行执行。若目标 Release 或 PyPI 版本已存在，重跑前必须比较既有资产的文件清单和 SHA-256；只有完全一致的制品可按幂等方式跳过，禁止覆盖或忽略任何差异制品。
 
 ## 5. 发布前置条件
 

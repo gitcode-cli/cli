@@ -2388,6 +2388,7 @@ gc schema "issue view"
 |------|----------|
 | `repo fork` | 仓库路径已按用户输入解析，但 GitCode API 在部分仓库上仍可能返回 `400 Bad Request` |
 | `milestone create/view` | 返回 400 错误，API 可能不支持 |
+| `release delete` | GitCode 官方 OpenAPI 当前未提供 Release 删除接口；命令会返回平台的 `405 Method Not Allowed`，请在仓库 Release 页面删除 |
 
 ---
 

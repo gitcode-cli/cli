@@ -225,7 +225,11 @@ func validateArtifact(doc workflowDocument, contract artifactContract) []string 
 	}
 	expectedName := fmt.Sprintf("${{ steps.%s.outputs.name }}", contract.stepID)
 	if !hasArtifactUpload(job.Steps, expectedName, contract.path) {
-		problems = append(problems, fmt.Sprintf("job %q upload name/path must be %q and %q", contract.jobID, expectedName, contract.path))
+		problem := fmt.Sprintf(
+			"job %q upload name/path must be %q and %q",
+			contract.jobID, expectedName, contract.path,
+		)
+		problems = append(problems, problem)
 	}
 	return problems
 }
@@ -307,8 +311,11 @@ func jobUsesDocker(job workflowJob) bool {
 	return false
 }
 
+const dockerCommandExpression = `^(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*` +
+	`(?:sudo\s+)?(?:\S*/)?(?:docker|dockerd|docker-compose)\b`
+
 var (
-	dockerCommandPattern  = regexp.MustCompile(`^(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*(?:sudo\s+)?(?:\S*/)?(?:docker|dockerd|docker-compose)\b`)
+	dockerCommandPattern  = regexp.MustCompile(dockerCommandExpression)
 	shellSeparatorPattern = regexp.MustCompile(`&&|\|\||;`)
 )
 

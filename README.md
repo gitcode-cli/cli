@@ -184,11 +184,23 @@ unset GC_TOKEN
 
 更多用法参见 Makefile 和 `docker-compose.yml`。
 
+### Homebrew (macOS/Linux)
+
+```bash
+# 添加 tap（仓库名不包含 homebrew- 前缀，需要显式指定 URL）
+brew tap gitcode-cli/cli https://github.com/gitcode-cli/cli
+
+# 安装
+brew install gitcode-cli/cli/gc
+```
+
+Homebrew 会自动选择匹配当前平台的二进制（Apple Silicon → darwin_arm64，Intel Mac → darwin_amd64，Linux → 对应架构），并安装 shell 补全（bash/zsh/fish）。无需安装 Go 或其他运行时。
+
 ### 规划中的安装方式
 
 以下安装方式正在开发中：
 
-- [ ] Homebrew (macOS/Linux)
+- [x] Homebrew (macOS/Linux)
 - [ ] Scoop (Windows)
 
 ## 快速开始

@@ -113,6 +113,7 @@ pip install gitcode-cli==0.3.4
 | Wheel | `.whl` | 跨平台 | GitHub Release |
 | 源码包 | `.tar.gz` / `.zip` | all | GitHub Release |
 | PyPI | wheel | 跨平台 | PyPI 官方源 |
+| Homebrew | Formula | macOS / Linux | GitHub Release → Formula/gc.rb 自动更新 |
 
 ---
 
@@ -306,6 +307,12 @@ pip install gitcode-cli
 # 方式二：从 Release 下载安装
 wget https://gitcode.com/gitcode-cli/cli/releases/download/v{VERSION}/gitcode_cli-{VERSION}-py3-none-any.whl
 pip install gitcode_cli-{VERSION}-py3-none-any.whl
+\`\`\`
+
+### Homebrew (macOS/Linux)
+\`\`\`bash
+brew tap gitcode-cli/cli https://github.com/gitcode-cli/cli
+brew install gitcode-cli/cli/gc
 \`\`\`
 
 ## 发布说明入口

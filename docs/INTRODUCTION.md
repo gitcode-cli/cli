@@ -93,7 +93,7 @@ gitcode release delete v1.0.0 -R owner/repo --dry-run
 
 ### 1. 安装
 
-GitCode CLI 提供跨平台 wheel、DEB、RPM 和独立二进制等安装方式。为避免版本号过期，请直接从[项目 README 的安装章节](https://gitcode.com/gitcode-cli/cli#安装)或 [Releases](https://gitcode.com/gitcode-cli/cli/releases)选择最新版。
+GitCode CLI 提供跨平台 wheel、Homebrew、DEB、RPM 和独立二进制等安装方式。为避免版本号过期，请直接从[项目 README 的安装章节](https://gitcode.com/gitcode-cli/cli#安装)或 [Releases](https://gitcode.com/gitcode-cli/cli/releases)选择最新版。
 
 安装后先确认命令可用：
 

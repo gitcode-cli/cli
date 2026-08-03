@@ -197,6 +197,16 @@ go build -o ./gc ./cmd/gc
 - `.gitignore` 已覆盖新增产物类型
 - 本地临时目录未进入版本控制
 
+### 7.1 Homebrew formula
+
+Homebrew formula (`gc.rb`) 是发布产物，不属于本地产物：
+
+- 由 GoReleaser 在 release workflow `artifacts` job 生成到 `dist/homebrew/gc.rb`（含 version/sha256/URL/install/test，来自 `.goreleaser.yaml` `brews:` 段）
+- 由 `brew` job 用 deploy key 推送到 tap 仓 `gitcode-cli/homebrew-tap`（见 [release-process.md](./release-process.md) §6.5）
+- 本地 `homebrew/gc.rb` 仅作参考副本，实际 formula 以 GoReleaser 生成结果为准（DSL 风格可能与本副本不同）
+
+> **技术债务**：GoReleaser `brews:` 段自 v2.16 起标记废弃，但仍可生成 formula（`goreleaser release` 兼容，仅 `goreleaser check` 报错）。正式 release workflow 固定 GoReleaser v2.17.1，迁移到 `after.hooks` 或自定义 formula 生成脚本由独立 issue 跟踪，不阻塞当前发布。
+
 ## 8. 文档同步要求
 
 当构建、打包流程或产物命名发生变化时，必须同步检查：

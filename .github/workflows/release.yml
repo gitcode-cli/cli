@@ -437,7 +437,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+          printf '%s\n' "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzqKEHvnCg2BRkOjFMiQ24aN3n5j0JpnewHSk" > ~/.ssh/known_hosts
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${HOMEBREW_TAP_DEPLOY_KEY}"
           git clone git@github.com:gitcode-cli/homebrew-tap.git /tmp/tap
@@ -447,5 +447,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add gc.rb
-          git commit -m "chore: update gc formula for ${VERSION_TAG}" || exit 0
+          if git diff --quiet --cached; then
+            echo "no formula changes to push"
+            exit 0
+          fi
+          git commit -m "chore: update gc formula for ${VERSION_TAG}"
           git push origin main

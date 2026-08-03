@@ -8,7 +8,9 @@
 #   brew install gitcode-cli/homebrew-tap/gc
 #
 # The sha256 and version fields here are placeholders; GoReleaser injects the
-# real values from the published release artifacts.
+# real values from the published release artifacts. The DSL (on_intel/on_arm vs
+# Hardware::CPU checks) may also differ from the generated result; always treat
+# dist/homebrew/gc.rb as the source of truth.
 
 class Gc < Formula
   desc "GitCode CLI - Command line tool for GitCode"

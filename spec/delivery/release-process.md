@@ -75,6 +75,10 @@ vMAJOR.MINOR.PATCH-PRERELEASE
 - 真实命令验证已完成
 - 文档已同步
 - 无未解决的 blocker 级问题
+- Homebrew 链路就绪（首次发布前一次性配置）：
+  - tap 仓 `gitcode-cli/homebrew-tap` 存在且默认分支为 `main`
+  - tap 仓已配置 write deploy key（公钥）
+  - 主仓 secret `HOMEBREW_TAP_DEPLOY_KEY` 已配置（对应私钥）
 
 ## 6. 标准发布流程
 

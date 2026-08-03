@@ -260,6 +260,11 @@ ARM64：
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
+### Homebrew (macOS/Linux)
+
+    brew tap gitcode-cli/cli https://github.com/gitcode-cli/cli
+    brew install gitcode-cli/cli/gc
+
 ## 验证安装
 
     gc version
@@ -332,6 +337,15 @@ wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_linux_amd64
 chmod +x gc_linux_amd64
 sudo mv gc_linux_amd64 /usr/local/bin/gc
 ```
+
+### Homebrew (macOS/Linux)
+
+```bash
+brew tap gitcode-cli/cli https://github.com/gitcode-cli/cli
+brew install gitcode-cli/cli/gc
+```
+
+Homebrew 自动匹配平台架构（Apple Silicon / Intel / Linux），并安装 bash/zsh/fish 补全。无需 Go 运行时。
 
 ### 验证安装
 

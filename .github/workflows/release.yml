@@ -285,6 +285,14 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      - name: Upload Homebrew formula
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: homebrew-formula
+          path: dist/homebrew/*.rb
+          if-no-files-found: error
+          retention-days: 90
+
   publish:
     name: GitHub Release
     runs-on: ubuntu-24.04
@@ -409,3 +417,35 @@ jobs:
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           skip-existing: true
+
+  brew:
+    name: Homebrew tap
+    runs-on: ubuntu-24.04
+    needs: [preflight, publish]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: homebrew-formula
+          path: formula
+
+      - name: Push formula to tap repository
+        env:
+          HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+          VERSION_TAG: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${HOMEBREW_TAP_DEPLOY_KEY}"
+          git clone git@github.com:gitcode-cli/homebrew-tap.git /tmp/tap
+          formula_path="$(ls formula/*.rb | head -1)"
+          cp "${formula_path}" /tmp/tap/gc.rb
+          cd /tmp/tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gc.rb
+          git commit -m "chore: update gc formula for ${VERSION_TAG}" || exit 0
+          git push origin main

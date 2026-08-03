@@ -90,6 +90,27 @@ changelog:
     - title: "Others"
       order: 999
 
+brews:
+  - name: gc
+    repository:
+      owner: gitcode-cli
+      name: homebrew-tap
+      branch: main
+    commit_author:
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "chore: update gc formula for {{ .Tag }}"
+    homepage: https://gitcode.com/gitcode-cli/cli
+    description: GitCode CLI - Command line tool for GitCode
+    license: MIT
+    install: |
+      bin.install "gc"
+      bash_completion.install "completions/gc.bash" => "gc"
+      zsh_completion.install "completions/gc.zsh" => "_gc"
+      fish_completion.install "completions/gc.fish"
+    test: |
+      assert_match "gc version", shell_output("#{bin}/gc version")
+
 release:
   draft: false
   prerelease: auto

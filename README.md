@@ -184,11 +184,24 @@ unset GC_TOKEN
 
 更多用法参见 Makefile 和 `docker-compose.yml`。
 
+### Homebrew (macOS/Linux)
+
+```bash
+brew install gitcode-cli/homebrew-tap/gc
+```
+
+更新到最新版本：
+
+```bash
+brew upgrade gc
+```
+
+shell 补全（bash/zsh/fish）随安装自动配置，无需额外操作。
+
 ### 规划中的安装方式
 
 以下安装方式正在开发中：
 
-- [ ] Homebrew (macOS/Linux)
 - [ ] Scoop (Windows)
 
 ## 快速开始

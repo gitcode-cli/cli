@@ -28,13 +28,14 @@
 1. [INTRODUCTION.md](./INTRODUCTION.md)
 2. [COMMANDS.md](./COMMANDS.md)
 3. [AUTH.md](./AUTH.md)
-4. [REGRESSION.md](./REGRESSION.md)
-5. [PACKAGING.md](./PACKAGING.md)
-6. [AI-GUIDE.md](./AI-GUIDE.md)
-7. [LOOP_ENGINEERING_MAINLINE_ANALYSIS.md](./LOOP_ENGINEERING_MAINLINE_ANALYSIS.md)
-8. [AI-TEMPLATES.md](./AI-TEMPLATES.md)
-9. `docs/ai-templates/*.md`
-10. [应用案例库](../Example/index.md)
+4. [LARK.md](./LARK.md)
+5. [REGRESSION.md](./REGRESSION.md)
+6. [PACKAGING.md](./PACKAGING.md)
+7. [AI-GUIDE.md](./AI-GUIDE.md)
+8. [LOOP_ENGINEERING_MAINLINE_ANALYSIS.md](./LOOP_ENGINEERING_MAINLINE_ANALYSIS.md)
+9. [AI-TEMPLATES.md](./AI-TEMPLATES.md)
+10. `docs/ai-templates/*.md`
+11. [应用案例库](../Example/index.md)
 
 说明：
 
@@ -49,6 +50,7 @@
 | [INTRODUCTION.md](./INTRODUCTION.md) | GitCode CLI 产品介绍、核心价值、应用场景和快速上手指南 |
 | [COMMANDS.md](./COMMANDS.md) | 命令行为说明和示例 |
 | [AUTH.md](./AUTH.md) | 认证来源和行为说明 |
+| [LARK.md](./LARK.md) | 飞书/Lark 通知（lark-cli 集成）安装、配置与发送指南 |
 | [REGRESSION.md](./REGRESSION.md) | 核心回归矩阵说明 |
 | [PACKAGING.md](./PACKAGING.md) | 本地打包与发布使用说明 |
 | [AI-GUIDE.md](./AI-GUIDE.md) | 外部项目使用 AI 操作 GitCode 的场景指南 |

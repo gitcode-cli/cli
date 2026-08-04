@@ -26,6 +26,7 @@ GitCode CLI 把仓库、Issue、PR、Release 和 Actions 带回终端，让开�
 - [产品介绍与快速上手](./docs/INTRODUCTION.md)
 - [命令手册](./docs/COMMANDS.md)
 - [认证说明](./docs/AUTH.md)
+- [飞书/Lark 通知](./docs/LARK.md)
 - [回归说明](./docs/REGRESSION.md)
 - [打包说明](./docs/PACKAGING.md)
 - [AI 操作指南（外部项目）](./docs/AI-GUIDE.md)

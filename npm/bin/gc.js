@@ -16,7 +16,10 @@ const path = require("path");
 const { spawn } = require("child_process");
 const { resolveBinaryName } = require("../lib/platform");
 
-const PLATFORMS_DIR = path.join(__dirname, "platforms");
+// PLATFORMS_DIR can be overridden (e.g. for deterministic unit tests that
+// point at an empty dir to exercise the ENOENT path). Defaults to the bundled
+// platforms directory shipped with this package.
+const PLATFORMS_DIR = process.env.GC_PLATFORMS_DIR || path.join(__dirname, "platforms");
 
 function binPath() {
   const name = resolveBinaryName(process.platform, process.arch);

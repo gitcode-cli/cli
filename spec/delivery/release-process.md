@@ -81,7 +81,8 @@ vMAJOR.MINOR.PATCH-PRERELEASE
   - 主仓 secret `HOMEBREW_TAP_DEPLOY_KEY` 已配置（对应私钥）
 - npm 链路就绪（首次发布前一次性配置）：
   - npm 组织 `gitcode-cli` 已创建，发布者为成员
-  - 主仓 secret `NPM_TOKEN` 已配置（npm automation 或 granular access token，scope 限定 `@gitcode-cli/cli`）；npm 不支持 OIDC Trusted Publishing，必须用 token
+  - 在 npmjs.com 的 `@gitcode-cli/cli` 包设置中配置 **Trusted Publisher**（GitHub Actions）：org `gitcode-cli`、repo `cli`、workflow filename `release.yml`、allowed `npm publish`。npm CLI ≥ 11.5.1 + Node ≥ 22.14 自动经 OIDC 发布，**无需 NPM_TOKEN**；Classic token 已于 2025-11 移除，granular token 无法创建 org 下首个新包，故采用 OIDC（npm 官方推荐）
+  - `npm/package.json` 的 `repository.url` 必须为 `https://github.com/gitcode-cli/cli.git`（OIDC 校验 repository.url 与 GitHub 仓一致）
 
 ## 6. 标准发布流程
 
@@ -147,7 +148,7 @@ workflow 必须先在只读权限下校验 `docs/releases/vX.Y.Z.md`、执行 Go
 
 `brew` job 在 publish 后推送 Homebrew formula 到 tap 仓，是发布完整性的组成部分：失败即整个 release workflow 失败，阻断 §6.6 GitCode 同步，需人工修复（deploy key / secret / tap 仓）后重跑 workflow（publish 幂等跳过，brew 重新推送），或手动补推 formula 与 GitCode 同步。它使用 deploy key 而非 GITHUB_TOKEN，只读权限即可。
 
-`npm` job 在 publish 后交叉编译 5 个平台二进制（linux/darwin × amd64/arm64 + windows amd64）内置到 `npm/bin/platforms/`，同步 `npm/package.json` 版本，运行 wrapper 单测，然后 `npm publish --access public` 发布 `@gitcode-cli/cli`。它使用仓库 secret `NPM_TOKEN`（npm 不支持 OIDC）；失败即整个 release workflow 失败。重跑时先 `npm view @gitcode-cli/cli@<version>` 校验：已存在则按幂等方式跳过，不存在才发布（与 PyPI 的 verify-and-skip 一致）。
+`npm` job 在 publish 后交叉编译 5 个平台二进制（linux/darwin × amd64/arm64 + windows amd64）内置到 `npm/bin/platforms/`，同步 `npm/package.json` 版本，运行 wrapper 单测，然后 `npm publish --access public` 发布 `@gitcode-cli/cli`。它使用 **OIDC Trusted Publishing**（`permissions: id-token: write`，npm CLI 自动用短期令牌，**无 NPM_TOKEN**，自动生成 provenance）；需在 npmjs.com 为 `@gitcode-cli/cli` 配置 Trusted Publisher（GitHub Actions，workflow `release.yml`）。失败即整个 release workflow 失败。重跑时先 `npm view @gitcode-cli/cli@<version>` 校验：已存在则幂等跳过（与 PyPI 的 verify-and-skip 一致）。
 
 ### 6.6 同步 GitCode tag、Release 与正式制品
 

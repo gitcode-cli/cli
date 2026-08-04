@@ -461,6 +461,7 @@ jobs:
     needs: [preflight, publish]
     permissions:
       contents: read
+      id-token: write  # OIDC trusted publishing; no NPM_TOKEN needed
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -471,12 +472,11 @@ jobs:
         with:
           go-version: '1.22.12'
 
-      - name: Verify NPM_TOKEN is configured
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          set -euo pipefail
-          test -n "${NPM_TOKEN}" || { echo "::error::NPM_TOKEN secret is missing; create an npm automation/granular token for @gitcode-cli/cli and add it as a repository secret"; exit 1; }
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false  # never cache in release builds
 
       - name: Sync npm package version
         env:
@@ -515,21 +515,19 @@ jobs:
           npm pack --dry-run
           npm test
 
-      - name: Publish to npm
+      - name: Publish to npm (OIDC trusted publishing)
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
         run: |
           set -euo pipefail
           cd npm
-          # Configure registry auth without an extra setup-node action (the
-          # release workflow pins every action to a commit SHA).
-          printf '//registry.npmjs.org/:_authToken=%s\n' "${NPM_TOKEN}" > ~/.npmrc
-          # Idempotent rerun: if the version already exists, skip publishing
-          # (mirrors PyPI's verify-and-skip model). A 404 means not yet
-          # published; any other exit is a real failure.
+          # Idempotent rerun: a public package version is visible without
+          # auth; if it already exists, skip (mirrors PyPI verify-and-skip).
           if npm view "@gitcode-cli/cli@${VERSION_NUM}" version >/dev/null 2>&1; then
             echo "npm @gitcode-cli/cli@${VERSION_NUM} already published; skipping (idempotent)"
             exit 0
           fi
+          # OIDC: npm CLI auto-detects the id-token: write permission and the
+          # trusted publisher configured on npmjs.com, exchanging a short-lived
+          # token. No NPM_TOKEN secret is used; provenance is auto-generated.
           npm publish --access public

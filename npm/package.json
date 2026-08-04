@@ -7,7 +7,7 @@
   "homepage": "https://gitcode.com/gitcode-cli/cli",
   "repository": {
     "type": "git",
-    "url": "https://gitcode.com/gitcode-cli/cli.git",
+    "url": "https://github.com/gitcode-cli/cli.git",
     "directory": "npm"
   },
   "bugs": {

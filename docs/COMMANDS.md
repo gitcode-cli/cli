@@ -2283,6 +2283,90 @@ gc actions runner-set shared-runner-sets -R owner/repo --json
 
 ---
 
+## 飞书/Lark 命令 (lark)
+
+`gc lark` 通过官方 `lark-cli` 工具与飞书/Lark 集成。gc 以子进程方式委托 `lark-cli`，飞书 OAuth 凭证由 lark-cli 存入操作系统 keychain，gc 不接触飞书令牌。
+
+### 前置要求
+
+- 已安装 Node.js（`npm`/`npx`）。lark-cli 缺失时首次运行 `gc lark *` 子命令会返回明确错误并提示 `gc lark install`。
+- 已完成飞书 OAuth 登录：`gc lark install` 安装 lark-cli 后，运行 `lark-cli config init` 与 `lark-cli auth login --recommend`（交互式，需浏览器）。
+
+### lark send - 发送飞书消息
+
+向飞书群、用户或自己发送消息，委托 `lark-cli im +messages-send`。
+
+```bash
+# 通知自己（bot → 你，无需群、无外部群限制）
+gc lark send --to-self --text "deploy done"
+
+# 发送纯文本到指定群
+gc lark send --chat-id oc_xxx --text "deploy done"
+
+# 给指定用户发单聊（按 open_id）
+gc lark send --user-id ou_xxx --as bot --text "hi"
+
+# 发送 markdown
+gc lark send --chat-id oc_xxx --markdown "## Release\n- v1.2.3 shipped"
+
+# 从文件读取正文（- 表示 stdin）
+echo "ci passed" | gc lark send --to-self --body-file -
+
+# 以机器人身份发送到群
+gc lark send --chat-id oc_xxx --as bot --text "hello"
+
+# 预览将执行的 lark-cli 调用，不实际发送
+gc lark send --to-self --text "hi" --dry-run
+
+# JSON 输出（供 AI 代理/脚本消费）
+gc lark send --to-self --text "hi" --json
+```
+
+说明：
+- 目标三选一（互斥）：`--chat-id <oc_xxx>`（群）、`--user-id <ou_xxx>`（单聊）、`--to-self`（给自己）。三者皆空时回落到默认群（见下）。推荐"每人用自己 bot 给自己发通知"的场景用 `--to-self`：自动从 `lark-cli auth status` 解析当前用户 open_id，默认以 bot 身份发送，不受群成员/外部群限制。
+- 默认群（仅在未传目标时生效）解析优先级：环境变量 `GC_LARK_DEFAULT_CHAT_ID` > `~/.config/gc/lark.json` 的 `default_chat_id`。
+- 内容来源四选一：`--text` / `--markdown` / `--file <路径>` / `--body-file <路径|->`。`--file` 把文件作为附件转发给 lark-cli。
+- 消息正文（`--text`/`--markdown`/`--body-file`）在发送前经 `cmdutil.ScanContentForSecrets` 扫描，若包含当前 `GC_TOKEN`/`GITCODE_TOKEN` 值则拒绝发送。`--file` 附件为二进制路径，不由 gc 扫描内容。
+- `--json` 成功写入 stdout、退出码 0；失败写入 stderr 并非零退出。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证/权限错误（lark-cli 未登录或令牌失效）。
+
+### lark auth status - 查看登录状态
+
+```bash
+gc lark auth status          # 友好输出
+gc lark auth status --json   # 透传 lark-cli 的结构化登录状态
+```
+
+### lark install - 安装 lark-cli
+
+```bash
+gc lark install              # 运行 npx @larksuite/cli@latest install
+```
+
+安装后若当前 shell 的 PATH 未刷新，可设置环境变量 `GC_LARK_CLI_BIN` 指向 lark-cli 二进制路径。
+
+### lark doctor - 健康检查
+
+```bash
+gc lark doctor               # 检测 lark-cli 安装 + 登录就绪 + 默认群配置
+gc lark doctor --json
+```
+
+### lark config - 管理默认群
+
+```bash
+# 设置默认群
+gc lark config set --default-chat oc_xxx
+
+# 查看生效的默认群（受 GC_LARK_DEFAULT_CHAT_ID 覆盖）
+gc lark config get
+gc lark config get --json
+```
+
+默认群持久化在 `~/.config/gc/lark.json`（权限 0600），与 gc 的 host 配置 `config.json` 分离。环境变量 `GC_LARK_DEFAULT_CHAT_ID` 优先于持久化值。
+
+---
+
 ## 其他命令
 
 ### version - 显示版本
@@ -2372,6 +2456,8 @@ gc schema "issue view"
 | `GC_DEBUG` | 启用 API 调试日志，输出重试、Rate Limit 等信息到 stderr |
 | `GC_API_DEBUG` | 同 `GC_DEBUG`，启用 API 调试日志 |
 | `NO_COLOR` | 禁用颜色输出 |
+| `GC_LARK_CLI_BIN` | 覆盖 lark-cli 二进制路径，优先于 PATH 查找（用于安装后 PATH 未刷新的场景） |
+| `GC_LARK_DEFAULT_CHAT_ID` | 覆盖 `gc lark send` 的默认飞书群 id，优先于 `~/.config/gc/lark.json` |
 
 ---
 

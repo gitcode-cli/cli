@@ -285,6 +285,14 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      - name: Upload Homebrew formula
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: homebrew-formula
+          path: dist/homebrew/*.rb
+          if-no-files-found: error
+          retention-days: 90
+
   publish:
     name: GitHub Release
     runs-on: ubuntu-24.04
@@ -409,3 +417,40 @@ jobs:
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           skip-existing: true
+
+  brew:
+    name: Homebrew tap
+    runs-on: ubuntu-24.04
+    needs: [preflight, artifacts, publish]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: homebrew-formula
+          path: formula
+
+      - name: Push formula to tap repository
+        env:
+          HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+          VERSION_TAG: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+          test -n "${HOMEBREW_TAP_DEPLOY_KEY}" || { echo "::error::HOMEBREW_TAP_DEPLOY_KEY secret is missing"; exit 1; }
+          mkdir -p ~/.ssh
+          printf '%s\n' "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzqKEHvnCg2BRkOjFMiQ24aN3n5j0JpnewHSk" > ~/.ssh/known_hosts
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${HOMEBREW_TAP_DEPLOY_KEY}"
+          git clone git@github.com:gitcode-cli/homebrew-tap.git /tmp/tap
+          cp formula/gc.rb /tmp/tap/gc.rb
+          cd /tmp/tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gc.rb
+          if git diff --quiet --cached; then
+            echo "no formula changes to push"
+            exit 0
+          fi
+          git commit -m "chore: update gc formula for ${VERSION_TAG}"
+          git pull --rebase origin main
+          git push origin main

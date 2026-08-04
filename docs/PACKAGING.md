@@ -260,6 +260,16 @@ ARM64：
     chmod +x gc_linux_arm64
     sudo mv gc_linux_arm64 /usr/local/bin/gc
 
+### Homebrew (macOS/Linux)
+
+    brew install gitcode-cli/homebrew-tap/gc
+
+更新到最新版本：
+
+    brew upgrade gc
+
+shell 补全（bash/zsh/fish）随安装自动配置。formula 由 GoReleaser 在发布流程中生成并推送到 [gitcode-cli/homebrew-tap](https://github.com/gitcode-cli/homebrew-tap)（见 `.goreleaser.yaml` `brews:` 与 release workflow `brew` job）。
+
 ## 验证安装
 
     gc version

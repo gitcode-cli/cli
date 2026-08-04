@@ -75,6 +75,10 @@ vMAJOR.MINOR.PATCH-PRERELEASE
 - 真实命令验证已完成
 - 文档已同步
 - 无未解决的 blocker 级问题
+- Homebrew 链路就绪（首次发布前一次性配置）：
+  - tap 仓 `gitcode-cli/homebrew-tap` 存在且默认分支为 `main`
+  - tap 仓已配置 write deploy key（公钥）
+  - 主仓 secret `HOMEBREW_TAP_DEPLOY_KEY` 已配置（对应私钥）
 
 ## 6. 标准发布流程
 
@@ -86,9 +90,9 @@ vMAJOR.MINOR.PATCH-PRERELEASE
 4. 同步文档版本号
 5. 使用标准脚本在本地验证发布产物
 6. 将发布准备 PR 合入 GitCode 与 GitHub 的 `main`，确认 tree hash 一致
-7. 触发 GitHub release workflow，创建 tag、GitHub Release、正式产物并发布 PyPI
+7. 触发 GitHub release workflow，创建 tag、GitHub Release、正式产物并发布 PyPI，并推送 Homebrew formula 到 `gitcode-cli/homebrew-tap`（由 workflow `brew` job 完成）
 8. 通过 SSH 将同一 tag 推送到 GitCode，并把同一批正式产物上传到 GitCode Release
-9. 对两个平台、PyPI 和安装入口执行发布后验证
+9. 对两个平台、PyPI 和 Homebrew 安装入口执行发布后验证
 
 ### 6.1 获取最新主线
 
@@ -137,6 +141,8 @@ gh run watch <run-id> -R gitcode-cli/cli
 ```
 
 workflow 必须先在只读权限下校验 `docs/releases/vX.Y.Z.md`、执行 GoReleaser snapshot、nFPM、wheel/sdist 和入口冒烟；全部预检通过后，独立的最小写权限 job 才能创建指向当前 `main` 的 tag。正式制品从该 tag 在只读 job 中构建并生成覆盖全部资产的 SHA-256 清单，再由独立 job 发布 GitHub Release。PyPI job 只下载已验证制品并执行 Trusted Publishing，不参与构建，也不修改 Release。已有 tag 仅在其 commit 与当前 workflow HEAD 完全一致时允许复用。
+
+`brew` job 在 publish 后推送 Homebrew formula 到 tap 仓，是发布完整性的组成部分：失败即整个 release workflow 失败，阻断 §6.6 GitCode 同步，需人工修复（deploy key / secret / tap 仓）后重跑 workflow（publish 幂等跳过，brew 重新推送），或手动补推 formula 与 GitCode 同步。它使用 deploy key 而非 GITHUB_TOKEN，只读权限即可。
 
 ### 6.6 同步 GitCode tag、Release 与正式制品
 
@@ -192,6 +198,7 @@ release notes 必须满足：
 - GitCode 与 GitHub tag 指向同一 commit，两个 `main` 的 tree hash 一致
 - GitCode 与 GitHub Release 的同名资产校验和一致
 - PyPI 返回目标版本，且 wheel 内置二进制的版本和 commit SHA 可追溯
+- Homebrew tap 仓 `gc.rb` 已更新到目标版本，`brew install gitcode-cli/homebrew-tap/gc` 可安装且 `gc version` 输出正确
 
 若发布包含 DEB / RPM / wheel，建议至少各抽样验证一种常用安装路径。
 

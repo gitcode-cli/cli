@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // Wrapper entry for @gitcode-cli/cli.
 //
 // - Default: resolve the bundled platform binary and exec it with the

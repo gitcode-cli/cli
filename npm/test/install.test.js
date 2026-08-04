@@ -7,22 +7,27 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("fs");
 const path = require("path");
 const { chooseGlobalBinDir, completionTarget, dirOnPath } = require("../lib/install");
 
-test("chooseGlobalBinDir returns the Windows per-user dir on win32", () => {
+test("chooseGlobalBinDir returns a writable, existing dir on posix (regardless of /usr/local/bin)", () => {
+  // Deterministic: on hosted runners /usr/local/bin may be writable, so we
+  // only assert the invariant — the returned dir exists and is writable —
+  // rather than which specific dir is chosen.
+  const home = "/tmp/gc-install-home-" + process.pid;
+  const dir = chooseGlobalBinDir(home, false);
+  assert.ok(fs.existsSync(dir), `${dir} should exist`);
+  // Writable probe (the function already guarantees writability by design).
+  const probe = path.join(dir, ".gc-test-probe");
+  fs.writeFileSync(probe, "");
+  fs.unlinkSync(probe);
+});
+
+test("chooseGlobalBinDir returns the Windows per-user dir on win32 (no FS writability dependency)", () => {
   const home = "/u/home";
   const dir = chooseGlobalBinDir(home, true);
   assert.strictEqual(dir, path.join(home, "AppData", "Local", "gitcode-cli", "bin"));
-});
-
-test("chooseGlobalBinDir falls back to ~/.local/bin when /usr/local/bin is not writable", () => {
-  const home = "/tmp/definitely-not-writable-home-" + process.pid;
-  const dir = chooseGlobalBinDir(home, false);
-  assert.strictEqual(dir, path.join(home, ".local", "bin"));
-  // the fallback dir is created
-  const fs = require("fs");
-  assert.ok(fs.existsSync(dir));
 });
 
 test("completionTarget maps each shell to a standard path", () => {

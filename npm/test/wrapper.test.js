@@ -1,6 +1,6 @@
-// Unit tests for bin/gc.js behavior that can be exercised without the real
-// gc binary: the install interception contract and the unsupported-platform
-// error path. The exec path is covered end-to-end elsewhere.
+// Unit tests for bin/gc.js. Deterministic: points the wrapper at an empty
+// platforms dir (via GC_PLATFORMS_DIR) so the ENOENT path is exercised
+// regardless of whether the release workflow built the real binaries.
 // Run: node --test (from npm/) or `npm test`.
 
 "use strict";
@@ -8,6 +8,8 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const { execFileSync } = require("child_process");
+const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
 const WRAPPER = path.join(__dirname, "..", "bin", "gc.js");
@@ -30,10 +32,10 @@ function runWrapper(args, env) {
 }
 
 test("wrapper exits 127 with a clear message when the binary is missing (ENOENT)", () => {
-  // The platforms dir has no bundled binary in a source checkout (binaries are
-  // built by the release workflow), so the wrapper must hit its ENOENT path.
-  const r = runWrapper(["version"]);
-  // 127 = command not found (the wrapper's ENOENT path)
+  // Point the wrapper at a guaranteed-empty temp dir so the ENOENT path is
+  // deterministic whether or not real binaries are bundled in this checkout.
+  const empty = fs.mkdtempSync(path.join(os.tmpdir(), "gc-platforms-empty-"));
+  const r = runWrapper(["version"], { GC_PLATFORMS_DIR: empty });
   assert.strictEqual(r.status, 127);
   assert.match(r.stderr, /gc binary not found/);
 });

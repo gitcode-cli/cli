@@ -142,7 +142,7 @@ gh run watch <run-id> -R gitcode-cli/cli
 
 workflow 必须先在只读权限下校验 `docs/releases/vX.Y.Z.md`、执行 GoReleaser snapshot、nFPM、wheel/sdist 和入口冒烟；全部预检通过后，独立的最小写权限 job 才能创建指向当前 `main` 的 tag。正式制品从该 tag 在只读 job 中构建并生成覆盖全部资产的 SHA-256 清单，再由独立 job 发布 GitHub Release。PyPI job 只下载已验证制品并执行 Trusted Publishing，不参与构建，也不修改 Release。已有 tag 仅在其 commit 与当前 workflow HEAD 完全一致时允许复用。
 
-`brew` job 在 publish 后以 best-effort 方式推送 Homebrew formula 到 tap 仓（`continue-on-error: true`，失败不阻断核心发布；靠 §8 发布后验证兜底）。它使用 deploy key 而非 GITHUB_TOKEN，只读权限即可。
+`brew` job 在 publish 后推送 Homebrew formula 到 tap 仓，是发布完整性的组成部分：失败即整个 release workflow 失败，阻断 §6.6 GitCode 同步，需人工修复（deploy key / secret / tap 仓）后重跑 workflow（publish 幂等跳过，brew 重新推送），或手动补推 formula 与 GitCode 同步。它使用 deploy key 而非 GITHUB_TOKEN，只读权限即可。
 
 ### 6.6 同步 GitCode tag、Release 与正式制品
 

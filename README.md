@@ -199,6 +199,23 @@ brew upgrade gc
 
 shell 补全（bash/zsh/fish）随安装自动配置，无需额外操作。
 
+### npm (跨平台)
+
+一行 bootstrap（无需全局 npm 安装，自动装二进制 + 补全）：
+
+```bash
+npx @gitcode-cli/cli@latest install
+```
+
+或全局安装：
+
+```bash
+npm install -g @gitcode-cli/cli
+gc version
+```
+
+包内置 Linux/macOS/Windows 多平台二进制；shell 补全（bash/zsh/fish）由 `install` 子命令自动配置。
+
 ### 规划中的安装方式
 
 以下安装方式正在开发中：

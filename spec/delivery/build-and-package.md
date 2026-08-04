@@ -100,6 +100,7 @@ make release-snapshot
 - DEB 包：`gc_*.deb`
 - RPM 包：`gc-*.rpm`
 - PyPI 包：`gitcode_cli-*.whl`、`gitcode_cli-*.tar.gz`
+- npm 包：`@gitcode-cli/cli`（`npm/` 目录的 Node wrapper + 内置多平台二进制 `npm/bin/platforms/gc-{linux,darwin}-{amd64,arm64}` 与 `gc-windows-amd64.exe`，由 release workflow 的 `npm` job 构建发布）
 
 ## 5. 构建前置条件
 

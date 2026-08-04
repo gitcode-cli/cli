@@ -52,6 +52,7 @@
 | `docs/` | 用户文档 |
 | `issues-plan/` | 阶段说明（可能滞后，非事实源） |
 | `gc_cli/` | Python wheel 包装层，分发内置全平台二进制 |
+| `npm/` | npm 包包装层（`@gitcode-cli/cli`），Node wrapper + 内置多平台二进制 + `install` 引导 |
 
 ### 2.2 命令结构约定
 

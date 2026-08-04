@@ -17,6 +17,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/help"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label"
+	larkcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/lark"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/milestone"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/pr"
 	precommitcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/precommit"
@@ -70,6 +71,7 @@ func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(milestone.NewCmdMilestone(f))
 	cmd.AddCommand(release.NewCmdRelease(f))
 	cmd.AddCommand(schema.NewCmdSchema(cmd))
+	cmd.AddCommand(larkcmd.NewCmdLark(f))
 
 	rewriteExamples(cmd, commandName)
 

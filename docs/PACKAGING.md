@@ -270,6 +270,13 @@ ARM64：
 
 shell 补全（bash/zsh/fish）随安装自动配置。formula 由 GoReleaser 在发布流程中生成并推送到 [gitcode-cli/homebrew-tap](https://github.com/gitcode-cli/homebrew-tap)（见 `.goreleaser.yaml` `brews:` 与 release workflow `brew` job）。
 
+### npm (跨平台)
+
+    npx @gitcode-cli/cli@latest install     # 一行 bootstrap：装二进制 + 补全
+    npm install -g @gitcode-cli/cli          # 或全局安装
+
+npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/bin/platforms/`），Node wrapper 按平台选择并 exec。**npm 不由 `scripts/package.sh` 构建**——由 release workflow 的 `npm` job 交叉编译 5 个二进制 + 同步 `npm/package.json` 版本 + `npm publish --access public`（引用 `NPM_TOKEN` secret；重跑时 `npm view` 校验已存在则幂等跳过）。前置：npm org `gitcode-cli` 已创建 + 仓库 secret `NPM_TOKEN` 已配。
+
 ## 验证安装
 
     gc version

@@ -1,0 +1,55 @@
+// Platform -> binary name resolution for the bundled GitCode CLI binaries.
+//
+// Mirrors the selection logic in gc_cli/wrapper.py (get_binary_name): Node's
+// process.platform/process.arch are mapped to the bundled binary file name
+// under npm/bin/platforms/.
+
+"use strict";
+
+// Node arch -> gc arch segment. x64 binaries are named with "amd64".
+const ARCH_MAP = {
+  x64: "amd64",
+  amd64: "amd64", // defensive; Node does not emit amd64 today
+  arm64: "arm64",
+  arm: "arm64", // best-effort for 32-bit ARM (not officially built)
+};
+
+// Node platform -> gc platform segment.
+const PLATFORM_MAP = {
+  linux: "linux",
+  darwin: "darwin",
+  win32: "windows",
+};
+
+/**
+ * Resolve the bundled binary file name for the current platform/arch.
+ * Returns e.g. "gc-linux-amd64" or "gc-windows-amd64.exe".
+ * Throws when the platform/arch is unsupported (no bundled binary exists).
+ */
+function resolveBinaryName(platform, arch) {
+  const p = PLATFORM_MAP[platform];
+  const a = ARCH_MAP[arch];
+  if (!p || !a) {
+    throw new Error(
+      `unsupported platform/arch: ${platform}/${arch}; ` +
+        `supported: linux/x64, linux/arm64, darwin/x64, darwin/arm64, win32/x64`
+    );
+  }
+  const name = `gc-${p}-${a}`;
+  return p === "windows" ? `${name}.exe` : name;
+}
+
+/**
+ * True when the resolved binary is bundled (i.e. the platform/arch combo is
+ * one we ship). Used by install to decide whether to fall back.
+ */
+function isSupported(platform, arch) {
+  try {
+    resolveBinaryName(platform, arch);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+module.exports = { resolveBinaryName, isSupported, ARCH_MAP, PLATFORM_MAP };

@@ -3,6 +3,11 @@ bin/
 !gc_cli/bin/
 gc_cli/bin/*
 !gc_cli/bin/.gitkeep
+# npm package: ship the Node wrapper (bin/gc.js) but never the bundled
+# platform binaries (built by the release workflow).
+!npm/bin/
+npm/bin/*
+!npm/bin/gc.js
 /gc
 gc_linux_*
 gc-darwin-*

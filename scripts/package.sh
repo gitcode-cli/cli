@@ -118,6 +118,12 @@ success "Updated pyproject.toml"
 sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" gc_cli/__init__.py
 success "Updated gc_cli/__init__.py"
 
+# Update npm package version (if the npm package dir exists)
+if [ -f "npm/package.json" ]; then
+    sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" npm/package.json
+    success "Updated npm/package.json"
+fi
+
 # Update README.md (download links; release badge is de-pinned to "latest")
 sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc_/v${VERSION}\/gc_/g" README.md
 sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc-/v${VERSION}\/gc-/g" README.md

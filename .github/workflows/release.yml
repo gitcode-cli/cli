@@ -454,3 +454,82 @@ jobs:
           git commit -m "chore: update gc formula for ${VERSION_TAG}"
           git pull --rebase origin main
           git push origin main
+
+  npm:
+    name: npm
+    runs-on: ubuntu-24.04
+    needs: [preflight, publish]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.preflight.outputs.head_sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.22.12'
+
+      - name: Verify NPM_TOKEN is configured
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "${NPM_TOKEN}" || { echo "::error::NPM_TOKEN secret is missing; create an npm automation/granular token for @gitcode-cli/cli and add it as a repository secret"; exit 1; }
+
+      - name: Sync npm package version
+        env:
+          VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
+        run: |
+          set -euo pipefail
+          sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION_NUM}\"/" npm/package.json
+          grep -q "\"version\": \"${VERSION_NUM}\"" npm/package.json
+
+      - name: Build bundled multi-platform binaries
+        env:
+          VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
+          COMMIT: ${{ needs.preflight.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p npm/bin/platforms
+          DATE="$(date -u +%Y-%m-%d)"
+          LDFLAGS="-s -w -X main.version=${VERSION_NUM} -X main.commit=${COMMIT} -X main.date=${DATE}"
+          build() {
+            local goos="$1" goarch="$2" out="$3"
+            echo "building ${goos}/${goarch} -> ${out}"
+            GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "npm/bin/platforms/${out}" ./cmd/gc
+            test -f "npm/bin/platforms/${out}"
+          }
+          build linux  amd64 gc-linux-amd64
+          build linux  arm64 gc-linux-arm64
+          build darwin amd64 gc-darwin-amd64
+          build darwin arm64 gc-darwin-arm64
+          build windows amd64 gc-windows-amd64.exe
+          chmod +x npm/bin/platforms/gc-linux-*
+
+      - name: Verify package (npm pack + wrapper unit tests)
+        run: |
+          set -euo pipefail
+          cd npm
+          npm pack --dry-run
+          npm test
+
+      - name: Publish to npm
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
+        run: |
+          set -euo pipefail
+          cd npm
+          # Configure registry auth without an extra setup-node action (the
+          # release workflow pins every action to a commit SHA).
+          printf '//registry.npmjs.org/:_authToken=%s\n' "${NPM_TOKEN}" > ~/.npmrc
+          # Idempotent rerun: if the version already exists, skip publishing
+          # (mirrors PyPI's verify-and-skip model). A 404 means not yet
+          # published; any other exit is a real failure.
+          if npm view "@gitcode-cli/cli@${VERSION_NUM}" version >/dev/null 2>&1; then
+            echo "npm @gitcode-cli/cli@${VERSION_NUM} already published; skipping (idempotent)"
+            exit 0
+          fi
+          npm publish --access public

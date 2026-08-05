@@ -11,7 +11,7 @@ const ARCH_MAP = {
   x64: "amd64",
   amd64: "amd64", // defensive; Node does not emit amd64 today
   arm64: "arm64",
-  arm: "arm64", // best-effort for 32-bit ARM (not officially built)
+  arm: "arm64", // best-effort for 32-bit ARM (not built as a shipped target)
 };
 
 // Node platform -> gc platform segment.

@@ -1,8 +1,8 @@
 # @gitcode-cli/cli
 
-The official [GitCode CLI](https://gitcode.com/gitcode-cli/cli) distributed via npm with **bundled multi-platform binaries** (Linux x64/ARM64, macOS x64/ARM64, Windows x64). No separate download step; `gc` / `gitcode` works right after install.
+The open-source [GitCode CLI](https://gitcode.com/gitcode-cli/cli) distributed via npm with **bundled multi-platform binaries** (Linux x64/ARM64, macOS x64/ARM64, Windows x64). No separate download step; `gc` / `gitcode` works right after install.
 
-GitCode CLI brings repositories, issues, pull requests, releases and Actions back to the terminal — for developers, scripts, and AI agents.
+GitCode CLI (`gc` / `gitcode`) is the community-developed, MIT-licensed command line tool for GitCode — bringing repositories, issues, pull requests, releases and Actions back to the terminal for developers, scripts, and AI agents. It is an independent open-source project, not published by the GitCode platform team.
 
 ## Install
 

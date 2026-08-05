@@ -1,7 +1,7 @@
 {
   "name": "@gitcode-cli/cli",
-  "version": "0.0.0",
-  "description": "GitCode CLI - the official command line tool for GitCode, distributed via npm with bundled multi-platform binaries.",
+  "version": "0.10.2",
+  "description": "GitCode CLI — the open-source command line tool for GitCode, distributed via npm with bundled multi-platform binaries.",
   "license": "MIT",
   "author": "GitCode CLI Contributors <support@gitcode.com>",
   "homepage": "https://gitcode.com/gitcode-cli/cli",
@@ -33,7 +33,7 @@
     "README.md"
   ],
   "scripts": {
-    "version": "node -e \"console.log(require('./package.json').version)\"",
+    "version": "0.10.2",
     "test": "node --test"
   }
 }

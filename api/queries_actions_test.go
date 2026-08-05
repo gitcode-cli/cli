@@ -1,7 +1,10 @@
 package api
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -925,5 +928,101 @@ func artifactDetailJSON() string {
 		"expires_at":"1783587145000",
 		"created_at":"1783500745000",
 		"updated_at":"1783500745000"
+	}`
+}
+
+func TestValidateActionsWorkflowBuildsV8PathAndBody(t *testing.T) {
+	var gotMethod string
+	var gotPath string
+	var gotAuth string
+	var gotBody string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotMethod = req.Method
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			t.Fatalf("io.ReadAll() error = %v", err)
+		}
+		gotBody = string(body)
+		return authTestResponse(http.StatusOK, validateResponseJSON()), nil
+	})
+	client.SetToken("test-token", "test")
+
+	resp, raw, err := ValidateActionsWorkflow(client, "owner", "repo", []byte("name: ci\n"))
+	if err != nil {
+		t.Fatalf("ValidateActionsWorkflow() error = %v", err)
+	}
+	if resp == nil || !resp.Valid {
+		t.Fatalf("resp = %+v, want valid=true", resp)
+	}
+	if len(resp.Diagnostics) != 1 {
+		t.Fatalf("len(Diagnostics) = %d, want 1", len(resp.Diagnostics))
+	}
+	if resp.Diagnostics[0].Message != "bad yaml" {
+		t.Fatalf("diagnostic message = %q, want bad yaml", resp.Diagnostics[0].Message)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+	if gotMethod != http.MethodPost {
+		t.Fatalf("method = %q, want POST", gotMethod)
+	}
+	want := "/api/v8/repos/owner/repo/actions/workflows/validate"
+	if gotPath != want {
+		t.Fatalf("request path = %q, want %q", gotPath, want)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+	var reqBody map[string]string
+	if err := json.Unmarshal([]byte(gotBody), &reqBody); err != nil {
+		t.Fatalf("request body is not JSON: %v; body=%q", err, gotBody)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(reqBody["base64_content"])
+	if err != nil {
+		t.Fatalf("base64 decode error: %v", err)
+	}
+	if string(decoded) != "name: ci\n" {
+		t.Fatalf("decoded content = %q, want %q", string(decoded), "name: ci\n")
+	}
+	if string(raw) != validateResponseJSON() {
+		t.Fatalf("raw body not preserved verbatim (len %d vs %d)", len(raw), len(validateResponseJSON()))
+	}
+}
+
+func TestValidateActionsWorkflowError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+
+	_, _, err := ValidateActionsWorkflow(client, "owner", "repo", []byte("name: ci\n"))
+	if err == nil {
+		t.Fatal("ValidateActionsWorkflow() error = nil, want error")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("apiErr.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusNotFound)
+	}
+}
+
+func validateResponseJSON() string {
+	return `{
+		"valid": true,
+		"diagnostics": [
+			{
+				"range": {
+					"start": {"line": 2, "column": 4},
+					"end": {"line": 2, "column": 5}
+				},
+				"severity": "error",
+				"message": "bad yaml"
+			}
+		]
 	}`
 }

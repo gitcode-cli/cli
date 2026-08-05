@@ -11,6 +11,7 @@ import (
 	runnercmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner"
 	runnergroupcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner-group"
 	runnersetcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/runner-set"
+	yamlcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions/yaml"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -51,6 +52,7 @@ func NewCmdActions(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(runnergroupcmd.NewCmdRunnerGroup(f))
 	cmd.AddCommand(runnercmd.NewCmdRunner(f))
 	cmd.AddCommand(runnersetcmd.NewCmdRunnerSet(f))
+	cmd.AddCommand(yamlcmd.NewCmdYaml(f))
 
 	return cmd
 }

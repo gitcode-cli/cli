@@ -352,6 +352,9 @@ gitcode actions artifact download <artifact-id> -R owner/repo --output artifact.
 # 删除 artifact
 gitcode actions artifact delete <artifact-id> -R owner/repo --yes
 
+# 校验 workflow YAML
+gc actions yaml validate --file .gitcode/workflows/ci.yml -R owner/repo
+
 # 调用 GitCode API 原始响应
 gitcode api repos/owner/repo
 

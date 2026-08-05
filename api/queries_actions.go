@@ -1,6 +1,8 @@
 package api
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -429,6 +431,65 @@ func DeleteActionsArtifact(client *Client, owner, repo, artifactID string) error
 
 	_, err := client.RawREST("DELETE", endpoint, nil, nil)
 	return err
+}
+
+// ValidateWorkflowRequest is the JSON request body for the workflow validate endpoint.
+type ValidateWorkflowRequest struct {
+	Base64Content string `json:"base64_content"`
+}
+
+// WorkflowPosition is a line/column position in a workflow YAML file.
+type WorkflowPosition struct {
+	Line   int `json:"line"`
+	Column int `json:"column"`
+}
+
+// WorkflowDiagnosticRange is a line/column range reported by the validator.
+type WorkflowDiagnosticRange struct {
+	Start WorkflowPosition `json:"start"`
+	End   WorkflowPosition `json:"end"`
+}
+
+// WorkflowDiagnostic is a single validation failure cause.
+type WorkflowDiagnostic struct {
+	Range    WorkflowDiagnosticRange `json:"range"`
+	Severity string                  `json:"severity"`
+	Message  string                  `json:"message"`
+}
+
+// ValidateWorkflowResponse is the response from the workflow validate endpoint.
+type ValidateWorkflowResponse struct {
+	Valid       bool                 `json:"valid"`
+	Diagnostics []WorkflowDiagnostic `json:"diagnostics"`
+}
+
+// ValidateActionsWorkflow validates workflow YAML content through the Actions
+// v8 validate endpoint.
+//
+// It calls POST /api/v8/repos/{owner}/{repo}/actions/workflows/validate and
+// base64-encodes the content into the required base64_content field. The
+// optional access_token query parameter is intentionally omitted: the CLI
+// authenticates through the standard Bearer header.
+func ValidateActionsWorkflow(client *Client, owner, repo string, content []byte) (*ValidateWorkflowResponse, json.RawMessage, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/workflows/validate"
+
+	body, err := json.Marshal(ValidateWorkflowRequest{
+		Base64Content: base64.StdEncoding.EncodeToString(content),
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal validate request: %w", err)
+	}
+
+	resp, err := client.RawREST("POST", endpoint, bytes.NewReader(body), nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var result ValidateWorkflowResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse validate response: %w", err)
+	}
+	return &result, resp.Body, nil
 }
 
 // RunnerGroup represents a single Actions runner group in an organization.

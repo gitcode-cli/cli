@@ -15,9 +15,15 @@
   },
   "keywords": [
     "gitcode",
+    "gitcode-cli",
     "cli",
+    "command-line",
+    "terminal",
     "git",
-    "devops"
+    "devops",
+    "lark",
+    "feishu",
+    "ai-agent"
   ],
   "engines": {
     "node": ">=18"

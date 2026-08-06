@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -120,30 +119,30 @@ func validateRun(opts *ValidateOptions) error {
 }
 
 func readYAML(file string, stdin io.Reader) ([]byte, error) {
-	var content []byte
+	var text string
 	var err error
 	if file == "-" {
-		content, err = io.ReadAll(stdin)
+		text, err = cmdutil.ReadTextFromFlag(stdin, "--file")
 		if err != nil {
 			return nil, fmt.Errorf("failed to read workflow YAML from stdin: %w", err)
 		}
 	} else {
-		content, err = os.ReadFile(file)
+		text, err = cmdutil.ReadTextFile(file)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read workflow YAML file %s: %w", file, err)
 		}
 	}
-	return []byte(cmdutil.DecodeUserText(content)), nil
+	return []byte(text), nil
 }
 
-func printResult(io *iostreams.IOStreams, result *api.ValidateWorkflowResponse) {
-	cs := io.ColorScheme()
+func printResult(ios *iostreams.IOStreams, result *api.ValidateWorkflowResponse) {
+	cs := ios.ColorScheme()
 	if result.Valid {
-		fmt.Fprintf(io.Out, "%s Workflow YAML is valid\n", cs.Green("✓"))
+		fmt.Fprintf(ios.Out, "%s Workflow YAML is valid\n", cs.Green("✓"))
 		return
 	}
 
-	fmt.Fprintf(io.Out, "%s Workflow YAML is invalid\n", cs.Red("✗"))
+	fmt.Fprintf(ios.Out, "%s Workflow YAML is invalid\n", cs.Red("✗"))
 	for _, d := range result.Diagnostics {
 		loc := fmt.Sprintf("line %d, column %d", d.Range.Start.Line, d.Range.Start.Column)
 		if d.Range.End.Line != 0 || d.Range.End.Column != 0 {
@@ -153,6 +152,6 @@ func printResult(io *iostreams.IOStreams, result *api.ValidateWorkflowResponse) 
 		if severity == "" {
 			severity = "error"
 		}
-		fmt.Fprintf(io.Out, "  - %s [%s] %s\n", loc, severity, d.Message)
+		fmt.Fprintf(ios.Out, "  - %s [%s] %s\n", loc, severity, d.Message)
 	}
 }

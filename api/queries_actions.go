@@ -467,9 +467,9 @@ type ValidateWorkflowResponse struct {
 // v8 validate endpoint.
 //
 // It calls POST /api/v8/repos/{owner}/{repo}/actions/workflows/validate and
-// base64-encodes the content into the required base64_content field. The
-// optional access_token query parameter is intentionally omitted: the CLI
-// authenticates through the standard Bearer header.
+// base64-encodes the content into the required base64_content field.
+// Authentication uses the standard Bearer header; no token is placed in the
+// query string.
 func ValidateActionsWorkflow(client *Client, owner, repo string, content []byte) (*ValidateWorkflowResponse, json.RawMessage, error) {
 	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/workflows/validate"
 

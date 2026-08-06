@@ -252,10 +252,45 @@ func TestValidateRunMissingFile(t *testing.T) {
 	if !strings.Contains(err.Error(), "failed to read workflow YAML file") {
 		t.Fatalf("error = %q, want file read error", err.Error())
 	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitError)
+	}
 }
 
-func TestValidateRunAPIError(t *testing.T) {
+func TestValidateRunEmptyFile(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
+
+	ios, _, out, _ := iostreams.Test()
+	var gotBody string
+	opts := &ValidateOptions{
+		IO: ios,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					body, _ := io.ReadAll(req.Body)
+					gotBody = string(body)
+					return validateTestResponse(http.StatusOK, `{"valid":true,"diagnostics":[]}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		File:       filepath.Join(t.TempDir(), "empty.yml"),
+	}
+	if err := os.WriteFile(opts.File, nil, 0o644); err != nil {
+		t.Fatalf("os.WriteFile() error = %v", err)
+	}
+
+	if err := validateRun(opts); err != nil {
+		t.Fatalf("validateRun() error = %v", err)
+	}
+	assertBase64Body(t, gotBody, "")
+	if !strings.Contains(out.String(), "Workflow YAML is valid") {
+		t.Fatalf("output = %q, want valid message", out.String())
+	}
+}
+
+func TestValidateRunRejectsContentWithSecret(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-secret-token")
 
 	ios, _, _, _ := iostreams.Test()
 	opts := &ValidateOptions{
@@ -263,23 +298,71 @@ func TestValidateRunAPIError(t *testing.T) {
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-					return validateTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+					t.Fatal("API should not be called when content contains the current token")
+					return nil, nil
 				}),
 			}, nil
 		},
 		Repository: "owner/repo",
 		File:       filepath.Join(t.TempDir(), "ci.yml"),
 	}
-	if err := os.WriteFile(opts.File, []byte("name: ci\n"), 0o644); err != nil {
+	secretContent := "name: ci\ntoken: test-secret-token\n"
+	if err := os.WriteFile(opts.File, []byte(secretContent), 0o644); err != nil {
 		t.Fatalf("os.WriteFile() error = %v", err)
 	}
 
 	err := validateRun(opts)
 	if err == nil {
-		t.Fatal("validateRun() error = nil, want API error")
+		t.Fatal("validateRun() error = nil, want secret scan error")
 	}
-	if got := cmdutil.ExitCode(err); got != cmdutil.ExitNotFound {
-		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitNotFound)
+	if !strings.Contains(err.Error(), "content contains secret") {
+		t.Fatalf("error = %q, want secret scan error", err.Error())
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitError {
+		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitError)
+	}
+}
+
+func TestValidateRunAPIError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	tests := []struct {
+		name     string
+		status   int
+		wantExit int
+	}{
+		{name: "401 unauthorized", status: http.StatusUnauthorized, wantExit: cmdutil.ExitAuth},
+		{name: "403 forbidden", status: http.StatusForbidden, wantExit: cmdutil.ExitAuth},
+		{name: "404 not found", status: http.StatusNotFound, wantExit: cmdutil.ExitNotFound},
+		{name: "409 conflict", status: http.StatusConflict, wantExit: cmdutil.ExitConflict},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ios, _, _, _ := iostreams.Test()
+			opts := &ValidateOptions{
+				IO: ios,
+				HttpClient: func() (*http.Client, error) {
+					return &http.Client{
+						Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+							return validateTestResponse(tt.status, `{"message":"api error"}`), nil
+						}),
+					}, nil
+				},
+				Repository: "owner/repo",
+				File:       filepath.Join(t.TempDir(), "ci.yml"),
+			}
+			if err := os.WriteFile(opts.File, []byte("name: ci\n"), 0o644); err != nil {
+				t.Fatalf("os.WriteFile() error = %v", err)
+			}
+
+			err := validateRun(opts)
+			if err == nil {
+				t.Fatal("validateRun() error = nil, want API error")
+			}
+			if got := cmdutil.ExitCode(err); got != tt.wantExit {
+				t.Fatalf("ExitCode = %d, want %d", got, tt.wantExit)
+			}
+		})
 	}
 }
 

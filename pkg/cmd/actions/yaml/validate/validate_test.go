@@ -260,7 +260,7 @@ func TestValidateRunMissingFile(t *testing.T) {
 func TestValidateRunEmptyFile(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
-	ios, _, out, _ := iostreams.Test()
+	ios, _, _, _ := iostreams.Test()
 	var gotBody string
 	opts := &ValidateOptions{
 		IO: ios,
@@ -269,7 +269,7 @@ func TestValidateRunEmptyFile(t *testing.T) {
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 					body, _ := io.ReadAll(req.Body)
 					gotBody = string(body)
-					return validateTestResponse(http.StatusOK, `{"valid":true,"diagnostics":[]}`), nil
+					return validateTestResponse(http.StatusBadRequest, `{"message":"base64content is required"}`), nil
 				}),
 			}, nil
 		},
@@ -280,12 +280,13 @@ func TestValidateRunEmptyFile(t *testing.T) {
 		t.Fatalf("os.WriteFile() error = %v", err)
 	}
 
-	if err := validateRun(opts); err != nil {
-		t.Fatalf("validateRun() error = %v", err)
+	err := validateRun(opts)
+	if err == nil {
+		t.Fatal("validateRun() error = nil, want API error for empty content")
 	}
 	assertBase64Body(t, gotBody, "")
-	if !strings.Contains(out.String(), "Workflow YAML is valid") {
-		t.Fatalf("output = %q, want valid message", out.String())
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode = %d, want %d", got, cmdutil.ExitUsage)
 	}
 }
 

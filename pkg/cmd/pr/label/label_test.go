@@ -230,6 +230,36 @@ func TestLabelRunAddUsesPREndpoint(t *testing.T) {
 	}
 }
 
+// An --add value that normalizes to no valid label names must return a usage
+// error without any remote write (issue #498 P2: integration path for empty
+// normalized result).
+func TestLabelRunAddEmptyAfterNormalizeDoesNotMutate(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	for _, add := range []string{"", ",", " , , "} {
+		client := &http.Client{
+			Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				t.Fatalf("no remote request expected for add %q; got %s %s", add, req.Method, req.URL.Path)
+				return nil, nil
+			}),
+		}
+		ios, _, _, _ := iostreams.Test()
+		err := labelRun(&LabelOptions{
+			IO:         ios,
+			HttpClient: httpFactory(client),
+			Repository: "owner/repo",
+			Number:     123,
+			Add:        []string{add},
+		})
+		if err == nil {
+			t.Fatalf("add=%q: expected usage error, got nil", add)
+		}
+		if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+			t.Fatalf("add=%q: ExitCode = %d, want ExitUsage(%d)", add, got, cmdutil.ExitUsage)
+		}
+	}
+}
+
 func TestLabelRunAddJSON(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

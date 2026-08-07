@@ -160,6 +160,31 @@ func hasQuestionMarkRun(text string, minRun int) bool {
 	return strings.Contains(text, strings.Repeat("?", minRun))
 }
 
+// NormalizeLabels parses a slice of label names (typically from a
+// comma-separated --add/--labels flag or cobra StringSlice) into a clean
+// list: splits on comma, trims whitespace, drops empty entries, and
+// de-duplicates. Splitting is idempotent for already-split input, so it is
+// safe whether cobra pre-split the value or not. Order of first occurrence is
+// preserved.
+func NormalizeLabels(labels []string) []string {
+	result := make([]string, 0, len(labels))
+	seen := make(map[string]struct{}, len(labels))
+	for _, label := range labels {
+		for _, part := range strings.Split(label, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			if _, ok := seen[part]; ok {
+				continue
+			}
+			seen[part] = struct{}{}
+			result = append(result, part)
+		}
+	}
+	return result
+}
+
 func newLossyPowerShellStdinError(flagName string) error {
 	if flagName == "" {
 		flagName = "--body-file"

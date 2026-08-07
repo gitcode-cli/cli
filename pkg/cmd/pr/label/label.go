@@ -153,10 +153,9 @@ func labelRun(opts *LabelOptions) error {
 
 	// Add labels
 	if len(opts.Add) > 0 {
-		// Parse comma-separated labels
-		var labels []string
-		for _, l := range opts.Add {
-			labels = append(labels, strings.Split(l, ",")...)
+		labels := cmdutil.NormalizeLabels(opts.Add)
+		if len(labels) == 0 {
+			return cmdutil.NewUsageError("--add contains no valid label names")
 		}
 
 		added, err := api.AddLabelsToPR(client, owner, repo, opts.Number, labels)

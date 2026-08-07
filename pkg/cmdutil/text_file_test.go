@@ -225,3 +225,34 @@ func TestReadTextFromFlagRejectsContentContainingToken(t *testing.T) {
 		t.Fatalf("ReadTextFromFlag() error = %v, want ErrSecretDetected", err)
 	}
 }
+
+func TestNormalizeLabels(t *testing.T) {
+	tests := []struct {
+		name string
+		in   []string
+		want []string
+	}{
+		{name: "nil", in: nil, want: []string{}},
+		{name: "empty", in: []string{}, want: []string{}},
+		{name: "comma split", in: []string{"bug,enhancement"}, want: []string{"bug", "enhancement"}},
+		{name: "already split", in: []string{"bug", "enhancement"}, want: []string{"bug", "enhancement"}},
+		{name: "trim spaces", in: []string{" bug , enhancement "}, want: []string{"bug", "enhancement"}},
+		{name: "drop empty", in: []string{"bug,,", ",enhancement,"}, want: []string{"bug", "enhancement"}},
+		{name: "dedup", in: []string{"bug,bug,enhancement"}, want: []string{"bug", "enhancement"}},
+		{name: "dedup across elements", in: []string{"bug", "bug"}, want: []string{"bug"}},
+		{name: "preserves first-seen order", in: []string{"enhancement,bug"}, want: []string{"enhancement", "bug"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NormalizeLabels(tt.in)
+			if len(got) != len(tt.want) {
+				t.Fatalf("NormalizeLabels(%v) = %v, want %v", tt.in, got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Fatalf("NormalizeLabels(%v)[%d] = %q, want %q", tt.in, i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}

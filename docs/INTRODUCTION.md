@@ -193,6 +193,63 @@ CLI 同样完整可用，命令树与参数见 [命令手册 COMMANDS.md](https:
 - AI 工作流 skills：[gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)
 - 问题反馈与功能建议：[Issues](https://gitcode.com/gitcode-cli/cli/issues)
 
+## 真实样例：开箱即用
+
+以下命令均可直接复制运行（以公开仓库 `gitcode-cli/cli` 为靶子）；AI 任务则把引用块里的话发给你的 AI 客户端，它用 `gitcode` 在边界内跑完，把结构化结果和证据回给你。
+
+### 一行命令，立即出结果
+
+```bash
+# 当前有哪些待评审 PR？一条命令拿到结构化清单
+gitcode pr list -R gitcode-cli/cli --state open --json
+
+# 最近 CI 有没有挂？直接筛失败流水线
+gitcode actions run list -R gitcode-cli/cli --status FAILED --json
+
+# 不开浏览器看某 PR 的改动
+gitcode pr view 440 -R gitcode-cli/cli --json
+
+# 一条命令给 issue 打多个标签
+gitcode issue label 497 --add feature,scope/actions -R gitcode-cli/cli
+
+# 把 PR 的 diff 导出成 patch 评审
+gitcode pr diff 440 -R gitcode-cli/cli > review.patch
+
+# 列出某仓库所有 release 资产
+gitcode release view v0.10.3 -R gitcode-cli/cli --json
+```
+
+### 把任务交给 AI，你审结论
+
+**样例 1 — PR 一览**
+> 「看下 gitcode-cli/cli 当前有哪些 open PR，每个 PR 的标题、状态、关联 issue，汇总成一张表，标注哪些 ready-for-review」
+
+AI 跑 `gitcode pr list --state open --json`，整理成表回给你，你不用逐个点开页面。
+
+**样例 2 — 定位失败 CI**
+> 「gitcode-cli/cli 最近 CI 有没有失败？失败的是哪个 job、哪条 commit 触发的、失败原因是什么」
+
+AI 跑 `gitcode actions run list --status FAILED` → `gitcode actions job list <run-id>` → 拉 job 日志，定位到具体 job + 触发 commit + 错误行，给出修复方向。
+
+**样例 3 — Issue 分诊**
+> 「把 gitcode-cli/cli 的 open issue 按 bug/feature 分两类，统计各自数量，标出 3 个最该优先处理的并说明理由」
+
+AI 跑 `gitcode issue list --json --paginate`，分类统计，按影响/紧迫排序，给你一份待办清单。
+
+**样例 4 — 工程评审 PR**
+> 「评审 PR #440：读 diff，按项目 spec 规范做工程评审，给我 P0/P1/P2 结论」
+
+AI 跑 `gitcode pr view/diff`，读 `spec/foundations/*`，跨代码/安全/测试/文档四角色出结构化评审，直接发到 PR 评论。
+
+**样例 5 — 端到端发布**
+> 「准备并发布 v0.10.4：写 release notes、核 tag、走 issue→PR→CI→merge→release 全流程」
+
+AI 创建发布准备 PR → CI 通过 → 合入 → 触发 release workflow → 同步 GitCode Release，全程你只在危险动作处 `--yes` 确认，最后它把各平台验证结果汇总给你。
+
+### 危险动作不会悄悄执行
+
+AI 要删一个 release、合并一个 PR、或把含 `GC_TOKEN` 的正文提交到 issue？非交互环境没显式 `--yes` 直接失败；正文经 secret 扫描会被拒绝。你始终是最后一道闸——AI 干活，你签字。
+
 ## 从今天的一件小事开始
 
 不必先改造整套研发流程。装好后，直接给 AI 一个小任务：让它把某个仓库的待评审 PR 汇总一遍、找出最近一次失败流水线、或在只读模式下分析一个 Issue/PR。AI 用 `gitcode` 在边界内跑完，把结论和证据交给你——这是 GitCode CLI 想给你的协作体验。

@@ -184,10 +184,13 @@ func TestLabelRunAddUsesPREndpoint(t *testing.T) {
 
 	var gotPath string
 	var gotMethod string
+	var gotBody string
 	client := &http.Client{
 		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			gotPath = req.URL.Path
 			gotMethod = req.Method
+			body, _ := io.ReadAll(req.Body)
+			gotBody = string(body)
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Status:     http.StatusText(http.StatusOK),
@@ -214,6 +217,14 @@ func TestLabelRunAddUsesPREndpoint(t *testing.T) {
 		t.Fatalf("request path = %q, want to contain /pulls/123/labels", gotPath)
 	}
 	assertNotIssueEndpoint(t, gotPath)
+	// Body must be the bare JSON array of label names per the official OpenAPI,
+	// not the legacy {"labels":[...]} object (regression guard for issue #475).
+	if gotBody != `["bug","enhancement"]` {
+		t.Fatalf("request body = %q, want bare JSON array [\"bug\",\"enhancement\"]", gotBody)
+	}
+	if strings.Contains(gotBody, "labels") {
+		t.Fatalf("request body %q must not wrap labels in an object", gotBody)
+	}
 	if !strings.Contains(out.String(), "Added labels to PR #123") {
 		t.Fatalf("output = %q, want 'Added labels to PR #123'", out.String())
 	}
@@ -259,10 +270,12 @@ func TestLabelRunRemoveUsesPREndpoint(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
 	var gotPath string
+	var gotEscaped string
 	var gotMethod string
 	client := &http.Client{
 		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			gotPath = req.URL.Path
+			gotEscaped = req.URL.EscapedPath()
 			gotMethod = req.Method
 			return &http.Response{
 				StatusCode: http.StatusOK,
@@ -288,6 +301,13 @@ func TestLabelRunRemoveUsesPREndpoint(t *testing.T) {
 	}
 	if !strings.Contains(gotPath, "/pulls/123/labels/status/draft") {
 		t.Fatalf("request path = %q, want to contain /pulls/123/labels/status/draft", gotPath)
+	}
+	// EscapedPath must encode the slash in the label name so the label is a
+	// single path segment (status%2Fdraft), not two segments (status/draft),
+	// which would target a different resource. Regression guard for
+	// url.PathEscape in RemoveLabelFromPR.
+	if !strings.Contains(gotEscaped, "/pulls/123/labels/status%2Fdraft") {
+		t.Fatalf("escaped path = %q, want to contain /pulls/123/labels/status%%2Fdraft (label slash must be encoded)", gotEscaped)
 	}
 	assertNotIssueEndpoint(t, gotPath)
 	if !strings.Contains(out.String(), "Removed label 'status/draft' from PR #123") {

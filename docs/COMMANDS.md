@@ -2039,6 +2039,30 @@ gc actions artifact delete <artifact-id> -R owner/repo --yes --json
 
 ---
 
+### actions yaml validate - 校验 Workflow YAML
+
+调用 GitCode Actions v8 官方接口（`POST /api/v8/repos/{owner}/{repo}/actions/workflows/validate`）校验 workflow YAML 配置语法。YAML 内容按 API 要求 base64 编码后放入 `base64_content` 请求字段。
+
+```bash
+# 校验 workflow 文件
+gc actions yaml validate --file .gitcode/workflows/ci.yml -R owner/repo
+
+# 从 stdin 读取 YAML
+cat ci.yml | gc actions yaml validate --file - -R owner/repo
+
+# JSON 输出
+gc actions yaml validate --file ci.yml -R owner/repo --json
+```
+
+说明：
+
+- `--file`（必填）：要校验的 YAML 文件路径；传 `-` 表示从 stdin 读取。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- `--json` 原样透传 API 响应（`valid`、`diagnostics[].range.start/end.line/column`、`severity`、`message`）。
+- 退出码：`0` 校验通过（`valid=true`）；`1` 校验未通过（`valid=false`）或其它 API 错误；`2` 参数错误（缺少 `--file` 等）；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
+
+---
+
 ### actions runner-group list - 列出组织 Runner Group
 
 列出指定组织下的所有 Runner Group。

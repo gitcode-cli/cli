@@ -66,6 +66,7 @@
 - `api/queries_*.go`：按领域分组的查询函数（issue、pr、repo、commit、release、label_milestone、user）
 - `api/flexible.go`：灵活字段解析
 - `api/time.go`：时间解析与格式化
+- 官方 OpenAPI 参考仓：`git@gitcode.com:gitcode-cli/gc-api-doc.git`（端点/path/body 权威真相源，修复涉及 API 调用时先查证，见 [开发工作流程 §5.9.B](./spec/workflows/development-workflow.md#59-横切编排资产)）
 
 ### 2.4 文档分层
 

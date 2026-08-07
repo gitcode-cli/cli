@@ -163,7 +163,7 @@ Issue 创建/受理
 
 | 序号 | 门禁 | 要求 | 详细规范 | docs-only 是否跳过 |
 |------|------|------|---------|:--:|
-| 1 | 开发实现 | 修复或实现 issue 描述的功能 | — | — |
+| 1 | 开发实现 | 修复或实现 issue 描述的功能 | [§5.9.B](#59-横切编排资产)（涉及 API 调用时） | — |
 | 2 | 编写/补齐测试 | 覆盖修改路径的单元测试 | [测试指南](../foundations/testing-guide.md) | ✅ 可跳过 |
 | 3 | 本地构建 | `go build -o ./gc ./cmd/gc` 成功 | — | ✅ 可跳过 |
 | 4 | 单元测试 | `go test ./...` 全部通过 | [测试指南](../foundations/testing-guide.md) | ✅ 可跳过 |
@@ -255,6 +255,42 @@ CI 因环境原因（如 GitCode Actions 或 GitHub 镜像仓不可达）无法�
 - 把 PR 标记为 `status/merged`
 - 把对应 issue 标记为 `status/merged` 或正常关闭
 
+### 5.9 横切编排资产
+
+以下两个资产横切整条交付管线，在每个对应阶段作为标准动作执行（非可选装饰）：
+
+#### A. 里程碑通报 — `gitcode-delivery-notify` skill
+
+在每个状态转换点向用户本人飞书发送简短进展，使长交付任务可异步可见、阻塞才介入。
+
+- skill 来源：独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 的 `gitcode-delivery-notify`；opencode 装在 `~/.agents/skills/`（非 `.claude/skills/`）。
+- 发送：`gitcode lark send --to-self --markdown "<summary>" --json`（bot → user P2P，`--to-self` 自动解析当前 `lark-cli` 用户 open_id）。
+- consent 前置：必须有持久化 consent 文件 `~/.config/gc/skills/lark-notify-consent.json` 或当次交互确认；非交互 + 无 consent → 静默跳过，不报错。
+- 里程碑与触发信号：
+
+  | 里程碑 | 触发信号 |
+  |--------|----------|
+  | `issue_verified` | issue 进入 `status/verified` |
+  | `pr_created` | `gitcode pr create` 返回 number/html_url |
+  | `ci` | 远端 CI 全 job 完成（抖动只发最终结论） |
+  | `review` | 评审 verdict 状态变更 |
+  | `merged` | `gitcode pr merge` 成功 + issue 关闭 |
+  | `blocked` | 某门禁无法继续，需人工输入/外部审批 |
+
+- 约束：摘要只含 id/标题/URL/一行结论；禁贴 token、PR 全文、评审 dump、日志；同一 `{milestone}:{id}` 本会话只发一次；`gitcode lark send` 提交前扫描 `GC_TOKEN` 值，命中拒绝；通知失败 best-effort，只记一行 stderr 继续，**绝不因通知失败阻断交付**。
+
+#### B. API 端点查证 — `gc-api-doc` 参考仓
+
+修复涉及 GitCode REST API 调用（新增/修改 api 包函数、端点实测报错）时，先查官方 OpenAPI 真相源再写代码，不类比 GitHub CLI、不猜语义。
+
+- 参考仓：`git@gitcode.com:gitcode-cli/gc-api-doc.git`（官方 GitCode OpenAPI 全集）。
+- 查证路径：`docs/api/<domain>/`（按领域分目录的端点文档）+ `data/official/openapi.json`（结构化 path/method/body schema）。
+- 适用场景：现有 api 函数端点实测 404/400、body 形状不确定、新增端点调用、path/method 与官方语义存疑。
+- 不适用：纯本地重构、不涉及 API 调用的改动。
+- 仓不可达时：报告用户人工解决，不得自行绕过（如改用 curl+token 猜测）。
+
+> 完整实例见 [Example/cases/delivery-notify-lark.md](../../Example/cases/delivery-notify-lark.md)（Issue #475→PR #448：v1 用 `/merge_requests/` 实测 404，查 `gc-api-doc` 确认官方 `/pulls/{n}/labels` + 裸 JSON 数组 body 后救活）。
+
 ## 6. 修复 Issue 前的验证要求
 
 ### 错误示例
@@ -312,7 +348,8 @@ Issue 和 PR 至少应使用以下标签维度：
 - 本地与合并门禁：看 [代码质量门禁规范](../foundations/code-quality-gates.md)
 - 远端 CI 与 AI 编排：看 [CI 工作流规范](../delivery/ci-workflows.md)
 - AI 本地开发闭环编排：看 [AI 本地开发流程](./ai-local-development-workflow.md)
+- 横切编排资产实例：看 [飞书里程碑通报驱动的端到端交付](../../Example/cases/delivery-notify-lark.md)（`gitcode-delivery-notify` + `gc-api-doc`）
 
 ---
 
-**最后更新**: 2026-07-13
+**最后更新**: 2026-08-07

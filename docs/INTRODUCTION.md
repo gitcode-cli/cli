@@ -2,10 +2,10 @@
 
 当团队每天都在 GitCode 上查看 Issue、评审 PR、追踪流水线、整理发布时，真正消耗时间的往往不是某一次点击，而是重复查找、复制信息、切换页面，以及把同一套操作重新做一遍。
 
-GitCode CLI 把这些工作带回终端：仓库、Issue、Pull Request、Commit、标签、里程碑、Release 和 Actions 都可以通过统一命令完成。对开发者，它减少上下文切换；对团队，它让操作可以复用和审计；对 AI 代理，它提供结构化、可发现、带安全边界的 GitCode 执行入口。本文统一使用跨平台入口 `gitcode`；通过 wheel、PyPI、DEB 或 RPM 安装时也会提供等价的 `gc` 入口。
+GitCode CLI 把这些工作带回终端：仓库、Issue、Pull Request、Commit、标签、里程碑、Release 和 Actions 都可以通过统一命令完成。对开发者，它减少上下文切换；对团队，它让操作可以复用和审计；对 AI 代理，它提供结构化、可发现、带安全边界的 GitCode 执行入口。本文统一使用跨平台入口 `gitcode`；通过 npm、PyPI、Homebrew、DEB/RPM 或 wheel 安装时都会同时提供 `gitcode` 和 `gc` 两个入口。
 
 - 项目仓库：[gitcode-cli/cli](https://gitcode.com/gitcode-cli/cli)
-- 下载最新版本：[Releases](https://gitcode.com/gitcode-cli/cli/releases)
+- 安装渠道：[npm](https://www.npmjs.com/package/@gitcode-cli/cli)（推荐）｜[PyPI](https://pypi.org/project/gitcode-cli/)｜[GitCode Release](https://gitcode.com/gitcode-cli/cli/releases)｜[GitHub Release](https://github.com/gitcode-cli/cli/releases)
 - 完整命令手册：[docs/COMMANDS.md](https://gitcode.com/gitcode-cli/cli/blob/main/docs/COMMANDS.md)
 
 ## 为什么值得使用
@@ -93,15 +93,33 @@ gitcode release delete v1.0.0 -R owner/repo --dry-run
 
 ### 1. 安装
 
-GitCode CLI 提供跨平台 wheel、DEB、RPM 和独立二进制等安装方式。为避免版本号过期，请直接从[项目 README 的安装章节](https://gitcode.com/gitcode-cli/cli#安装)或 [Releases](https://gitcode.com/gitcode-cli/cli/releases)选择最新版。
+GitCode CLI 通过多个官方源分发，跨平台（Linux/macOS/Windows × x64/ARM64）。**推荐 npm 方式**——内置全平台二进制，一行安装与升级：
 
-安装后先确认命令可用：
+```bash
+# 推荐：npm（https://www.npmjs.com/package/@gitcode-cli/cli）
+# 安装与升级到最新版本是同一条命令
+npm install -g @gitcode-cli/cli
+```
+
+其他官方渠道：
+
+| 渠道 | 安装 / 升级 | 地址 |
+|------|-------------|------|
+| npm（推荐） | `npm install -g @gitcode-cli/cli` | https://www.npmjs.com/package/@gitcode-cli/cli |
+| PyPI | `pip install -U gitcode-cli` | https://pypi.org/project/gitcode-cli/ |
+| Homebrew (macOS/Linux) | `brew install gitcode-cli/homebrew-tap/gc` / `brew upgrade gc` | [homebrew-tap](https://github.com/gitcode-cli/homebrew-tap) |
+| GitCode Release | 从归档下载 wheel/DEB/RPM/二进制 | https://gitcode.com/gitcode-cli/cli/releases |
+| GitHub Release | 同上制品镜像 | https://github.com/gitcode-cli/cli/releases |
+
+> 一行 bootstrap（无需全局 npm 安装，自动装二进制 + 补全）：`npx @gitcode-cli/cli@latest install`
+
+安装后确认命令可用：
 
 ```bash
 gitcode version
 ```
 
-Windows PowerShell 已将 `gc` 用作 `Get-Content` 的别名，因此推荐使用 `gitcode`。通过 wheel、PyPI、DEB 或 RPM 安装时会同时提供 `gitcode` 和 `gc`；从源码构建或使用独立二进制时，默认产物通常只有 `gc`。
+Windows PowerShell 已将 `gc` 用作 `Get-Content` 的别名，因此推荐使用 `gitcode`。npm/PyPI/Homebrew/DEB/RPM/wheel 安装时会同时提供 `gitcode` 和 `gc`；从源码构建或使用独立二进制时默认产物通常只有 `gc`。
 
 ### 2. 在私有终端登录并确认认证
 

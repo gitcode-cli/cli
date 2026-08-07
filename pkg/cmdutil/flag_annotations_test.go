@@ -76,6 +76,7 @@ func captureStderr(t *testing.T, fn func()) string {
 	if err != nil {
 		t.Fatalf("os.Pipe: %v", err)
 	}
+	defer r.Close()
 	old := os.Stderr
 	os.Stderr = w
 	defer func() { os.Stderr = old }()
@@ -88,6 +89,6 @@ func captureStderr(t *testing.T, fn func()) string {
 	}()
 
 	fn()
-	w.Close()
+	_ = w.Close()
 	return <-done
 }

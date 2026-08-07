@@ -79,6 +79,7 @@ gitcode schema
 | [AI 全流程交付——从 Issue 到合并的标准化闭环](./cases/ai-full-delivery-workflow.md) | AI 代理、项目维护者、流程设计者 | `gitcode-issue-review`、`gitcode-pr-create`、`gitcode-pr-review`、`gitcode-security-check` | 展示 AI 代理如何按 spec 规范的 15 阶段管线完成代码交付（以 bugfix #250 为实例） | CLI 开发环境、GC_TOKEN、了解 spec/ | 流程 |
 | [Team Agent 多角色并行评审——PR #221 评审全流程](./cases/team-agent-multi-role-review.md) | AI 代理、维护者、评审流程设计者 | `gitcode-pr-review`、`gitcode-pr-inline-review`、`gitcode-pr-apply-feedback` | 通过 TeamCreate + 4 Agent 并行执行 Code/Security/Test/Documentation 评审（以 PR #221 为实例） | GC_TOKEN、gh CLI、了解 spec/workflows/review-workflow.md | 流程 |
 | [PR 评审反馈闭环——以 PR #440 为例的修复复核与放行](./cases/review-feedback-loop.md) | 单评审者、维护者、外部贡献者、AI 评审代理 | `gitcode-pr-review`、`gitcode-pr-apply-feedback`、`gitcode-pr` | 单评审者给 P1/P2 意见→作者修复→fork fetch+本地 build/test 复核→approval 403 回退 comment→合并放行（含 P0 误判撤回教训） | GC_TOKEN、Go 工具链、了解 spec/workflows/review-workflow.md | 流程 |
+| [飞书里程碑通报驱动的端到端交付](./cases/delivery-notify-lark.md) | AI 代理、异步协作用户、流程设计者 | `gitcode-delivery-notify` + 参考仓 `gc-api-doc` | 主流程织入两横切资产：`gc lark send --to-self` 在交付里程碑向本人飞书通报；修复涉及 API 时用 `gc-api-doc` 查官方端点/path/body 真相（以 Issue #475→PR #448 为实例，gc-api-doc 救活 v1 的 404） | GC_TOKEN、lark-cli 已登录、consent 已配置、gc-api-doc 可访问 | 流程 |
 
 ## 推荐阅读路径
 
@@ -123,11 +124,12 @@ gitcode schema
 1. [AI 全流程交付——从 Issue 到合并](./cases/ai-full-delivery-workflow.md) — 以 bugfix #250 为例的端到端 AI 交付实战
 2. [Team Agent 多角色并行评审](./cases/team-agent-multi-role-review.md) — 以 PR #221 为例的 4 Agent 独立评审全流程
 3. [PR 评审反馈闭环](./cases/review-feedback-loop.md) — 以 PR #440 为例的单评审者修复复核与放行（Team Agent 的轻量版）
-4. `spec/workflows/ai-local-development-workflow.md` — 15 阶段 AI 开发管线正式规范
-5. `spec/workflows/review-workflow.md` — 8 角色多轮评审体系
-6. `spec/workflows/status-label-checklist.md` — 标签状态更新操作指南
-7. [Issue 实现前评审](./cases/issue-pre-review.md) — 开发前的 Issue 完整性检查
-8. [PR 合并策略与清理](./cases/pr-merge-strategy.md) — merge 操作和分支清理
+4. [飞书里程碑通报驱动的端到端交付](./cases/delivery-notify-lark.md) — 以 Issue #475 为例：主流程织入 `gc lark send --to-self` 里程碑通报 + `gc-api-doc` 查官方端点真相
+5. `spec/workflows/ai-local-development-workflow.md` — 15 阶段 AI 开发管线正式规范
+6. `spec/workflows/review-workflow.md` — 8 角色多轮评审体系
+7. `spec/workflows/status-label-checklist.md` — 标签状态更新操作指南
+8. [Issue 实现前评审](./cases/issue-pre-review.md) — 开发前的 Issue 完整性检查
+9. [PR 合并策略与清理](./cases/pr-merge-strategy.md) — merge 操作和分支清理
 
 ## GitHub Pages 静态部署说明
 

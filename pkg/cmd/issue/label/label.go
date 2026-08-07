@@ -187,6 +187,7 @@ func labelRun(opts *LabelOptions) error {
 		desired := mergeIssueLabels(issue.Labels, opts.Remove, addLabels)
 		updated, err := api.UpdateIssue(client, owner, repo, opts.Number, &api.UpdateIssueOptions{
 			Repo:   repo,
+			Title:  issue.Title,
 			Labels: desired,
 		})
 		if err != nil {

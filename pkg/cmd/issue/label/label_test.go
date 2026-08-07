@@ -226,6 +226,38 @@ func TestLabelRunCombinedEmptyAddSliceDoesNotMutate(t *testing.T) {
 	}
 }
 
+// Edge: when the removed label is absent from the current set, the combined
+// path still adds the new labels (delete on an absent map key is a no-op).
+func TestLabelRunCombinedRemoveAbsentLabel(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	var gotMethod string
+	var gotPath string
+	// GET returns [keep] (no "triage"); PATCH returns the final set.
+	client := issueLabelClient(t, &gotPath, &gotMethod, http.StatusOK, http.StatusOK,
+		`{"number":"123","labels":[{"name":"keep"}]}`,
+		`{"number":"123","labels":[{"name":"keep"},{"name":"verified"}]}`)
+	ios, _, out, _ := iostreams.Test()
+	err := labelRun(&LabelOptions{
+		IO:         ios,
+		HttpClient: httpFactory(client),
+		Repository: "owner/repo",
+		Number:     123,
+		Remove:     "triage",
+		Add:        []string{"verified"},
+		AddSet:     true,
+	})
+	if err != nil {
+		t.Fatalf("labelRun() error = %v", err)
+	}
+	if gotMethod != http.MethodPatch {
+		t.Fatalf("method = %q, want PATCH", gotMethod)
+	}
+	if !strings.Contains(out.String(), "Added labels to issue #123: verified") {
+		t.Fatalf("output = %q, want add confirmation", out.String())
+	}
+}
+
 func TestLabelRunCombinedGetIssueFails(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 

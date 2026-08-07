@@ -115,7 +115,7 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 	cmd.Flags().StringVarP(&opts.Hostname, "hostname", "H", "", "The hostname of the GitCode instance to authenticate with")
 	cmd.Flags().BoolVar(&opts.WithToken, "with-token", false, "Read token from standard input")
 	cmd.Flags().StringVarP(&opts.GitProtocol, "git-protocol", "p", "https", "The Git protocol to use for operations (https/ssh)")
-	cmdutil.SetFlagEnum(cmd, "git-protocol", "https", "ssh")
+	cmdutil.SetFlagEnumOrWarn(cmd, "git-protocol", "https", "ssh")
 	cmd.Flags().BoolVarP(&opts.Web, "web", "w", false, "Open GitCode.com in a browser to authenticate")
 
 	return cmd

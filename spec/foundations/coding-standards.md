@@ -170,6 +170,36 @@ return fmt.Errorf("Failed to connect to server.")  // 大写、句号
 return fmt.Errorf("the server is down")  // 不是描述发生了什么
 ```
 
+### 禁止裸 panic
+- 不得用 `panic` 处理可预见错误；业务/运行期错误必须以 `error` 返回，由调用方处理。
+- 构造期（命令装配、flag 注册/注解等）的「不可能发生」编程错误，若调用方签名无法传播 `error`（如 `NewCmd*` 返回 `*cobra.Command`），且失败仅影响非功能性元数据（如 schema/export 注解），可降级为 stderr 告警 + 继续运行，**不得让进程崩溃**。
+- 确需 fail-fast 时，用显式 `Must*` 前缀命名 + 注释说明，仅在构造期对真正不可能的编程错误使用。
+- cobra 等第三方库自身的 panic 不在本规则范围（属其内部约定）。
+
+```go
+// ✅ 正确：返回 error
+func SetFlagEnum(cmd *cobra.Command, name string, values ...string) error {
+    if err := cmd.Flags().SetAnnotation(name, FlagEnumAnnotation, values); err != nil {
+        return fmt.Errorf("failed to annotate flag %q: %w", name, err)
+    }
+    return nil
+}
+
+// ✅ 构造期降级：调用方无法传播 error，降级告警不崩溃
+func SetFlagEnumOrWarn(cmd *cobra.Command, name string, values ...string) {
+    if err := SetFlagEnum(cmd, name, values...); err != nil {
+        fmt.Fprintf(os.Stderr, "gc: warning: %v\n", err)
+    }
+}
+
+// ❌ 错误：裸 panic 让进程崩溃
+func SetFlagEnum(cmd *cobra.Command, name string, values ...string) {
+    if err := cmd.Flags().SetAnnotation(name, FlagEnumAnnotation, values); err != nil {
+        panic(fmt.Sprintf("failed to annotate flag %q: %v", name, err))
+    }
+}
+```
+
 ## 代码风格
 
 ### 行长度

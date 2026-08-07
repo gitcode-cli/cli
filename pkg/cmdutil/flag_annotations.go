@@ -2,6 +2,7 @@ package cmdutil
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -22,10 +23,24 @@ var StandardTopics = []string{
 	"repo",
 }
 
-// SetFlagEnum records a stable enum set for schema/export consumers.
-func SetFlagEnum(cmd *cobra.Command, name string, values ...string) {
+// SetFlagEnum records a stable enum set for schema/export consumers. It
+// returns an error (e.g. when the flag is not registered on the command)
+// instead of panicking, so callers can decide how to handle it.
+func SetFlagEnum(cmd *cobra.Command, name string, values ...string) error {
 	if err := cmd.Flags().SetAnnotation(name, FlagEnumAnnotation, values); err != nil {
-		panic(fmt.Sprintf("failed to annotate flag %q: %v", name, err))
+		return fmt.Errorf("failed to annotate flag %q: %w", name, err)
+	}
+	return nil
+}
+
+// SetFlagEnumOrWarn records a stable enum set for schema/export consumers and
+// degrades an annotation failure to a stderr warning instead of crashing the
+// process. Use this from command constructors (NewCmd*) whose signature
+// (*cobra.Command) cannot propagate an error; the annotation is non-functional
+// metadata for schema/export, so a missing enum does not break the command.
+func SetFlagEnumOrWarn(cmd *cobra.Command, name string, values ...string) {
+	if err := SetFlagEnum(cmd, name, values...); err != nil {
+		fmt.Fprintf(os.Stderr, "gc: warning: %v\n", err)
 	}
 }
 

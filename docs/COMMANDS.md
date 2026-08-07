@@ -185,11 +185,12 @@ echo $?         # 输出 4 (ExitAuth)
 ### 认证
 
 ```bash
-# 方式一：设置环境变量（推荐，CI 从平台 Secret 注入）
-export GC_TOKEN="your_gitcode_token"
+# 方式一：设置环境变量（推荐，CI 从平台 Secret 注入；本地开发可写入 shell 配置）
+# 值须来自 secret manager，勿在命令行或配置文件中硬编码真实 token
+export GC_TOKEN="$GC_TOKEN_FROM_SECRETS"
 
-# 永久生效，添加到 shell 配置
-echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
+# 永久生效（本地开发），添加到 shell 配置
+echo 'export GC_TOKEN="$GC_TOKEN_FROM_SECRETS"' >> ~/.bashrc
 source ~/.bashrc
 
 # 方式二：非交互登录（从 secret manager 管道读入；禁止 echo/cat 明文 token，

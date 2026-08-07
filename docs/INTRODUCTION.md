@@ -8,87 +8,6 @@ GitCode CLI 把这些工作带回终端：仓库、Issue、Pull Request、Commit
 - 安装渠道：[npm](https://www.npmjs.com/package/@gitcode-cli/cli)（推荐）｜[PyPI](https://pypi.org/project/gitcode-cli/)｜[GitCode Release](https://gitcode.com/gitcode-cli/cli/releases)｜[GitHub Release](https://github.com/gitcode-cli/cli/releases)
 - 完整命令手册：[docs/COMMANDS.md](https://gitcode.com/gitcode-cli/cli/blob/main/docs/COMMANDS.md)
 
-## 为什么值得使用
-
-### 少离开终端，多完成一次完整交付
-
-从发现问题到合并发布，常见动作都可以留在当前工作区中完成：
-
-```bash
-# 看仓库和待处理事项
-gitcode repo view owner/repo
-gitcode issue list -R owner/repo --state open
-gitcode pr list -R owner/repo --state open
-
-# 创建 Issue 和 PR
-gitcode issue create -R owner/repo --title "修复登录超时" --body-file issue.md --json
-gitcode pr create -R owner/repo --base main --title "fix: 修复登录超时" --body-file pr.md --json
-
-# 评审与发布
-gitcode pr diff 42 -R owner/repo
-gitcode pr review 42 -R owner/repo --comment-file review.md
-gitcode release create v1.0.0 -R owner/repo --title "v1.0.0" --notes-file CHANGELOG.md --json
-```
-
-命令参数、输出字段和平台限制以[完整命令手册](https://gitcode.com/gitcode-cli/cli/blob/main/docs/COMMANDS.md)为准。
-
-### 自动化不必依赖脆弱的页面脚本
-
-高频只读命令和主要写操作支持 `--json`。脚本可以解析稳定的标准输出，错误则通过标准错误和明确退出码返回。需要探索能力时，`gitcode schema` 可以直接给出命令树、参数和元数据；尚未封装成专用命令的接口，还可以通过 `gitcode api` 调用。
-
-```bash
-# 机器可读结果
-gitcode issue list -R owner/repo --paginate --per-page 100 --json
-gitcode pr view 42 -R owner/repo --json
-gitcode actions run list -R owner/repo --status FAILED --json
-
-# 让脚本或 AI 发现命令，而不是猜参数
-gitcode schema
-gitcode schema "pr create"
-
-# 专用命令尚未覆盖时读取原始 API 响应
-gitcode api repos/owner/repo
-```
-
-### AI 不只是“告诉你怎么做”，而是可以在边界内完成操作
-
-网页适合人浏览，CLI 更适合 AI 执行。GitCode CLI 的结构化输出、命令元数据、非交互行为和确认机制，让 AI 可以完成“读取事实、分析、执行、核验”的闭环，同时避免因为等待交互输入而卡住。
-
-例如，你可以直接对 AI 说：
-
-> 查看 `owner/repo` 当前所有开放 PR，按风险排序，逐个总结改动和 CI 状态，只执行只读命令。
-
-> 根据本地改动起草一个 Issue 和 PR 描述，先展示给我确认，再使用 GitCode CLI 提交。
-
-> 找出 `main` 分支最近失败的 Actions 运行，定位失败 job，下载日志并给出根因判断。
-
-面向 Codex、Claude 等 AI 客户端的可安装 skills 已独立维护在 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)。其中包括 Issue 创建与评审、PR 创建与评审、反馈修复、Release 发布、安全检查、流水线分析等端到端工作流。更完整的 AI 使用约定见[使用 AI 操作 GitCode 指南](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AI-GUIDE.md)。
-
-### 自动化有边界，危险动作不会悄悄发生
-
-GitCode CLI 对删除等高风险操作提供 `--dry-run` 和确认保护。在非交互环境中，未明确确认的破坏性操作会直接失败，不会无限等待输入。对 AI 来说，这意味着“能执行”不等于“可自行授权”：只有用户明确批准后，AI 才应使用 `--yes` 跳过确认。
-
-```bash
-# 先预演，再由人确认是否执行
-gitcode repo delete owner/repo --dry-run
-gitcode release delete v1.0.0 -R owner/repo --dry-run
-```
-
-认证信息不应出现在聊天、Prompt、脚本参数、Issue 或 PR 正文中。登录必须由用户本人在私有、未录制且不由 AI 控制的本地终端完成，AI 只运行 `gitcode auth status` 确认认证是否可用。详细规则见[认证说明](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AUTH.md)。
-
-## 适合哪些场景
-
-| 使用者 | 典型任务 | GitCode CLI 带来的价值 |
-| --- | --- | --- |
-| 日常开发者 | 查 Issue、创建 PR、查看 diff、回复评审 | 减少页面切换，让工作流留在代码旁边 |
-| 项目维护者 | Issue 分诊、标签与里程碑、批量审查、版本发布 | 形成一致、可复用的项目治理动作 |
-| 测试与发布人员 | 追踪变更、核对 Release、下载发布资产 | 用命令和 JSON 构建可重复的发布检查 |
-| CI/CD 运维人员 | 查看 Actions run/job、下载日志和 Artifact、检查 Runner | 更快定位流水线和运行环境问题 |
-| AI 编码代理 | 获取远端事实、提交 Issue/PR、评审、核验结果 | 获得可发现、结构化、受约束的执行接口 |
-| 企业自动化平台 | 跨仓库统计、流水线巡检、标准化交付 | 以统一 CLI 代替零散 API 脚本和页面自动化 |
-
-仓库中已经整理了可直接复用的真实场景，包括 Issue 到 PR 的完整链路、发布评审、CI 流水线定位、安全检查和 AI 全流程交付，见 [GitCode CLI 应用案例库](https://gitcode.com/gitcode-cli/cli/tree/main/Example)。
-
 ## 五分钟开始使用
 
 ### 1. 安装
@@ -249,6 +168,87 @@ AI 创建发布准备 PR → CI 通过 → 合入 → 触发 release workflow �
 ### 危险动作不会悄悄执行
 
 AI 要删一个 release、合并一个 PR、或把含 `GC_TOKEN` 的正文提交到 issue？非交互环境没显式 `--yes` 直接失败；正文经 secret 扫描会被拒绝。你始终是最后一道闸——AI 干活，你签字。
+
+## 为什么值得使用
+
+### 少离开终端，多完成一次完整交付
+
+从发现问题到合并发布，常见动作都可以留在当前工作区中完成：
+
+```bash
+# 看仓库和待处理事项
+gitcode repo view owner/repo
+gitcode issue list -R owner/repo --state open
+gitcode pr list -R owner/repo --state open
+
+# 创建 Issue 和 PR
+gitcode issue create -R owner/repo --title "修复登录超时" --body-file issue.md --json
+gitcode pr create -R owner/repo --base main --title "fix: 修复登录超时" --body-file pr.md --json
+
+# 评审与发布
+gitcode pr diff 42 -R owner/repo
+gitcode pr review 42 -R owner/repo --comment-file review.md
+gitcode release create v1.0.0 -R owner/repo --title "v1.0.0" --notes-file CHANGELOG.md --json
+```
+
+命令参数、输出字段和平台限制以[完整命令手册](https://gitcode.com/gitcode-cli/cli/blob/main/docs/COMMANDS.md)为准。
+
+### 自动化不必依赖脆弱的页面脚本
+
+高频只读命令和主要写操作支持 `--json`。脚本可以解析稳定的标准输出，错误则通过标准错误和明确退出码返回。需要探索能力时，`gitcode schema` 可以直接给出命令树、参数和元数据；尚未封装成专用命令的接口，还可以通过 `gitcode api` 调用。
+
+```bash
+# 机器可读结果
+gitcode issue list -R owner/repo --paginate --per-page 100 --json
+gitcode pr view 42 -R owner/repo --json
+gitcode actions run list -R owner/repo --status FAILED --json
+
+# 让脚本或 AI 发现命令，而不是猜参数
+gitcode schema
+gitcode schema "pr create"
+
+# 专用命令尚未覆盖时读取原始 API 响应
+gitcode api repos/owner/repo
+```
+
+### AI 不只是“告诉你怎么做”，而是可以在边界内完成操作
+
+网页适合人浏览，CLI 更适合 AI 执行。GitCode CLI 的结构化输出、命令元数据、非交互行为和确认机制，让 AI 可以完成“读取事实、分析、执行、核验”的闭环，同时避免因为等待交互输入而卡住。
+
+例如，你可以直接对 AI 说：
+
+> 查看 `owner/repo` 当前所有开放 PR，按风险排序，逐个总结改动和 CI 状态，只执行只读命令。
+
+> 根据本地改动起草一个 Issue 和 PR 描述，先展示给我确认，再使用 GitCode CLI 提交。
+
+> 找出 `main` 分支最近失败的 Actions 运行，定位失败 job，下载日志并给出根因判断。
+
+面向 Codex、Claude 等 AI 客户端的可安装 skills 已独立维护在 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills)。其中包括 Issue 创建与评审、PR 创建与评审、反馈修复、Release 发布、安全检查、流水线分析等端到端工作流。更完整的 AI 使用约定见[使用 AI 操作 GitCode 指南](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AI-GUIDE.md)。
+
+### 自动化有边界，危险动作不会悄悄发生
+
+GitCode CLI 对删除等高风险操作提供 `--dry-run` 和确认保护。在非交互环境中，未明确确认的破坏性操作会直接失败，不会无限等待输入。对 AI 来说，这意味着“能执行”不等于“可自行授权”：只有用户明确批准后，AI 才应使用 `--yes` 跳过确认。
+
+```bash
+# 先预演，再由人确认是否执行
+gitcode repo delete owner/repo --dry-run
+gitcode release delete v1.0.0 -R owner/repo --dry-run
+```
+
+认证信息不应出现在聊天、Prompt、脚本参数、Issue 或 PR 正文中。登录必须由用户本人在私有、未录制且不由 AI 控制的本地终端完成，AI 只运行 `gitcode auth status` 确认认证是否可用。详细规则见[认证说明](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AUTH.md)。
+
+## 适合哪些场景
+
+| 使用者 | 典型任务 | GitCode CLI 带来的价值 |
+| --- | --- | --- |
+| 日常开发者 | 查 Issue、创建 PR、查看 diff、回复评审 | 减少页面切换，让工作流留在代码旁边 |
+| 项目维护者 | Issue 分诊、标签与里程碑、批量审查、版本发布 | 形成一致、可复用的项目治理动作 |
+| 测试与发布人员 | 追踪变更、核对 Release、下载发布资产 | 用命令和 JSON 构建可重复的发布检查 |
+| CI/CD 运维人员 | 查看 Actions run/job、下载日志和 Artifact、检查 Runner | 更快定位流水线和运行环境问题 |
+| AI 编码代理 | 获取远端事实、提交 Issue/PR、评审、核验结果 | 获得可发现、结构化、受约束的执行接口 |
+| 企业自动化平台 | 跨仓库统计、流水线巡检、标准化交付 | 以统一 CLI 代替零散 API 脚本和页面自动化 |
+
+仓库中已经整理了可直接复用的真实场景，包括 Issue 到 PR 的完整链路、发布评审、CI 流水线定位、安全检查和 AI 全流程交付，见 [GitCode CLI 应用案例库](https://gitcode.com/gitcode-cli/cli/tree/main/Example)。
 
 ## 从今天的一件小事开始
 

@@ -176,5 +176,5 @@ func RegisterTopicEnum(cmd *cobra.Command, flagName string) {
 			values = append(values, t)
 		}
 	}
-	cmdutil.SetFlagEnum(cmd, flagName, values...)
+	cmdutil.SetFlagEnumOrWarn(cmd, flagName, values...)
 }

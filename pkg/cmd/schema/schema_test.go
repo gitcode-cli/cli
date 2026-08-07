@@ -44,7 +44,7 @@ func TestSchemaCommandIncludesEnumMetadata(t *testing.T) {
 	cmdutil.AddFormatFlag(list, new(string))
 	cmdutil.AddTimeFormatFlag(list, new(string))
 	list.Flags().String("state", "open", "Filter by state (open/closed/all)")
-	cmdutil.SetFlagEnum(list, "state", "open", "closed", "all")
+	cmdutil.SetFlagEnumOrWarn(list, "state", "open", "closed", "all")
 	issue.AddCommand(list)
 	root.AddCommand(issue)
 

@@ -95,7 +95,7 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.Description, "description", "d", "", "New description")
 	cmd.Flags().StringVarP(&opts.DescriptionFile, "description-file", "F", "", "Read description from file")
 	cmd.Flags().StringVarP(&opts.State, "state", "s", "", "Milestone state (open/closed)")
-	cmdutil.SetFlagEnum(cmd, "state", "open", "closed")
+	cmdutil.SetFlagEnumOrWarn(cmd, "state", "open", "closed")
 	cmd.Flags().StringVarP(&opts.DueDate, "due-date", "D", "", "Due date (YYYY-MM-DD)")
 	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation for state changes")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)

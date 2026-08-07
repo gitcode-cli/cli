@@ -93,9 +93,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVar(&opts.Status, "status", "", "Filter by run status (COMPLETED/RUNNING/FAILED/CANCELED/IGNORED/PAUSED/SUSPEND)")
-	cmdutil.SetFlagEnum(cmd, "status", "COMPLETED", "RUNNING", "FAILED", "CANCELED", "IGNORED", "PAUSED", "SUSPEND")
+	cmdutil.SetFlagEnumOrWarn(cmd, "status", "COMPLETED", "RUNNING", "FAILED", "CANCELED", "IGNORED", "PAUSED", "SUSPEND")
 	cmd.Flags().StringVar(&opts.Event, "event", "", "Filter by trigger event (MR/Push/Manual)")
-	cmdutil.SetFlagEnum(cmd, "event", "MR", "Push", "Manual")
+	cmdutil.SetFlagEnumOrWarn(cmd, "event", "MR", "Push", "Manual")
 	cmd.Flags().StringVar(&opts.Branch, "branch", "", "Filter by branch")
 	cmd.Flags().StringVar(&opts.Executor, "executor", "", "Filter by executor username")
 	cmd.Flags().StringVar(&opts.WorkflowID, "workflow-id", "", "Filter by workflow id")

@@ -1,12 +1,26 @@
 package lark
 
 import (
+	"os"
 	"strings"
 	"testing"
 
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 	"gitcode.com/gitcode-cli/cli/pkg/larkcli"
 )
+
+// existingExecutable returns a path to an executable that exists on every
+// platform (the running test binary). It replaces the former /bin/true stub,
+// which only exists on Linux and caused macOS/Windows CI to report
+// lark-cli "not installed" (issue #499).
+func existingExecutable(t *testing.T) string {
+	t.Helper()
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatalf("os.Executable: %v", err)
+	}
+	return exe
+}
 
 // notInstalledRun is a RunFunc that simulates lark-cli missing (FindLarkCLI
 // resolves nothing in the doctor path because we stub the run directly).
@@ -33,7 +47,7 @@ func TestDoctorRun_NotInstalled(t *testing.T) {
 func TestDoctorRun_InstalledAndReadyJSON(t *testing.T) {
 	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	t.Setenv("GC_LARK_DEFAULT_CHAT_ID", "oc_default")
-	t.Setenv("GC_LARK_CLI_BIN", "/bin/true") // any existing executable so FindLarkCLI returns a path
+	t.Setenv("GC_LARK_CLI_BIN", existingExecutable(t)) // any existing executable so FindLarkCLI returns a path
 
 	io, _, out, _ := iostreams.Test()
 	opts := &doctorOptions{
@@ -59,7 +73,7 @@ func TestDoctorRun_InstalledAndReadyJSON(t *testing.T) {
 func TestDoctorRun_InstalledButNotLoggedIn(t *testing.T) {
 	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	t.Setenv("GC_LARK_DEFAULT_CHAT_ID", "")
-	t.Setenv("GC_LARK_CLI_BIN", "/bin/true")
+	t.Setenv("GC_LARK_CLI_BIN", existingExecutable(t))
 	t.Setenv("PATH", t.TempDir())
 
 	io, _, out, _ := iostreams.Test()

@@ -22,8 +22,9 @@ func TestInstallRun_Success(t *testing.T) {
 		},
 	}
 	// FindLarkCLI resolves a path so the "installed but not on PATH" branch
-	// is skipped; point env at /bin/true so the success message fires.
-	t.Setenv("GC_LARK_CLI_BIN", "/bin/true")
+	// is skipped; point env at the running test binary (cross-platform stub,
+	// replaces /bin/true which only exists on Linux — issue #499).
+	t.Setenv("GC_LARK_CLI_BIN", existingExecutable(t))
 	if err := installRun(opts); err != nil {
 		t.Fatalf("err = %v", err)
 	}

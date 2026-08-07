@@ -3,6 +3,7 @@ package larkcli
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -73,12 +74,16 @@ func TestSaveDefaultChat_TrimsAndPersists(t *testing.T) {
 	if got := DefaultChatID(); got != "oc_trimmed" {
 		t.Errorf("DefaultChatID() = %q, want oc_trimmed", got)
 	}
-	// File must be created with 0600 on unix and exist.
+	// File must be created with 0600 on unix and exist. Windows does not
+	// enforce unix permission bits (Go reports 0666 regardless of the
+	// 0600 create mode), so the perm assertion is unix-only (issue #499).
 	info, err := os.Stat(ConfigPath())
 	if err != nil {
 		t.Fatalf("Stat config: %v", err)
 	}
-	if mode := info.Mode().Perm(); mode != 0o600 {
-		t.Errorf("config perm = %o, want 0600", mode)
+	if runtime.GOOS != "windows" {
+		if mode := info.Mode().Perm(); mode != 0o600 {
+			t.Errorf("config perm = %o, want 0600", mode)
+		}
 	}
 }

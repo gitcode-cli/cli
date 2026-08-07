@@ -26,6 +26,7 @@ type LabelOptions struct {
 
 	// Flags
 	Add    []string
+	AddSet bool // true when --add was explicitly passed (even if it parsed to empty)
 	Remove string
 	List   bool
 	JSON   bool
@@ -38,7 +39,7 @@ type LabelResult struct {
 	Repo   string   `json:"repo"`
 	Action string   `json:"action"`
 	Labels []string `json:"labels,omitempty"`
-	Label  string   `json:"label,omitempty"` // For remove action
+	Label  string   `json:"label,omitempty"` // For remove/update action: the removed label
 }
 
 // NewCmdLabel creates the label command
@@ -62,6 +63,9 @@ func NewCmdLabel(f *cmdutil.Factory, runF func(*LabelOptions) error) *cobra.Comm
 			# Remove a label from an issue
 			$ gc issue label 123 --remove bug -R owner/repo
 
+			# Replace a label by removing the old one and adding new ones
+			$ gc issue label 123 --remove triage --add verified,in-progress -R owner/repo
+
 			# List labels on an issue
 			$ gc issue label 123 --list -R owner/repo
 		`),
@@ -72,6 +76,7 @@ func NewCmdLabel(f *cmdutil.Factory, runF func(*LabelOptions) error) *cobra.Comm
 				return cmdutil.NewUsageError(fmt.Sprintf("invalid issue number: %s", args[0]))
 			}
 			opts.Number = number
+			opts.AddSet = cmd.Flags().Changed("add")
 
 			if runF != nil {
 				return runF(opts)
@@ -147,15 +152,69 @@ func labelRun(opts *LabelOptions) error {
 		return nil
 	}
 
-	// Add labels
-	if len(opts.Add) > 0 {
-		// Parse comma-separated labels
-		var labels []string
+	// Parse and validate --add BEFORE any remote write so an invalid add value
+	// never triggers a remote label mutation (issue #410 P1). Use AddSet so that
+	// `--add ""` (which cobra parses to an empty slice) is still treated as
+	// "user asked to add but provided no valid label" and rejected without
+	// touching the remote.
+	var addLabels []string
+	if opts.AddSet {
+		seen := make(map[string]bool)
 		for _, l := range opts.Add {
-			labels = append(labels, strings.Split(l, ",")...)
+			for _, part := range strings.Split(l, ",") {
+				part = strings.TrimSpace(part)
+				if part == "" || seen[part] {
+					continue
+				}
+				seen[part] = true
+				addLabels = append(addLabels, part)
+			}
 		}
+		if len(addLabels) == 0 {
+			return cmdutil.NewUsageError("--add contains no valid label names")
+		}
+	}
 
-		added, err := api.AddIssueLabels(client, owner, repo, opts.Number, labels)
+	hasRemove := opts.Remove != ""
+
+	// Combined remove + add: a single atomic update so there is no
+	// partial-success window (issue #410).
+	if hasRemove && len(addLabels) > 0 {
+		issue, err := api.GetIssue(client, owner, repo, opts.Number)
+		if err != nil {
+			return cmdutil.WrapNotFound(err, "issue #%d not found in %s/%s", opts.Number, owner, repo)
+		}
+		desired := mergeIssueLabels(issue.Labels, opts.Remove, addLabels)
+		updated, err := api.UpdateIssue(client, owner, repo, opts.Number, &api.UpdateIssueOptions{
+			Repo:   repo,
+			Labels: desired,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update issue labels: %w", err)
+		}
+		var finalNames []string
+		for _, l := range updated.Labels {
+			finalNames = append(finalNames, l.Name)
+		}
+		if opts.JSON {
+			result := LabelResult{
+				Number: opts.Number,
+				Owner:  owner,
+				Repo:   repo,
+				Action: "update",
+				Label:  opts.Remove,
+				Labels: finalNames,
+			}
+			return cmdutil.WriteJSON(opts.IO.Out, result)
+		}
+		fmt.Fprintf(opts.IO.Out, "%s Removed label '%s' from issue #%d\n", cs.Red("✗"), opts.Remove, opts.Number)
+		fmt.Fprintf(opts.IO.Out, "%s Added labels to issue #%d: %s\n", cs.Green("✓"), opts.Number, strings.Join(addLabels, ", "))
+		return nil
+	}
+
+	// Add labels
+	if len(addLabels) > 0 {
+		added, err := api.AddIssueLabels(client, owner, repo, opts.Number, addLabels)
 		if err != nil {
 			return fmt.Errorf("failed to add labels: %w", err)
 		}
@@ -181,7 +240,7 @@ func labelRun(opts *LabelOptions) error {
 	}
 
 	// Remove label
-	if opts.Remove != "" {
+	if hasRemove {
 		err := api.RemoveIssueLabel(client, owner, repo, opts.Number, opts.Remove)
 		if err != nil {
 			return fmt.Errorf("failed to remove label: %w", err)
@@ -203,6 +262,27 @@ func labelRun(opts *LabelOptions) error {
 	}
 
 	return cmdutil.NewUsageError("specify --add, --remove, or --list")
+}
+
+// mergeIssueLabels returns the desired label set after a combined remove + add:
+// the issue's current labels minus the removed label, plus the added labels,
+// deduplicated. Order is not guaranteed.
+func mergeIssueLabels(current []*api.Label, remove string, add []string) []string {
+	set := make(map[string]bool)
+	for _, l := range current {
+		if l != nil {
+			set[l.Name] = true
+		}
+	}
+	delete(set, remove)
+	for _, l := range add {
+		set[l] = true
+	}
+	out := make([]string, 0, len(set))
+	for l := range set {
+		out = append(out, l)
+	}
+	return out
 }
 
 func parseRepo(repo string) (string, string, error) {

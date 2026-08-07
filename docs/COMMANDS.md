@@ -850,13 +850,22 @@ gc issue label 1 --add bug,enhancement
 # 移除标签
 gc issue label 1 --remove bug -R infra-test/gctest1
 
+# 先移除旧标签再添加新标签（单次原子更新，支持一条命令完成标签替换）
+gc issue label 1 --remove status/triage --add status/verified,status/in-progress -R infra-test/gctest1
+
 # 列出标签
 gc issue label 1 --list -R infra-test/gctest1
 
 # 输出 JSON
 gc issue label 1 --add bug -R infra-test/gctest1 --json
+gc issue label 1 --remove status/triage --add status/verified -R infra-test/gctest1 --json
 gc issue label 1 --list -R infra-test/gctest1 --json
 ```
+
+说明：
+
+- 同时指定 `--remove` 和 `--add` 时，命令读取当前标签后以单次更新完成「移除旧标签 + 添加新标签」，不存在只移除未添加的中间态；`--add` 输入先解析校验，无有效标签名时返回参数错误且不触发任何远端写操作。
+- 组合操作的 JSON 结果 `action` 为 `update`，`label` 为被移除的标签，`labels` 为更新后的标签集合。
 
 ### issue prs - 查看 Issue 关联的 PRs
 

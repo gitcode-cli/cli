@@ -680,11 +680,13 @@ func ListPRIssues(client *Client, owner, repo string, number int) ([]Issue, erro
 }
 
 // AddLabelsToPR adds labels to a pull request.
+//
+// It calls POST /repos/{owner}/{repo}/pulls/{number}/labels. The request body
+// is the raw JSON array of label names (per the official GitCode OpenAPI), and
+// the response is the array of applied labels.
 func AddLabelsToPR(client *Client, owner, repo string, number int, labels []string) ([]Label, error) {
 	var result []Label
-	err := client.Post("/repos/"+owner+"/"+repo+"/merge_requests/"+itoa(number)+"/labels", map[string]interface{}{
-		"labels": labels,
-	}, &result)
+	err := client.Post("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/labels", labels, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -692,16 +694,19 @@ func AddLabelsToPR(client *Client, owner, repo string, number int, labels []stri
 }
 
 // RemoveLabelFromPR removes a label from a pull request.
+//
+// It calls DELETE /repos/{owner}/{repo}/pulls/{number}/labels/{name}.
 func RemoveLabelFromPR(client *Client, owner, repo string, number int, label string) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/merge_requests/" + itoa(number) + "/labels/" + url.PathEscape(label))
+	return client.Delete("/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/labels/" + url.PathEscape(label))
 }
 
 // SetPRLabels sets (replaces) labels on a pull request.
+//
+// It calls PUT /repos/{owner}/{repo}/pulls/{number}/labels with the raw JSON
+// array of label names.
 func SetPRLabels(client *Client, owner, repo string, number int, labels []string) ([]Label, error) {
 	var result []Label
-	err := client.Put("/repos/"+owner+"/"+repo+"/merge_requests/"+itoa(number)+"/labels", map[string]interface{}{
-		"labels": labels,
-	}, &result)
+	err := client.Put("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/labels", labels, &result)
 	if err != nil {
 		return nil, err
 	}

@@ -165,9 +165,9 @@ AI 跑 `gitcode pr view/diff`，读 `spec/foundations/*`，跨代码/安全/测�
 
 AI 创建发布准备 PR → CI 通过 → 合入 → 触发 release workflow → 同步 GitCode Release，全程你只在危险动作处 `--yes` 确认，最后它把各平台验证结果汇总给你。
 
-### 危险动作不会悄悄执行
+### <span style="color:#e60000;">危险动作不会悄悄执行</span>
 
-AI 要删一个 release、合并一个 PR、或把含 `GC_TOKEN` 的正文提交到 issue？非交互环境没显式 `--yes` 直接失败；正文经 secret 扫描会被拒绝。你始终是最后一道闸——AI 干活，你签字。
+AI 要删一个 release、合并一个 PR、或把含 `GC_TOKEN` 的正文提交到 issue？非交互环境没显式 `--yes` 直接失败；正文经 secret 扫描会被拒绝。<span style="color:#e60000;">你始终是最后一道闸——AI 干活，你签字</span>。
 
 ## 为什么值得使用
 

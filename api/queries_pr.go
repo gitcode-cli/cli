@@ -699,16 +699,3 @@ func AddLabelsToPR(client *Client, owner, repo string, number int, labels []stri
 func RemoveLabelFromPR(client *Client, owner, repo string, number int, label string) error {
 	return client.Delete("/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/labels/" + url.PathEscape(label))
 }
-
-// SetPRLabels sets (replaces) labels on a pull request.
-//
-// It calls PUT /repos/{owner}/{repo}/pulls/{number}/labels with the raw JSON
-// array of label names.
-func SetPRLabels(client *Client, owner, repo string, number int, labels []string) ([]Label, error) {
-	var result []Label
-	err := client.Put("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/labels", labels, &result)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}

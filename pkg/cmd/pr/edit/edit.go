@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -254,21 +253,21 @@ func validateLabelOptions(opts *EditOptions) error {
 	if replaceSet && (legacySet || addSet || removeSet) {
 		return cmdutil.NewUsageError("--replace-labels cannot be combined with --labels, --add-label, or --remove-label")
 	}
-	if legacySet && len(normalizeLabels(opts.Labels)) == 0 {
+	if legacySet && len(cmdutil.NormalizeLabels(opts.Labels)) == 0 {
 		return cmdutil.NewUsageError("--labels requires at least one non-empty label")
 	}
-	if addSet && len(normalizeLabels(opts.AddLabels)) == 0 {
+	if addSet && len(cmdutil.NormalizeLabels(opts.AddLabels)) == 0 {
 		return cmdutil.NewUsageError("--add-label requires at least one non-empty label")
 	}
-	if removeSet && len(normalizeLabels(opts.RemoveLabels)) == 0 {
+	if removeSet && len(cmdutil.NormalizeLabels(opts.RemoveLabels)) == 0 {
 		return cmdutil.NewUsageError("--remove-label requires at least one non-empty label")
 	}
 
 	added := make(map[string]struct{})
-	for _, label := range append(normalizeLabels(opts.Labels), normalizeLabels(opts.AddLabels)...) {
+	for _, label := range append(cmdutil.NormalizeLabels(opts.Labels), cmdutil.NormalizeLabels(opts.AddLabels)...) {
 		added[label] = struct{}{}
 	}
-	for _, label := range normalizeLabels(opts.RemoveLabels) {
+	for _, label := range cmdutil.NormalizeLabels(opts.RemoveLabels) {
 		if _, ok := added[label]; ok {
 			return cmdutil.NewUsageError(fmt.Sprintf("label %q cannot be both added and removed", label))
 		}
@@ -285,7 +284,7 @@ func hasLabelChanges(opts *EditOptions) bool {
 
 func resolvePRLabels(client *api.Client, owner, repo string, opts *EditOptions) ([]string, error) {
 	if opts.ReplaceLabelsSet {
-		return normalizeLabels(opts.ReplaceLabels), nil
+		return cmdutil.NormalizeLabels(opts.ReplaceLabels), nil
 	}
 
 	current, err := api.GetPullRequest(client, owner, repo, opts.Number)
@@ -301,10 +300,10 @@ func resolvePRLabels(client *api.Client, owner, repo string, opts *EditOptions) 
 	}
 	labels = append(labels, opts.Labels...)
 	labels = append(labels, opts.AddLabels...)
-	labels = normalizeLabels(labels)
+	labels = cmdutil.NormalizeLabels(labels)
 
 	remove := make(map[string]struct{})
-	for _, label := range normalizeLabels(opts.RemoveLabels) {
+	for _, label := range cmdutil.NormalizeLabels(opts.RemoveLabels) {
 		remove[label] = struct{}{}
 	}
 	result := labels[:0]
@@ -314,23 +313,6 @@ func resolvePRLabels(client *api.Client, owner, repo string, opts *EditOptions) 
 		}
 	}
 	return result, nil
-}
-
-func normalizeLabels(labels []string) []string {
-	result := make([]string, 0, len(labels))
-	seen := make(map[string]struct{}, len(labels))
-	for _, label := range labels {
-		label = strings.TrimSpace(label)
-		if label == "" {
-			continue
-		}
-		if _, ok := seen[label]; ok {
-			continue
-		}
-		seen[label] = struct{}{}
-		result = append(result, label)
-	}
-	return result
 }
 
 func parseRepo(repo string) (string, string, error) {

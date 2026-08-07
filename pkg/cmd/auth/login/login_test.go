@@ -46,6 +46,25 @@ func TestNewCmdLogin(t *testing.T) {
 	}
 }
 
+// TestNewCmdLoginHelpAvoidsUnsafeTokenExamples is a regression guard for
+// issue #476: the login command help must not demonstrate putting a token
+// literal on the command line (echo/printf "..." or '...') or reading it
+// from a plaintext file (cat token-file), both of which leak the token to
+// shell history/disk. The guard is intentionally narrow (substring-based)
+// to avoid false positives on the safety guidance prose ("Never echo/cat a
+// token literal", which has no space after echo/cat).
+func TestNewCmdLoginHelpAvoidsUnsafeTokenExamples(t *testing.T) {
+	f := cmdutil.TestFactory()
+	cmd := NewCmdLogin(f, nil)
+	for _, source := range []string{cmd.Example, cmd.Long} {
+		for _, bad := range []string{`echo "`, `echo '`, `printf "`, `printf '`, "token.txt", "cat token", "cat ~/.secret"} {
+			if strings.Contains(source, bad) {
+				t.Errorf("help contains unsafe token example %q: %q", bad, source)
+			}
+		}
+	}
+}
+
 func TestNewCmdLoginBindsWebAndHostnameFlags(t *testing.T) {
 	f := cmdutil.TestFactory()
 	var gotWeb bool

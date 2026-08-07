@@ -185,15 +185,17 @@ echo $?         # 输出 4 (ExitAuth)
 ### 认证
 
 ```bash
-# 方式一：设置环境变量（推荐）
-export GC_TOKEN="your_gitcode_token"
+# 方式一：设置环境变量（推荐，CI 从平台 Secret 注入；本地开发可写入 shell 配置）
+# 值须来自 secret manager，勿在命令行或配置文件中硬编码真实 token
+export GC_TOKEN="$GC_TOKEN_FROM_SECRETS"
 
-# 永久生效，添加到 shell 配置
-echo 'export GC_TOKEN="your_gitcode_token"' >> ~/.bashrc
+# 永久生效（本地开发），添加到 shell 配置
+echo 'export GC_TOKEN="$GC_TOKEN_FROM_SECRETS"' >> ~/.bashrc
 source ~/.bashrc
 
-# 方式二：非交互登录
-echo "YOUR_TOKEN" | gc auth login --with-token
+# 方式二：非交互登录（从 secret manager 管道读入；禁止 echo/cat 明文 token，
+# 会写入 shell history 或明文落盘）
+<print-token-from-secret-manager> | gc auth login --with-token
 ```
 
 ### 测试仓库
@@ -208,17 +210,19 @@ echo "YOUR_TOKEN" | gc auth login --with-token
 ### auth login - 登录
 
 ```bash
-# 交互式登录
+# 交互式登录（推荐；在私有、未录制的终端执行）
 gc auth login
 
-# 从 stdin 读取 Token 登录
-echo "YOUR_TOKEN" | gc auth login --with-token
+# 从 stdin 读取 Token 登录（从 secret manager 管道读入；禁止 echo/cat 明文 token，
+# 会写入 shell history 或明文落盘）
+<print-token-from-secret-manager> | gc auth login --with-token
 
 # 打开浏览器生成 Token 后继续登录
 gc auth login --web
 ```
 
 说明：
+- 认证优先级：交互式登录或 `--web`（私有终端）> `GC_TOKEN` 环境变量（CI 从平台 Secret 注入）> 本地配置。禁止把 token 字面量放命令行（写入 shell history/进程列表）或明文文件；`--with-token` 须从 secret manager 管道读入。
 - `auth login --web` 仅支持默认主机 `gitcode.com`，会打开 `https://gitcode.com/setting/token-classic/create` 新建访问令牌页面，然后继续在终端中读取你粘贴的 Token 完成登录。
 - `--web` 与 `--with-token` 不能同时使用；两者分别代表浏览器辅助交互登录和从标准输入读取 Token。
 - 自定义主机不支持 `--web`；请先核对目标主机，再使用 `auth login --hostname <host>` 在本地交互终端登录。

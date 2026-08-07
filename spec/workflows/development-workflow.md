@@ -257,16 +257,17 @@ CI 因环境原因（如 GitCode Actions 或 GitHub 镜像仓不可达）无法�
 
 ### 5.9 横切编排资产
 
-以下两个资产横切整条交付管线，在每个对应阶段作为标准动作执行（非可选装饰）：
+以下资产横切整条交付管线。**A 为可选项（opt-in，交付前交互式询问用户）**；**B 为涉及 API 调用时的标准查证动作**：
 
-#### A. 里程碑通报 — `gitcode-delivery-notify` skill
+#### A. 里程碑通报 — `gitcode-delivery-notify` skill（可选）
 
-在每个状态转换点向用户本人飞书发送简短进展，使长交付任务可异步可见、阻塞才介入。
+可选横切资产：在交付的每个状态转换点向用户本人飞书发送简短进展，使长交付任务可异步可见、阻塞才介入。**默认不启用**，须用户 opt-in。
 
 - skill 来源：独立仓库 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 的 `gitcode-delivery-notify`；opencode 装在 `~/.agents/skills/`（非 `.claude/skills/`）。
+- **交付前 opt-in（交互式）**：进入交付前若 `CanPrompt` 为真，先询问用户是否启用通报；启用则继续问「通报哪些里程碑、发本人还是群、是否每条发送前确认」，写入持久化 consent 文件 `~/.config/gc/skills/lark-notify-consent.json`。
+- **consent 来源优先级**：持久化 consent 文件 > 当次交互确认 > 无 → 不发送（静默跳过，不报错、不阻断交付）。
 - 发送：`gitcode lark send --to-self --markdown "<summary>" --json`（bot → user P2P，`--to-self` 自动解析当前 `lark-cli` 用户 open_id）。
-- consent 前置：必须有持久化 consent 文件 `~/.config/gc/skills/lark-notify-consent.json` 或当次交互确认；非交互 + 无 consent → 静默跳过，不报错。
-- 里程碑与触发信号：
+- 里程碑与触发信号（启用后到达即通报）：
 
   | 里程碑 | 触发信号 |
   |--------|----------|
@@ -279,7 +280,7 @@ CI 因环境原因（如 GitCode Actions 或 GitHub 镜像仓不可达）无法�
 
 - 约束：摘要只含 id/标题/URL/一行结论；禁贴 token、PR 全文、评审 dump、日志；同一 `{milestone}:{id}` 本会话只发一次；`gitcode lark send` 提交前扫描 `GC_TOKEN` 值，命中拒绝；通知失败 best-effort，只记一行 stderr 继续，**绝不因通知失败阻断交付**。
 
-#### B. API 端点查证 — `gc-api-doc` 参考仓
+#### B. API 端点查证 — `gc-api-doc` 参考仓（涉及 API 调用时标准动作）
 
 修复涉及 GitCode REST API 调用（新增/修改 api 包函数、端点实测报错）时，先查官方 OpenAPI 真相源再写代码，不类比 GitHub CLI、不猜语义。
 

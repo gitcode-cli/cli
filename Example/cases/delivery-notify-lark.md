@@ -130,7 +130,7 @@ gc lark send 提交前扫描 GC_TOKEN 值，命中拒绝，不要绕过。
 | 9. 合并 | `gc pr merge` + 验证 issue 自动关闭 | **delivery-notify**：发 `merged` |
 | (阻塞) | 某门禁无法继续（需人工确认/外部审批） | **delivery-notify**：发 `blocked`（含需要用户提供什么） |
 
-> 关键：delivery-notify 在每个里程碑是**标准动作**而非可选装饰；gc-api-doc 在「修复」阶段涉及 API 时是**标准查证动作**而非事后补救。
+> 关键：delivery-notify 是**可选 opt-in**（交付前交互式询问用户，未启用则全程不发）；gc-api-doc 在「修复」阶段涉及 API 时是**标准查证动作**。
 
 ## 本次真实执行记录
 

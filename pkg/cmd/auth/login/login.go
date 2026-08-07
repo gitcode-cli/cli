@@ -48,24 +48,37 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 		Use:   "login",
 		Short: "Log in to a GitCode account",
 		Long: heredoc.Doc(`
-				Authenticate with a GitCode account.
+			Authenticate with a GitCode account.
 
-				By default, gc prompts for a token in an interactive terminal.
-				In non-interactive environments, use --with-token to read the token
-				from standard input.
-			`),
+			By default, gc prompts for a token in an interactive terminal.
+			In non-interactive environments, use --with-token to read the token
+			from standard input.
+
+			Never place a token literal on the command line: it leaks to shell
+			history and process lists, and never store a token in a plaintext
+			file. Prefer interactive login, --web, or the GC_TOKEN environment
+			variable (injected from your platform's secrets); when using
+			--with-token, pipe from a secret manager.
+		`),
 		Example: heredoc.Doc(`
-			# Start interactive login
+			# Start interactive login (recommended; use a private, unrecorded terminal)
 			$ gc auth login
 
-			# Login with a token from stdin
-			$ echo "your-token" | gc auth login --with-token
-
-			# Login with a token from a file
-			$ cat token.txt | gc auth login --with-token
+			# Login via browser device flow
+			$ gc auth login --web
 
 			# Login to a specific host
 			$ gc auth login --hostname gitcode.com
+
+			# Non-interactive (CI): inject the token via the GC_TOKEN environment
+			# variable from your platform's secrets; gc authenticates automatically,
+			# no login command needed.
+			#   $ export GC_TOKEN="$GC_TOKEN_FROM_SECRETS"
+
+			# Read a token from stdin with --with-token. Never echo/cat a token
+			# literal (it leaks to shell history or disk); pipe from a secret
+			# manager instead.
+			$ <print-token-from-secret-manager> | gc auth login --with-token
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.Web && opts.WithToken {

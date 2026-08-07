@@ -125,10 +125,26 @@ Windows PowerShell 已将 `gc` 用作 `Get-Content` 的别名，因此推荐使�
 
 ```bash
 gitcode auth login --web
-gitcode auth status
 ```
 
-`--web` 会打开 GitCode 的新建访问令牌页面，生成后仍需回到终端粘贴；当前版本不会隐藏输入。请只在用户本人控制的私有、未录制本地终端中执行。浏览器不可用时可运行 `gitcode auth login`，但同样需要遵守这一限制。不要把 Token 交给 AI，也不要把 Token 直接写进命令、脚本或聊天内容。认证来源、优先级和安全注意事项见[认证说明](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AUTH.md)。
+输出示例：
+
+```
+Opening https://gitcode.com/setting/token-classic/create in your browser.
+After generating a token in the browser, paste it below.
+
+? Paste your authentication token: _
+```
+
+在桌面终端中 `--web` 会自动打开浏览器跳到令牌创建页；**在 WSL、SSH、无 GUI 的服务器等环境不会自动跳转**，需要手动复制输出的链接到浏览器打开，生成令牌后回到终端粘贴。
+
+> ⚠️ Token 只在用户本人控制的私有、未录制本地终端中输入，当前版本不会隐藏输入。不要把 Token 交给 AI，也不要写进命令、脚本或聊天内容。
+
+```bash
+gitcode auth status   # 确认登录状态
+```
+
+认证来源、优先级和安全注意事项见[认证说明](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AUTH.md)。
 
 ### 3. 给你的 AI 装上 GitCode 技能
 

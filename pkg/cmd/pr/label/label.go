@@ -114,14 +114,16 @@ func labelRun(opts *LabelOptions) error {
 
 	// List labels
 	if opts.List {
-		issue, err := api.GetIssue(client, owner, repo, opts.Number)
+		pr, err := api.GetPullRequest(client, owner, repo, opts.Number)
 		if err != nil {
 			return cmdutil.WrapNotFound(err, "PR #%d not found in %s/%s", opts.Number, owner, repo)
 		}
 
 		var labelNames []string
-		for _, label := range issue.Labels {
-			labelNames = append(labelNames, label.Name)
+		for _, label := range pr.Labels {
+			if label != nil {
+				labelNames = append(labelNames, label.Name)
+			}
 		}
 
 		if opts.JSON {
@@ -135,14 +137,16 @@ func labelRun(opts *LabelOptions) error {
 			return cmdutil.WriteJSON(opts.IO.Out, result)
 		}
 
-		if len(issue.Labels) == 0 {
-			fmt.Fprintf(opts.IO.Out, "No labels on issue #%s\n", issue.Number)
+		if len(pr.Labels) == 0 {
+			fmt.Fprintf(opts.IO.Out, "No labels on PR #%d\n", pr.Number)
 			return nil
 		}
 
-		fmt.Fprintf(opts.IO.Out, "Labels on PR #%s:\n", issue.Number)
-		for _, label := range issue.Labels {
-			fmt.Fprintf(opts.IO.Out, "  %s\n", cs.Cyan(label.Name))
+		fmt.Fprintf(opts.IO.Out, "Labels on PR #%d:\n", pr.Number)
+		for _, label := range pr.Labels {
+			if label != nil {
+				fmt.Fprintf(opts.IO.Out, "  %s\n", cs.Cyan(label.Name))
+			}
 		}
 		return nil
 	}
@@ -155,7 +159,7 @@ func labelRun(opts *LabelOptions) error {
 			labels = append(labels, strings.Split(l, ",")...)
 		}
 
-		added, err := api.AddIssueLabels(client, owner, repo, opts.Number, labels)
+		added, err := api.AddLabelsToPR(client, owner, repo, opts.Number, labels)
 		if err != nil {
 			return fmt.Errorf("failed to add labels: %w", err)
 		}
@@ -182,7 +186,7 @@ func labelRun(opts *LabelOptions) error {
 
 	// Remove label
 	if opts.Remove != "" {
-		err := api.RemoveIssueLabel(client, owner, repo, opts.Number, opts.Remove)
+		err := api.RemoveLabelFromPR(client, owner, repo, opts.Number, opts.Remove)
 		if err != nil {
 			return fmt.Errorf("failed to remove label: %w", err)
 		}
@@ -209,7 +213,7 @@ func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
 }
 
-func formatLabels(labels []*api.Label) string {
+func formatLabels(labels []api.Label) string {
 	names := make([]string, len(labels))
 	for i, l := range labels {
 		names[i] = l.Name

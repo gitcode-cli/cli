@@ -130,36 +130,42 @@ gitcode auth status
 
 `--web` 会打开 GitCode 的新建访问令牌页面，生成后仍需回到终端粘贴；当前版本不会隐藏输入。请只在用户本人控制的私有、未录制本地终端中执行。浏览器不可用时可运行 `gitcode auth login`，但同样需要遵守这一限制。不要把 Token 交给 AI，也不要把 Token 直接写进命令、脚本或聊天内容。认证来源、优先级和安全注意事项见[认证说明](https://gitcode.com/gitcode-cli/cli/blob/main/docs/AUTH.md)。
 
-### 3. 先从只读命令开始
+### 3. 给你的 AI 装上 GitCode 技能
+
+GitCode CLI 的真正吸引力不在手敲命令，而在让 AI 在安全边界内替你完成端到端工作。把 [gitcode-cli/skills](https://gitcode.com/gitcode-cli/skills) 里的技能装进你的 AI 客户端（Claude / Codex 等）：
 
 ```bash
-gitcode repo view gitcode-cli/cli
-gitcode issue list -R gitcode-cli/cli --state open
-gitcode pr list -R gitcode-cli/cli --state open --json
+# 克隆技能仓库
+git clone https://gitcode.com/gitcode-cli/skills.git
+# 把需要的技能目录复制到 AI 客户端的 skills 目录
+#   Claude:  ~/.claude/skills/<技能名>/SKILL.md
+#   Codex:   ~/.codex/skills/<技能名>/SKILL.md
+cp -R skills/gitcode-issue-triage ~/.claude/skills/
 ```
 
-`-R owner/repo` 可以让命令在任意目录中操作指定仓库；进入本地 Git 仓库后，多数命令也可以自动识别当前仓库。
+技能覆盖 Issue 创建/评审/分诊、PR 创建/评审/行内评审/反馈修复、Release 发布、安全检查、流水线分析、回归等端到端工作流。每个技能自包含，按需复制即可。
 
-### 4. 完成一次真实协作
+### 4. 直接给 AI 一个任务
 
-先把正文写入 Markdown 文件，便于审阅、复用，也能减少 shell 转义和中文编码问题：
+装好技能后，你不必逐条敲命令——把任务交给 AI，它用 `gitcode` 在边界内完成查、读、写、发布：
 
-```bash
-gitcode issue create -R owner/repo --title "问题标题" --body-file issue.md --json
-gitcode pr create -R owner/repo --base main --title "feat: 功能标题" --body-file pr.md --json
-```
+> 「把这个仓库的 open issue 分诊一遍：打标签、标重复、给结论」
+> 「评审 PR #N：读 diff、按项目规范做工程评审、提行内意见」
+> 「准备并发布 v0.10.4：核 tag、生成 release notes、走发布流程」
 
-创建前应遵守目标仓库自己的 Issue、分支、测试和 PR 规范。CLI 负责可靠执行平台操作，不替代项目本身的工程规则。
+AI 自动调用 `gitcode issue list/label`、`gitcode pr view/diff`、`gitcode release create/upload` 等，把结构化结果与证据回给你。你审结论，不用逐页点 GitCode。
 
-### 5. 按任务找到下一条命令
+### 5. 危险动作由你把关
 
-```bash
-gitcode help --json
-gitcode schema
-gitcode help issue create
-gitcode help pr review
-gitcode help actions run list
-```
+AI 不会悄悄执行破坏性操作：
+
+- 删除/合并/发布等破坏性命令默认有确认保护；非交互环境（脚本/管道）未显式 `--yes` 会直接失败，不隐式等待输入。
+- issue/PR/comment/release 的正文提交前经 `cmdutil.ScanContentForSecrets` 扫描，疑似 `GC_TOKEN` 值会被拒绝，防止 token 泄漏到平台内容。
+- 全局 `--no-interactive` 可主动声明非交互模式（供 AI/脚本），设置后所有确认立即失败、需 `--yes`。
+
+### 想自己敲命令？
+
+CLI 同样完整可用，命令树与参数见 [命令手册 COMMANDS.md](https://gitcode.com/gitcode-cli/cli/blob/main/docs/COMMANDS.md)。只读命令支持 `--json`，写命令支持 `--dry-run`，退出码 0-5 稳定语义；`gitcode help --json` 与 `gitcode schema` 可程序化发现命令。
 
 常用入口：
 
@@ -173,6 +179,6 @@ gitcode help actions run list
 
 ## 从今天的一件小事开始
 
-不必先改造整套研发流程。可以先用 `gitcode pr list --json` 做一次待评审 PR 汇总，用 `gitcode actions run list` 找一次失败流水线，或者让 AI 在只读模式下完成一次 Issue/PR 分析。
+不必先改造整套研发流程。装好后，直接给 AI 一个小任务：让它把某个仓库的待评审 PR 汇总一遍、找出最近一次失败流水线、或在只读模式下分析一个 Issue/PR。AI 用 `gitcode` 在边界内跑完，把结论和证据交给你——这是 GitCode CLI 想给你的协作体验。
 
 当一个操作可以被命令准确表达，它就可以被保存、复用、审计，也可以安全地交给自动化和 AI。GitCode CLI 的价值，正是把 GitCode 上分散的协作动作，变成团队可以持续积累的工程能力。

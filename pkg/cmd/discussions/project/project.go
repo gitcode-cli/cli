@@ -1,0 +1,42 @@
+// Package project implements the discussions project subcommand group.
+package project
+
+import (
+	"github.com/MakeNowJust/heredoc/v2"
+	"github.com/spf13/cobra"
+
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions/project/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions/project/view"
+	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+)
+
+// NewCmdProject creates the discussions project subcommand group for
+// repository (project-level) discussions.
+func NewCmdProject(f *cmdutil.Factory) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "project <command>",
+		Short: "Manage repository discussions",
+		Long: heredoc.Doc(`
+			Work with GitCode repository (project-level) discussions (discuss).
+
+			These are discussion threads scoped to a repository, accessed via the
+			GitCode v5 API (GET /api/v5/repos/{owner}/{repo}/discuss). The CLI
+			exposes read-only list and view operations.
+		`),
+		Example: heredoc.Doc(`
+			# List discussions in a repository
+			$ gc discussions project list -R owner/repo
+
+			# View a discussion
+			$ gc discussions project view 42 -R owner/repo
+
+			# Output as JSON
+			$ gc discussions project list -R owner/repo --json
+		`),
+	}
+
+	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(view.NewCmdView(f, nil))
+
+	return cmd
+}

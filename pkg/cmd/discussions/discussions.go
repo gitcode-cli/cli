@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions/project"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions/view"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
@@ -40,6 +41,7 @@ func NewCmdDiscussions(f *cmdutil.Factory) *cobra.Command {
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(view.NewCmdView(f, nil))
+	cmd.AddCommand(project.NewCmdProject(f))
 
 	return cmd
 }

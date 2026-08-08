@@ -22,9 +22,12 @@ type ListOptions struct {
 	Repository string
 
 	// Flags
-	Limit int
-	Page  int
-	JSON  bool
+	Limit      int
+	Page       int
+	PerPage    int
+	LimitSet   bool
+	PerPageSet bool
+	JSON       bool
 }
 
 // NewCmdList creates the list command
@@ -55,6 +58,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			if runF != nil {
 				return runF(opts)
 			}
+			opts.LimitSet = cmd.Flags().Changed("limit")
+			opts.PerPageSet = cmd.Flags().Changed("per-page")
 			return listRun(opts)
 		},
 	}
@@ -62,6 +67,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of milestones to list")
 	cmd.Flags().IntVar(&opts.Page, "page", 1, "Page number")
+	cmd.Flags().IntVar(&opts.PerPage, "per-page", 0, "API page size (default: --limit)")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
@@ -85,14 +91,25 @@ func listRun(opts *ListOptions) error {
 		return err
 	}
 
+	if opts.Limit <= 0 {
+		return cmdutil.NewUsageError("--limit must be greater than 0")
+	}
+	if opts.Page < 0 {
+		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
+	}
+	if opts.PerPage < 0 {
+		return cmdutil.NewUsageError("--per-page must be greater than or equal to 0")
+	}
+
 	// List milestones
 	milestones, err := api.ListRepoMilestones(client, owner, repo, &api.MilestoneListOptions{
-		PerPage: opts.Limit,
+		PerPage: resolvePerPage(opts),
 		Page:    opts.Page,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list milestones: %w", err)
 	}
+	milestones = trimMilestones(milestones, opts)
 
 	// Output
 	if len(milestones) == 0 {
@@ -134,4 +151,21 @@ func listRun(opts *ListOptions) error {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+// resolvePerPage returns the API page size: the explicit --per-page when set,
+// otherwise --limit. Mirrors the pr list / issue list pattern.
+func resolvePerPage(opts *ListOptions) int {
+	if opts.PerPageSet && opts.PerPage > 0 {
+		return opts.PerPage
+	}
+	return opts.Limit
+}
+
+// trimMilestones truncates to --limit when both --limit and --per-page were set.
+func trimMilestones(milestones []api.Milestone, opts *ListOptions) []api.Milestone {
+	if opts.PerPageSet && opts.LimitSet && len(milestones) > opts.Limit {
+		return milestones[:opts.Limit]
+	}
+	return milestones
 }

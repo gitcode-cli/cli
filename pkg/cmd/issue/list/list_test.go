@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 	"gitcode.com/gitcode-cli/cli/pkg/testutil"
@@ -462,5 +463,73 @@ func jsonResponse(status int, body string) *http.Response {
 		Status:     http.StatusText(status),
 		Header:     make(http.Header),
 		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}
+
+func TestResolvePerPage(t *testing.T) {
+	tests := []struct {
+		name       string
+		perPageSet bool
+		perPage    int
+		limit      int
+		want       int
+	}{
+		{name: "per-page set wins", perPageSet: true, perPage: 50, limit: 30, want: 50},
+		{name: "per-page unset falls back to limit", perPageSet: false, perPage: 0, limit: 30, want: 30},
+		{name: "per-page set but zero falls back to limit", perPageSet: true, perPage: 0, limit: 20, want: 20},
+		{name: "per-page set negative falls back to limit", perPageSet: true, perPage: -5, limit: 15, want: 15},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := &ListOptions{Limit: tt.limit, PerPage: tt.perPage, PerPageSet: tt.perPageSet}
+			if got := resolvePerPage(opts); got != tt.want {
+				t.Fatalf("resolvePerPage() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrimIssues(t *testing.T) {
+	mk := func(n int) []api.Issue { return make([]api.Issue, n) }
+	tests := []struct {
+		name       string
+		issues     []api.Issue
+		limit      int
+		limitSet   bool
+		perPageSet bool
+		wantLen    int
+	}{
+		{name: "both set truncates to limit", issues: mk(10), limit: 3, limitSet: true, perPageSet: true, wantLen: 3},
+		{name: "only per-page set no truncation", issues: mk(10), limit: 3, limitSet: false, perPageSet: true, wantLen: 10},
+		{name: "only limit set no truncation", issues: mk(10), limit: 3, limitSet: true, perPageSet: false, wantLen: 10},
+		{name: "neither set no truncation", issues: mk(5), limit: 3, limitSet: false, perPageSet: false, wantLen: 5},
+		{name: "under limit no truncation", issues: mk(2), limit: 5, limitSet: true, perPageSet: true, wantLen: 2},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := &ListOptions{Limit: tt.limit, LimitSet: tt.limitSet, PerPageSet: tt.perPageSet}
+			got := trimIssues(tt.issues, opts)
+			if len(got) != tt.wantLen {
+				t.Fatalf("trimIssues() len = %d, want %d", len(got), tt.wantLen)
+			}
+		})
+	}
+}
+
+func TestListRunPerPageValidation(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	ioStreams, _, _, _ := iostreams.Test()
+	opts := &ListOptions{
+		IO: ioStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      30,
+		PerPage:    -1,
+	}
+	err := listRun(opts)
+	if err == nil || cmdutil.ExitCode(err) != cmdutil.ExitUsage {
+		t.Fatalf("listRun(PerPage=-1) err=%v, want ExitUsage", err)
 	}
 }

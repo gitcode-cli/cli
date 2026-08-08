@@ -368,6 +368,9 @@ gc repo list --owner infra-test
 # 限制数量
 gc repo list --limit 10
 
+# 控制 API page size
+gc repo list --per-page 50
+
 # 只列出公开仓库
 gc repo list --visibility public
 
@@ -396,11 +399,15 @@ gc repo log -R infra-test/gctest1 --file README.md --branch main
 
 # 限制数量并输出 JSON
 gc repo log -R infra-test/gctest1 --file README.md --branch main --limit 5 --json
+
+# 控制 API page size
+gc repo log -R infra-test/gctest1 --per-page 50 --json
 ```
 
 说明：
 - `repo log` 支持 `-R/--repo`，也支持在当前 Git 仓库中缺省 `-R` 自动推断目标仓库。
 - `--file` 对应提交 API 的文件路径过滤，`--branch` 可传分支、tag 或 commit SHA。
+- `-L/--limit`（默认 30，客户端结果上限）与 `--per-page`（API page size，未指定时默认 `--limit`）；同时指定时本地按 `--limit` 截断。
 - 文本输出会显示短 SHA、提交日期和提交信息首行；`--json` 输出远端提交对象数组。
 
 ### repo sync - 同步目录到目标仓库并创建 PR
@@ -680,6 +687,7 @@ gc issue list -R infra-test/gctest1 --template '{{range .}}#{{.Number}} {{.Title
 - 非法 `--format` 值会返回错误，不会静默降级为默认输出。
 - `--since`、`--created-after`、`--created-before`、`--updated-after`、`--updated-before` 支持 `YYYY-MM-DD` 和 ISO 8601 时间。
 - CLI 会在请求前自动规范化为 GitCode API 可接受的 RFC3339 时间戳。
+- `-L/--limit`（默认 30，客户端结果上限）与 `--per-page`（API page size，未指定时默认 `--limit`）；同时指定时本地按 `--limit` 截断。`--page` 翻页。
 
 ### issue view - 查看 Issue
 
@@ -936,6 +944,7 @@ gc discussions list --org my-org --json
 说明：
 - `--org`（必填）：组织 path。
 - `--page` / `--per-page`：分页（`--per-page` 最大 100，默认 20）。
+- `-L/--limit`：客户端结果上限（默认 30），在 `--per-page` 取回后本地截断。
 - `--sort`：`created`（默认，创建时间）或 `comment_size`（评论数量）。
 - `--direction`：`asc` 或 `desc`（默认降序）。
 - `--search`：按标题与描述服务端过滤。
@@ -973,6 +982,7 @@ gc discussions project list -R owner/repo --json
 说明：
 - `-R`（必填）：仓库（owner/repo），在当前 Git 仓库目录执行时可省略自动推断。
 - `--page`/`--per-page`/`--sort`/`--direction`/`--search`：与 `discussions list` 同义。
+- `-L/--limit`：客户端结果上限（默认 30），与 `discussions list` 同义。
 - `--json`：原样输出讨论数组。
 
 ### discussions project view - 查看仓库讨论
@@ -1764,7 +1774,7 @@ gc label list -R infra-test/gctest1 --json
 ```
 
 说明：
-- `label list` 当前不提供 `--limit`，因为 GitCode labels list API 没有对应分页/limit 参数。
+- `label list` 支持 `-L/--limit`（默认 30，客户端结果上限）和 `--per-page`（API page size，未指定时默认 `--limit`）；`--page` 翻页。`--limit` 与 `--per-page` 同时指定时，本地按 `--limit` 截断。
 
 ### label create - 创建标签
 
@@ -1810,7 +1820,7 @@ gc milestone list -R infra-test/gctest1 --json
 ```
 
 说明：
-- `milestone list` 当前不提供 `--state`，因为 GitCode milestones list API 还没有对应筛选参数。`--limit` 和 `--page` 已支持。
+- `milestone list` 当前不提供 `--state`，因为 GitCode milestones list API 还没有对应筛选参数。`--limit`（默认 30）和 `--per-page`（API page size，默认 `--limit`）、`--page` 已支持。
 
 ### milestone create - 创建里程碑
 

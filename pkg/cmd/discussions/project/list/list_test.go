@@ -52,7 +52,7 @@ func TestListRunText(t *testing.T) {
 		}),
 	}
 	ios, _, out, _ := iostreams.Test()
-	err := listRun(&ListOptions{IO: ios, HttpClient: httpFactory(client), Repository: "owner/repo"})
+	err := listRun(&ListOptions{IO: ios, HttpClient: httpFactory(client), Repository: "owner/repo", Limit: 30})
 	if err != nil {
 		t.Fatalf("listRun() error = %v", err)
 	}
@@ -77,7 +77,7 @@ func TestListRunJSON(t *testing.T) {
 		}),
 	}
 	ios, _, out, _ := iostreams.Test()
-	err := listRun(&ListOptions{IO: ios, HttpClient: httpFactory(client), Repository: "owner/repo", JSON: true})
+	err := listRun(&ListOptions{IO: ios, HttpClient: httpFactory(client), Repository: "owner/repo", Limit: 30, JSON: true})
 	if err != nil {
 		t.Fatalf("listRun() error = %v", err)
 	}
@@ -89,10 +89,11 @@ func TestListRunJSON(t *testing.T) {
 func TestListRunValidationErrors(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	for _, opts := range []ListOptions{
-		{Repository: "o/repo", Page: -1},
-		{Repository: "o/repo", PerPage: 101},
-		{Repository: "o/repo", Sort: "bogus"},
-		{Repository: "o/repo", Direction: "sideways"},
+		{Repository: "o/repo", Page: -1, Limit: 30},
+		{Repository: "o/repo", Limit: 0, Page: 1},
+		{Repository: "o/repo", PerPage: 101, Limit: 30},
+		{Repository: "o/repo", Sort: "bogus", Limit: 30},
+		{Repository: "o/repo", Direction: "sideways", Limit: 30},
 	} {
 		err := listRun(&opts)
 		if err == nil {

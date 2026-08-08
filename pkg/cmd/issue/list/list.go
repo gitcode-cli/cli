@@ -40,6 +40,9 @@ type ListOptions struct {
 	UpdatedBefore string
 	Search        string
 	Page          int
+	PerPage       int
+	LimitSet      bool
+	PerPageSet    bool
 	JSON          bool
 	Format        string
 	TimeFormat    string
@@ -109,6 +112,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			if runF != nil {
 				return runF(opts)
 			}
+			opts.LimitSet = cmd.Flags().Changed("limit")
+			opts.PerPageSet = cmd.Flags().Changed("per-page")
 			return listRun(opts)
 		},
 	}
@@ -132,6 +137,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.UpdatedBefore, "updated-before", "", "Filter issues updated before this time")
 	cmd.Flags().StringVar(&opts.Search, "search", "", "Search by keyword in title or body")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number for pagination")
+	cmd.Flags().IntVar(&opts.PerPage, "per-page", 0, "API page size (default: --limit)")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmdutil.AddFormatFlag(cmd, &opts.Format)
 	cmdutil.AddTimeFormatFlag(cmd, &opts.TimeFormat)
@@ -177,6 +183,9 @@ func listRun(opts *ListOptions) error {
 	if opts.Page < 0 {
 		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
 	}
+	if opts.PerPage < 0 {
+		return cmdutil.NewUsageError("--per-page must be greater than or equal to 0")
+	}
 
 	milestone, err := resolveMilestoneFilter(client, owner, repo, opts.Milestone)
 	if err != nil {
@@ -187,7 +196,7 @@ func listRun(opts *ListOptions) error {
 	issues, err := api.ListRepoIssues(client, owner, repo, &api.IssueListOptions{
 		State:         opts.State,
 		Labels:        opts.Labels,
-		PerPage:       opts.Limit,
+		PerPage:       resolvePerPage(opts),
 		Page:          opts.Page,
 		Milestone:     milestone,
 		Assignee:      opts.Assignee,
@@ -204,6 +213,7 @@ func listRun(opts *ListOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to list issues: %w", err)
 	}
+	issues = trimIssues(issues, opts)
 
 	// Output
 	if len(issues) == 0 {
@@ -278,6 +288,25 @@ func isASCIIDecimal(value string) bool {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+// resolvePerPage returns the API page size: the explicit --per-page when set,
+// otherwise --limit (the client-side cap). Mirrors the pr list / actions list
+// pattern so --per-page is available on every list command.
+func resolvePerPage(opts *ListOptions) int {
+	if opts.PerPageSet && opts.PerPage > 0 {
+		return opts.PerPage
+	}
+	return opts.Limit
+}
+
+// trimIssues truncates the result to --limit when both --limit and --per-page
+// were explicitly set (per-page may fetch more than the user wants to see).
+func trimIssues(issues []api.Issue, opts *ListOptions) []api.Issue {
+	if opts.PerPageSet && opts.LimitSet && len(issues) > opts.Limit {
+		return issues[:opts.Limit]
+	}
+	return issues
 }
 
 type resolvedOutputOptions struct {

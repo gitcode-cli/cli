@@ -24,6 +24,9 @@ type Options struct {
 	Branch     string
 	Limit      int
 	Page       int
+	PerPage    int
+	LimitSet   bool
+	PerPageSet bool
 	JSON       bool
 }
 
@@ -57,6 +60,8 @@ func NewCmdLog(f *cmdutil.Factory, runF func(*Options) error) *cobra.Command {
 			if runF != nil {
 				return runF(opts)
 			}
+			opts.LimitSet = cmd.Flags().Changed("limit")
+			opts.PerPageSet = cmd.Flags().Changed("per-page")
 			return run(opts)
 		},
 	}
@@ -66,6 +71,7 @@ func NewCmdLog(f *cmdutil.Factory, runF func(*Options) error) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.Branch, "branch", "b", "", "Branch, tag, or commit SHA")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of commits to list")
 	cmd.Flags().IntVar(&opts.Page, "page", 1, "Page number to fetch")
+	cmd.Flags().IntVar(&opts.PerPage, "per-page", 0, "API page size (default: --limit)")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
@@ -77,6 +83,9 @@ func run(opts *Options) error {
 	}
 	if opts.Page <= 0 {
 		return cmdutil.NewUsageError("--page must be greater than 0")
+	}
+	if opts.PerPage < 0 {
+		return cmdutil.NewUsageError("--per-page must be greater than or equal to 0")
 	}
 
 	client, err := cmdutil.AuthenticatedClientFromFactory(opts.HttpClient)
@@ -97,11 +106,12 @@ func run(opts *Options) error {
 		Path:    opts.File,
 		SHA:     opts.Branch,
 		Page:    opts.Page,
-		PerPage: opts.Limit,
+		PerPage: resolvePerPage(opts),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list commits: %w", err)
 	}
+	commits = trimCommits(commits, opts)
 
 	if opts.JSON {
 		return cmdutil.WriteJSON(opts.IO.Out, commits)
@@ -144,4 +154,21 @@ func shortSHA(sha string) string {
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+// resolvePerPage returns the API page size: the explicit --per-page when set,
+// otherwise --limit. Mirrors the pr list / issue list pattern.
+func resolvePerPage(opts *Options) int {
+	if opts.PerPageSet && opts.PerPage > 0 {
+		return opts.PerPage
+	}
+	return opts.Limit
+}
+
+// trimCommits truncates to --limit when both --limit and --per-page were set.
+func trimCommits(commits []api.RepositoryCommit, opts *Options) []api.RepositoryCommit {
+	if opts.PerPageSet && opts.LimitSet && len(commits) > opts.Limit {
+		return commits[:opts.Limit]
+	}
+	return commits
 }

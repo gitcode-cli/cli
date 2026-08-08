@@ -271,9 +271,10 @@ func TestListOrgDiscussionCommentRepliesBuildsPath(t *testing.T) {
 }
 
 func TestListRepoDiscussionCommentsBuildsPathAndParams(t *testing.T) {
-	var gotPath, gotMethod string
+	var gotPath, gotQuery, gotMethod string
 	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
 		gotPath = req.URL.Path
+		gotQuery = req.URL.RawQuery
 		gotMethod = req.Method
 		return authTestResponse(http.StatusOK, `[{"id":"c","content":"hi","author":{"login":"bob"},"like_total":2,"reply_total":1}]`), nil
 	})
@@ -286,6 +287,9 @@ func TestListRepoDiscussionCommentsBuildsPathAndParams(t *testing.T) {
 	}
 	if gotPath != "/api/v5/repos/owner/repo/discuss/3/comment" {
 		t.Fatalf("path = %q, want .../discuss/3/comment", gotPath)
+	}
+	if !containsParam(gotQuery, "order=time_desc") {
+		t.Fatalf("query = %q, want to contain order=time_desc", gotQuery)
 	}
 	if len(cs) != 1 || cs[0].ID != "c" || cs[0].LikeTotal != 2 {
 		t.Fatalf("comments = %+v, want id=c like_total=2", cs)

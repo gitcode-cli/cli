@@ -1014,7 +1014,7 @@ gc discussions project comments list 42 -R owner/repo
 gc discussions project comments list 42 -R owner/repo --order time_desc --json
 ```
 
-说明：`-R`（必填）；位置参数为讨论编号；`--order`/`--page`/`--per-page`/`--json`。
+说明：`-R` 仓库（owner/repo），在当前 Git 仓库目录执行时可省略自动推断；位置参数为讨论编号；`--order`/`--page`/`--per-page`/`--json`。
 
 ### discussions project comments replies - 列出仓库讨论评论回复
 
@@ -1022,7 +1022,7 @@ gc discussions project comments list 42 -R owner/repo --order time_desc --json
 gc discussions project comments replies 42 <comment-id> -R owner/repo
 ```
 
-说明：两个位置参数（讨论编号 + comment-id）；`-R`（必填）；`--page`/`--per-page`/`--json`。
+说明：两个位置参数（讨论编号 + comment-id）；`-R` 仓库，可省略自动推断；`--page`/`--per-page`/`--json`。
 
 评论与回复共享同一输出结构（`id`/`author`/`content`/`md_content`/`like_total`/`reply_total`/`created_at` 等）；404（讨论或评论不存在）返回 exit 3。
 

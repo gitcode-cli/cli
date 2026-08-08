@@ -76,3 +76,18 @@ func TestListRunValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestListRunNotFoundExit3(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	client := &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: http.StatusNotFound, Status: http.StatusText(http.StatusNotFound), Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"message":"not found"}`))}, nil
+	})}
+	ios, _, _, _ := iostreams.Test()
+	err := listRun(&ListOptions{IO: ios, HttpClient: httpFactory(client), Org: "my-org", Number: 999})
+	if err == nil {
+		t.Fatal("listRun() error = nil, want not-found")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitNotFound {
+		t.Fatalf("ExitCode = %d, want ExitNotFound(%d)", got, cmdutil.ExitNotFound)
+	}
+}

@@ -202,3 +202,26 @@ func splitQuery(query string) []string {
 	out = append(out, query[start:])
 	return out
 }
+
+func TestListRepoDiscussionsNoParamsOmitsQuery(t *testing.T) {
+	var gotQuery string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotQuery = req.URL.RawQuery
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+	if _, err := ListRepoDiscussions(client, "owner", "repo", nil); err != nil {
+		t.Fatalf("ListRepoDiscussions() error = %v", err)
+	}
+	if gotQuery != "" {
+		t.Fatalf("query = %q, want empty when no options", gotQuery)
+	}
+}
+
+func TestGetRepoDiscussionNotFoundReturnsError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+	if _, err := GetRepoDiscussion(client, "owner", "repo", 999); err == nil {
+		t.Fatal("GetRepoDiscussion() error = nil, want error for 404")
+	}
+}

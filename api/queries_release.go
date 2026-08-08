@@ -48,8 +48,9 @@ type AssetUploadURL struct {
 
 // ReleaseListOptions represents options for listing releases
 type ReleaseListOptions struct {
-	PerPage int `url:"per_page,omitempty"`
-	Page    int `url:"page,omitempty"`
+	PerPage   int    `url:"per_page,omitempty"`
+	Page      int    `url:"page,omitempty"`
+	Direction string `url:"direction,omitempty"`
 }
 
 // CreateReleaseOptions represents options for creating a release
@@ -92,7 +93,10 @@ func ListReleases(client *Client, owner, repo string, opts *ReleaseListOptions) 
 		return nil, err
 	}
 	// Sort by created_at descending so --limit returns the latest releases.
-	// The GitCode API does not guarantee sort order.
+	// Callers should set Direction="desc" so the API returns newest-first,
+	// letting --limit (mapped to per_page) receive the latest N releases.
+	// This client-side sort is a defense in depth: the GitCode API does not
+	// guarantee sort order even when direction is specified.
 	sort.Slice(releases, func(i, j int) bool {
 		return releases[i].CreatedAt.Time.After(releases[j].CreatedAt.Time)
 	})
@@ -378,17 +382,9 @@ func buildPath(base string, opts *ReleaseListOptions) string {
 	if opts == nil {
 		return base
 	}
-
-	params := ""
-	if opts.PerPage > 0 {
-		params = "?per_page=" + itoa64(int64(opts.PerPage))
-	}
-	if opts.Page > 0 {
-		if params != "" {
-			params += "&page=" + itoa64(int64(opts.Page))
-		} else {
-			params = "?page=" + itoa64(int64(opts.Page))
-		}
-	}
-	return base + params
+	return base + newQueryBuilder().
+		SetInt("per_page", opts.PerPage).
+		SetInt("page", opts.Page).
+		Set("direction", strings.TrimSpace(opts.Direction)).
+		String()
 }

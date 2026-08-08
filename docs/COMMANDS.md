@@ -1573,6 +1573,7 @@ gc release list -R infra-test/gctest1 --json
 ```
 
 说明：
+- `--limit`（默认 30）返回最新 N 个 release：CLI 向 API 请求 `direction=desc`（最新优先），客户端再按 `published_at`（缺失时回退 `created_at`）降序排序。
 - 文本输出中只有最新一个正式 release 会标记为 `(latest)`。
 - 其他正式 release 会标记为 `(published)`；草稿和预发布仍分别显示 `(draft)`、`(pre-release)`。
 

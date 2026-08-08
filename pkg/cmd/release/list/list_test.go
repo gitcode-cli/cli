@@ -334,3 +334,39 @@ func TestListRunUsesBaseRepoWhenRepoOmitted(t *testing.T) {
 		t.Fatalf("request path = %q, want /api/v5/repos/owner/repo/releases", gotPath)
 	}
 }
+
+// TestListRunRequestsDirectionDesc verifies that listRun requests the API with
+// direction=desc so --limit receives the latest releases (#256).
+func TestListRunRequestsDirectionDesc(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	f := cmdutil.TestFactory()
+	var gotQuery string
+	err := listRun(&ListOptions{
+		IO: f.IOStreams,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					gotQuery = req.URL.RawQuery
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Status:     http.StatusText(http.StatusOK),
+						Header:     make(http.Header),
+						Body:       io.NopCloser(strings.NewReader(`[]`)),
+					}, nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      5,
+	})
+	if err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+	if !strings.Contains(gotQuery, "direction=desc") {
+		t.Errorf("expected direction=desc in query, got %q", gotQuery)
+	}
+	if !strings.Contains(gotQuery, "per_page=5") {
+		t.Errorf("expected per_page=5 in query, got %q", gotQuery)
+	}
+}

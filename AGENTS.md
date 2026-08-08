@@ -320,6 +320,7 @@ gh run view <run-id> --log --job=<job-id>
 - 外部项目使用 AI 操作 GitCode 的说明以 `docs/AI-GUIDE.md` 为准，但该文档不定义本仓库内部开发流程
 - 代码或流程变化后必须同步检查相关文档
 - 实际命令测试只能使用 `infra-test/*`
+- 涉及 GitCode API 调用的代码改动（新增/修改 `api/` 包函数、端点实测报错排查）必须先查 `gc-api-doc` 参考仓（`git@gitcode.com:gitcode-cli/gc-api-doc.git`）确认端点/path/body，不类比 GitHub CLI、不猜语义、不绕过（如改用 curl+token 猜测）；详见 [开发工作流程 §5.9.B](./spec/workflows/development-workflow.md#59-横切编排资产)
 - 不得在 `main` 直接开发
 - 不得提交构建产物、评估输出或真实凭证
 - 不得在缺少验证记录、自检证据或独立执行主体评审的情况下宣称"已完成"

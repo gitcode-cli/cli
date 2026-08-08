@@ -137,3 +137,101 @@ func GetRepoDiscussion(client *Client, owner, repo string, number int) (*Discuss
 	}
 	return &d, nil
 }
+
+// DiscussionComment represents a GitCode discussion comment or comment reply.
+// Both the comment-list and reply-list endpoints return the same shape (per
+// the official OpenAPI), so a single struct covers both.
+type DiscussionComment struct {
+	ID         string `json:"id"`
+	CreatedAt  string `json:"created_at"`
+	Author     *User  `json:"author"`
+	Content    string `json:"content"`
+	MdContent  string `json:"md_content,omitempty"`
+	IsHide     int    `json:"is_hide"`
+	ReplyTotal int    `json:"reply_total"`
+	LikeTotal  int    `json:"like_total"`
+	IsLike     bool   `json:"is_like"`
+	IsDeleted  int    `json:"is_deleted"`
+	IsRemark   int    `json:"is_remark"`
+}
+
+// ListDiscussionCommentsOptions filters and paginates discussion comment
+// listing. Order applies to comment lists only (replies do not accept it).
+type ListDiscussionCommentsOptions struct {
+	Page    int
+	PerPage int
+	Order   string // time_asc, time_desc, hot_desc (comments only)
+}
+
+// ListOrgDiscussionComments lists comments on an organization discussion.
+// GET /api/v5/orgs/{org}/discuss/{number}/comment
+func ListOrgDiscussionComments(client *Client, org string, number int, opts *ListDiscussionCommentsOptions) ([]*DiscussionComment, error) {
+	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss/" + itoa(number) + "/comment"
+	endpoint = appendDiscussionCommentParams(endpoint, opts)
+	var comments []*DiscussionComment
+	if err := client.Get(endpoint, &comments); err != nil {
+		return nil, fmt.Errorf("failed to list org discussion comments: %w", err)
+	}
+	return comments, nil
+}
+
+// ListOrgDiscussionCommentReplies lists replies to a comment on an
+// organization discussion.
+// GET /api/v5/orgs/{org}/discuss/{number}/comment/{comment_id}/reply
+func ListOrgDiscussionCommentReplies(client *Client, org string, number int, commentID string, opts *ListDiscussionCommentsOptions) ([]*DiscussionComment, error) {
+	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss/" + itoa(number) + "/comment/" + url.PathEscape(commentID) + "/reply"
+	endpoint = appendDiscussionCommentParams(endpoint, opts)
+	var replies []*DiscussionComment
+	if err := client.Get(endpoint, &replies); err != nil {
+		return nil, fmt.Errorf("failed to list org discussion comment replies: %w", err)
+	}
+	return replies, nil
+}
+
+// ListRepoDiscussionComments lists comments on a repository (project-level)
+// discussion. GET /api/v5/repos/{owner}/{repo}/discuss/{number}/comment
+func ListRepoDiscussionComments(client *Client, owner, repo string, number int, opts *ListDiscussionCommentsOptions) ([]*DiscussionComment, error) {
+	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + itoa(number) + "/comment"
+	endpoint = appendDiscussionCommentParams(endpoint, opts)
+	var comments []*DiscussionComment
+	if err := client.Get(endpoint, &comments); err != nil {
+		return nil, fmt.Errorf("failed to list repo discussion comments: %w", err)
+	}
+	return comments, nil
+}
+
+// ListRepoDiscussionCommentReplies lists replies to a comment on a repository
+// (project-level) discussion.
+// GET /api/v5/repos/{owner}/{repo}/discuss/{number}/comment/{comment_id}/reply
+func ListRepoDiscussionCommentReplies(client *Client, owner, repo string, number int, commentID string, opts *ListDiscussionCommentsOptions) ([]*DiscussionComment, error) {
+	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + itoa(number) + "/comment/" + url.PathEscape(commentID) + "/reply"
+	endpoint = appendDiscussionCommentParams(endpoint, opts)
+	var replies []*DiscussionComment
+	if err := client.Get(endpoint, &replies); err != nil {
+		return nil, fmt.Errorf("failed to list repo discussion comment replies: %w", err)
+	}
+	return replies, nil
+}
+
+// appendDiscussionCommentParams appends page/per_page/order query params when
+// set. Order is included only when non-empty (callers for reply endpoints
+// leave it empty since the API does not accept order there).
+func appendDiscussionCommentParams(endpoint string, opts *ListDiscussionCommentsOptions) string {
+	if opts == nil {
+		return endpoint
+	}
+	values := url.Values{}
+	if opts.Page > 0 {
+		values.Set("page", itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		values.Set("per_page", itoa(opts.PerPage))
+	}
+	if opts.Order != "" {
+		values.Set("order", opts.Order)
+	}
+	if len(values) > 0 {
+		return endpoint + "?" + values.Encode()
+	}
+	return endpoint
+}

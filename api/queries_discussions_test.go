@@ -225,3 +225,87 @@ func TestGetRepoDiscussionNotFoundReturnsError(t *testing.T) {
 		t.Fatal("GetRepoDiscussion() error = nil, want error for 404")
 	}
 }
+
+func TestListOrgDiscussionCommentsBuildsPathAndParams(t *testing.T) {
+	var gotPath, gotQuery, gotMethod string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotQuery = req.URL.RawQuery
+		gotMethod = req.Method
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+	if _, err := ListOrgDiscussionComments(client, "my-org", 7, &ListDiscussionCommentsOptions{
+		Page: 1, PerPage: 50, Order: "hot_desc",
+	}); err != nil {
+		t.Fatalf("ListOrgDiscussionComments() error = %v", err)
+	}
+	if gotMethod != http.MethodGet {
+		t.Fatalf("method = %q, want GET", gotMethod)
+	}
+	if gotPath != "/api/v5/orgs/my-org/discuss/7/comment" {
+		t.Fatalf("path = %q, want /api/v5/orgs/my-org/discuss/7/comment", gotPath)
+	}
+	for _, want := range []string{"page=1", "per_page=50", "order=hot_desc"} {
+		if !containsParam(gotQuery, want) {
+			t.Fatalf("query = %q, want to contain %q", gotQuery, want)
+		}
+	}
+}
+
+func TestListOrgDiscussionCommentRepliesBuildsPath(t *testing.T) {
+	var gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		return authTestResponse(http.StatusOK, `[{"id":"c1","content":"reply","author":{"login":"alice"}}]`), nil
+	})
+	rs, err := ListOrgDiscussionCommentReplies(client, "my-org", 7, "c1", &ListDiscussionCommentsOptions{Page: 2})
+	if err != nil {
+		t.Fatalf("error = %v", err)
+	}
+	if gotPath != "/api/v5/orgs/my-org/discuss/7/comment/c1/reply" {
+		t.Fatalf("path = %q, want .../comment/c1/reply", gotPath)
+	}
+	if len(rs) != 1 || rs[0].ID != "c1" || rs[0].Content != "reply" {
+		t.Fatalf("replies = %+v, want id=c1 content=reply", rs)
+	}
+}
+
+func TestListRepoDiscussionCommentsBuildsPathAndParams(t *testing.T) {
+	var gotPath, gotQuery, gotMethod string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotQuery = req.URL.RawQuery
+		gotMethod = req.Method
+		return authTestResponse(http.StatusOK, `[{"id":"c","content":"hi","author":{"login":"bob"},"like_total":2,"reply_total":1}]`), nil
+	})
+	cs, err := ListRepoDiscussionComments(client, "owner", "repo", 3, &ListDiscussionCommentsOptions{Order: "time_desc"})
+	if err != nil {
+		t.Fatalf("error = %v", err)
+	}
+	if gotMethod != http.MethodGet {
+		t.Fatalf("method = %q, want GET", gotMethod)
+	}
+	if gotPath != "/api/v5/repos/owner/repo/discuss/3/comment" {
+		t.Fatalf("path = %q, want .../discuss/3/comment", gotPath)
+	}
+	if !containsParam(gotQuery, "order=time_desc") {
+		t.Fatalf("query = %q, want to contain order=time_desc", gotQuery)
+	}
+	if len(cs) != 1 || cs[0].ID != "c" || cs[0].LikeTotal != 2 {
+		t.Fatalf("comments = %+v, want id=c like_total=2", cs)
+	}
+}
+
+func TestListRepoDiscussionCommentRepliesBuildsPath(t *testing.T) {
+	var gotPath string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+	if _, err := ListRepoDiscussionCommentReplies(client, "owner", "repo", 3, "c1", nil); err != nil {
+		t.Fatalf("error = %v", err)
+	}
+	if gotPath != "/api/v5/repos/owner/repo/discuss/3/comment/c1/reply" {
+		t.Fatalf("path = %q, want .../discuss/3/comment/c1/reply", gotPath)
+	}
+}

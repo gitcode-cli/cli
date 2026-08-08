@@ -106,6 +106,51 @@ func TestViewRunJSON(t *testing.T) {
 	}
 }
 
+func TestViewRunNumberMustBePositive(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	ios, _, _, _ := iostreams.Test()
+	err := viewRun(&ViewOptions{
+		IO:         ios,
+		HttpClient: httpFactory(&http.Client{}),
+		Org:        "my-org",
+		Number:     0, // itoa(0) would otherwise build /discuss/30
+	})
+	if err == nil {
+		t.Fatal("viewRun() error = nil, want usage error for number < 1")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitUsage {
+		t.Fatalf("ExitCode = %d, want ExitUsage(%d)", got, cmdutil.ExitUsage)
+	}
+}
+
+func TestViewRunNilAuthorText(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	body := `{"id":"a","number":42,"title":"no author","md_content":"body","comment_total":0,"is_closed":0}`
+	client := &http.Client{
+		Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     http.StatusText(http.StatusOK),
+				Header:     make(http.Header),
+				Body:       io.NopCloser(strings.NewReader(body)),
+			}, nil
+		}),
+	}
+	ios, _, out, _ := iostreams.Test()
+	err := viewRun(&ViewOptions{
+		IO:         ios,
+		HttpClient: httpFactory(client),
+		Org:        "my-org",
+		Number:     42,
+	})
+	if err != nil {
+		t.Fatalf("viewRun() error = %v", err)
+	}
+	if !strings.Contains(out.String(), "no author") {
+		t.Fatalf("output = %q, want title even with nil author", out.String())
+	}
+}
+
 func TestViewRunNotFoundExit3(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	client := &http.Client{

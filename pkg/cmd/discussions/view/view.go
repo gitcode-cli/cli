@@ -72,6 +72,9 @@ func viewRun(opts *ViewOptions) error {
 	if opts.Org == "" {
 		return cmdutil.NewUsageError("--org is required")
 	}
+	if opts.Number < 1 {
+		return cmdutil.NewUsageError("discussion number must be a positive integer")
+	}
 
 	httpClient, err := opts.HttpClient()
 	if err != nil {

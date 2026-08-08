@@ -70,43 +70,19 @@ type ActionsListRunsOptions struct {
 func ListActionsRuns(client *Client, owner, repo string, opts *ActionsListRunsOptions) (*WorkflowRunsResponse, error) {
 	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runs"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Event != "" {
-			values.Set("event", opts.Event)
-		}
-		if opts.Status != "" {
-			values.Set("status", opts.Status)
-		}
-		if opts.Branch != "" {
-			values.Set("branch", opts.Branch)
-		}
-		if opts.Executor != "" {
-			values.Set("executor", opts.Executor)
-		}
-		if opts.PullRequestID != "" {
-			values.Set("pull_request_id", opts.PullRequestID)
-		}
-		if opts.WorkflowID != "" {
-			values.Set("workflow_id", opts.WorkflowID)
-		}
-		if opts.WorkflowName != "" {
-			values.Set("workflow_name", opts.WorkflowName)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if opts.StartTime > 0 {
-			values.Set("startTime", itoa64(opts.StartTime))
-		}
-		if opts.EndTime > 0 {
-			values.Set("endTime", itoa64(opts.EndTime))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("event", opts.Event).
+			Set("status", opts.Status).
+			Set("branch", opts.Branch).
+			Set("executor", opts.Executor).
+			Set("pull_request_id", opts.PullRequestID).
+			Set("workflow_id", opts.WorkflowID).
+			Set("workflow_name", opts.WorkflowName).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			SetInt64("startTime", opts.StartTime).
+			SetInt64("endTime", opts.EndTime).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -313,25 +289,13 @@ type ActionsListArtifactsOptions struct {
 func ListActionsArtifacts(client *Client, owner, repo string, opts *ActionsListArtifactsOptions) (*ArtifactsResponse, error) {
 	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/artifacts"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Name != "" {
-			values.Set("name", opts.Name)
-		}
-		if opts.Sort != "" {
-			values.Set("sort", opts.Sort)
-		}
-		if opts.Direction != "" {
-			values.Set("direction", opts.Direction)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("name", opts.Name).
+			Set("sort", opts.Sort).
+			Set("direction", opts.Direction).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -354,25 +318,13 @@ func ListActionsArtifacts(client *Client, owner, repo string, opts *ActionsListA
 func ListActionsRunArtifacts(client *Client, owner, repo, runID string, opts *ActionsListArtifactsOptions) (*ArtifactsResponse, error) {
 	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runs/" + url.PathEscape(runID) + "/artifacts"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Name != "" {
-			values.Set("name", opts.Name)
-		}
-		if opts.Sort != "" {
-			values.Set("sort", opts.Sort)
-		}
-		if opts.Direction != "" {
-			values.Set("direction", opts.Direction)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("name", opts.Name).
+			Set("sort", opts.Sort).
+			Set("direction", opts.Direction).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -531,19 +483,11 @@ type ListOrgRunnerGroupsOptions struct {
 func ListOrgRunnerGroups(client *Client, org string, opts *ListOrgRunnerGroupsOptions) (*RunnerGroupsResponse, error) {
 	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Keyword != "" {
-			values.Set("keyword", opts.Keyword)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("keyword", opts.Keyword).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -628,19 +572,11 @@ type ListRunnerGroupRunnersOptions struct {
 func ListRunnerGroupRunners(client *Client, org, runnerGroupID string, opts *ListRunnerGroupRunnersOptions) (*RunnersResponse, error) {
 	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups/" + url.PathEscape(runnerGroupID) + "/runners"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Keyword != "" {
-			values.Set("keyword", opts.Keyword)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("keyword", opts.Keyword).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -662,19 +598,11 @@ func ListRunnerGroupRunners(client *Client, org, runnerGroupID string, opts *Lis
 func ListRepoRunners(client *Client, owner, repo string, opts *ListRunnerGroupRunnersOptions) (*RunnersResponse, error) {
 	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runners"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Keyword != "" {
-			values.Set("keyword", opts.Keyword)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("keyword", opts.Keyword).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -709,19 +637,11 @@ type RunnerSetsResponse struct {
 func ListRunnerGroupRunnerSets(client *Client, org, runnerGroupID string, opts *ListRunnerGroupRunnersOptions) (*RunnerSetsResponse, error) {
 	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups/" + url.PathEscape(runnerGroupID) + "/runner-sets"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Keyword != "" {
-			values.Set("keyword", opts.Keyword)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("keyword", opts.Keyword).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -758,19 +678,11 @@ type SharedNamespacesResponse struct {
 func ListRunnerGroupSharedNamespaces(client *Client, org, runnerGroupID string, opts *ListRunnerGroupRunnersOptions) (*SharedNamespacesResponse, error) {
 	endpoint := "/api/v8/orgs/" + url.PathEscape(org) + "/actions/runner-groups/" + url.PathEscape(runnerGroupID) + "/shared-namespaces"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Keyword != "" {
-			values.Set("keyword", opts.Keyword)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("keyword", opts.Keyword).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -792,19 +704,11 @@ func ListRunnerGroupSharedNamespaces(client *Client, org, runnerGroupID string, 
 func ListRepoRunnerSets(client *Client, owner, repo string, opts *ListRunnerGroupRunnersOptions) (*RunnerSetsResponse, error) {
 	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runner-sets"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Keyword != "" {
-			values.Set("keyword", opts.Keyword)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("keyword", opts.Keyword).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -826,19 +730,11 @@ func ListRepoRunnerSets(client *Client, owner, repo string, opts *ListRunnerGrou
 func ListRepoSharedRunners(client *Client, owner, repo string, opts *ListRunnerGroupRunnersOptions) (*RunnersResponse, error) {
 	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/runners/shared-runners"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Keyword != "" {
-			values.Set("keyword", opts.Keyword)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("keyword", opts.Keyword).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)
@@ -860,19 +756,11 @@ func ListRepoSharedRunners(client *Client, owner, repo string, opts *ListRunnerG
 func ListRepoSharedRunnerSets(client *Client, owner, repo string, opts *ListRunnerGroupRunnersOptions) (*RunnerSetsResponse, error) {
 	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/shared-runner-sets"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Keyword != "" {
-			values.Set("keyword", opts.Keyword)
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			Set("keyword", opts.Keyword).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 
 	resp, err := client.RawREST("GET", endpoint, nil, nil)

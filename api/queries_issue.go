@@ -125,57 +125,23 @@ func ListRepoIssues(client *Client, owner, repo string, opts *IssueListOptions) 
 
 	// Build query parameters
 	if opts != nil {
-		params := url.Values{}
-
-		if opts.State != "" {
-			params.Set("state", opts.State)
-		}
-		if opts.Labels != "" {
-			params.Set("labels", opts.Labels)
-		}
-		if opts.Sort != "" {
-			params.Set("sort", opts.Sort)
-		}
-		if opts.Direction != "" {
-			params.Set("direction", opts.Direction)
-		}
-		if opts.Since != "" {
-			params.Set("since", opts.Since)
-		}
-		if opts.PerPage > 0 {
-			params.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			params.Set("page", itoa(opts.Page))
-		}
-		if opts.Milestone != "" {
-			params.Set("milestone", opts.Milestone)
-		}
-		if opts.Assignee != "" {
-			params.Set("assignee", opts.Assignee)
-		}
-		if opts.Creator != "" {
-			params.Set("creator", opts.Creator)
-		}
-		if opts.CreatedAfter != "" {
-			params.Set("created_after", opts.CreatedAfter)
-		}
-		if opts.CreatedBefore != "" {
-			params.Set("created_before", opts.CreatedBefore)
-		}
-		if opts.UpdatedAfter != "" {
-			params.Set("updated_after", opts.UpdatedAfter)
-		}
-		if opts.UpdatedBefore != "" {
-			params.Set("updated_before", opts.UpdatedBefore)
-		}
-		if opts.Search != "" {
-			params.Set("search", opts.Search)
-		}
-
-		if len(params) > 0 {
-			path = path + "?" + params.Encode()
-		}
+		path += newQueryBuilder().
+			Set("state", opts.State).
+			Set("labels", opts.Labels).
+			Set("sort", opts.Sort).
+			Set("direction", opts.Direction).
+			Set("since", opts.Since).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			Set("milestone", opts.Milestone).
+			Set("assignee", opts.Assignee).
+			Set("creator", opts.Creator).
+			Set("created_after", opts.CreatedAfter).
+			Set("created_before", opts.CreatedBefore).
+			Set("updated_after", opts.UpdatedAfter).
+			Set("updated_before", opts.UpdatedBefore).
+			Set("search", opts.Search).
+			String()
 	}
 
 	var issues []Issue
@@ -452,22 +418,12 @@ func isIssueOpen(issue *Issue) bool {
 func ListIssueComments(client *Client, owner, repo string, number int, opts *IssueCommentListOptions) ([]IssueComment, error) {
 	path := "/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/comments"
 	if opts != nil {
-		params := url.Values{}
-		if opts.Page > 0 {
-			params.Set("page", itoa(opts.Page))
-		}
-		if opts.PerPage > 0 {
-			params.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Order != "" {
-			params.Set("order", opts.Order)
-		}
-		if opts.Since != "" {
-			params.Set("since", opts.Since)
-		}
-		if len(params) > 0 {
-			path += "?" + params.Encode()
-		}
+		path += newQueryBuilder().
+			SetInt("page", opts.Page).
+			SetInt("per_page", opts.PerPage).
+			Set("order", opts.Order).
+			Set("since", opts.Since).
+			String()
 	}
 
 	var comments []IssueComment
@@ -539,16 +495,10 @@ type LabelListOptions struct {
 func ListRepoLabels(client *Client, owner, repo string, opts *LabelListOptions) ([]Label, error) {
 	path := "/repos/" + owner + "/" + repo + "/labels"
 	if opts != nil {
-		values := url.Values{}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			path += "?" + values.Encode()
-		}
+		path += newQueryBuilder().
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 	var labels []Label
 	err := client.Get(path, &labels)
@@ -691,16 +641,10 @@ type MilestoneListOptions struct {
 func ListRepoMilestones(client *Client, owner, repo string, opts *MilestoneListOptions) ([]Milestone, error) {
 	path := "/repos/" + owner + "/" + repo + "/milestones"
 	if opts != nil {
-		values := url.Values{}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if len(values) > 0 {
-			path += "?" + values.Encode()
-		}
+		path += newQueryBuilder().
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
 	}
 	var milestones []Milestone
 	err := client.Get(path, &milestones)

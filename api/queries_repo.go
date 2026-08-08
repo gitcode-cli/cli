@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/url"
-	"strconv"
 	"strings"
 )
 
@@ -218,33 +217,15 @@ func buildRepoListPath(base string, opts *RepoListOptions) string {
 	if opts == nil {
 		return base
 	}
-
-	values := url.Values{}
-	if v := strings.TrimSpace(opts.Visibility); v != "" {
-		values.Set("visibility", v)
-	}
-	if v := strings.TrimSpace(opts.Affiliation); v != "" {
-		values.Set("affiliation", v)
-	}
-	if v := strings.TrimSpace(opts.Type); v != "" {
-		values.Set("type", v)
-	}
-	if v := strings.TrimSpace(opts.Sort); v != "" {
-		values.Set("sort", v)
-	}
-	if v := strings.TrimSpace(opts.Direction); v != "" {
-		values.Set("direction", v)
-	}
-	if opts.PerPage > 0 {
-		values.Set("per_page", strconv.Itoa(opts.PerPage))
-	}
-	if opts.Page > 0 {
-		values.Set("page", strconv.Itoa(opts.Page))
-	}
-	if len(values) == 0 {
-		return base
-	}
-	return base + "?" + values.Encode()
+	return base + newQueryBuilder().
+		Set("visibility", strings.TrimSpace(opts.Visibility)).
+		Set("affiliation", strings.TrimSpace(opts.Affiliation)).
+		Set("type", strings.TrimSpace(opts.Type)).
+		Set("sort", strings.TrimSpace(opts.Sort)).
+		Set("direction", strings.TrimSpace(opts.Direction)).
+		SetInt("per_page", opts.PerPage).
+		SetInt("page", opts.Page).
+		String()
 }
 
 func itoa(i int) string {

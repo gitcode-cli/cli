@@ -309,9 +309,7 @@ func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error
 // GetReleaseUploadURL fetches the upload URL for a release asset
 func GetReleaseUploadURL(client *Client, owner, repo, tag, filename string) (*AssetUploadURL, error) {
 	escapedTag := url.PathEscape(tag)
-	values := url.Values{}
-	values.Set("file_name", filename)
-	path := "/repos/" + owner + "/" + repo + "/releases/" + escapedTag + "/upload_url?" + values.Encode()
+	path := "/repos/" + owner + "/" + repo + "/releases/" + escapedTag + "/upload_url" + newQueryBuilder().Set("file_name", filename).String()
 
 	var result AssetUploadURL
 	err := client.Get(path, &result)

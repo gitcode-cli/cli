@@ -58,6 +58,7 @@ func TestListRunText(t *testing.T) {
 		IO:         ios,
 		HttpClient: httpFactory(client),
 		Org:        "my-org",
+		Limit:      30,
 	})
 	if err != nil {
 		t.Fatalf("listRun() error = %v", err)
@@ -91,6 +92,7 @@ func TestListRunJSON(t *testing.T) {
 		IO:         ios,
 		HttpClient: httpFactory(client),
 		Org:        "my-org",
+		Limit:      30,
 		JSON:       true,
 	})
 	if err != nil {
@@ -118,6 +120,7 @@ func TestListRunEmpty(t *testing.T) {
 		IO:         ios,
 		HttpClient: httpFactory(client),
 		Org:        "my-org",
+		Limit:      30,
 	})
 	if err != nil {
 		t.Fatalf("listRun() error = %v", err)
@@ -130,11 +133,12 @@ func TestListRunEmpty(t *testing.T) {
 func TestListRunValidationErrors(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	for _, opts := range []ListOptions{
-		{Org: "", Page: 1},                // missing org
-		{Org: "o", Page: -1},              // page < 0
-		{Org: "o", PerPage: 101},          // per_page > 100
-		{Org: "o", Sort: "bogus"},         // bad sort
-		{Org: "o", Direction: "sideways"}, // bad direction
+		{Org: "", Page: 1, Limit: 30},                // missing org
+		{Org: "o", Page: -1, Limit: 30},              // page < 0
+		{Org: "o", Limit: 0, Page: 1},                // limit <= 0
+		{Org: "o", PerPage: 101, Limit: 30},          // per_page > 100
+		{Org: "o", Sort: "bogus", Limit: 30},         // bad sort
+		{Org: "o", Direction: "sideways", Limit: 30}, // bad direction
 	} {
 		err := listRun(&opts)
 		if err == nil {

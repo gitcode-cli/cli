@@ -21,6 +21,8 @@ type ListOptions struct {
 
 	Org string
 
+	Limit     int
+	LimitSet  bool
 	Page      int
 	PerPage   int
 	Sort      string
@@ -63,12 +65,14 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			if runF != nil {
 				return runF(opts)
 			}
+			opts.LimitSet = cmd.Flags().Changed("limit")
 			return listRun(opts)
 		},
 	}
 
 	cmd.Flags().StringVar(&opts.Org, "org", "", "Organization path (required)")
 	cmd.MarkFlagRequired("org")
+	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of discussions to list")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number (1-based)")
 	cmd.Flags().IntVar(&opts.PerPage, "per-page", 0, "Page size (max 100, default 20)")
 	cmd.Flags().StringVar(&opts.Sort, "sort", "", "Sort field: created (default) or comment_size")
@@ -82,6 +86,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 func listRun(opts *ListOptions) error {
 	if opts.Org == "" {
 		return cmdutil.NewUsageError("--org is required")
+	}
+	if opts.Limit <= 0 {
+		return cmdutil.NewUsageError("--limit must be greater than 0")
 	}
 	if opts.Page < 0 {
 		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
@@ -115,6 +122,7 @@ func listRun(opts *ListOptions) error {
 	if err != nil {
 		return err
 	}
+	discussions = trimDiscussions(discussions, opts)
 
 	if opts.JSON {
 		return cmdutil.WriteJSON(opts.IO.Out, discussions)
@@ -122,4 +130,14 @@ func listRun(opts *ListOptions) error {
 
 	render.PrintDiscussions(opts.IO, discussions)
 	return nil
+}
+
+// trimDiscussions caps the result to --limit. Unlike the --limit-only commands
+// (where --per-page defaults to --limit), discussions --per-page defaults to
+// the API default (20), so the client-side cap is applied after fetch.
+func trimDiscussions(discussions []*api.Discussion, opts *ListOptions) []*api.Discussion {
+	if len(discussions) > opts.Limit {
+		return discussions[:opts.Limit]
+	}
+	return discussions
 }

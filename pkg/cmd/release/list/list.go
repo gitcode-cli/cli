@@ -93,7 +93,8 @@ func listRun(opts *ListOptions) error {
 
 	// List releases
 	releases, err := api.ListReleases(client, owner, repo, &api.ReleaseListOptions{
-		PerPage: opts.Limit,
+		PerPage:   opts.Limit,
+		Direction: "desc",
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list releases: %w", err)

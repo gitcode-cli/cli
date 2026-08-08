@@ -427,3 +427,109 @@ func TestIsNotFoundError(t *testing.T) {
 		})
 	}
 }
+
+// TestListReleases_SendsDirectionWhenSet verifies that ListReleases sends the
+// direction query parameter when ReleaseListOptions.Direction is set, so the
+// API returns newest releases first (#256).
+func TestListReleases_SendsDirectionWhenSet(t *testing.T) {
+	var gotURL string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotURL = req.URL.String()
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := ListReleases(client, "owner", "repo", &ReleaseListOptions{
+		PerPage:   5,
+		Direction: "desc",
+	})
+	if err != nil {
+		t.Fatalf("ListReleases() error = %v", err)
+	}
+
+	if !strings.Contains(gotURL, "direction=desc") {
+		t.Errorf("expected direction=desc in URL, got %s", gotURL)
+	}
+	if !strings.Contains(gotURL, "per_page=5") {
+		t.Errorf("expected per_page=5 in URL, got %s", gotURL)
+	}
+}
+
+// TestListReleases_OmitsDirectionWhenEmpty verifies that an empty Direction
+// does not append direction to the query string (#256).
+func TestListReleases_OmitsDirectionWhenEmpty(t *testing.T) {
+	var gotURL string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotURL = req.URL.String()
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := ListReleases(client, "owner", "repo", &ReleaseListOptions{
+		PerPage: 5,
+	})
+	if err != nil {
+		t.Fatalf("ListReleases() error = %v", err)
+	}
+
+	if strings.Contains(gotURL, "direction") {
+		t.Errorf("expected no direction in URL when empty, got %s", gotURL)
+	}
+}
+
+// TestBuildPath_QueryParams is a table-driven test for buildPath parameter
+// assembly, covering nil, empty, and combined options including Direction.
+func TestBuildPath_QueryParams(t *testing.T) {
+	tests := []struct {
+		name string
+		base string
+		opts *ReleaseListOptions
+		want string
+	}{
+		{
+			name: "nil opts",
+			base: "/repos/o/r/releases",
+			opts: nil,
+			want: "/repos/o/r/releases",
+		},
+		{
+			name: "empty opts",
+			base: "/repos/o/r/releases",
+			opts: &ReleaseListOptions{},
+			want: "/repos/o/r/releases",
+		},
+		{
+			name: "per_page only",
+			base: "/repos/o/r/releases",
+			opts: &ReleaseListOptions{PerPage: 5},
+			want: "/repos/o/r/releases?per_page=5",
+		},
+		{
+			name: "per_page and direction",
+			base: "/repos/o/r/releases",
+			opts: &ReleaseListOptions{PerPage: 5, Direction: "desc"},
+			want: "/repos/o/r/releases?direction=desc&per_page=5",
+		},
+		{
+			name: "all params",
+			base: "/repos/o/r/releases",
+			opts: &ReleaseListOptions{PerPage: 10, Page: 2, Direction: "desc"},
+			want: "/repos/o/r/releases?direction=desc&page=2&per_page=10",
+		},
+		{
+			name: "zero per_page omitted",
+			base: "/repos/o/r/releases",
+			opts: &ReleaseListOptions{PerPage: 0, Direction: "desc"},
+			want: "/repos/o/r/releases?direction=desc",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildPath(tt.base, tt.opts)
+			if got != tt.want {
+				t.Errorf("buildPath() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

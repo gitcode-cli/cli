@@ -986,6 +986,46 @@ gc discussions project view 42 -R owner/repo --json
 - `-R`（必填）：仓库。位置参数为讨论编号。
 - `--json`：原样输出讨论对象（含 `md_content` 正文）。
 
+### discussions comments list - 列出组织讨论评论
+
+组织讨论评论，调用 `GET /api/v5/orgs/{org}/discuss/{number}/comment`。
+
+```bash
+gc discussions comments list 42 --org my-org
+gc discussions comments list 42 --org my-org --order hot_desc --json
+```
+
+说明：`--org`（必填）；位置参数为讨论编号；`--order`（time_asc/time_desc/hot_desc）；`--page`/`--per-page`；`--json`。
+
+### discussions comments replies - 列出组织讨论评论回复
+
+```bash
+gc discussions comments replies 42 <comment-id> --org my-org
+```
+
+说明：两个位置参数（讨论编号 + comment-id）；`--org`（必填）；`--page`/`--per-page`；`--json`。
+
+### discussions project comments list - 列出仓库讨论评论
+
+仓库讨论评论，调用 `GET /api/v5/repos/{owner}/{repo}/discuss/{number}/comment`。
+
+```bash
+gc discussions project comments list 42 -R owner/repo
+gc discussions project comments list 42 -R owner/repo --order time_desc --json
+```
+
+说明：`-R`（必填）；位置参数为讨论编号；`--order`/`--page`/`--per-page`/`--json`。
+
+### discussions project comments replies - 列出仓库讨论评论回复
+
+```bash
+gc discussions project comments replies 42 <comment-id> -R owner/repo
+```
+
+说明：两个位置参数（讨论编号 + comment-id）；`-R`（必填）；`--page`/`--per-page`/`--json`。
+
+评论与回复共享同一输出结构（`id`/`author`/`content`/`md_content`/`like_total`/`reply_total`/`created_at` 等）；404（讨论或评论不存在）返回 exit 3。
+
 ---
 
 ## Pull Request 命令 (pr)

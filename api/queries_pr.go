@@ -169,36 +169,16 @@ func buildPRListPath(base string, opts *PRListOptions) string {
 	if opts == nil {
 		return base
 	}
-
-	values := url.Values{}
-	if opts.State != "" {
-		values.Set("state", opts.State)
-	}
-	if opts.Head != "" {
-		values.Set("head", opts.Head)
-	}
-	if opts.Base != "" {
-		values.Set("base", opts.Base)
-	}
-	if opts.Sort != "" {
-		values.Set("sort", opts.Sort)
-	}
-	if opts.Direction != "" {
-		values.Set("direction", opts.Direction)
-	}
-	if opts.PerPage > 0 {
-		values.Set("per_page", itoa(opts.PerPage))
-	}
-	if opts.Page > 0 {
-		values.Set("page", itoa(opts.Page))
-	}
-	if opts.Milestone != "" {
-		values.Set("milestone", opts.Milestone)
-	}
-	if len(values) == 0 {
-		return base
-	}
-	return base + "?" + values.Encode()
+	return base + newQueryBuilder().
+		Set("state", opts.State).
+		Set("head", opts.Head).
+		Set("base", opts.Base).
+		Set("sort", opts.Sort).
+		Set("direction", opts.Direction).
+		SetInt("per_page", opts.PerPage).
+		SetInt("page", opts.Page).
+		Set("milestone", opts.Milestone).
+		String()
 }
 
 // GetPullRequest fetches a PR by number
@@ -436,11 +416,8 @@ func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment
 	for page := 1; ; page++ {
 		var comments []PRComment
 		path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments"
-		values := url.Values{}
-		values.Set("per_page", itoa(perPage))
-		values.Set("page", itoa(page))
 
-		err := client.Get(path+"?"+values.Encode(), &comments)
+		err := client.Get(path+newQueryBuilder().SetInt("per_page", perPage).SetInt("page", page).String(), &comments)
 		if err != nil {
 			return nil, err
 		}
@@ -567,10 +544,7 @@ func ListPRCommits(client *Client, owner, repo string, number int) ([]Commit, er
 	var all []Commit
 	for page := 1; ; page++ {
 		var commits []Commit
-		values := url.Values{}
-		values.Set("per_page", itoa(perPage))
-		values.Set("page", itoa(page))
-		err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/commits?"+values.Encode(), &commits)
+		err := client.Get("/repos/"+owner+"/"+repo+"/pulls/"+itoa(number)+"/commits"+newQueryBuilder().SetInt("per_page", perPage).SetInt("page", page).String(), &commits)
 		if err != nil {
 			return nil, err
 		}

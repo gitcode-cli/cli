@@ -50,25 +50,13 @@ type ListOrgDiscussionsOptions struct {
 func ListOrgDiscussions(client *Client, org string, opts *ListOrgDiscussionsOptions) ([]*Discussion, error) {
 	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Sort != "" {
-			values.Set("sort", opts.Sort)
-		}
-		if opts.Direction != "" {
-			values.Set("direction", opts.Direction)
-		}
-		if opts.Search != "" {
-			values.Set("search", opts.Search)
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			SetInt("page", opts.Page).
+			SetInt("per_page", opts.PerPage).
+			Set("sort", opts.Sort).
+			Set("direction", opts.Direction).
+			Set("search", opts.Search).
+			String()
 	}
 
 	var discussions []*Discussion
@@ -98,25 +86,13 @@ func GetOrgDiscussion(client *Client, org string, number int) (*Discussion, erro
 func ListRepoDiscussions(client *Client, owner, repo string, opts *ListOrgDiscussionsOptions) ([]*Discussion, error) {
 	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss"
 	if opts != nil {
-		values := url.Values{}
-		if opts.Page > 0 {
-			values.Set("page", itoa(opts.Page))
-		}
-		if opts.PerPage > 0 {
-			values.Set("per_page", itoa(opts.PerPage))
-		}
-		if opts.Sort != "" {
-			values.Set("sort", opts.Sort)
-		}
-		if opts.Direction != "" {
-			values.Set("direction", opts.Direction)
-		}
-		if opts.Search != "" {
-			values.Set("search", opts.Search)
-		}
-		if len(values) > 0 {
-			endpoint += "?" + values.Encode()
-		}
+		endpoint += newQueryBuilder().
+			SetInt("page", opts.Page).
+			SetInt("per_page", opts.PerPage).
+			Set("sort", opts.Sort).
+			Set("direction", opts.Direction).
+			Set("search", opts.Search).
+			String()
 	}
 
 	var discussions []*Discussion
@@ -220,18 +196,9 @@ func appendDiscussionCommentParams(endpoint string, opts *ListDiscussionComments
 	if opts == nil {
 		return endpoint
 	}
-	values := url.Values{}
-	if opts.Page > 0 {
-		values.Set("page", itoa(opts.Page))
-	}
-	if opts.PerPage > 0 {
-		values.Set("per_page", itoa(opts.PerPage))
-	}
-	if opts.Order != "" {
-		values.Set("order", opts.Order)
-	}
-	if len(values) > 0 {
-		return endpoint + "?" + values.Encode()
-	}
-	return endpoint
+	return endpoint + newQueryBuilder().
+		SetInt("page", opts.Page).
+		SetInt("per_page", opts.PerPage).
+		Set("order", opts.Order).
+		String()
 }

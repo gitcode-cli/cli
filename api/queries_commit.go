@@ -3,8 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"strconv"
 )
 
 // RepositoryCommit represents a detailed commit from the commits API
@@ -101,24 +99,12 @@ func buildCommitListPath(base string, opts *CommitListOptions) string {
 	if opts == nil {
 		return base
 	}
-
-	values := url.Values{}
-	if opts.Path != "" {
-		values.Set("path", opts.Path)
-	}
-	if opts.SHA != "" {
-		values.Set("sha", opts.SHA)
-	}
-	if opts.Page > 0 {
-		values.Set("page", strconv.Itoa(opts.Page))
-	}
-	if opts.PerPage > 0 {
-		values.Set("per_page", strconv.Itoa(opts.PerPage))
-	}
-	if len(values) == 0 {
-		return base
-	}
-	return base + "?" + values.Encode()
+	return base + newQueryBuilder().
+		Set("path", opts.Path).
+		Set("sha", opts.SHA).
+		SetInt("page", opts.Page).
+		SetInt("per_page", opts.PerPage).
+		String()
 }
 
 // CommitComment represents a commit comment

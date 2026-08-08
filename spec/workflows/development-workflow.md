@@ -284,11 +284,11 @@ CI 因环境原因（如 GitCode Actions 或 GitHub 镜像仓不可达）无法�
 
 修复涉及 GitCode REST API 调用（新增/修改 api 包函数、端点实测报错）时，先查官方 OpenAPI 真相源再写代码，不类比 GitHub CLI、不猜语义。
 
-- 参考仓：`git@gitcode.com:gitcode-cli/gc-api-doc.git`（官方 GitCode OpenAPI 全集）。
-- 查证路径：`docs/api/<domain>/`（按领域分目录的端点文档）+ `data/official/openapi.json`（结构化 path/method/body schema）。
+- 参考仓：`api-doc/` submodule（`git submodule update --init` 获取，官方 GitCode OpenAPI 全集；锁定 commit，需定期 `git submodule update --remote api-doc` sync）；submodule 不可达时 fallback 临时 clone `git@gitcode.com:gitcode-cli/gc-api-doc.git`。
+- 查证路径：`api-doc/docs/api/<domain>/`（按领域分目录的端点文档）+ `api-doc/data/official/openapi.json`（结构化 path/method/body schema）。
 - 适用场景：现有 api 函数端点实测 404/400、body 形状不确定、新增端点调用、path/method 与官方语义存疑。
 - 不适用：纯本地重构、不涉及 API 调用的改动。
-- 仓不可达时：报告用户人工解决，不得自行绕过（如改用 curl+token 猜测）。
+- 仓不可达时：先确认 `git submodule update --init api-doc`；仍不可达报告用户人工解决，不得自行绕过（如改用 curl+token 猜测）。
 
 > 完整实例见 [Example/cases/delivery-notify-lark.md](../../Example/cases/delivery-notify-lark.md)（Issue #475→PR #448：v1 用 `/merge_requests/` 实测 404，查 `gc-api-doc` 确认官方 `/pulls/{n}/labels` + 裸 JSON 数组 body 后救活）。
 

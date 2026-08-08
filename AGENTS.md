@@ -53,6 +53,7 @@
 | `issues-plan/` | 阶段说明（可能滞后，非事实源） |
 | `gc_cli/` | Python wheel 包装层，分发内置全平台二进制 |
 | `npm/` | npm 包包装层（`@gitcode-cli/cli`），Node wrapper + 内置多平台二进制 + `install` 引导 |
+| `api-doc/` | gc-api-doc submodule 副本（GitCode API 端点/path/body 权威真相源，§5.9.B 查证用；锁定 commit，需定期 `git submodule update --remote api-doc` sync）|
 
 ### 2.2 命令结构约定
 
@@ -66,7 +67,7 @@
 - `api/queries_*.go`：按领域分组的查询函数（issue、pr、repo、commit、release、label_milestone、user）
 - `api/flexible.go`：灵活字段解析
 - `api/time.go`：时间解析与格式化
-- 官方 OpenAPI 参考仓：`git@gitcode.com:gitcode-cli/gc-api-doc.git`（端点/path/body 权威真相源，修复涉及 API 调用时先查证，见 [开发工作流程 §5.9.B](./spec/workflows/development-workflow.md#59-横切编排资产)）
+- 官方 OpenAPI 参考仓：`api-doc/` submodule（`git submodule update --init` 获取；锁定 commit，需定期 `git submodule update --remote api-doc` sync），端点/path/body 权威真相源；仓不可达时 fallback 临时 clone `git@gitcode.com:gitcode-cli/gc-api-doc.git`。修复涉及 API 调用时先查证，见 [开发工作流程 §5.9.B](./spec/workflows/development-workflow.md#59-横切编排资产)
 
 ### 2.4 文档分层
 
@@ -320,7 +321,7 @@ gh run view <run-id> --log --job=<job-id>
 - 外部项目使用 AI 操作 GitCode 的说明以 `docs/AI-GUIDE.md` 为准，但该文档不定义本仓库内部开发流程
 - 代码或流程变化后必须同步检查相关文档
 - 实际命令测试只能使用 `infra-test/*`
-- 涉及 GitCode API 调用的代码改动（新增/修改 `api/` 包函数、端点实测报错排查）必须先查 `gc-api-doc` 参考仓（`git@gitcode.com:gitcode-cli/gc-api-doc.git`）确认端点/path/body，不类比 GitHub CLI、不猜语义、不绕过（如改用 curl+token 猜测）；详见 [开发工作流程 §5.9.B](./spec/workflows/development-workflow.md#59-横切编排资产)
+- 涉及 GitCode API 调用的代码改动（新增/修改 `api/` 包函数、端点实测报错排查）必须先查 `api-doc/` submodule（`git submodule update --init` 后本地可读；锁定 commit 可能滞后，需定期 `git submodule update --remote api-doc` sync）确认端点/path/body，不类比 GitHub CLI、不猜语义、不绕过（如改用 curl+token 猜测）；详见 [开发工作流程 §5.9.B](./spec/workflows/development-workflow.md#59-横切编排资产)
 - 不得在 `main` 直接开发
 - 不得提交构建产物、评估输出或真实凭证
 - 不得在缺少验证记录、自检证据或独立执行主体评审的情况下宣称"已完成"

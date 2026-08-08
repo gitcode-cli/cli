@@ -32,6 +32,7 @@
 | GitCode 原生 CI 状态与结果 | GitCode Actions run（通过 `gc actions` 获取） | 是 | GitCode PR 的 Linux 自动化事实 |
 | GitHub 镜像 CI 状态与结果 | GitHub Actions run（通过 `gh run view` 获取） | 是 | 跨平台自动化事实 |
 | CI 工作流定义 | `.gitcode/workflows/ci.yml`、`.github/workflows/ci.yml` + `spec/delivery/ci-workflows.md` | 是 | workflow 定义行为，spec 定义平台边界 |
+| GitCode API 端点/path/body | `api-doc/`（gc-api-doc submodule 副本）+ 远端 `gitcode-cli/gc-api-doc` 仓 | 有条件地是 | submodule 锁定特定 commit，需定期 `git submodule update --remote api-doc` sync；查证时若与远端实测不符，以远端平台实测为准（判定优先级第 3）|
 
 ## 判定优先级
 
@@ -51,6 +52,7 @@
 - 不得把 `docs/AI-GUIDE.md` 当成 gitcode-cli 仓库内部开发流程规范
 - 不得把已废弃的 `.ai/skills/` 或客户端本地 `.claude/skills/`、`.codex/skills/` 当成本仓库的规则源
 - 判断交付完成度时，必须检查远端平台事实和 `origin/main`
+- 查证 API 端点/path/body 时以 `api-doc/` submodule 为参考；若与远端实测行为不符，以远端平台实测为准（submodule 锁定 commit 可能滞后于平台）
 
 ## 下一步去看哪里
 

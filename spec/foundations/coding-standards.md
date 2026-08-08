@@ -202,7 +202,7 @@ func SetFlagEnum(cmd *cobra.Command, name string, values ...string) {
 
 ### API 调用一致性
 - 涉及 GitCode REST API 调用的代码，端点/path/method/body 须与官方 OpenAPI 真相源一致，不类比 GitHub CLI、不猜语义。
-- 官方 OpenAPI 参考仓：`git@gitcode.com:gitcode-cli/gc-api-doc.git`（结构化定义在 `data/official/openapi.json`，按领域分目录的端点文档在 `docs/api/<domain>/`）。
+- 官方 OpenAPI 参考仓：`api-doc/` submodule（`git submodule update --init` 获取；锁定 commit，需定期 `git submodule update --remote api-doc` sync）；submodule 不可达时 fallback 临时 clone `git@gitcode.com:gitcode-cli/gc-api-doc.git`。结构化定义在 `api-doc/data/official/openapi.json`，按领域分目录的端点文档在 `api-doc/docs/api/<domain>/`。
 - 现有 `api/` 包函数端点实测报错（404/400）或 body 形状不确定时，以参考仓为准修正，不得绕过（如改用 curl+token 猜测）。
 - 详细流程要求见 [开发工作流程 §5.9.B](../workflows/development-workflow.md#59-横切编排资产)。
 

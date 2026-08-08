@@ -385,6 +385,6 @@ func buildPath(base string, opts *ReleaseListOptions) string {
 	return base + newQueryBuilder().
 		SetInt("per_page", opts.PerPage).
 		SetInt("page", opts.Page).
-		Set("direction", opts.Direction).
+		Set("direction", strings.TrimSpace(opts.Direction)).
 		String()
 }

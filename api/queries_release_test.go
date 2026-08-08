@@ -505,6 +505,18 @@ func TestBuildPath_QueryParams(t *testing.T) {
 			want: "/repos/o/r/releases?per_page=5",
 		},
 		{
+			name: "page only",
+			base: "/repos/o/r/releases",
+			opts: &ReleaseListOptions{Page: 2},
+			want: "/repos/o/r/releases?page=2",
+		},
+		{
+			name: "direction trims whitespace",
+			base: "/repos/o/r/releases",
+			opts: &ReleaseListOptions{Direction: "  desc  "},
+			want: "/repos/o/r/releases?direction=desc",
+		},
+		{
 			name: "per_page and direction",
 			base: "/repos/o/r/releases",
 			opts: &ReleaseListOptions{PerPage: 5, Direction: "desc"},

@@ -955,6 +955,37 @@ gc discussions view 42 --org my-org --json
 - `--org`（必填）：组织 path。位置参数为讨论编号。
 - `--json`：原样输出讨论对象（含 `md_content` 正文）。
 
+### discussions project list - 列出仓库讨论
+
+仓库（项目级）讨论，调用 GitCode v5 API（`GET /api/v5/repos/{owner}/{repo}/discuss`），参数与组织讨论一致。
+
+```bash
+# 列出仓库讨论
+gc discussions project list -R owner/repo
+
+# 搜索 / 排序 / 分页
+gc discussions project list -R owner/repo --search "release" --sort comment_size --direction desc --page 2 --per-page 50
+
+# 输出 JSON
+gc discussions project list -R owner/repo --json
+```
+
+说明：
+- `-R`（必填）：仓库（owner/repo），在当前 Git 仓库目录执行时可省略自动推断。
+- `--page`/`--per-page`/`--sort`/`--direction`/`--search`：与 `discussions list` 同义。
+- `--json`：原样输出讨论数组。
+
+### discussions project view - 查看仓库讨论
+
+```bash
+gc discussions project view 42 -R owner/repo
+gc discussions project view 42 -R owner/repo --json
+```
+
+说明：
+- `-R`（必填）：仓库。位置参数为讨论编号。
+- `--json`：原样输出讨论对象（含 `md_content` 正文）。
+
 ---
 
 ## Pull Request 命令 (pr)

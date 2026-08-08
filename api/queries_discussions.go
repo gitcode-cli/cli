@@ -90,3 +90,50 @@ func GetOrgDiscussion(client *Client, org string, number int) (*Discussion, erro
 	}
 	return &d, nil
 }
+
+// ListRepoDiscussions lists discussions in a repository (project-level
+// discussions). It calls GET /api/v5/repos/{owner}/{repo}/discuss with the
+// same optional pagination/sort/direction/search parameters as the org-level
+// endpoint (per the official OpenAPI).
+func ListRepoDiscussions(client *Client, owner, repo string, opts *ListOrgDiscussionsOptions) ([]*Discussion, error) {
+	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss"
+	if opts != nil {
+		values := url.Values{}
+		if opts.Page > 0 {
+			values.Set("page", itoa(opts.Page))
+		}
+		if opts.PerPage > 0 {
+			values.Set("per_page", itoa(opts.PerPage))
+		}
+		if opts.Sort != "" {
+			values.Set("sort", opts.Sort)
+		}
+		if opts.Direction != "" {
+			values.Set("direction", opts.Direction)
+		}
+		if opts.Search != "" {
+			values.Set("search", opts.Search)
+		}
+		if len(values) > 0 {
+			endpoint += "?" + values.Encode()
+		}
+	}
+
+	var discussions []*Discussion
+	if err := client.Get(endpoint, &discussions); err != nil {
+		return nil, fmt.Errorf("failed to list repo discussions: %w", err)
+	}
+	return discussions, nil
+}
+
+// GetRepoDiscussion fetches a single repository (project-level) discussion by
+// number. It calls GET /api/v5/repos/{owner}/{repo}/discuss/{number}.
+func GetRepoDiscussion(client *Client, owner, repo string, number int) (*Discussion, error) {
+	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + itoa(number)
+
+	var d Discussion
+	if err := client.Get(endpoint, &d); err != nil {
+		return nil, fmt.Errorf("failed to get repo discussion: %w", err)
+	}
+	return &d, nil
+}

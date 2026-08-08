@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions/render"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -126,41 +127,6 @@ func listRun(opts *ListOptions) error {
 		return cmdutil.WriteJSON(opts.IO.Out, discussions)
 	}
 
-	printDiscussions(opts.IO, discussions)
+	render.PrintDiscussions(opts.IO, discussions)
 	return nil
-}
-
-func printDiscussions(io *iostreams.IOStreams, discussions []*api.Discussion) {
-	cs := io.ColorScheme()
-	if len(discussions) == 0 {
-		fmt.Fprintf(io.Out, "No discussions found\n")
-		return
-	}
-	fmt.Fprintf(io.Out, "%s\n", cs.Bold("Discussions"))
-	for _, d := range discussions {
-		state := "open"
-		if d.IsClosed != 0 {
-			state = "closed"
-		}
-		author := ""
-		if d.Author != nil {
-			author = d.Author.Login
-		}
-		pin := ""
-		if d.IsPin != 0 {
-			pin = cs.Yellow("📌 ")
-		}
-		fmt.Fprintf(io.Out, "  %s#%d  %s  (%s)  comments=%d  %s\n",
-			pin,
-			d.Number,
-			d.Title,
-			author,
-			d.CommentTotal,
-			cs.Cyan(state),
-		)
-		if d.UpdatedAt != "" {
-			fmt.Fprintf(io.Out, "       updated %s\n", d.UpdatedAt)
-		}
-	}
-	fmt.Fprintf(io.Out, "\nTotal: %d\n", len(discussions))
 }

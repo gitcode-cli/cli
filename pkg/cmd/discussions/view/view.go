@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions/render"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -94,31 +95,6 @@ func viewRun(opts *ViewOptions) error {
 		return cmdutil.WriteJSON(opts.IO.Out, d)
 	}
 
-	printDiscussion(opts.IO, d)
+	render.PrintDiscussion(opts.IO, d)
 	return nil
-}
-
-func printDiscussion(io *iostreams.IOStreams, d *api.Discussion) {
-	cs := io.ColorScheme()
-	state := "open"
-	if d.IsClosed != 0 {
-		state = "closed"
-	}
-	author := ""
-	if d.Author != nil {
-		author = d.Author.Login
-	}
-	fmt.Fprintf(io.Out, "%s #%d  %s\n", cs.Bold("Discussion"), d.Number, d.Title)
-	fmt.Fprintf(io.Out, "state: %s  comments: %d  author: %s\n", cs.Cyan(state), d.CommentTotal, author)
-	if d.CreatedAt != "" {
-		fmt.Fprintf(io.Out, "created: %s", d.CreatedAt)
-		if d.UpdatedAt != "" {
-			fmt.Fprintf(io.Out, "  updated: %s", d.UpdatedAt)
-		}
-		fmt.Fprintln(io.Out)
-	}
-	if d.MdContent != "" {
-		fmt.Fprintln(io.Out)
-		fmt.Fprintf(io.Out, "%s\n", d.MdContent)
-	}
 }

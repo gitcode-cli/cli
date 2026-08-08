@@ -910,6 +910,53 @@ gc issue relations -R infra-test/gctest1 --state open --limit 50
 
 ---
 
+## Discussions 命令 (discussions)
+
+只读访问 GitCode 组织级讨论（discuss）。当前覆盖组织讨论列表与详情，调用 GitCode v5 API（`GET /api/v5/orgs/{org}/discuss` 与 `/discuss/{number}`）。
+
+### discussions list - 列出组织讨论
+
+```bash
+# 列出组织讨论
+gc discussions list --org my-org
+
+# 按标题/描述搜索
+gc discussions list --org my-org --search "release plan"
+
+# 按评论数排序（降序）
+gc discussions list --org my-org --sort comment_size --direction desc
+
+# 分页
+gc discussions list --org my-org --page 2 --per-page 50
+
+# 输出 JSON
+gc discussions list --org my-org --json
+```
+
+说明：
+- `--org`（必填）：组织 path。
+- `--page` / `--per-page`：分页（`--per-page` 最大 100，默认 20）。
+- `--sort`：`created`（默认，创建时间）或 `comment_size`（评论数量）。
+- `--direction`：`asc` 或 `desc`（默认降序）。
+- `--search`：按标题与描述服务端过滤。
+- `--json`：原样输出讨论数组。
+
+### discussions view - 查看组织讨论
+
+```bash
+# 查看讨论
+gc discussions view 42 --org my-org
+
+# 输出 JSON
+gc discussions view 42 --org my-org --json
+```
+
+说明：
+- `--org`（必填）：组织 path。位置参数为讨论编号。
+- `--json`：原样输出讨论对象（含 `md_content` 正文）。
+
+---
+
 ## Pull Request 命令 (pr)
 
 ### pr create - 创建 PR

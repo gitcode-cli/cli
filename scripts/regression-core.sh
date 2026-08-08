@@ -25,8 +25,22 @@ if [[ "$READONLY_REPO" != infra-test/* ]]; then
   exit 1
 fi
 
+log() {
+  printf '\n[%s]\n' "$1"
+}
+
+# Build the CLI binary before fixture probing so a clean-worktree first run
+# can probe fixtures with a valid binary (#478).
+log "Build"
+(cd "$ROOT_DIR" && go build -o "$GC_BIN" ./cmd/gc)
+if [[ ! -x "$GC_BIN" ]]; then
+  echo "REGRESSION: build failed, $GC_BIN not executable" >&2
+  exit 1
+fi
+
 # Pre-flight fixture probe: verify required remote objects exist.
 # Skip dependent tests if fixtures are missing (drift, not CLI regression).
+# Probes run after Build so a clean-worktree first run can detect fixtures.
 SKIP_ISSUE=0; SKIP_PR=0; SKIP_RELEASE=0
 
 if ! "$GC_BIN" issue list -R "$READONLY_REPO" --limit 1 --json >/dev/null 2>&1; then
@@ -41,10 +55,6 @@ if ! "$GC_BIN" release list -R "$READONLY_REPO" --json >/dev/null 2>&1; then
   SKIP_RELEASE=1
   echo "REGRESSION: release fixture unavailable for $READONLY_REPO, release tests will skip" >&2
 fi
-
-log() {
-  printf '\n[%s]\n' "$1"
-}
 
 run_capture() {
   local __var_name="$1"
@@ -105,9 +115,6 @@ run_expect_status() {
   printf -v "$__var_name" '%s' "$output"
   printf '%s\n' "$output"
 }
-
-log "Build"
-(cd "$ROOT_DIR" && go build -o "$GC_BIN" ./cmd/gc)
 
 TMP_EMPTY_CONFIG_DIR="$(mktemp -d)"
 TMP_NON_GIT_DIR="$(mktemp -d)"

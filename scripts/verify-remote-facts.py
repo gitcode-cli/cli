@@ -28,7 +28,7 @@ ISSUE_REF_RE = re.compile(r"(?:#|!)(\d+)")
 
 
 def run_json(cmd: list[str]) -> dict:
-    result = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    result = subprocess.run(cmd, check=False, capture_output=True, text=True, encoding="utf-8")
     if result.returncode != 0:
         raise SystemExit(result.stderr.strip() or f"failed to run: {' '.join(cmd)}")
     try:
@@ -39,7 +39,7 @@ def run_json(cmd: list[str]) -> dict:
 
 def merged_in_main(sha: str) -> bool:
     cmd = ["git", "merge-base", "--is-ancestor", sha, "origin/main"]
-    result = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    result = subprocess.run(cmd, check=False, capture_output=True, text=True, encoding="utf-8")
     if result.returncode == 0:
         return True
     if result.returncode == 1:

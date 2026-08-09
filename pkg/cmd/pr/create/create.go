@@ -266,10 +266,11 @@ func parseRepo(repo string) (string, string, error) {
 // resolveHead expresses a cross-repo PR source for GitCode.
 //
 // When --fork is supplied and head is a bare branch name, it returns the
-// Gitee-style "<fork_owner>:<branch>" form, which GitCode resolves to the fork's
-// branch even when the upstream has a same-name branch. A head that already
-// carries an "owner:" prefix is returned unchanged so callers can override the
-// inferred fork owner explicitly. See issue #259.
+// "owner/repo:branch" form, which GitCode v5 resolves to the fork's branch
+// even when the upstream has a same-name branch. (The "owner:branch" form used
+// earlier per #259 is no longer resolved by the server — see #495.) A head
+// that already carries an "owner:branch" or "owner/repo:branch" prefix is
+// returned unchanged so callers can override the inferred fork explicitly.
 //
 // The returned warning is non-empty when an explicit head owner overrides a
 // conflicting --fork owner (likely a typo), so the caller can surface it.
@@ -278,22 +279,26 @@ func resolveHead(head, fork string) (resolved, warning string, err error) {
 		return head, "", nil
 	}
 
-	forkOwner := fork
-	if idx := strings.Index(fork, "/"); idx >= 0 {
-		forkOwner = fork[:idx]
+	// fork must be "owner/repo" so we can build "owner/repo:branch" (#495).
+	idx := strings.Index(fork, "/")
+	if idx <= 0 || idx == len(fork)-1 {
+		return "", "", cmdutil.NewUsageError("invalid --fork value; expected owner/repo")
 	}
+	forkOwner := fork[:idx]
 
-	// An explicit "owner:branch" head wins, but flag a mismatched --fork owner.
-	if idx := strings.Index(head, ":"); idx >= 0 {
-		if headOwner := head[:idx]; forkOwner != "" && headOwner != forkOwner {
+	// An explicit head carrying ":" (owner:branch or owner/repo:branch) wins.
+	// Flag a mismatched --fork owner (compare the owner prefix before any '/').
+	if colon := strings.Index(head, ":"); colon >= 0 {
+		headOwner := head[:colon]
+		if slash := strings.Index(headOwner, "/"); slash >= 0 {
+			headOwner = headOwner[:slash]
+		}
+		if headOwner != forkOwner {
 			warning = fmt.Sprintf("--head owner %q overrides --fork owner %q", headOwner, forkOwner)
 		}
 		return head, warning, nil
 	}
 
-	if forkOwner == "" {
-		return "", "", cmdutil.NewUsageError("invalid --fork value; expected owner/repo")
-	}
-
-	return forkOwner + ":" + head, "", nil
+	// Build "owner/repo:branch" — GitCode v5 resolves this cross-repo form.
+	return fork + ":" + head, "", nil
 }

@@ -45,7 +45,7 @@ fi
 # worktree, someone moved Build after probe — first run would silently skip
 # coverage again (#503).
 if [[ ! -x "$GC_BIN" ]]; then
-  echo "REGRESSION: $GC_BIN not built before fixture probe — Build must precede probe (#478/#503)" >&2
+  echo "REGRESSION: $GC_BIN not built before fixture probe - Build must precede probe (#478/#503)" >&2
   exit 1
 fi
 SKIP_ISSUE=0; SKIP_PR=0; SKIP_RELEASE=0

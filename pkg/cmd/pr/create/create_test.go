@@ -587,16 +587,16 @@ func TestResolveHead(t *testing.T) {
 			want: "feature",
 		},
 		{
-			name: "fork prefixes owner from owner/repo",
-			head: "feature/issue-259",
+			name: "fork builds owner/repo:branch from owner/repo",
+			head: "feature/issue-495",
 			fork: "myfork/repo",
-			want: "myfork:feature/issue-259",
+			want: "myfork/repo:feature/issue-495",
 		},
 		{
-			name: "fork without repo segment still yields owner prefix",
-			head: "feature",
-			fork: "myfork",
-			want: "myfork:feature",
+			name:    "fork without repo segment is rejected",
+			head:    "feature",
+			fork:    "myfork",
+			wantErr: true,
 		},
 		{
 			name: "head with matching owner is preserved without warning",
@@ -612,9 +612,21 @@ func TestResolveHead(t *testing.T) {
 			wantWarning: `--head owner "other" overrides --fork owner "myfork"`,
 		},
 		{
+			name: "explicit owner/repo:branch head is preserved without warning",
+			head: "myfork/repo:feature",
+			fork: "myfork/repo",
+			want: "myfork/repo:feature",
+		},
+		{
 			name:    "fork missing owner is rejected",
 			head:    "feature",
 			fork:    "/repo",
+			wantErr: true,
+		},
+		{
+			name:    "fork missing repo is rejected",
+			head:    "feature",
+			fork:    "myfork/",
 			wantErr: true,
 		},
 	}
@@ -638,7 +650,7 @@ func TestResolveHead(t *testing.T) {
 	}
 }
 
-func TestCreateRunForkNormalizesHeadToOwnerBranch(t *testing.T) {
+func TestCreateRunForkNormalizesHeadToOwnerRepoBranch(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
 	f := cmdutil.TestFactory()
@@ -665,8 +677,8 @@ func TestCreateRunForkNormalizesHeadToOwnerBranch(t *testing.T) {
 	if createdOpts == nil {
 		t.Fatalf("CreatePR() was not called")
 	}
-	if createdOpts.Head != "myfork:feature/issue-259" {
-		t.Fatalf("CreatePR Head = %q, want %q", createdOpts.Head, "myfork:feature/issue-259")
+	if createdOpts.Head != "myfork/repo:feature/issue-259" {
+		t.Fatalf("CreatePR Head = %q, want %q", createdOpts.Head, "myfork/repo:feature/issue-259")
 	}
 }
 

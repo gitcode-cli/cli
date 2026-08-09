@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -159,6 +160,9 @@ func cloneRun(opts *CloneOptions) error {
 
 func execGitClone(gitArgs []string, opts *CloneOptions) error {
 	gitCmd := exec.Command("git", gitArgs...)
+	// Prevent git from blocking on a credential or SSH passphrase prompt in
+	// non-interactive (CI/Agent) contexts (#319).
+	gitCmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 	gitCmd.Stdin = opts.IO.In
 	gitCmd.Stdout = opts.IO.Out
 	gitCmd.Stderr = opts.IO.ErrOut

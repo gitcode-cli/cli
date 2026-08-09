@@ -291,3 +291,48 @@ func TestRemoteURLReturnsURLForValidRemote(t *testing.T) {
 		t.Fatalf("RemoteURL(origin) = %q, want %q", got, want)
 	}
 }
+
+// TestGitEnvIncludesTerminalPrompt verifies that gitEnv always sets
+// GIT_TERMINAL_PROMPT=0 so git subprocesses never block in non-interactive
+// contexts (#319).
+func TestGitEnvIncludesTerminalPrompt(t *testing.T) {
+	env := gitEnv(nil)
+	found := false
+	for _, e := range env {
+		if e == "GIT_TERMINAL_PROMPT=0" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("gitEnv(nil) missing GIT_TERMINAL_PROMPT=0: %v", env)
+	}
+}
+
+// TestGitEnvExtraOverridesTerminalPrompt verifies that entries in extra are
+// appended last, so callers can override GIT_TERMINAL_PROMPT if needed (#319).
+func TestGitEnvExtraOverridesTerminalPrompt(t *testing.T) {
+	env := gitEnv(map[string]string{"GIT_TERMINAL_PROMPT": "1"})
+	last := ""
+	for _, e := range env {
+		if strings.HasPrefix(e, "GIT_TERMINAL_PROMPT=") {
+			last = e
+		}
+	}
+	if last != "GIT_TERMINAL_PROMPT=1" {
+		t.Errorf("extra GIT_TERMINAL_PROMPT should override default 0, got last=%q", last)
+	}
+}
+
+// TestGitEnvPreservesExtra verifies that extra env entries are included.
+func TestGitEnvPreservesExtra(t *testing.T) {
+	env := gitEnv(map[string]string{"FOO": "bar"})
+	found := false
+	for _, e := range env {
+		if e == "FOO=bar" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("gitEnv() missing extra FOO=bar: %v", env)
+	}
+}

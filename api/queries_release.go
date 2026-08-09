@@ -340,11 +340,11 @@ func UploadReleaseAssetByTag(client *Client, owner, repo, tag, filename string, 
 	// Step 1: Get upload URL and headers
 	uploadInfo, err := GetReleaseUploadURL(client, owner, repo, tag, filename)
 	if err != nil {
-		return fmtError("failed to get upload URL: " + err.Error())
+		return fmtError(err, "failed to get upload URL")
 	}
 
 	if uploadInfo.URL == "" {
-		return fmtError("upload URL is empty")
+		return fmtError(nil, "upload URL is empty")
 	}
 
 	// Step 2: Upload file to the returned URL with headers
@@ -354,16 +354,29 @@ func UploadReleaseAssetByTag(client *Client, owner, repo, tag, filename string, 
 // ErrNoReleaseID is returned when the GitCode API omits release IDs.
 var ErrNoReleaseID = errors.New("release id was not returned by GitCode API")
 
-func fmtError(msg string) error {
-	return &releaseError{msg: msg}
+// fmtError wraps cause (if non-nil) in a releaseError with the given message,
+// preserving the error chain so callers can errors.Unwrap/is.As the original
+// API error (#321). When cause is nil the returned error has no wrapped cause.
+func fmtError(cause error, msg string) error {
+	return &releaseError{msg: msg, cause: cause}
 }
 
 type releaseError struct {
-	msg string
+	msg   string
+	cause error
 }
 
 func (e *releaseError) Error() string {
+	if e.cause != nil {
+		return e.msg + ": " + e.cause.Error()
+	}
 	return e.msg
+}
+
+// Unwrap returns the wrapped cause so errors.Unwrap/is.As can reach the
+// original API error (#321).
+func (e *releaseError) Unwrap() error {
+	return e.cause
 }
 
 func itoa64(i int64) string {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -543,5 +544,41 @@ func TestBuildPath_QueryParams(t *testing.T) {
 				t.Errorf("buildPath() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+// TestFmtErrorPreservesErrorChain verifies that fmtError wraps the cause so
+// errors.Unwrap/As can reach the original API error (#321).
+func TestFmtErrorPreservesErrorChain(t *testing.T) {
+	original := &APIError{StatusCode: 500, Message: "server error"}
+	err := fmtError(original, "failed to get upload URL")
+
+	if unwrapped := errors.Unwrap(err); unwrapped != original {
+		t.Errorf("errors.Unwrap() = %v, want %v", unwrapped, original)
+	}
+
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("errors.As(err, &apiErr) = false, want true")
+	}
+	if apiErr != original {
+		t.Errorf("errors.As matched %v, want %v", apiErr, original)
+	}
+
+	if !strings.Contains(err.Error(), "failed to get upload URL") || !strings.Contains(err.Error(), "server error") {
+		t.Errorf("Error() = %q, want contains both msg and cause", err.Error())
+	}
+}
+
+// TestFmtErrorNilCauseNoUnwrap verifies that fmtError(nil, msg) has no cause
+// to unwrap and the message stands alone (#321).
+func TestFmtErrorNilCauseNoUnwrap(t *testing.T) {
+	err := fmtError(nil, "upload URL is empty")
+
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		t.Errorf("errors.Unwrap() = %v, want nil for nil cause", unwrapped)
+	}
+	if want := "upload URL is empty"; err.Error() != want {
+		t.Errorf("Error() = %q, want %q", err.Error(), want)
 	}
 }

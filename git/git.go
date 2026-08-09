@@ -107,17 +107,25 @@ func RunInDirWithEnv(dir string, env map[string]string, args ...string) (string,
 	return runWithEnv(dir, env, args...)
 }
 
+// gitEnv returns the environment for git subprocesses, always including
+// GIT_TERMINAL_PROMPT=0 so git never blocks on a credential or SSH passphrase
+// prompt in non-interactive (CI/Agent) contexts (#319). Entries in extra are
+// appended last so callers can override GIT_TERMINAL_PROMPT if needed.
+func gitEnv(extra map[string]string) []string {
+	env := os.Environ()
+	env = append(env, "GIT_TERMINAL_PROMPT=0")
+	for k, v := range extra {
+		env = append(env, k+"="+v)
+	}
+	return env
+}
+
 func runWithEnv(dir string, env map[string]string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	if dir != "" {
 		cmd.Dir = dir
 	}
-	if len(env) > 0 {
-		cmd.Env = os.Environ()
-		for key, value := range env {
-			cmd.Env = append(cmd.Env, key+"="+value)
-		}
-	}
+	cmd.Env = gitEnv(env)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, string(output))
@@ -235,6 +243,8 @@ func SafeCheckoutWithOutput(stdout, stderr io.Writer, dir string, branch string)
 		return err
 	}
 	cmd := exec.Command("git", "checkout", "--", branch)
+	// Prevent git from blocking on a prompt in non-interactive contexts (#319).
+	cmd.Env = gitEnv(nil)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	if dir != "" {
@@ -275,6 +285,8 @@ func SafeFetchWithOutput(stdout, stderr io.Writer, dir, remote, ref, localBranch
 	}
 	refspec := ref + ":" + localBranch
 	cmd := exec.Command("git", "fetch", remote, "--", refspec)
+	// Prevent git from blocking on a prompt in non-interactive contexts (#319).
+	cmd.Env = gitEnv(nil)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	if dir != "" {
@@ -314,6 +326,8 @@ func SafeFetchFromURLWithOutput(stdout, stderr io.Writer, dir, fetchURL, ref, lo
 	}
 	refspec := ref + ":" + localBranch
 	cmd := exec.Command("git", "fetch", fetchURL, "--", refspec)
+	// Prevent git from blocking on a prompt in non-interactive contexts (#319).
+	cmd.Env = gitEnv(nil)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	if dir != "" {

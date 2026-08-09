@@ -41,6 +41,13 @@ fi
 # Pre-flight fixture probe: verify required remote objects exist.
 # Skip dependent tests if fixtures are missing (drift, not CLI regression).
 # Probes run after Build so a clean-worktree first run can detect fixtures.
+# Invariant: Build must precede probe (#478). If this guard fires on a clean
+# worktree, someone moved Build after probe — first run would silently skip
+# coverage again (#503).
+if [[ ! -x "$GC_BIN" ]]; then
+  echo "REGRESSION: $GC_BIN not built before fixture probe - Build must precede probe (#478/#503)" >&2
+  exit 1
+fi
 SKIP_ISSUE=0; SKIP_PR=0; SKIP_RELEASE=0
 
 if ! "$GC_BIN" issue list -R "$READONLY_REPO" --limit 1 --json >/dev/null 2>&1; then

@@ -167,8 +167,9 @@ func createRun(opts *CreateOptions) error {
 		}
 	}
 
-	// Express a cross-repo (fork) source via head="<fork_owner>:<branch>" instead
-	// of a fork_path form field, which GitCode v5 mis-resolves (issue #259).
+	// Express a cross-repo (fork) source via head="<fork_owner>/<fork_repo>:<branch>"
+	// (GitCode v5 resolves this form; the "owner:branch" form from #259 is no
+	// longer resolved — see #495), instead of a fork_path form field.
 	head, warning, err := resolveHead(head, opts.Fork)
 	if err != nil {
 		return err

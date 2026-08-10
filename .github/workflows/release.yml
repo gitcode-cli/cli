@@ -569,6 +569,7 @@ jobs:
           [[ "${TAG_SHA_EXPECTED}" =~ ^[0-9a-f]{40}$ ]]
           [[ "${PACKAGE_SHA_EXPECTED}" =~ ^[0-9a-f]{64}$ ]]
           test "${PACKAGE_NAME}" = "gitcode-cli-cli-${VERSION_NUM}.tgz"
+          git fetch --force --tags origin
           TAG_SHA="$(git rev-parse "${VERSION_INPUT}^{commit}")"
           test "${TAG_SHA}" = "${TAG_SHA_EXPECTED}"
           git merge-base --is-ancestor "${TAG_SHA}" origin/main

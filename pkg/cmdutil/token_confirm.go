@@ -20,8 +20,10 @@ func ConfirmTokenDisclosure(ioStreams *iostreams.IOStreams, hostname string) err
 
 	reader := bufio.NewReader(ioStreams.In)
 	input, err := reader.ReadString('\n')
-	if err != nil && strings.TrimSpace(input) == "" {
-		if err == io.EOF {
+	if err != nil {
+		// Surface read errors even when partial input was received, instead of
+		// falling through to a misleading "did not match" (#361).
+		if err == io.EOF && strings.TrimSpace(input) == "" {
 			return NewUsageError("printing authentication token requires interactive confirmation")
 		}
 		return NewCLIError(ExitUsage, "failed to read confirmation", err)

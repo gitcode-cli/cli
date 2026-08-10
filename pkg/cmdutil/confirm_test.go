@@ -170,3 +170,20 @@ func TestConfirmOrAbort_EOFWithEmptyInputReturnsNonInteractive(t *testing.T) {
 		t.Fatalf("error = %q, want mention of --yes (non-interactive)", err.Error())
 	}
 }
+
+// TestConfirmTokenDisclosure_PartialInputWithReadErrorSurfacesReadError verifies
+// the same fix applies to ConfirmTokenDisclosure (token_confirm.go #361).
+func TestConfirmTokenDisclosure_PartialInputWithReadErrorSurfacesReadError(t *testing.T) {
+	streams, _, _, _ := iostreams.TestTTY()
+	streams.In = &failingReader{data: "partial", err: errors.New("corrupt terminal")}
+	err := ConfirmTokenDisclosure(streams, "example.com")
+	if err == nil {
+		t.Fatal("ConfirmTokenDisclosure() with partial input + read error = nil, want error")
+	}
+	if _, ok := err.(*CLIError); !ok {
+		t.Fatalf("error type = %T, want *CLIError (read error, not 'did not match')", err)
+	}
+	if !strings.Contains(err.Error(), "failed to read confirmation") {
+		t.Fatalf("error = %q, want 'failed to read confirmation'", err.Error())
+	}
+}

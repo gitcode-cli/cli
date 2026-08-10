@@ -17,6 +17,14 @@ func TestReleaseWorkflowOrdersTagBeforeGoReleaser(t *testing.T) {
 	assertOrdered(t, workflow, "- name: Preflight packages and wheel", "- name: Create and push tag")
 	assertOrdered(t, workflow, "- name: Create and push tag", "- name: Build GoReleaser assets")
 	assertOrdered(t, workflow, "- name: Build GoReleaser assets", "- name: Sync package versions")
+	for _, value := range []string{
+		`SNAPSHOT_VERSION="$(python -c 'import json; print(json.load(open("dist/metadata.json", encoding="utf-8"))["version"])')"`,
+		`prepare-npm-package.sh "${{ steps.version.outputs.VERSION_NUM }}" dist dist "${SNAPSHOT_VERSION}"`,
+	} {
+		if !strings.Contains(workflow, value) {
+			t.Errorf("release workflow missing snapshot asset version handling %q", value)
+		}
+	}
 }
 
 func TestReleaseWorkflowUsesTrackedNotesAndExactTag(t *testing.T) {

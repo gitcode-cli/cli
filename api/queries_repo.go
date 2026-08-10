@@ -73,7 +73,7 @@ func ListOrgRepos(client *Client, org string, opts *RepoListOptions) ([]Reposito
 // GetRepo fetches a repository by owner/name
 func GetRepo(client *Client, owner, name string) (*Repository, error) {
 	var repo Repository
-	err := client.Get("/repos/"+owner+"/"+name, &repo)
+	err := client.Get(escapedRepoPath(owner, name), &repo)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func GetBranch(client *Client, owner, repo, branch string) (*Branch, error) {
 // ForkRepo forks a repository
 func ForkRepo(client *Client, owner, name string) (*Repository, error) {
 	var repo Repository
-	err := client.Post("/repos/"+owner+"/"+name+"/forks", nil, &repo)
+	err := client.Post(escapedRepoPath(owner, name)+"/forks", nil, &repo)
 	if err != nil {
 		return nil, err
 	}

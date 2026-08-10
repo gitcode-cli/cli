@@ -56,7 +56,7 @@ func CreateLabel(client *Client, owner, repo string, opts *CreateLabelOptions) (
 func GetLabel(client *Client, owner, repo, name string) (*Label, error) {
 	escapedName := url.PathEscape(name)
 	var label Label
-	err := client.Get("/repos/"+owner+"/"+repo+"/labels/"+escapedName, &label)
+	err := client.Get(escapedRepoPath(owner, repo)+"/labels/"+escapedName, &label)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func GetLabel(client *Client, owner, repo, name string) (*Label, error) {
 func UpdateLabel(client *Client, owner, repo, name string, opts *UpdateLabelOptions) (*Label, error) {
 	escapedName := url.PathEscape(name)
 	var label Label
-	err := client.Patch("/repos/"+owner+"/"+repo+"/labels/"+escapedName, opts, &label)
+	err := client.Patch(escapedRepoPath(owner, repo)+"/labels/"+escapedName, opts, &label)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func DeleteLabel(client *Client, owner, repo, name string) error {
 // AddLabelsToIssue adds labels to an issue
 func AddLabelsToIssue(client *Client, owner, repo string, number int, labels []string) ([]Label, error) {
 	var result []Label
-	err := client.Post("/repos/"+owner+"/"+repo+"/issues/"+itoa(number)+"/labels", map[string]interface{}{
+	err := client.Post(escapedRepoPath(owner, repo)+"/issues/"+itoa(number)+"/labels", map[string]interface{}{
 		"labels": labels,
 	}, &result)
 	if err != nil {
@@ -101,7 +101,7 @@ func RemoveLabelFromIssue(client *Client, owner, repo string, number int, label 
 // SetIssueLabels sets (replaces) labels on an issue
 func SetIssueLabels(client *Client, owner, repo string, number int, labels []string) ([]Label, error) {
 	var result []Label
-	err := client.Put("/repos/"+owner+"/"+repo+"/issues/"+itoa(number)+"/labels", map[string]interface{}{
+	err := client.Put(escapedRepoPath(owner, repo)+"/issues/"+itoa(number)+"/labels", map[string]interface{}{
 		"labels": labels,
 	}, &result)
 	if err != nil {
@@ -118,7 +118,7 @@ func ClearIssueLabels(client *Client, owner, repo string, number int) error {
 // CreateMilestone creates a new milestone
 func CreateMilestone(client *Client, owner, repo string, opts *CreateMilestoneOptions) (*Milestone, error) {
 	var milestone Milestone
-	err := client.Post("/repos/"+owner+"/"+repo+"/milestones", opts, &milestone)
+	err := client.Post(escapedRepoPath(owner, repo)+"/milestones", opts, &milestone)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func CreateMilestone(client *Client, owner, repo string, opts *CreateMilestoneOp
 // GetMilestone fetches a milestone by number
 func GetMilestone(client *Client, owner, repo string, number int) (*Milestone, error) {
 	var milestone Milestone
-	err := client.Get("/repos/"+owner+"/"+repo+"/milestones/"+itoa(number), &milestone)
+	err := client.Get(escapedRepoPath(owner, repo)+"/milestones/"+itoa(number), &milestone)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func GetMilestone(client *Client, owner, repo string, number int) (*Milestone, e
 // UpdateMilestone updates an existing milestone
 func UpdateMilestone(client *Client, owner, repo string, number int, opts *UpdateMilestoneOptions) (*Milestone, error) {
 	var milestone Milestone
-	err := client.Patch("/repos/"+owner+"/"+repo+"/milestones/"+itoa(number), opts, &milestone)
+	err := client.Patch(escapedRepoPath(owner, repo)+"/milestones/"+itoa(number), opts, &milestone)
 	if err != nil {
 		return nil, err
 	}

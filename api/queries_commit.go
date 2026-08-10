@@ -85,7 +85,7 @@ func GetCommitPatch(client *Client, owner, repo, sha string) (string, error) {
 
 // ListCommits lists repository commits, optionally scoped to a file path and branch/tag SHA.
 func ListCommits(client *Client, owner, repo string, opts *CommitListOptions) ([]RepositoryCommit, error) {
-	path := buildCommitListPath("/repos/"+owner+"/"+repo+"/commits", opts)
+	path := buildCommitListPath(escapedRepoPath(owner, repo)+"/commits", opts)
 
 	var commits []RepositoryCommit
 	err := client.Get(path, &commits)

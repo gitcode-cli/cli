@@ -181,7 +181,7 @@ func ListRepoIssuesAll(client *Client, owner, repo string, opts *IssueListOption
 // GetIssue fetches an issue by number
 func GetIssue(client *Client, owner, repo string, number int) (*Issue, error) {
 	var issue Issue
-	err := client.Get("/repos/"+owner+"/"+repo+"/issues/"+itoa(number), &issue)
+	err := client.Get(escapedRepoPath(owner, repo)+"/issues/"+itoa(number), &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func CreateIssue(client *Client, owner, repo string, opts *CreateIssueOptions) (
 	}
 
 	var issue Issue
-	err := client.PostForm("/repos/"+owner+"/"+repo+"/issues", formValues, &issue)
+	err := client.PostForm(escapedRepoPath(owner, repo)+"/issues", formValues, &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +463,7 @@ func ListIssueCommentsAll(client *Client, owner, repo string, number int, opts *
 // CreateIssueComment creates a comment on an issue
 func CreateIssueComment(client *Client, owner, repo string, number int, opts *CreateCommentOptions) (*IssueComment, error) {
 	var comment IssueComment
-	err := client.Post("/repos/"+owner+"/"+repo+"/issues/"+itoa(number)+"/comments", opts, &comment)
+	err := client.Post(escapedRepoPath(owner, repo)+"/issues/"+itoa(number)+"/comments", opts, &comment)
 	if err != nil {
 		return nil, err
 	}
@@ -473,7 +473,7 @@ func CreateIssueComment(client *Client, owner, repo string, number int, opts *Cr
 // UpdateIssueComment updates a comment on an issue.
 func UpdateIssueComment(client *Client, owner, repo string, commentID string, opts *UpdateCommentOptions) (*IssueComment, error) {
 	var comment IssueComment
-	err := client.Patch("/repos/"+owner+"/"+repo+"/issues/comments/"+commentID, opts, &comment)
+	err := client.Patch(escapedRepoPath(owner, repo)+"/issues/comments/"+commentID, opts, &comment)
 	if err != nil {
 		return nil, err
 	}

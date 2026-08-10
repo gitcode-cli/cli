@@ -137,7 +137,7 @@ gitcode issue label 497 --add feature,scope/actions -R gitcode-cli/cli
 gitcode pr diff 440 -R gitcode-cli/cli > review.patch
 
 # 列出某仓库所有 release 资产
-gitcode release view v0.10.3 -R gitcode-cli/cli --json
+gitcode release view v0.11.0 -R gitcode-cli/cli --json
 ```
 
 ### 把任务交给 AI，你审结论

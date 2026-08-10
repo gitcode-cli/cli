@@ -36,12 +36,12 @@ gitcode doctor install --json
 
 ```bash
 # DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.10.3/gc_0.10.3_amd64.deb
-sudo dpkg -i gc_0.10.3_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.11.0/gc_0.11.0_amd64.deb
+sudo dpkg -i gc_0.11.0_amd64.deb
 
 # RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.10.3/gc-0.10.3-1.x86_64.rpm
-sudo rpm -i gc-0.10.3-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.11.0/gc-0.11.0-1.x86_64.rpm
+sudo rpm -i gc-0.11.0-1.x86_64.rpm
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
@@ -57,7 +57,7 @@ source .venv/bin/activate  # Linux/macOS
 # .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.10.3/gitcode_cli-0.10.3-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.11.0/gitcode_cli-0.11.0-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode，避免 gc 被内置 Get-Content 别名覆盖
 gitcode version
@@ -81,7 +81,7 @@ source .venv/bin/activate  # Linux/macOS
 # .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 
 # 固定版本安装，避免 PyPI 尚未同步时安装旧版本
-python -m pip install -i https://pypi.org/simple/ gitcode-cli==0.10.3
+python -m pip install -i https://pypi.org/simple/ gitcode-cli==0.11.0
 
 # Windows PowerShell 中推荐使用 gitcode
 gitcode version

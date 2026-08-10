@@ -5,14 +5,14 @@
 GitCode CLI 把这些工作带回终端：仓库、Issue、Pull Request、Commit、标签、里程碑、Release 和 Actions 都可以通过统一命令完成。对开发者，它减少上下文切换；对团队，它让操作可以复用和审计；对 AI 代理，它提供结构化、可发现、带安全边界的 GitCode 执行入口。本文统一使用跨平台入口 `gitcode`；通过 npm、PyPI、Homebrew、DEB/RPM 或 wheel 安装时都会同时提供 `gitcode` 和 `gc` 两个入口。
 
 - 项目仓库：[gitcode-cli/cli](https://gitcode.com/gitcode-cli/cli)
-- 安装渠道：[npm](https://www.npmjs.com/package/@gitcode-cli/cli)（推荐）｜[PyPI](https://pypi.org/project/gitcode-cli/)｜[GitCode Release](https://gitcode.com/gitcode-cli/cli/releases)｜[GitHub Release](https://github.com/gitcode-cli/cli/releases)
+- 安装渠道：[npm](https://www.npmjs.com/package/@gitcode-cli/cli)｜[PyPI](https://pypi.org/project/gitcode-cli/)｜[GitCode Release](https://gitcode.com/gitcode-cli/cli/releases)｜[GitHub Release](https://github.com/gitcode-cli/cli/releases)
 - 完整命令手册：[docs/COMMANDS.md](https://gitcode.com/gitcode-cli/cli/blob/main/docs/COMMANDS.md)
 
 ## 五分钟开始使用
 
 ### 1. 安装
 
-GitCode CLI 通过多个官方源分发，跨平台（Linux/macOS/Windows × x64/ARM64）。**推荐 npm 方式**——内置全平台二进制，一行安装与升级：
+GitCode CLI 通过多个官方源分发：Linux/macOS 支持 x64/ARM64，Windows 当前支持 x64。Windows、Node/AI 环境可用 npm 作为通用快速入口；macOS 优先 Homebrew，Debian/Ubuntu 优先 DEB，RHEL/Fedora 优先 RPM。只让一个全局渠道拥有命令入口。
 
 ```bash
 # 推荐：npm（https://www.npmjs.com/package/@gitcode-cli/cli）
@@ -20,12 +20,14 @@ GitCode CLI 通过多个官方源分发，跨平台（Linux/macOS/Windows × x64
 npm install -g @gitcode-cli/cli
 ```
 
+npm 安装默认使用 `notify` 模式：普通命令最多每 24 小时在后台连接官方 npm registry 检查一次 stable 新版本，只提示、不自动安装。需要升级时显式运行 `gitcode update`；只有主动执行 `gitcode config set update.mode auto` 才会自动应用，也可用 `update.mode off` 禁用后台检查。详见[命令手册的更新策略](./COMMANDS.md#gitcode-update)。
+
 其他官方渠道：
 
 | 渠道 | 安装 / 升级 | 地址 |
 |------|-------------|------|
-| npm（推荐） | `npm install -g @gitcode-cli/cli` | https://www.npmjs.com/package/@gitcode-cli/cli |
-| PyPI | `pip install -U gitcode-cli` | https://pypi.org/project/gitcode-cli/ |
+| npm（Windows、Node/AI 环境） | `npm install -g @gitcode-cli/cli` | https://www.npmjs.com/package/@gitcode-cli/cli |
+| PyPI（隔离安装） | `pipx install gitcode-cli` / `pipx upgrade gitcode-cli`（或仅在已激活 venv 中使用 pip） | https://pypi.org/project/gitcode-cli/ |
 | Homebrew (macOS/Linux) | `brew install gitcode-cli/homebrew-tap/gc` / `brew upgrade gc` | [homebrew-tap](https://github.com/gitcode-cli/homebrew-tap) |
 | GitCode Release | 从归档下载 wheel/DEB/RPM/二进制 | https://gitcode.com/gitcode-cli/cli/releases |
 | GitHub Release | 同上制品镜像 | https://github.com/gitcode-cli/cli/releases |

@@ -20,7 +20,17 @@ gitcode version
 gitcode doctor install --json
 ```
 
-npm 安装默认每天在命令结束后后台检查 stable 更新，下一次启动生效；CI、非交互或可复现任务应设置 `GC_NO_UPDATE_CHECK=1`，或执行 `gitcode config set update.mode off`。自动更新不调用 pip/Homebrew/apt/dnf，也不修改 PATH。
+若裸 `gitcode` 仍被旧 pip 入口遮蔽，Windows 先运行 `& "$(npm prefix -g)\gitcode.cmd" doctor install --json`，Linux/macOS 运行 `"$(npm prefix -g)/bin/gitcode" doctor install --json`；确认候选路径后再由用户选择调整 PATH、升级或卸载旧渠道。
+
+npm 安装默认每天在命令结束后后台检查 stable 更新，发现新版本会在下一次启动提示 `gitcode update`，不会自动安装；需要自动应用时由用户执行 `gitcode config set update.mode auto`。CI、非交互或可复现任务应设置 `GC_NO_UPDATE_CHECK=1`，或执行 `gitcode config set update.mode off`。更新器不调用 pip/Homebrew/apt/dnf，也不修改 PATH。
+
+**macOS (Homebrew):**
+
+```bash
+brew install gitcode-cli/homebrew-tap/gc
+brew upgrade gc
+gitcode doctor install --json
+```
 
 **Linux (DEB/RPM):**
 

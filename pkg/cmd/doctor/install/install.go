@@ -208,6 +208,18 @@ func addDiagnostics(report *Report, env map[string]string, goos string) {
 		report.Conflicts = append(report.Conflicts, `Windows PowerShell may resolve "gc" as the Get-Content alias`)
 		report.Recommendations = append(report.Recommendations, `use "gitcode" in PowerShell; do not remove the built-in gc alias globally`)
 	}
+	for _, command := range []string{"gitcode", "gc"} {
+		resolution := report.Commands[command]
+		directories := map[string]struct{}{}
+		for _, candidate := range resolution.Candidates {
+			directories[normalizedPath(filepath.Dir(candidate), goos)] = struct{}{}
+		}
+		if len(directories) > 1 {
+			report.Conflicts = append(report.Conflicts, fmt.Sprintf("%s is provided by multiple PATH directories", command))
+			report.Recommendations = append(report.Recommendations,
+				fmt.Sprintf("keep the intended %s provider first on PATH and explicitly upgrade or remove the others", command))
+		}
+	}
 	if report.Distribution == "npm" {
 		metadataPrefix := npmPrefix(env[packageRootEnv])
 		selected := report.Commands["gitcode"].Selected

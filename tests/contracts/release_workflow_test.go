@@ -180,6 +180,19 @@ func TestReleaseWorkflowPinsPublishingDependencies(t *testing.T) {
 	}
 }
 
+func TestReleaseWorkflowKeepsPrereleasesOffNpmLatest(t *testing.T) {
+	workflow := readReleaseWorkflow(t)
+	for _, required := range []string{
+		`PUBLISH_TAG="latest"`, `PUBLISH_TAG="next"`, `--tag "${PUBLISH_TAG}"`,
+		`dist-tags.${PUBLISH_TAG}`, `test "${TAG_VERSION}" = "${VERSION_NUM}"`,
+	} {
+		if !strings.Contains(workflow, required) {
+			t.Errorf("release workflow missing npm prerelease tag guard %q", required)
+		}
+	}
+	assertOrdered(t, workflow, `PUBLISH_TAG="latest"`, `npm view "@gitcode-cli/cli@${VERSION_NUM}" version`)
+}
+
 func TestPackageScriptPinsNfpm(t *testing.T) {
 	path := filepath.Join("..", "..", "scripts", "package.sh")
 	data, err := os.ReadFile(path)

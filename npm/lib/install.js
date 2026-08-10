@@ -72,42 +72,86 @@ function ensureExec(file) {
   }
 }
 
-function copyFile(src, dst) {
-  const temp = `${dst}.tmp-${process.pid}`;
-  const backup = `${dst}.previous`;
-  fs.copyFileSync(src, temp);
+function replacePath(src, dst, transactionID) {
+  const temp = `${dst}.tmp-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
+  const backup = `${dst}.backup-${transactionID}`;
+  const sourceStat = fs.lstatSync(src);
+  if (!sourceStat.isFile() || sourceStat.isSymbolicLink()) {
+    throw new Error(`refusing non-regular install source: ${src}`);
+  }
+  let hadOriginal = false;
+  try {
+    const stat = fs.lstatSync(dst);
+    if (!stat.isFile() || stat.isSymbolicLink()) {
+      throw new Error(`refusing non-regular install target: ${dst}`);
+    }
+    hadOriginal = true;
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  try {
+    fs.lstatSync(backup);
+    throw new Error(`refusing existing transaction backup: ${backup}`);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  if (hadOriginal) fs.copyFileSync(dst, backup, fs.constants.COPYFILE_EXCL);
+  fs.copyFileSync(src, temp, fs.constants.COPYFILE_EXCL);
   ensureExec(temp);
   try {
-    if (fs.existsSync(dst)) {
-      fs.copyFileSync(dst, backup);
-      fs.unlinkSync(dst);
-    }
-    fs.renameSync(temp, dst);
+    renameReplace(temp, dst);
+    return { dst, backup, hadOriginal };
   } catch (error) {
+    try {
+      if (hadOriginal && fs.existsSync(backup)) renameReplace(backup, dst);
+    } catch {
+      // Keep the transaction backup for manual recovery.
+    }
     try {
       fs.unlinkSync(temp);
     } catch {
       // Preserve the original error.
     }
-    try {
-      if (!fs.existsSync(dst) && fs.existsSync(backup)) fs.copyFileSync(backup, dst);
-    } catch {
-      // Preserve the original error; the backup remains available.
-    }
     throw error;
   }
 }
 
-function rollbackFile(dst) {
-  const backup = `${dst}.previous`;
-  if (fs.existsSync(backup)) {
-    fs.copyFileSync(backup, dst);
-    return;
-  }
+function renameReplace(src, dst) {
   try {
+    fs.renameSync(src, dst);
+  } catch (error) {
+    if (!["EEXIST", "EPERM"].includes(error.code)) throw error;
     fs.unlinkSync(dst);
-  } catch {
-    // No original file existed.
+    fs.renameSync(src, dst);
+  }
+}
+
+function rollbackTransaction(records) {
+  const failures = [];
+  for (const record of [...records].reverse()) {
+    try {
+      if (record.hadOriginal && fs.existsSync(record.backup)) {
+        renameReplace(record.backup, record.dst);
+      } else {
+        fs.unlinkSync(record.dst);
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") failures.push(error);
+    }
+  }
+  if (failures.length) {
+    throw new AggregateError(failures, `failed to restore ${failures.length} install path(s)`);
+  }
+}
+
+function commitTransaction(records) {
+  for (const record of records) {
+    try {
+      fs.unlinkSync(record.backup);
+    } catch {
+      // The install is already committed; an orphaned unique backup is safer
+      // than rolling back a healthy installation because cleanup failed.
+    }
   }
 }
 
@@ -160,15 +204,40 @@ function parseInstallArgs(args) {
   return options;
 }
 
+function quotePowerShell(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function installHelp() {
+  return [
+    "Install bundled gc and gitcode binaries outside the npm package directory.",
+    "",
+    "Usage:",
+    "  gitcode install [--target-dir <directory>]",
+    "",
+    "Flags:",
+    "  --target-dir <directory>  Install into an explicit directory",
+    "  -h, --help                Show this help",
+    "",
+  ].join("\n");
+}
+
 async function runInstall(args = []) {
+  if (args.length === 1 && ["-h", "--help"].includes(args[0])) {
+    process.stdout.write(installHelp());
+    return;
+  }
   const options = parseInstallArgs(args);
   const home = os.homedir();
   const isWin = process.platform === "win32";
 
   if (!isSupported(process.platform, process.arch)) {
+    const guidance = process.platform === "win32" && process.arch === "arm64"
+      ? "Windows arm64 is not shipped yet; build from source with Go."
+      : "Use a release channel that explicitly lists this OS and architecture.";
     throw new Error(
-      `no bundled binary for ${process.platform}/${process.arch}. ` +
-        `Install via PyPI/Homebrew/DEB/RPM instead: https://gitcode.com/gitcode-cli/cli/releases`
+      `no bundled binary for ${process.platform}/${process.arch}. ${guidance} ` +
+        `https://gitcode.com/gitcode-cli/cli/releases`
     );
   }
 
@@ -187,12 +256,13 @@ async function runInstall(args = []) {
   const dst = path.join(dir, isWin ? "gc.exe" : "gc");
   const alias = path.join(dir, isWin ? "gitcode.exe" : "gitcode");
   const helper = path.join(dir, "gitcode-update-helper.js");
-  const installedFiles = [dst, alias, helper];
+  const transactionID = `${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
+  const transaction = [];
   let versionLine;
   try {
-    copyFile(src, dst);
-    copyFile(src, alias);
-    copyFile(BOOTSTRAP_HELPER, helper);
+    transaction.push(replacePath(src, dst, transactionID));
+    transaction.push(replacePath(src, alias, transactionID));
+    transaction.push(replacePath(BOOTSTRAP_HELPER, helper, transactionID));
     if (sha256(src) !== sha256(dst) || sha256(src) !== sha256(alias)) {
       throw new Error("installed binary checksum verification failed");
     }
@@ -211,8 +281,17 @@ async function runInstall(args = []) {
       helper,
       sha256: sha256(src),
     });
+    commitTransaction(transaction);
   } catch (error) {
-    for (const file of installedFiles.reverse()) rollbackFile(file);
+    try {
+      rollbackTransaction(transaction);
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        "installation failed and rollback was incomplete",
+        { cause: error }
+      );
+    }
     throw error;
   }
 
@@ -236,8 +315,8 @@ async function runInstall(args = []) {
       process.stdout.write(
           `\nAdd ${dir} to your user PATH, then reopen terminals. PowerShell example:\n` +
           `  $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')\n` +
-          `  [Environment]::SetEnvironmentVariable('Path', '${dir};' + $userPath, 'User')\n` +
-          `  $env:Path = '${dir};' + $env:Path\n`
+          `  [Environment]::SetEnvironmentVariable('Path', ${quotePowerShell(`${dir};`)} + $userPath, 'User')\n` +
+          `  $env:Path = ${quotePowerShell(`${dir};`)} + $env:Path\n`
       );
     }
   } else if (dir === path.join(home, ".local", "bin")) {
@@ -251,4 +330,7 @@ async function runInstall(args = []) {
   process.stdout.write(`\nRun "${isWin ? "gitcode" : "gc"} --help" to get started.\n`);
 }
 
-module.exports = { runInstall, chooseGlobalBinDir, completionTarget, dirOnPath, parseInstallArgs };
+module.exports = {
+  runInstall, chooseGlobalBinDir, commitTransaction, completionTarget, dirOnPath,
+  installHelp, parseInstallArgs, quotePowerShell, replacePath, rollbackTransaction,
+};

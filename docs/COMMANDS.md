@@ -2555,6 +2555,10 @@ gc doctor install --json
 - 只给出 `conflicts` 和 `recommendations`；不会修改 PATH、shell profile、认证配置，也不会调用其他包管理器卸载软件。
 - `--json` 只向 stdout 写一个稳定 JSON 对象，适合安装器、CI 与 AI 代理消费。
 
+npm bootstrap 的 Node wrapper 另提供 `gitcode install [--target-dir <directory>]`；`--target-dir` 只在用户显式指定时覆盖默认的用户级安装目录，可用 `gitcode install --help` 查看。
+
+<a id="gitcode-update"></a>
+
 ### update - 检查或更新当前安装渠道
 
 ```bash
@@ -2564,10 +2568,11 @@ gc update
 gc update --json
 ```
 
-- npm global wrapper 只更新精确包 `@gitcode-cli/cli@<stable latest>`；不会更新其他全局 npm 包。
+- npm global wrapper 只从官方 `https://registry.npmjs.org` 更新精确包 `@gitcode-cli/cli@<stable latest>`；不会更新其他全局 npm 包，并使用 `--ignore-scripts` 禁止更新包生命周期脚本。
 - npm bootstrap 使用安装 manifest 和独立 helper，在当前进程退出后原子替换 `gc` / `gitcode`，下一次启动生效。
 - stable 版本不会自动进入 prerelease，也不会降级。
 - 更新有 24 小时 TTL、跨进程锁、`version --json` 健康检查与失败回滚；后台失败不会改变刚完成业务命令的退出码，摘要在下次启动写入 stderr 一次。
+- updater 子进程使用最小环境白名单，不继承 GitCode/npm/GitHub/云平台凭证或用户 npm registry 配置；仅保留 PATH、系统目录、状态/配置目录、代理和 CA 等运行所需变量。
 - `--check` 只查询 stable `latest`，不安装。
 - 非 npm 渠道只返回对应包管理器的手工升级说明，不会调用 pip、Homebrew、apt、dnf 或 rpm。
 - `--json` 字段为 `status`、`distribution`、`current`、`latest`、`message`；JSON 只写 stdout。
@@ -2583,12 +2588,14 @@ gc config set update.mode off
 gc config set update.mode off --json
 ```
 
-- `auto`：npm global 与 npm bootstrap 的默认值；后台检查并应用 stable 更新。
-- `notify`：后台检查，只提示可用版本。
+支持的 key：`browser`、`editor`、`pager`、`update.mode`。前三项保存普通字符串；`update.mode` 仅接受以下枚举值：
+
+- `notify`：默认值；后台检查 stable 新版本，在下一次启动提示 `gitcode update`，不自动安装。
+- `auto`：用户明确启用后，后台检查并应用 stable 更新。
 - `off`：不联网检查，不自动更新。
 - 配置保存在 `~/.config/gc/config.json` 的 `gitcode.com` host 下；`GC_UPDATE_MODE` 优先于文件配置。
 - 首次 npm 命令会在 stderr 说明默认策略和退出方式。
-- `CI=true`、`--no-interactive`、`--no-update-check`、`GC_NO_UPDATE_CHECK=1` 均禁用自动应用；显式 `update` / `update --check` 仍由用户主动控制。
+- `CI=true`、`--no-interactive`、`--no-update-check`、`GC_NO_UPDATE_CHECK=1` 均禁用隐式后台检查、联网与自动应用；显式 `update` / `update --check` 仍由用户主动控制。
 
 ## 其他命令
 

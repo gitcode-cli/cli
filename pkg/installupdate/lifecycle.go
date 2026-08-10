@@ -16,7 +16,10 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/config"
 )
 
-const updateTTL = 24 * time.Hour
+const (
+	updateTTL       = 24 * time.Hour
+	updateLockStale = 15 * time.Minute
+)
 
 // Manifest describes an npm-bootstrap installation.
 type Manifest struct {
@@ -79,20 +82,24 @@ func AfterCommand(cfg config.Config, errOut io.Writer, noUpdate, noInteractive b
 		return
 	}
 	statePath := StatePath()
-	state := readState(statePath)
-	if state.Summary != nil && !state.Summary.Shown {
-		fmt.Fprintln(errOut, state.Summary.Message)
-		state.Summary.Shown = true
-		writeState(statePath, state)
-	}
-	if disabled(cfg, noUpdate, noInteractive) {
+	updatesDisabled := disabled(cfg, noUpdate, noInteractive)
+	var state updateState
+	if !mutateStateLocked(statePath, func(current *updateState) {
+		if current.Summary != nil && !current.Summary.Shown {
+			fmt.Fprintln(errOut, current.Summary.Message)
+			current.Summary.Shown = true
+		}
+		if !updatesDisabled && !current.NoticeShown {
+			fmt.Fprintln(errOut, "GitCode CLI installed by npm bootstrap checks daily for stable updates and notifies without installing them.")
+			fmt.Fprintln(errOut, `Run "gitcode update", opt in with "gitcode config set update.mode auto", or disable checks with update.mode off.`)
+			current.NoticeShown = true
+		}
+		state = *current
+	}) {
 		return
 	}
-	if !state.NoticeShown {
-		fmt.Fprintln(errOut, "GitCode CLI installed by npm bootstrap checks daily and automatically applies stable updates after commands.")
-		fmt.Fprintln(errOut, `Set "gitcode config set update.mode notify|off" or GC_NO_UPDATE_CHECK=1 to change this behavior.`)
-		state.NoticeShown = true
-		writeState(statePath, state)
+	if updatesDisabled {
+		return
 	}
 	if state.NextCheck > time.Now().UnixMilli() {
 		return
@@ -100,6 +107,40 @@ func AfterCommand(cfg config.Config, errOut io.Writer, noUpdate, noInteractive b
 	if err := StartDetached(manifest, false); err != nil {
 		fmt.Fprintf(errOut, "update check skipped: %v\n", err)
 	}
+}
+
+func mutateStateLocked(path string, mutate func(*updateState)) bool {
+	lockPath := path + ".lock"
+	lock, err := acquireStateLock(lockPath)
+	if err != nil {
+		return false
+	}
+	defer func() {
+		_ = lock.Close()
+		_ = os.Remove(lockPath)
+	}()
+	state := readState(path)
+	mutate(&state)
+	writeState(path, state)
+	return true
+}
+
+func acquireStateLock(path string) (*os.File, error) {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return nil, err
+	}
+	lock, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if !os.IsExist(err) {
+		return lock, err
+	}
+	info, statErr := os.Stat(path)
+	if statErr != nil || time.Since(info.ModTime()) <= updateLockStale {
+		return nil, err
+	}
+	if removeErr := os.Remove(path); removeErr != nil {
+		return nil, removeErr
+	}
+	return os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 }
 
 // StatePath returns the cross-platform npm update state file.
@@ -120,10 +161,7 @@ func StatePath() string {
 
 // StartDetached runs the copied bootstrap helper after this process exits.
 func StartDetached(manifest *Manifest, force bool) error {
-	node := manifest.Node
-	if node == "" {
-		node = "node"
-	}
+	node := resolveNode(manifest.Node)
 	args := []string{
 		manifest.Helper,
 		"--background",
@@ -143,10 +181,7 @@ func StartDetached(manifest *Manifest, force bool) error {
 
 // RunCheck executes an explicit foreground update check.
 func RunCheck(manifest *Manifest, jsonOutput bool, out, errOut io.Writer) error {
-	node := manifest.Node
-	if node == "" {
-		node = "node"
-	}
+	node := resolveNode(manifest.Node)
 	args := []string{manifest.Helper, "--check", "--manifest", manifest.ManifestPath()}
 	if jsonOutput {
 		args = append(args, "--json")
@@ -156,6 +191,18 @@ func RunCheck(manifest *Manifest, jsonOutput bool, out, errOut io.Writer) error 
 	cmd.Stdout = out
 	cmd.Stderr = errOut
 	return cmd.Run()
+}
+
+func resolveNode(recorded string) string {
+	if recorded != "" {
+		if _, err := os.Stat(recorded); err == nil || !filepath.IsAbs(recorded) {
+			return recorded
+		}
+	}
+	if current, err := exec.LookPath("node"); err == nil {
+		return current
+	}
+	return "node"
 }
 
 func disabled(cfg config.Config, noUpdate, noInteractive bool) bool {
@@ -179,16 +226,18 @@ func truthy(value string) bool {
 }
 
 func updaterEnvironment() []string {
-	blocked := map[string]struct{}{
-		"GC_TOKEN":        {},
-		"GITCODE_TOKEN":   {},
-		"NPM_TOKEN":       {},
-		"NODE_AUTH_TOKEN": {},
+	allowed := map[string]struct{}{
+		"ALL_PROXY": {}, "APPDATA": {}, "COMSPEC": {}, "GC_CONFIG_DIR": {},
+		"GC_STATE_DIR": {}, "GC_UPDATE_MODE": {}, "HOME": {}, "HTTP_PROXY": {},
+		"HTTPS_PROXY": {}, "LANG": {}, "LC_ALL": {}, "LOCALAPPDATA": {},
+		"NODE_EXTRA_CA_CERTS": {}, "NO_PROXY": {}, "PATH": {}, "PATHEXT": {}, "SSL_CERT_DIR": {},
+		"SSL_CERT_FILE": {}, "SYSTEMROOT": {}, "TEMP": {}, "TMP": {},
+		"USERPROFILE": {}, "WINDIR": {}, "XDG_CONFIG_HOME": {}, "XDG_STATE_HOME": {},
 	}
-	clean := make([]string, 0, len(os.Environ())+1)
+	clean := make([]string, 0, len(allowed)+1)
 	for _, item := range os.Environ() {
 		key, _, _ := strings.Cut(item, "=")
-		if _, ok := blocked[strings.ToUpper(key)]; !ok {
+		if _, ok := allowed[strings.ToUpper(key)]; ok {
 			clean = append(clean, item)
 		}
 	}
@@ -215,12 +264,28 @@ func writeState(path string, state updateState) {
 	if err != nil {
 		return
 	}
-	temp := path + ".tmp"
-	if os.WriteFile(temp, append(data, '\n'), 0o600) != nil {
+	temp, err := os.CreateTemp(filepath.Dir(path), ".update-state-*")
+	if err != nil {
+		return
+	}
+	tempPath := temp.Name()
+	defer os.Remove(tempPath)
+	if err := temp.Chmod(0o600); err != nil {
+		temp.Close()
+		return
+	}
+	if _, err := temp.Write(append(data, '\n')); err != nil {
+		temp.Close()
+		return
+	}
+	if err := temp.Close(); err != nil {
+		return
+	}
+	if os.Rename(tempPath, path) == nil {
 		return
 	}
 	_ = os.Remove(path)
-	_ = os.Rename(temp, path)
+	_ = os.Rename(tempPath, path)
 }
 
 // DueAt returns the next automatic-check time used by tests and diagnostics.

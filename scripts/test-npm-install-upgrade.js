@@ -51,6 +51,14 @@ function npmEntrypoint() {
   return path.join(npmBinDir(), process.platform === "win32" ? "gitcode.cmd" : "gitcode");
 }
 
+function runEntrypoint(entrypoint, args, options = {}) {
+  if (process.platform === "win32" && /\.cmd$/i.test(entrypoint)) {
+    const wrapper = path.join(prefix, "node_modules", "@gitcode-cli", "cli", "bin", "gc.js");
+    return run(process.execPath, [wrapper, ...args], options);
+  }
+  return run(entrypoint, args, options);
+}
+
 function writeShadow() {
   fs.mkdirSync(oldBin, { recursive: true });
   const target = path.join(oldBin, process.platform === "win32" ? "gitcode.cmd" : "gitcode");
@@ -90,7 +98,7 @@ function buildPackage() {
 }
 
 function assertVersion(entrypoint, expected, env) {
-  const result = run(entrypoint, ["version", "--json"], { env, shell: process.platform === "win32" });
+  const result = runEntrypoint(entrypoint, ["version", "--json"], { env });
   const actual = JSON.parse(result.stdout).version;
   if (actual !== expected) throw new Error(`${entrypoint} reported ${actual}, expected ${expected}`);
 }
@@ -123,9 +131,8 @@ function main() {
   }
   assertVersion(npmEntrypoint(), TEST_VERSION, { PATH: migrationPath, Path: migrationPath });
 
-  const doctor = run(npmEntrypoint(), ["doctor", "install", "--json"], {
+  const doctor = runEntrypoint(npmEntrypoint(), ["doctor", "install", "--json"], {
     env: { PATH: migrationPath, Path: migrationPath },
-    shell: process.platform === "win32",
   });
   const report = JSON.parse(doctor.stdout);
   if (report.distribution !== "npm" || !report.conflicts.some((item) => item.includes("npm global bin"))) {

@@ -5,6 +5,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 
 const METADATA_FILE = ".gitcode-install.json";
@@ -64,8 +65,24 @@ function pathConflict(prefix, env = process.env, isWin = process.platform === "w
 
 function writeInstallMetadata(packageRoot, values) {
   const target = path.join(packageRoot, METADATA_FILE);
+  const temp = `${target}.tmp-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
   const data = { schema: 1, ...values };
-  fs.writeFileSync(target, `${JSON.stringify(data, null, 2)}\n`, { mode: 0o600 });
+  try {
+    const stat = fs.lstatSync(target);
+    if (!stat.isFile() || stat.isSymbolicLink()) {
+      throw new Error(`refusing non-regular install metadata target: ${target}`);
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  fs.writeFileSync(temp, `${JSON.stringify(data, null, 2)}\n`, { mode: 0o600, flag: "wx" });
+  try {
+    fs.renameSync(temp, target);
+  } catch (error) {
+    if (!["EEXIST", "EPERM"].includes(error.code)) throw error;
+    fs.unlinkSync(target);
+    fs.renameSync(temp, target);
+  }
   return target;
 }
 

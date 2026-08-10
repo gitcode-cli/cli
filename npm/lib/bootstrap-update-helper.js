@@ -6,12 +6,19 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 
 const PACKAGE = "@gitcode-cli/cli";
+const OFFICIAL_REGISTRY = "https://registry.npmjs.org";
 const TTL_MS = 24 * 60 * 60 * 1000;
 const LOCK_STALE_MS = 15 * 60 * 1000;
-const SENSITIVE_ENV_KEYS = ["GC_TOKEN", "GITCODE_TOKEN", "NPM_TOKEN", "NODE_AUTH_TOKEN"];
+const UPDATE_ENV_ALLOWLIST = new Set([
+  "ALL_PROXY", "APPDATA", "COMSPEC", "GC_CONFIG_DIR", "GC_STATE_DIR", "GC_UPDATE_MODE",
+  "HOME", "HTTP_PROXY", "HTTPS_PROXY", "LANG", "LC_ALL", "LOCALAPPDATA", "NO_PROXY",
+  "NODE_EXTRA_CA_CERTS", "PATH", "PATHEXT", "SSL_CERT_DIR", "SSL_CERT_FILE", "SYSTEMROOT", "TEMP", "TMP",
+  "USERPROFILE", "WINDIR", "XDG_CONFIG_HOME", "XDG_STATE_HOME",
+]);
 
 function parseArgs(args) {
   const options = { background: false, check: false, force: false, json: false, manifest: "", parentPid: 0 };
@@ -39,14 +46,15 @@ function readJSON(file, fallback = {}) {
 
 function writeJSON(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
-  const temp = `${file}.tmp-${process.pid}`;
-  fs.writeFileSync(temp, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
+  const temp = `${file}.tmp-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
+  fs.writeFileSync(temp, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600, flag: "wx" });
   try {
-    fs.unlinkSync(file);
+    fs.renameSync(temp, file);
   } catch (error) {
-    if (error.code !== "ENOENT") throw error;
+    if (!["EEXIST", "EPERM"].includes(error.code)) throw error;
+    fs.unlinkSync(file);
+    fs.renameSync(temp, file);
   }
-  fs.renameSync(temp, file);
 }
 
 function statePath(env = process.env) {
@@ -64,12 +72,14 @@ function updateMode(env = process.env) {
   const configRoot = env.GC_CONFIG_DIR || path.join(os.homedir(), ".config", "gc");
   const config = readJSON(path.join(configRoot, "config.json"));
   const stored = (((config.hosts || {})["gitcode.com"] || {})["update.mode"] || "").toLowerCase();
-  return ["auto", "notify", "off"].includes(stored) ? stored : "auto";
+  return ["auto", "notify", "off"].includes(stored) ? stored : "notify";
 }
 
 function updaterEnvironment(env = process.env) {
-  const clean = { ...env, GC_NO_UPDATE_CHECK: "1" };
-  for (const key of SENSITIVE_ENV_KEYS) delete clean[key];
+  const clean = { GC_NO_UPDATE_CHECK: "1" };
+  for (const [key, value] of Object.entries(env)) {
+    if (UPDATE_ENV_ALLOWLIST.has(key.toUpperCase())) clean[key] = value;
+  }
   return clean;
 }
 
@@ -95,22 +105,59 @@ function compareVersions(left, right) {
 }
 
 function npmCommand(manifest) {
-  if (manifest.npm && /\.m?js$/i.test(manifest.npm)) return { command: manifest.node, prefix: [manifest.npm] };
-  return { command: manifest.npm || (process.platform === "win32" ? "npm.cmd" : "npm"), prefix: [] };
+  if (manifest.npm && /\.m?js$/i.test(manifest.npm) && fs.existsSync(manifest.npm)) {
+    return { command: process.execPath, prefix: [manifest.npm] };
+  }
+  if (manifest.npm && (!path.isAbsolute(manifest.npm) || fs.existsSync(manifest.npm)) && !/\.(?:cmd|bat)$/i.test(manifest.npm)) {
+    return { command: manifest.npm, prefix: [] };
+  }
+  const candidates = [
+    path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"),
+    path.resolve(path.dirname(process.execPath), "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+  ];
+  const current = candidates.find((candidate) => fs.existsSync(candidate));
+  if (current) return { command: process.execPath, prefix: [current] };
+  throw new Error("npm CLI JavaScript runtime not found; reinstall Node.js or run npm install -g explicitly");
+}
+
+function withNpmIsolation(args, userConfig, globalConfig) {
+  const isolation = [
+    `--userconfig=${userConfig}`,
+    `--globalconfig=${globalConfig}`,
+    `--@gitcode-cli:registry=${OFFICIAL_REGISTRY}`,
+    `--registry=${OFFICIAL_REGISTRY}`,
+  ];
+  const separator = args.indexOf("--");
+  if (separator < 0) return [...args, ...isolation];
+  return [...args.slice(0, separator), ...isolation, ...args.slice(separator)];
 }
 
 function runNpm(manifest, args, timeout) {
   const npm = npmCommand(manifest);
-  return spawnSync(npm.command, [...npm.prefix, ...args], {
-    encoding: "utf8",
-    timeout,
-    windowsHide: true,
-    env: updaterEnvironment(),
-  });
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "gitcode-npm-bootstrap-"));
+  try {
+    const userConfig = path.join(workDir, "user.npmrc");
+    const globalConfig = path.join(workDir, "global.npmrc");
+    fs.writeFileSync(userConfig, "", { flag: "wx", mode: 0o600 });
+    fs.writeFileSync(globalConfig, "", { flag: "wx", mode: 0o600 });
+    return spawnSync(npm.command, [...npm.prefix, ...withNpmIsolation(args, userConfig, globalConfig)], {
+      encoding: "utf8",
+      timeout,
+      windowsHide: true,
+      cwd: workDir,
+      env: updaterEnvironment(),
+    });
+  } finally {
+    fs.rmSync(workDir, { recursive: true, force: true });
+  }
 }
 
 function latestVersion(manifest) {
-  const result = runNpm(manifest, ["view", PACKAGE, "dist-tags.latest", "--json"], 10000);
+  const result = runNpm(
+    manifest,
+    ["view", PACKAGE, "dist-tags.latest", "--json"],
+    10000
+  );
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error((result.stderr || "npm registry check failed").trim());
   const version = JSON.parse(result.stdout);
@@ -132,15 +179,6 @@ function waitForParent(pid) {
   throw new Error(`parent process ${pid} did not exit before update timeout`);
 }
 
-function restorePrevious(manifest) {
-  const names = process.platform === "win32" ? ["gc.exe", "gitcode.exe"] : ["gc", "gitcode"];
-  for (const name of names) {
-    const target = path.join(manifest.targetDir, name);
-    const previous = `${target}.previous`;
-    if (fs.existsSync(previous)) fs.copyFileSync(previous, target);
-  }
-}
-
 function healthCheck(manifest, expected) {
   const entry = path.join(manifest.targetDir, process.platform === "win32" ? "gitcode.exe" : "gitcode");
   const result = spawnSync(entry, ["version", "--json"], {
@@ -160,6 +198,7 @@ function installLatest(manifest, latest) {
     "exec",
     "--yes",
     `--package=${PACKAGE}@${latest}`,
+    "--ignore-scripts",
     "--",
     "gitcode",
     "install",
@@ -202,7 +241,7 @@ function run(options) {
   if (!options.force && !options.check && state.nextCheck && Number(state.nextCheck) > Date.now()) {
     return { status: "cached", distribution: "npm-bootstrap", current: manifest.version, latest: "", message: "Update check is not due yet." };
   }
-  const lock = `${stateFile}.bootstrap.lock`;
+  const lock = `${stateFile}.lock`;
   const descriptor = acquireLock(lock);
   if (descriptor == null) return { status: "busy", distribution: "npm-bootstrap", current: manifest.version, latest: "", message: "Another update is running." };
   try {
@@ -212,18 +251,13 @@ function run(options) {
     if (comparison == null) throw new Error(`cannot compare ${manifest.version} and ${latest}`);
     if (comparison >= 0) {
       result = { status: "current", distribution: "npm-bootstrap", current: manifest.version, latest, message: `GitCode CLI ${manifest.version} is current.` };
-    } else if (options.check || updateMode() === "notify") {
+    } else if (options.check || (updateMode() === "notify" && !options.force)) {
       result = { status: "available", distribution: "npm-bootstrap", current: manifest.version, latest, message: `GitCode CLI ${latest} is available.` };
     } else if (updateMode() === "off" && !options.force) {
       result = { status: "disabled", distribution: "npm-bootstrap", current: manifest.version, latest, message: "Automatic updates are disabled." };
     } else {
       waitForParent(options.parentPid);
-      try {
-        installLatest(manifest, latest);
-      } catch (error) {
-        restorePrevious(manifest);
-        throw error;
-      }
+      installLatest(manifest, latest);
       result = { status: "updated", distribution: "npm-bootstrap", current: manifest.version, latest, message: `Updated GitCode CLI ${manifest.version} -> ${latest}.` };
     }
     const now = Date.now();
@@ -269,4 +303,6 @@ function main(args = process.argv.slice(2)) {
 
 if (require.main === module) process.exitCode = main();
 
-module.exports = { compareVersions, main, parseArgs, stableVersion, updateMode };
+module.exports = {
+  compareVersions, main, npmCommand, parseArgs, stableVersion, updateMode, updaterEnvironment, withNpmIsolation,
+};

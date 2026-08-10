@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -35,7 +36,7 @@ func TestSetAndGetUpdateMode(t *testing.T) {
 	}
 }
 
-func TestUpdateModeDefaultsToAuto(t *testing.T) {
+func TestUpdateModeDefaultsToNotify(t *testing.T) {
 	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	cmd := NewCmdConfig(cmdutil.TestFactory())
 	out := &bytes.Buffer{}
@@ -44,8 +45,26 @@ func TestUpdateModeDefaultsToAuto(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if strings.TrimSpace(out.String()) != "auto" {
-		t.Fatalf("output = %q, want auto", out.String())
+	if strings.TrimSpace(out.String()) != "notify" {
+		t.Fatalf("output = %q, want notify", out.String())
+	}
+}
+
+func TestGetNormalizesUpdateModeKey(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	cmd := NewCmdConfig(cmdutil.TestFactory())
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetArgs([]string{"get", " UPDATE.MODE ", "--json"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	var result configResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Key != "update.mode" || result.Value != "notify" {
+		t.Fatalf("result = %#v, want normalized notify result", result)
 	}
 }
 

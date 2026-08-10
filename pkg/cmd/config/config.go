@@ -36,18 +36,19 @@ func newCmdGet(f *cmdutil.Factory) *cobra.Command {
 		Short: "Read a configuration value",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			key := strings.ToLower(strings.TrimSpace(args[0]))
 			cfg, err := f.Config()
 			if err != nil {
 				return err
 			}
-			value, err := cfg.Get(defaultHost, args[0])
+			value, err := cfg.Get(defaultHost, key)
 			if err != nil {
 				return err
 			}
-			if args[0] == "update.mode" && value == "" {
-				value = "auto"
+			if key == "update.mode" && value == "" {
+				value = "notify"
 			}
-			result := configResult{Key: args[0], Value: value}
+			result := configResult{Key: key, Value: value}
 			if jsonOutput {
 				return cmdutil.WriteJSON(cmd.OutOrStdout(), result)
 			}

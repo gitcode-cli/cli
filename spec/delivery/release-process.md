@@ -153,6 +153,8 @@ workflow 必须先在只读权限下校验 `docs/releases/vX.Y.Z.md`、执行 Go
 
 `npm` job 只下载并校验 `release-assets`，再用 **OIDC Trusted Publishing** 执行 `npm publish <verified.tgz> --access public`（`permissions: id-token: write`，无 `NPM_TOKEN`，自动 provenance）。目标版本已存在时，必须 `npm pack` 下载 registry tarball 并与 Release tarball 比较 SHA-256；只有完全一致才可跳过，差异必须阻断发布。
 
+稳定版本发布到 npm `latest` dist-tag；带 prerelease 后缀的版本必须显式使用 `next`，不得污染自动更新读取的 stable `latest`。
+
 ### 6.6 同步 GitCode tag、Release 与正式制品
 
 GitHub workflow 全部成功后，通过 SSH 将同一 tag 推送到 GitCode，并下载 GitHub Release 的正式制品：

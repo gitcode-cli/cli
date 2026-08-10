@@ -169,7 +169,7 @@ ln -s gc ~/.local/bin/gitcode
 gc version
 ```
 
-Windows 和 macOS 用户建议使用上方 wheel 包；wheel 内置 Linux、macOS 和 Windows 二进制，并同时提供 `gc` 与 `gitcode` 两个命令入口。
+需要与系统包管理器隔离时可使用上方 wheel；需要免安装直接部署时使用独立二进制。二者都应先确认平台架构受支持。
 
 ### Docker 镜像
 
@@ -227,9 +227,21 @@ npm install -g @gitcode-cli/cli
 gitcode version
 ```
 
+如果 `gitcode version` 仍显示旧的 pip/wheel 版本，先直接调用 npm 安装目录中的新入口诊断，不必先卸载 pip：
+
+```powershell
+# Windows PowerShell
+& "$(npm prefix -g)\gitcode.cmd" doctor install --json
+```
+
+```bash
+# Linux/macOS
+"$(npm prefix -g)/bin/gitcode" doctor install --json
+```
+
 包内置 Linux/macOS/Windows 多平台二进制。Windows bootstrap 同时安装 `gc.exe` 和 `gitcode.exe`，PowerShell 请使用 `gitcode`，避免内置 `gc`/`Get-Content` alias。
 
-npm global 与 npm bootstrap 默认使用 `auto` 模式：命令本身立即执行，24 小时 TTL 到期后在后台检查 stable `latest`，更新成功后下一次启动生效。更新有跨进程锁、版本健康检查和失败回滚；网络、权限或 registry 失败不会改变刚完成命令的退出码。
+npm global 与 npm bootstrap 默认使用 `notify` 模式：命令本身立即执行，24 小时 TTL 到期后在后台检查 stable `latest`，发现新版后在下一次启动提示 `gitcode update`，不会自动安装，也不会改变刚完成命令的退出码。需要自动应用的用户可明确启用 `auto`；该模式具有跨进程锁、版本健康检查和失败回滚。
 
 ```bash
 gitcode update --check       # 只检查
@@ -244,7 +256,7 @@ gitcode --no-update-check version   # 单次禁用
 GC_NO_UPDATE_CHECK=1 gitcode version
 ```
 
-`CI=true`、`--no-interactive`、`--no-update-check` 或 `GC_NO_UPDATE_CHECK=1` 会禁用自动应用。自动更新仅操作 `@gitcode-cli/cli`，不会调用 pip、Homebrew、apt、dnf，也不会静默修改 PATH。npm 生命周期脚本被组织策略禁用时，可直接运行 npm prefix 中的 `gitcode` 再执行 `doctor install`；wrapper 会在首次直接运行时补建来源 metadata。
+`CI=true`、`--no-interactive`、`--no-update-check` 或 `GC_NO_UPDATE_CHECK=1` 会禁用后台检查。更新器仅从官方 `https://registry.npmjs.org` 获取精确 stable 版本，安装时禁用生命周期脚本，并以最小环境启动；它不会调用 pip、Homebrew、apt、dnf，也不会静默修改 PATH。npm 生命周期脚本被组织策略禁用时，可直接运行 npm prefix 中的 `gitcode` 再执行 `doctor install`；wrapper 会在首次直接运行时补建来源 metadata。
 
 ### 规划中的安装方式
 

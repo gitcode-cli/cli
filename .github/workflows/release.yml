@@ -496,6 +496,10 @@ jobs:
         run: |
           set -euo pipefail
           PACKAGE_FILE="$(find release-assets -maxdepth 1 -name '*.tgz' -type f -print -quit)"
+          PUBLISH_TAG="latest"
+          if [[ "${VERSION_NUM}" == *-* ]]; then
+            PUBLISH_TAG="next"
+          fi
           if npm view "@gitcode-cli/cli@${VERSION_NUM}" version >/dev/null 2>&1; then
             mkdir existing-npm
             npm pack "@gitcode-cli/cli@${VERSION_NUM}" --pack-destination existing-npm >/dev/null
@@ -505,10 +509,15 @@ jobs:
               echo "::error::existing npm package content differs from the verified release asset"
               exit 1
             }
+            TAG_VERSION="$(npm view "@gitcode-cli/cli" "dist-tags.${PUBLISH_TAG}")"
+            test "${TAG_VERSION}" = "${VERSION_NUM}" || {
+              echo "::error::npm dist-tag ${PUBLISH_TAG} points to ${TAG_VERSION}, expected ${VERSION_NUM}"
+              exit 1
+            }
             echo "npm @gitcode-cli/cli@${VERSION_NUM} already published with identical content; skipping"
             exit 0
           fi
           # OIDC: npm CLI auto-detects the id-token: write permission and the
           # trusted publisher configured on npmjs.com, exchanging a short-lived
           # token. No NPM_TOKEN secret is used; provenance is auto-generated.
-          npm publish "${PACKAGE_FILE}" --access public
+          npm publish "${PACKAGE_FILE}" --access public --tag "${PUBLISH_TAG}"

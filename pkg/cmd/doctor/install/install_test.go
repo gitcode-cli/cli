@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -54,6 +55,30 @@ func TestInspectDetectsBootstrapManifest(t *testing.T) {
 	report := Inspect([]string{"PATH=" + dir, binaryEnv + "=" + binary}, runtime.GOOS, "", "", "")
 	if report.Distribution != "npm-bootstrap" {
 		t.Fatalf("Distribution = %q, want npm-bootstrap", report.Distribution)
+	}
+}
+
+func TestInspectReportsMultipleProviderDirectories(t *testing.T) {
+	first := t.TempDir()
+	second := t.TempDir()
+	name := "gitcode"
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+	for _, dir := range []string{first, second} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("test"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	report := Inspect([]string{"PATH=" + first + string(os.PathListSeparator) + second}, runtime.GOOS, "", "", "")
+	found := false
+	for _, conflict := range report.Conflicts {
+		if strings.Contains(conflict, "gitcode is provided by multiple PATH directories") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected multiple-provider conflict, got %#v", report.Conflicts)
 	}
 }
 

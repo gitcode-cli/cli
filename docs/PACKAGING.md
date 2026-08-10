@@ -280,13 +280,15 @@ npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/
 
 正式 npm tarball 不再独立编译二进制：release workflow 的 `artifacts` job 调用 `scripts/prepare-npm-package.sh`，从同一批 GoReleaser 归档/裸二进制组装 npm 包，并将 `.tgz` 纳入 Release SHA-256 清单。`npm` job 只下载已验证的 Release artifact 并执行 OIDC Trusted Publishing；目标版本已存在时，必须下载 registry tarball 与 Release tarball 比对 SHA-256，内容一致才允许幂等跳过。
 
-npm global 与 bootstrap 默认 `auto` 更新 stable 版本，提供 `notify` / `off`、24 小时 TTL、跨进程锁、健康检查和回滚。安装/升级验证必须覆盖：
+npm global 与 bootstrap 默认 `notify` stable 新版本并提示显式运行 `gitcode update`；`auto` 仅在用户主动配置后自动应用，另提供 `off`。三种模式共享 24 小时 TTL，应用更新时使用跨进程锁、健康检查和回滚。安装/升级验证必须覆盖：
+
+npm 发布标签必须与版本类型一致：stable 发布到 `latest`，prerelease 发布到 `next`。发布重跑必须同时校验既有 tarball 内容与对应 dist-tag，不得让 prerelease 污染 stable 更新通道。
 
     gitcode doctor install --json
     gitcode update --check --json
     gitcode config set update.mode off
 
-更新器只允许操作 `@gitcode-cli/cli`；不得自动卸载 pip/Homebrew/DEB/RPM，不得提权或重写 PATH。鉴权使用 **OIDC Trusted Publishing**（`id-token: write`，无 `NPM_TOKEN`）；`npm/package.json` 的 `repository.url` 须保持为 `https://github.com/gitcode-cli/cli.git`。
+更新器只允许从官方 npm registry 操作 `@gitcode-cli/cli` 的精确 stable 版本，以 `--ignore-scripts` 安装并使用最小子进程环境；不得继承用户 registry/auth 配置，不得自动卸载 pip/Homebrew/DEB/RPM，不得提权或重写 PATH。发布鉴权使用 **OIDC Trusted Publishing**（`id-token: write`，无 `NPM_TOKEN`）；`npm/package.json` 的 `repository.url` 须保持为 `https://github.com/gitcode-cli/cli.git`。
 
 ## 验证安装
 

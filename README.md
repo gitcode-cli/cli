@@ -163,6 +163,8 @@ Windows 和 macOS 用户建议使用上方 wheel 包；wheel 内置 Linux、macO
 
 ### Docker 镜像
 
+> **用途说明**：Docker 镜像用于开发/构建环境。`docker compose up gc` 默认执行 `gc --help` 展示用法后退出（CLI 工具非长期服务）。交互式使用 `docker run -it gitcode/gc:dev` 或 `docker exec -it gc-cli bash`。
+
 仓库已提供 `Dockerfile`、`docker-compose.yml` 和 Makefile 目标：
 
 ```bash

@@ -85,7 +85,7 @@ type GitCodeUpdateReleaseOptions struct {
 
 // ListReleases lists releases for a repository
 func ListReleases(client *Client, owner, repo string, opts *ReleaseListOptions) ([]Release, error) {
-	path := buildPath("/repos/"+owner+"/"+repo+"/releases", opts)
+	path := buildPath(escapedRepoPath(owner, repo)+"/releases", opts)
 
 	var releases []Release
 	err := client.Get(path, &releases)
@@ -107,7 +107,7 @@ func ListReleases(client *Client, owner, repo string, opts *ReleaseListOptions) 
 func GetRelease(client *Client, owner, repo, tag string) (*Release, error) {
 	escapedTag := url.PathEscape(tag)
 	var release Release
-	err := client.Get("/repos/"+owner+"/"+repo+"/releases/tags/"+escapedTag, &release)
+	err := client.Get(escapedRepoPath(owner, repo)+"/releases/tags/"+escapedTag, &release)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func GetRelease(client *Client, owner, repo, tag string) (*Release, error) {
 // GetReleaseByID fetches a release by ID
 func GetReleaseByID(client *Client, owner, repo string, id int64) (*Release, error) {
 	var release Release
-	err := client.Get("/repos/"+owner+"/"+repo+"/releases/"+itoa64(id), &release)
+	err := client.Get(escapedRepoPath(owner, repo)+"/releases/"+itoa64(id), &release)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func GetReleaseByID(client *Client, owner, repo string, id int64) (*Release, err
 // GetLatestRelease fetches the latest release for a repository
 func GetLatestRelease(client *Client, owner, repo string) (*Release, error) {
 	var release Release
-	err := client.Get("/repos/"+owner+"/"+repo+"/releases/latest", &release)
+	err := client.Get(escapedRepoPath(owner, repo)+"/releases/latest", &release)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func GetLatestRelease(client *Client, owner, repo string) (*Release, error) {
 // CreateRelease creates a new release
 func CreateRelease(client *Client, owner, repo string, opts *CreateReleaseOptions) (*Release, error) {
 	var release Release
-	err := client.Post("/repos/"+owner+"/"+repo+"/releases", opts, &release)
+	err := client.Post(escapedRepoPath(owner, repo)+"/releases", opts, &release)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func CreateRelease(client *Client, owner, repo string, opts *CreateReleaseOption
 // UpdateRelease updates an existing release by ID
 func UpdateRelease(client *Client, owner, repo string, id int64, opts *UpdateReleaseOptions) (*Release, error) {
 	var release Release
-	err := client.Patch("/repos/"+owner+"/"+repo+"/releases/"+itoa64(id), opts, &release)
+	err := client.Patch(escapedRepoPath(owner, repo)+"/releases/"+itoa64(id), opts, &release)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func UpdateReleaseByTag(client *Client, owner, repo, tag string, opts *UpdateRel
 func UpdateReleaseByTagDirect(client *Client, owner, repo, tag string, opts *GitCodeUpdateReleaseOptions) (*Release, error) {
 	// URL escape the tag for path safety (e.g., "release/v1.0.0" -> "release%2Fv1.0.0")
 	escapedTag := url.PathEscape(tag)
-	path := "/repos/" + owner + "/" + repo + "/releases/" + escapedTag
+	path := escapedRepoPath(owner, repo) + "/releases/" + escapedTag
 
 	var release Release
 	err := client.Patch(path, opts, &release)
@@ -187,7 +187,7 @@ func UpdateReleaseByTagDirect(client *Client, owner, repo, tag string, opts *Git
 
 // DeleteRelease deletes a release by ID
 func DeleteRelease(client *Client, owner, repo string, id int64) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + itoa64(id))
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/" + itoa64(id))
 }
 
 // DeleteReleaseByTag deletes a release by tag name.
@@ -220,7 +220,7 @@ func DeleteReleaseByTag(client *Client, owner, repo, tag string) error {
 // This bypasses the need for release ID which GitCode API may not return.
 func DeleteReleaseByTagDirect(client *Client, owner, repo, tag string) error {
 	escapedTag := url.PathEscape(tag)
-	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + escapedTag)
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/" + escapedTag)
 }
 
 // DeleteReleaseByTagKnown is like DeleteReleaseByTag but uses a previously
@@ -288,7 +288,7 @@ func (r *Release) GetID() (int64, error) {
 // ListReleaseAssets lists assets for a release
 func ListReleaseAssets(client *Client, owner, repo string, releaseID int64) ([]ReleaseAsset, error) {
 	var assets []ReleaseAsset
-	err := client.Get("/repos/"+owner+"/"+repo+"/releases/"+itoa64(releaseID)+"/assets", &assets)
+	err := client.Get(escapedRepoPath(owner, repo)+"/releases/"+itoa64(releaseID)+"/assets", &assets)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +298,7 @@ func ListReleaseAssets(client *Client, owner, repo string, releaseID int64) ([]R
 // GetReleaseAsset fetches a single release asset
 func GetReleaseAsset(client *Client, owner, repo string, assetID int64) (*ReleaseAsset, error) {
 	var asset ReleaseAsset
-	err := client.Get("/repos/"+owner+"/"+repo+"/releases/assets/"+itoa64(assetID), &asset)
+	err := client.Get(escapedRepoPath(owner, repo)+"/releases/assets/"+itoa64(assetID), &asset)
 	if err != nil {
 		return nil, err
 	}
@@ -307,13 +307,13 @@ func GetReleaseAsset(client *Client, owner, repo string, assetID int64) (*Releas
 
 // DeleteReleaseAsset deletes a release asset
 func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/releases/assets/" + itoa64(assetID))
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/assets/" + itoa64(assetID))
 }
 
 // GetReleaseUploadURL fetches the upload URL for a release asset
 func GetReleaseUploadURL(client *Client, owner, repo, tag, filename string) (*AssetUploadURL, error) {
 	escapedTag := url.PathEscape(tag)
-	path := "/repos/" + owner + "/" + repo + "/releases/" + escapedTag + "/upload_url" + newQueryBuilder().Set("file_name", filename).String()
+	path := escapedRepoPath(owner, repo) + "/releases/" + escapedTag + "/upload_url" + newQueryBuilder().Set("file_name", filename).String()
 
 	var result AssetUploadURL
 	err := client.Get(path, &result)
@@ -328,7 +328,7 @@ func UploadReleaseAsset(client *Client, owner, repo string, releaseID int64, fil
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	return client.UploadAsset("/repos/"+owner+"/"+repo+"/releases/"+itoa64(releaseID)+"/assets", filename, content, contentType)
+	return client.UploadAsset(escapedRepoPath(owner, repo)+"/releases/"+itoa64(releaseID)+"/assets", filename, content, contentType)
 }
 
 // UploadReleaseAssetByTag uploads a file to a release by tag name using two-step process

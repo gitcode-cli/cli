@@ -121,7 +121,7 @@ type UpdateCommentOptions struct {
 
 // ListRepoIssues lists issues for a repository
 func ListRepoIssues(client *Client, owner, repo string, opts *IssueListOptions) ([]Issue, error) {
-	path := "/repos/" + owner + "/" + repo + "/issues"
+	path := escapedRepoPath(owner, repo) + "/issues"
 
 	// Build query parameters
 	if opts != nil {
@@ -181,7 +181,7 @@ func ListRepoIssuesAll(client *Client, owner, repo string, opts *IssueListOption
 // GetIssue fetches an issue by number
 func GetIssue(client *Client, owner, repo string, number int) (*Issue, error) {
 	var issue Issue
-	err := client.Get("/repos/"+owner+"/"+repo+"/issues/"+itoa(number), &issue)
+	err := client.Get(escapedRepoPath(owner, repo)+"/issues/"+itoa(number), &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func CreateIssue(client *Client, owner, repo string, opts *CreateIssueOptions) (
 	}
 
 	var issue Issue
-	err := client.PostForm("/repos/"+owner+"/"+repo+"/issues", formValues, &issue)
+	err := client.PostForm(escapedRepoPath(owner, repo)+"/issues", formValues, &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +268,7 @@ func createIssueViaOwnerPath(client *Client, owner, repo string, opts *CreateIss
 	}
 
 	var issue Issue
-	err := client.Post("/repos/"+owner+"/issues", body, &issue)
+	err := client.Post("/repos/"+url.PathEscape(owner)+"/issues", body, &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func createIssueAssignees(opts *CreateIssueOptions) []string {
 // UpdateIssue updates an existing issue
 // GitCode API: PATCH /repos/:owner/issues/:number with repo param in body
 func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIssueOptions) (*Issue, error) {
-	path := "/repos/" + owner + "/issues/" + itoa(number)
+	path := "/repos/" + url.PathEscape(owner) + "/issues/" + itoa(number)
 
 	// Ensure repo is set in opts
 	if opts.Repo == "" {
@@ -416,7 +416,7 @@ func isIssueOpen(issue *Issue) bool {
 
 // ListIssueComments lists comments on an issue
 func ListIssueComments(client *Client, owner, repo string, number int, opts *IssueCommentListOptions) ([]IssueComment, error) {
-	path := "/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/comments"
+	path := escapedRepoPath(owner, repo) + "/issues/" + itoa(number) + "/comments"
 	if opts != nil {
 		path += newQueryBuilder().
 			SetInt("page", opts.Page).
@@ -463,7 +463,7 @@ func ListIssueCommentsAll(client *Client, owner, repo string, number int, opts *
 // CreateIssueComment creates a comment on an issue
 func CreateIssueComment(client *Client, owner, repo string, number int, opts *CreateCommentOptions) (*IssueComment, error) {
 	var comment IssueComment
-	err := client.Post("/repos/"+owner+"/"+repo+"/issues/"+itoa(number)+"/comments", opts, &comment)
+	err := client.Post(escapedRepoPath(owner, repo)+"/issues/"+itoa(number)+"/comments", opts, &comment)
 	if err != nil {
 		return nil, err
 	}
@@ -473,7 +473,7 @@ func CreateIssueComment(client *Client, owner, repo string, number int, opts *Cr
 // UpdateIssueComment updates a comment on an issue.
 func UpdateIssueComment(client *Client, owner, repo string, commentID string, opts *UpdateCommentOptions) (*IssueComment, error) {
 	var comment IssueComment
-	err := client.Patch("/repos/"+owner+"/"+repo+"/issues/comments/"+commentID, opts, &comment)
+	err := client.Patch(escapedRepoPath(owner, repo)+"/issues/comments/"+commentID, opts, &comment)
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +482,7 @@ func UpdateIssueComment(client *Client, owner, repo string, commentID string, op
 
 // DeleteIssueComment deletes a comment on an issue
 func DeleteIssueComment(client *Client, owner, repo string, commentID int64) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/issues/comments/" + strconv.FormatInt(commentID, 10))
+	return client.Delete(escapedRepoPath(owner, repo) + "/issues/comments/" + strconv.FormatInt(commentID, 10))
 }
 
 // LabelListOptions represents options for listing repository labels
@@ -493,7 +493,7 @@ type LabelListOptions struct {
 
 // ListRepoLabels lists labels for a repository
 func ListRepoLabels(client *Client, owner, repo string, opts *LabelListOptions) ([]Label, error) {
-	path := "/repos/" + owner + "/" + repo + "/labels"
+	path := escapedRepoPath(owner, repo) + "/labels"
 	if opts != nil {
 		path += newQueryBuilder().
 			SetInt("per_page", opts.PerPage).
@@ -639,7 +639,7 @@ type MilestoneListOptions struct {
 
 // ListRepoMilestones lists milestones for a repository
 func ListRepoMilestones(client *Client, owner, repo string, opts *MilestoneListOptions) ([]Milestone, error) {
-	path := "/repos/" + owner + "/" + repo + "/milestones"
+	path := escapedRepoPath(owner, repo) + "/milestones"
 	if opts != nil {
 		path += newQueryBuilder().
 			SetInt("per_page", opts.PerPage).
@@ -657,7 +657,7 @@ func ListRepoMilestones(client *Client, owner, repo string, opts *MilestoneListO
 // GetIssuePullRequests gets Pull Requests associated with an issue
 // mode: 1 (enhanced mode, returns mergeable status), 0 (default, no mergeable status)
 func GetIssuePullRequests(client *Client, owner, repo string, number int, mode int) ([]IssuePR, error) {
-	path := "/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/pull_requests"
+	path := escapedRepoPath(owner, repo) + "/issues/" + itoa(number) + "/pull_requests"
 	if mode == 1 {
 		path += "?mode=1"
 	}

@@ -35,6 +35,7 @@ func TestReleaseWorkflowSupportsVerifiedNPMRecovery(t *testing.T) {
 		`if: ${{ inputs.npm_recovery }}`,
 		`test "$(tr -d '\r\n' < VERSION)" = "${VERSION_NUM}"`,
 		`docs/releases/${VERSION_INPUT}.npm-recovery.json`,
+		`git fetch --force --tags origin`,
 		`test "${TAG_SHA}" = "${TAG_SHA_EXPECTED}"`,
 		`git merge-base --is-ancestor "${TAG_SHA}" origin/main`,
 		`test "$(git show "${VERSION_INPUT}:VERSION")" = "${VERSION_NUM}"`,

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"strconv"
 	"fmt"
 	"net/url"
 	"strings"
@@ -184,7 +185,7 @@ func buildPRListPath(base string, opts *PRListOptions) string {
 // GetPullRequest fetches a PR by number
 func GetPullRequest(client *Client, owner, repo string, number int) (*PullRequest, error) {
 	var pr PullRequest
-	err := client.Get(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number), &pr)
+	err := client.Get(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number), &pr)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +248,7 @@ func UpdatePullRequest(client *Client, owner, repo string, number int, opts *Upd
 	formValues := buildPRUpdateFormValues(opts)
 
 	var pr PullRequest
-	err := client.PatchForm(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number), formValues, &pr)
+	err := client.PatchForm(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number), formValues, &pr)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +298,7 @@ func buildPRUpdateFormValues(opts *UpdatePROptions) url.Values {
 		}
 	}
 	if opts.MilestoneNumber > 0 {
-		formValues.Set("milestone_number", itoa(opts.MilestoneNumber))
+		formValues.Set("milestone_number", strconv.Itoa(opts.MilestoneNumber))
 	}
 	if opts.LabelsSet {
 		labels := make([]string, 0, len(opts.Labels))
@@ -400,7 +401,7 @@ func ReopenPullRequest(client *Client, owner, repo string, number int) (*PullReq
 // MergePullRequest merges a PR
 func MergePullRequest(client *Client, owner, repo string, number int, opts *MergePROptions) (*PullRequest, error) {
 	var pr PullRequest
-	err := client.Put(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/merge", opts, &pr)
+	err := client.Put(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/merge", opts, &pr)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +416,7 @@ func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment
 	var allComments []PRComment
 	for page := 1; ; page++ {
 		var comments []PRComment
-		path := escapedRepoPath(owner, repo) + "/pulls/" + itoa(number) + "/comments"
+		path := escapedRepoPath(owner, repo) + "/pulls/" + strconv.Itoa(number) + "/comments"
 
 		err := client.Get(path+newQueryBuilder().SetInt("per_page", perPage).SetInt("page", page).String(), &comments)
 		if err != nil {
@@ -433,7 +434,7 @@ func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment
 // CreatePRComment creates a comment on a PR
 func CreatePRComment(client *Client, owner, repo string, number int, opts *CreatePRCommentOptions) (*PRComment, error) {
 	var comment PRComment
-	err := client.Post(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/comments", opts, &comment)
+	err := client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/comments", opts, &comment)
 	if err != nil {
 		return nil, err
 	}
@@ -443,7 +444,7 @@ func CreatePRComment(client *Client, owner, repo string, number int, opts *Creat
 // CreatePRReview creates a review on a PR
 func CreatePRReview(client *Client, owner, repo string, number int, opts *CreatePRReviewOptions) (*PRReview, error) {
 	var review PRReview
-	err := client.Post(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/reviews", opts, &review)
+	err := client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/reviews", opts, &review)
 	if err != nil {
 		return nil, err
 	}
@@ -457,7 +458,7 @@ type ReviewPROptions struct {
 
 // ReviewPR handles PR review (approve/force pass)
 func ReviewPR(client *Client, owner, repo string, number int, opts *ReviewPROptions) error {
-	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/review", opts, nil)
+	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/review", opts, nil)
 }
 
 // EditPR updates a PR's information
@@ -472,7 +473,7 @@ type TestPROptions struct {
 
 // TestPR handles PR test
 func TestPR(client *Client, owner, repo string, number int, opts *TestPROptions) error {
-	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/test", opts, nil)
+	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/test", opts, nil)
 }
 
 // EditPRCommentOptions represents options for editing a PR comment
@@ -483,7 +484,7 @@ type EditPRCommentOptions struct {
 // EditPRComment edits a PR comment
 func EditPRComment(client *Client, owner, repo string, commentID int, opts *EditPRCommentOptions) (*PRComment, error) {
 	var comment PRComment
-	err := client.Patch(escapedRepoPath(owner, repo)+"/pulls/comments/"+itoa(commentID), opts, &comment)
+	err := client.Patch(escapedRepoPath(owner, repo)+"/pulls/comments/"+strconv.Itoa(commentID), opts, &comment)
 	if err != nil {
 		return nil, err
 	}
@@ -492,7 +493,7 @@ func EditPRComment(client *Client, owner, repo string, commentID int, opts *Edit
 
 // DeletePRComment deletes a PR comment
 func DeletePRComment(client *Client, owner, repo string, commentID int) error {
-	return client.Delete(escapedRepoPath(owner, repo) + "/pulls/comments/" + itoa(commentID))
+	return client.Delete(escapedRepoPath(owner, repo) + "/pulls/comments/" + strconv.Itoa(commentID))
 }
 
 // ReplyPRCommentOptions represents options for replying to a PR comment
@@ -510,7 +511,7 @@ type ReplyPRCommentReply struct {
 // ReplyPRComment replies to a PR comment discussion
 func ReplyPRComment(client *Client, owner, repo string, number int, discussionID string, opts *ReplyPRCommentOptions) (*ReplyPRCommentReply, error) {
 	var result ReplyPRCommentReply
-	err := client.Post(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/discussions/"+discussionID+"/comments", opts, &result)
+	err := client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/discussions/"+discussionID+"/comments", opts, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -524,13 +525,13 @@ type ResolvePRCommentOptions struct {
 
 // ResolvePRComment updates the resolution status of a PR comment
 func ResolvePRComment(client *Client, owner, repo string, number int, discussionID string, opts *ResolvePRCommentOptions) error {
-	return client.Put(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/comments/"+discussionID, opts, nil)
+	return client.Put(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/comments/"+discussionID, opts, nil)
 }
 
 // ListPRReviews lists reviews on a PR
 func ListPRReviews(client *Client, owner, repo string, number int) ([]PRReview, error) {
 	var reviews []PRReview
-	err := client.Get(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/reviews", &reviews)
+	err := client.Get(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/reviews", &reviews)
 	if err != nil {
 		return nil, err
 	}
@@ -544,7 +545,7 @@ func ListPRCommits(client *Client, owner, repo string, number int) ([]Commit, er
 	var all []Commit
 	for page := 1; ; page++ {
 		var commits []Commit
-		err := client.Get(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/commits"+newQueryBuilder().SetInt("per_page", perPage).SetInt("page", page).String(), &commits)
+		err := client.Get(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/commits"+newQueryBuilder().SetInt("per_page", perPage).SetInt("page", page).String(), &commits)
 		if err != nil {
 			return nil, err
 		}
@@ -636,7 +637,7 @@ type PRDiffLine struct {
 // GetPRFiles gets the files and diffs of a PR
 func GetPRFiles(client *Client, owner, repo string, number int) (*PRFilesResponse, error) {
 	var result PRFilesResponse
-	err := client.Get(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/files.json", &result)
+	err := client.Get(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/files.json", &result)
 	if err != nil {
 		return nil, err
 	}
@@ -646,7 +647,7 @@ func GetPRFiles(client *Client, owner, repo string, number int) (*PRFilesRespons
 // ListPRIssues lists issues linked to a pull request
 func ListPRIssues(client *Client, owner, repo string, number int) ([]Issue, error) {
 	var issues []Issue
-	err := client.Get("/repos/"+url.PathEscape(owner)+"/"+url.PathEscape(repo)+"/pulls/"+itoa(number)+"/issues", &issues)
+	err := client.Get("/repos/"+url.PathEscape(owner)+"/"+url.PathEscape(repo)+"/pulls/"+strconv.Itoa(number)+"/issues", &issues)
 	if err != nil {
 		return nil, err
 	}
@@ -660,7 +661,7 @@ func ListPRIssues(client *Client, owner, repo string, number int) ([]Issue, erro
 // the response is the array of applied labels.
 func AddLabelsToPR(client *Client, owner, repo string, number int, labels []string) ([]Label, error) {
 	var result []Label
-	err := client.Post(escapedRepoPath(owner, repo)+"/pulls/"+itoa(number)+"/labels", labels, &result)
+	err := client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/labels", labels, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -671,5 +672,5 @@ func AddLabelsToPR(client *Client, owner, repo string, number int, labels []stri
 //
 // It calls DELETE /repos/{owner}/{repo}/pulls/{number}/labels/{name}.
 func RemoveLabelFromPR(client *Client, owner, repo string, number int, label string) error {
-	return client.Delete(escapedRepoPath(owner, repo) + "/pulls/" + itoa(number) + "/labels/" + url.PathEscape(label))
+	return client.Delete(escapedRepoPath(owner, repo) + "/pulls/" + strconv.Itoa(number) + "/labels/" + url.PathEscape(label))
 }

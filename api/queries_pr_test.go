@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -651,7 +652,7 @@ func prCommentsJSON(count, offset int) string {
 	comments := make([]PRComment, count)
 	for i := range comments {
 		comments[i].ID = offset + i + 1
-		comments[i].Body = "comment-" + itoa(offset+i+1)
+		comments[i].Body = "comment-" + strconv.Itoa(offset+i+1)
 	}
 
 	data, err := json.Marshal(comments)
@@ -664,7 +665,7 @@ func prCommentsJSON(count, offset int) string {
 func prCommitsJSON(count int, message string) string {
 	commits := make([]Commit, count)
 	for i := range commits {
-		commits[i].SHA = itoa(i + 1)
+		commits[i].SHA = strconv.Itoa(i + 1)
 		commits[i].Message = message
 	}
 

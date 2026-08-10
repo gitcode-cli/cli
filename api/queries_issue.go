@@ -181,7 +181,7 @@ func ListRepoIssuesAll(client *Client, owner, repo string, opts *IssueListOption
 // GetIssue fetches an issue by number
 func GetIssue(client *Client, owner, repo string, number int) (*Issue, error) {
 	var issue Issue
-	err := client.Get(escapedRepoPath(owner, repo)+"/issues/"+itoa(number), &issue)
+	err := client.Get(escapedRepoPath(owner, repo)+"/issues/"+strconv.Itoa(number), &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func CreateIssue(client *Client, owner, repo string, opts *CreateIssueOptions) (
 	}
 	addAssigneeIDs(formValues, opts.AssigneeIDs)
 	if opts.Milestone > 0 {
-		formValues.Set("milestone", itoa(opts.Milestone))
+		formValues.Set("milestone", strconv.Itoa(opts.Milestone))
 	}
 
 	var issue Issue
@@ -285,7 +285,7 @@ func createIssueAssignees(opts *CreateIssueOptions) []string {
 // UpdateIssue updates an existing issue
 // GitCode API: PATCH /repos/:owner/issues/:number with repo param in body
 func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIssueOptions) (*Issue, error) {
-	path := "/repos/" + url.PathEscape(owner) + "/issues/" + itoa(number)
+	path := "/repos/" + url.PathEscape(owner) + "/issues/" + strconv.Itoa(number)
 
 	// Ensure repo is set in opts
 	if opts.Repo == "" {
@@ -313,7 +313,7 @@ func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIss
 		addAssigneeIDs(formValues, opts.AssigneeIDs)
 	}
 	if opts.Milestone > 0 {
-		formValues.Set("milestone", itoa(opts.Milestone))
+		formValues.Set("milestone", strconv.Itoa(opts.Milestone))
 	}
 	if opts.SecurityHole != "" {
 		formValues.Set("security_hole", opts.SecurityHole)
@@ -416,7 +416,7 @@ func isIssueOpen(issue *Issue) bool {
 
 // ListIssueComments lists comments on an issue
 func ListIssueComments(client *Client, owner, repo string, number int, opts *IssueCommentListOptions) ([]IssueComment, error) {
-	path := escapedRepoPath(owner, repo) + "/issues/" + itoa(number) + "/comments"
+	path := escapedRepoPath(owner, repo) + "/issues/" + strconv.Itoa(number) + "/comments"
 	if opts != nil {
 		path += newQueryBuilder().
 			SetInt("page", opts.Page).
@@ -463,7 +463,7 @@ func ListIssueCommentsAll(client *Client, owner, repo string, number int, opts *
 // CreateIssueComment creates a comment on an issue
 func CreateIssueComment(client *Client, owner, repo string, number int, opts *CreateCommentOptions) (*IssueComment, error) {
 	var comment IssueComment
-	err := client.Post(escapedRepoPath(owner, repo)+"/issues/"+itoa(number)+"/comments", opts, &comment)
+	err := client.Post(escapedRepoPath(owner, repo)+"/issues/"+strconv.Itoa(number)+"/comments", opts, &comment)
 	if err != nil {
 		return nil, err
 	}
@@ -657,7 +657,7 @@ func ListRepoMilestones(client *Client, owner, repo string, opts *MilestoneListO
 // GetIssuePullRequests gets Pull Requests associated with an issue
 // mode: 1 (enhanced mode, returns mergeable status), 0 (default, no mergeable status)
 func GetIssuePullRequests(client *Client, owner, repo string, number int, mode int) ([]IssuePR, error) {
-	path := escapedRepoPath(owner, repo) + "/issues/" + itoa(number) + "/pull_requests"
+	path := escapedRepoPath(owner, repo) + "/issues/" + strconv.Itoa(number) + "/pull_requests"
 	if mode == 1 {
 		path += "?mode=1"
 	}

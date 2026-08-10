@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -117,7 +118,7 @@ func GetRelease(client *Client, owner, repo, tag string) (*Release, error) {
 // GetReleaseByID fetches a release by ID
 func GetReleaseByID(client *Client, owner, repo string, id int64) (*Release, error) {
 	var release Release
-	err := client.Get(escapedRepoPath(owner, repo)+"/releases/"+itoa64(id), &release)
+	err := client.Get(escapedRepoPath(owner, repo)+"/releases/"+strconv.FormatInt(id, 10), &release)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +148,7 @@ func CreateRelease(client *Client, owner, repo string, opts *CreateReleaseOption
 // UpdateRelease updates an existing release by ID
 func UpdateRelease(client *Client, owner, repo string, id int64, opts *UpdateReleaseOptions) (*Release, error) {
 	var release Release
-	err := client.Patch(escapedRepoPath(owner, repo)+"/releases/"+itoa64(id), opts, &release)
+	err := client.Patch(escapedRepoPath(owner, repo)+"/releases/"+strconv.FormatInt(id, 10), opts, &release)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +188,7 @@ func UpdateReleaseByTagDirect(client *Client, owner, repo, tag string, opts *Git
 
 // DeleteRelease deletes a release by ID
 func DeleteRelease(client *Client, owner, repo string, id int64) error {
-	return client.Delete(escapedRepoPath(owner, repo) + "/releases/" + itoa64(id))
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/" + strconv.FormatInt(id, 10))
 }
 
 // DeleteReleaseByTag deletes a release by tag name.
@@ -288,7 +289,7 @@ func (r *Release) GetID() (int64, error) {
 // ListReleaseAssets lists assets for a release
 func ListReleaseAssets(client *Client, owner, repo string, releaseID int64) ([]ReleaseAsset, error) {
 	var assets []ReleaseAsset
-	err := client.Get(escapedRepoPath(owner, repo)+"/releases/"+itoa64(releaseID)+"/assets", &assets)
+	err := client.Get(escapedRepoPath(owner, repo)+"/releases/"+strconv.FormatInt(releaseID, 10)+"/assets", &assets)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +299,7 @@ func ListReleaseAssets(client *Client, owner, repo string, releaseID int64) ([]R
 // GetReleaseAsset fetches a single release asset
 func GetReleaseAsset(client *Client, owner, repo string, assetID int64) (*ReleaseAsset, error) {
 	var asset ReleaseAsset
-	err := client.Get(escapedRepoPath(owner, repo)+"/releases/assets/"+itoa64(assetID), &asset)
+	err := client.Get(escapedRepoPath(owner, repo)+"/releases/assets/"+strconv.FormatInt(assetID, 10), &asset)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +308,7 @@ func GetReleaseAsset(client *Client, owner, repo string, assetID int64) (*Releas
 
 // DeleteReleaseAsset deletes a release asset
 func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error {
-	return client.Delete(escapedRepoPath(owner, repo) + "/releases/assets/" + itoa64(assetID))
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/assets/" + strconv.FormatInt(assetID, 10))
 }
 
 // GetReleaseUploadURL fetches the upload URL for a release asset
@@ -328,7 +329,7 @@ func UploadReleaseAsset(client *Client, owner, repo string, releaseID int64, fil
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	return client.UploadAsset(escapedRepoPath(owner, repo)+"/releases/"+itoa64(releaseID)+"/assets", filename, content, contentType)
+	return client.UploadAsset(escapedRepoPath(owner, repo)+"/releases/"+strconv.FormatInt(releaseID, 10)+"/assets", filename, content, contentType)
 }
 
 // UploadReleaseAssetByTag uploads a file to a release by tag name using two-step process
@@ -377,18 +378,6 @@ func (e *releaseError) Error() string {
 // original API error (#321).
 func (e *releaseError) Unwrap() error {
 	return e.cause
-}
-
-func itoa64(i int64) string {
-	if i <= 0 {
-		return "0"
-	}
-	s := ""
-	for i > 0 {
-		s = string(rune('0'+i%10)) + s
-		i /= 10
-	}
-	return s
 }
 
 func buildPath(base string, opts *ReleaseListOptions) string {

@@ -1,6 +1,9 @@
 package api
 
-import "net/url"
+import (
+	"net/url"
+	"strconv"
+)
 
 // queryBuilder assembles a URL query string while skipping empty/zero values,
 // eliminating the repeated if-set boilerplate across the api package query
@@ -21,20 +24,20 @@ func (q *queryBuilder) Set(key, value string) *queryBuilder {
 	return q
 }
 
-// SetInt adds key=itoa(n), skipping n <= 0 (mirrors
-// `if n > 0 { values.Set(key, itoa(n)) }`).
+// SetInt adds key=strconv.Itoa(n), skipping n <= 0 (mirrors
+// `if n > 0 { values.Set(key, strconv.Itoa(n)) }`).
 func (q *queryBuilder) SetInt(key string, n int) *queryBuilder {
 	if n > 0 {
-		q.v.Set(key, itoa(n))
+		q.v.Set(key, strconv.Itoa(n))
 	}
 	return q
 }
 
-// SetInt64 adds key=itoa64(n), skipping n <= 0 (mirrors
-// `if n > 0 { values.Set(key, itoa64(n)) }`).
+// SetInt64 adds key=strconv.FormatInt(n, 10), skipping n <= 0 (mirrors
+// `if n > 0 { values.Set(key, strconv.FormatInt(n, 10)) }`).
 func (q *queryBuilder) SetInt64(key string, n int64) *queryBuilder {
 	if n > 0 {
-		q.v.Set(key, itoa64(n))
+		q.v.Set(key, strconv.FormatInt(n, 10))
 	}
 	return q
 }

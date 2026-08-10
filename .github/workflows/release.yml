@@ -130,7 +130,9 @@ jobs:
           /tmp/gc-release-venv/bin/gitcode version --json
           /tmp/gc-release-venv/bin/gc version --json
           /tmp/gc-release-venv/bin/python -m gc_cli version --json
-          bash scripts/prepare-npm-package.sh "${{ steps.version.outputs.VERSION_NUM }}" dist dist
+          SNAPSHOT_VERSION="$(python -c 'import json; print(json.load(open("dist/metadata.json", encoding="utf-8"))["version"])')"
+          test -n "${SNAPSHOT_VERSION}"
+          bash scripts/prepare-npm-package.sh "${{ steps.version.outputs.VERSION_NUM }}" dist dist "${SNAPSHOT_VERSION}"
 
   tag:
     name: Tag

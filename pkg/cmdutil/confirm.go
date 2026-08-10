@@ -34,8 +34,11 @@ func ConfirmOrAbort(opts ConfirmOptions) error {
 	}
 	reader := bufio.NewReader(opts.IO.In)
 	input, err := reader.ReadString('\n')
-	if err != nil && strings.TrimSpace(input) == "" {
-		if err == io.EOF {
+	if err != nil {
+		// Surface read errors even when partial input was received (e.g. corrupt
+		// terminal), instead of falling through to a misleading "did not match".
+		// EOF with empty input signals a non-interactive context (#361).
+		if err == io.EOF && strings.TrimSpace(input) == "" {
 			return NewUsageError("confirmation required in non-interactive mode; rerun with --yes")
 		}
 		return NewCLIError(ExitUsage, "failed to read confirmation", err)

@@ -2,6 +2,7 @@
   "version": "0.11.0",
   "tag": "v0.11.0",
   "tagCommit": "cc9f407d5f8438cf272ab6d2dd0629198cfb256c",
+  "tagTree": "fadec1631b971caf32528d4b2ecb0745cc4f2deb",
   "package": "gitcode-cli-cli-0.11.0.tgz",
   "sha256": "69720af0712c0c3166165448f6b0fd2bd9cc8990e6592f46b1a4dc4700813b29"
 }

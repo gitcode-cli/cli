@@ -163,7 +163,7 @@ gh workflow run release.yml -R gitcode-cli/cli \
   -f npm_recovery=true
 ```
 
-恢复 job 必须要求 `main` 中存在经 PR 评审的 `docs/releases/vX.Y.Z.npm-recovery.json`，以精确 tag commit 与 npm tarball SHA-256 把恢复目标绑定到受审事实。它还须验证当前根 `VERSION`、tag 内 `VERSION`、tag 位于当前 `main` 历史、GitHub Release 非草稿、Release tarball SHA-256、包内 name/version/repository，以及内置 Linux 二进制的 version/commit。它不得重建制品、移动 tag 或重发其他渠道；发布前必须拒绝对应 dist-tag 回退，目标 npm 版本已存在时仍须比较 registry tarball 与 Release tarball并校验 dist-tag。该恢复路径继续使用 `release.yml` 的 OIDC Trusted Publisher 身份，不使用长期 `NPM_TOKEN`。
+恢复 job 必须要求 `main` 中存在经 PR 评审的 `docs/releases/vX.Y.Z.npm-recovery.json`，以精确 tag commit、tag tree 与 npm tarball SHA-256 把恢复目标绑定到受审事实。它还须验证当前根 `VERSION`、tag 内 `VERSION`、tag tree 存在于当前 `main` 历史（允许双镜像产生 tree 相同但 commit 不同的 merge）、GitHub Release 非草稿、Release tarball SHA-256、包内 name/version/repository，以及内置 Linux 二进制的 version/commit。它不得重建制品、移动 tag 或重发其他渠道；发布前必须拒绝对应 dist-tag 回退，目标 npm 版本已存在时仍须比较 registry tarball 与 Release tarball并校验 dist-tag。该恢复路径继续使用 `release.yml` 的 OIDC Trusted Publisher 身份，不使用长期 `NPM_TOKEN`。
 
 ### 6.6 同步 GitCode tag、Release 与正式制品
 

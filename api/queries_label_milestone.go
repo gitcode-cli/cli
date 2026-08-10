@@ -77,7 +77,7 @@ func UpdateLabel(client *Client, owner, repo, name string, opts *UpdateLabelOpti
 // DeleteLabel deletes a label
 func DeleteLabel(client *Client, owner, repo, name string) error {
 	escapedName := url.PathEscape(name)
-	return client.Delete("/repos/" + owner + "/" + repo + "/labels/" + escapedName)
+	return client.Delete(escapedRepoPath(owner, repo) + "/labels/" + escapedName)
 }
 
 // AddLabelsToIssue adds labels to an issue
@@ -95,7 +95,7 @@ func AddLabelsToIssue(client *Client, owner, repo string, number int, labels []s
 // RemoveLabelFromIssue removes a label from an issue
 func RemoveLabelFromIssue(client *Client, owner, repo string, number int, label string) error {
 	escapedLabel := url.PathEscape(label)
-	return client.Delete("/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/labels/" + escapedLabel)
+	return client.Delete(escapedRepoPath(owner, repo) + "/issues/" + itoa(number) + "/labels/" + escapedLabel)
 }
 
 // SetIssueLabels sets (replaces) labels on an issue
@@ -112,7 +112,7 @@ func SetIssueLabels(client *Client, owner, repo string, number int, labels []str
 
 // ClearIssueLabels removes all labels from an issue
 func ClearIssueLabels(client *Client, owner, repo string, number int) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/labels")
+	return client.Delete(escapedRepoPath(owner, repo) + "/issues/" + itoa(number) + "/labels")
 }
 
 // CreateMilestone creates a new milestone
@@ -147,7 +147,7 @@ func UpdateMilestone(client *Client, owner, repo string, number int, opts *Updat
 
 // DeleteMilestone deletes a milestone
 func DeleteMilestone(client *Client, owner, repo string, number int) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/milestones/" + itoa(number))
+	return client.Delete(escapedRepoPath(owner, repo) + "/milestones/" + itoa(number))
 }
 
 // CloseMilestone closes a milestone

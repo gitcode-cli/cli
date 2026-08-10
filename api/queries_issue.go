@@ -121,7 +121,7 @@ type UpdateCommentOptions struct {
 
 // ListRepoIssues lists issues for a repository
 func ListRepoIssues(client *Client, owner, repo string, opts *IssueListOptions) ([]Issue, error) {
-	path := "/repos/" + owner + "/" + repo + "/issues"
+	path := escapedRepoPath(owner, repo) + "/issues"
 
 	// Build query parameters
 	if opts != nil {
@@ -416,7 +416,7 @@ func isIssueOpen(issue *Issue) bool {
 
 // ListIssueComments lists comments on an issue
 func ListIssueComments(client *Client, owner, repo string, number int, opts *IssueCommentListOptions) ([]IssueComment, error) {
-	path := "/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/comments"
+	path := escapedRepoPath(owner, repo) + "/issues/" + itoa(number) + "/comments"
 	if opts != nil {
 		path += newQueryBuilder().
 			SetInt("page", opts.Page).
@@ -482,7 +482,7 @@ func UpdateIssueComment(client *Client, owner, repo string, commentID string, op
 
 // DeleteIssueComment deletes a comment on an issue
 func DeleteIssueComment(client *Client, owner, repo string, commentID int64) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/issues/comments/" + strconv.FormatInt(commentID, 10))
+	return client.Delete(escapedRepoPath(owner, repo) + "/issues/comments/" + strconv.FormatInt(commentID, 10))
 }
 
 // LabelListOptions represents options for listing repository labels
@@ -493,7 +493,7 @@ type LabelListOptions struct {
 
 // ListRepoLabels lists labels for a repository
 func ListRepoLabels(client *Client, owner, repo string, opts *LabelListOptions) ([]Label, error) {
-	path := "/repos/" + owner + "/" + repo + "/labels"
+	path := escapedRepoPath(owner, repo) + "/labels"
 	if opts != nil {
 		path += newQueryBuilder().
 			SetInt("per_page", opts.PerPage).
@@ -639,7 +639,7 @@ type MilestoneListOptions struct {
 
 // ListRepoMilestones lists milestones for a repository
 func ListRepoMilestones(client *Client, owner, repo string, opts *MilestoneListOptions) ([]Milestone, error) {
-	path := "/repos/" + owner + "/" + repo + "/milestones"
+	path := escapedRepoPath(owner, repo) + "/milestones"
 	if opts != nil {
 		path += newQueryBuilder().
 			SetInt("per_page", opts.PerPage).
@@ -657,7 +657,7 @@ func ListRepoMilestones(client *Client, owner, repo string, opts *MilestoneListO
 // GetIssuePullRequests gets Pull Requests associated with an issue
 // mode: 1 (enhanced mode, returns mergeable status), 0 (default, no mergeable status)
 func GetIssuePullRequests(client *Client, owner, repo string, number int, mode int) ([]IssuePR, error) {
-	path := "/repos/" + owner + "/" + repo + "/issues/" + itoa(number) + "/pull_requests"
+	path := escapedRepoPath(owner, repo) + "/issues/" + itoa(number) + "/pull_requests"
 	if mode == 1 {
 		path += "?mode=1"
 	}

@@ -58,7 +58,7 @@ type CommitListOptions struct {
 
 // GetCommit fetches a single commit by SHA
 func GetCommit(client *Client, owner, repo, sha string, showDiff bool) (*RepositoryCommit, error) {
-	path := "/repos/" + owner + "/" + repo + "/commits/" + sha
+	path := escapedRepoPath(owner, repo) + "/commits/" + sha
 	if showDiff {
 		path += "?show_diff=true"
 	}
@@ -73,13 +73,13 @@ func GetCommit(client *Client, owner, repo, sha string, showDiff bool) (*Reposit
 
 // GetCommitDiff fetches the diff of a commit
 func GetCommitDiff(client *Client, owner, repo, sha string) (string, error) {
-	path := "/repos/" + owner + "/" + repo + "/commit/" + sha + "/diff"
+	path := escapedRepoPath(owner, repo) + "/commit/" + sha + "/diff"
 	return client.GetText(path)
 }
 
 // GetCommitPatch fetches the patch of a commit
 func GetCommitPatch(client *Client, owner, repo, sha string) (string, error) {
-	path := "/repos/" + owner + "/" + repo + "/commit/" + sha + "/patch"
+	path := escapedRepoPath(owner, repo) + "/commit/" + sha + "/patch"
 	return client.GetText(path)
 }
 
@@ -119,7 +119,7 @@ type CommitComment struct {
 
 // CreateCommitComment creates a comment on a commit
 func CreateCommitComment(client *Client, owner, repo, sha, body string) (*CommitComment, error) {
-	path := "/repos/" + owner + "/" + repo + "/commits/" + sha + "/comments"
+	path := escapedRepoPath(owner, repo) + "/commits/" + sha + "/comments"
 	payload := map[string]string{"body": body}
 
 	var comment CommitComment
@@ -168,7 +168,7 @@ func UpdateCommitComment(client *Client, owner, repo, id string, body string) (*
 
 // ListCommitComments lists all commit comments in a repository
 func ListCommitComments(client *Client, owner, repo string, opts *ListOptions) ([]CommitComment, error) {
-	path := "/repos/" + owner + "/" + repo + "/comments"
+	path := escapedRepoPath(owner, repo) + "/comments"
 	if opts != nil && opts.PerPage > 0 {
 		path += fmt.Sprintf("?per_page=%d&page=%d", opts.PerPage, opts.Page)
 		if opts.Order != "" {
@@ -186,7 +186,7 @@ func ListCommitComments(client *Client, owner, repo string, opts *ListOptions) (
 
 // ListCommentsForCommit lists comments for a specific commit
 func ListCommentsForCommit(client *Client, owner, repo, sha string, opts *ListOptions) ([]CommitComment, error) {
-	path := "/repos/" + owner + "/" + repo + "/commits/" + sha + "/comments"
+	path := escapedRepoPath(owner, repo) + "/commits/" + sha + "/comments"
 	if opts != nil && opts.PerPage > 0 {
 		path += fmt.Sprintf("?per_page=%d&page=%d", opts.PerPage, opts.Page)
 	}

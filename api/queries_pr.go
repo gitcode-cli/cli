@@ -415,7 +415,7 @@ func ListPRComments(client *Client, owner, repo string, number int) ([]PRComment
 	var allComments []PRComment
 	for page := 1; ; page++ {
 		var comments []PRComment
-		path := "/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/comments"
+		path := escapedRepoPath(owner, repo) + "/pulls/" + itoa(number) + "/comments"
 
 		err := client.Get(path+newQueryBuilder().SetInt("per_page", perPage).SetInt("page", page).String(), &comments)
 		if err != nil {
@@ -492,7 +492,7 @@ func EditPRComment(client *Client, owner, repo string, commentID int, opts *Edit
 
 // DeletePRComment deletes a PR comment
 func DeletePRComment(client *Client, owner, repo string, commentID int) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/pulls/comments/" + itoa(commentID))
+	return client.Delete(escapedRepoPath(owner, repo) + "/pulls/comments/" + itoa(commentID))
 }
 
 // ReplyPRCommentOptions represents options for replying to a PR comment

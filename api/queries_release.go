@@ -175,7 +175,7 @@ func UpdateReleaseByTag(client *Client, owner, repo, tag string, opts *UpdateRel
 func UpdateReleaseByTagDirect(client *Client, owner, repo, tag string, opts *GitCodeUpdateReleaseOptions) (*Release, error) {
 	// URL escape the tag for path safety (e.g., "release/v1.0.0" -> "release%2Fv1.0.0")
 	escapedTag := url.PathEscape(tag)
-	path := "/repos/" + owner + "/" + repo + "/releases/" + escapedTag
+	path := escapedRepoPath(owner, repo) + "/releases/" + escapedTag
 
 	var release Release
 	err := client.Patch(path, opts, &release)
@@ -187,7 +187,7 @@ func UpdateReleaseByTagDirect(client *Client, owner, repo, tag string, opts *Git
 
 // DeleteRelease deletes a release by ID
 func DeleteRelease(client *Client, owner, repo string, id int64) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + itoa64(id))
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/" + itoa64(id))
 }
 
 // DeleteReleaseByTag deletes a release by tag name.
@@ -220,7 +220,7 @@ func DeleteReleaseByTag(client *Client, owner, repo, tag string) error {
 // This bypasses the need for release ID which GitCode API may not return.
 func DeleteReleaseByTagDirect(client *Client, owner, repo, tag string) error {
 	escapedTag := url.PathEscape(tag)
-	return client.Delete("/repos/" + owner + "/" + repo + "/releases/" + escapedTag)
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/" + escapedTag)
 }
 
 // DeleteReleaseByTagKnown is like DeleteReleaseByTag but uses a previously
@@ -307,13 +307,13 @@ func GetReleaseAsset(client *Client, owner, repo string, assetID int64) (*Releas
 
 // DeleteReleaseAsset deletes a release asset
 func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/releases/assets/" + itoa64(assetID))
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/assets/" + itoa64(assetID))
 }
 
 // GetReleaseUploadURL fetches the upload URL for a release asset
 func GetReleaseUploadURL(client *Client, owner, repo, tag, filename string) (*AssetUploadURL, error) {
 	escapedTag := url.PathEscape(tag)
-	path := "/repos/" + owner + "/" + repo + "/releases/" + escapedTag + "/upload_url" + newQueryBuilder().Set("file_name", filename).String()
+	path := escapedRepoPath(owner, repo) + "/releases/" + escapedTag + "/upload_url" + newQueryBuilder().Set("file_name", filename).String()
 
 	var result AssetUploadURL
 	err := client.Get(path, &result)

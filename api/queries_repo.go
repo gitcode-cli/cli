@@ -102,7 +102,7 @@ func CreateOrgRepo(client *Client, org string, opts *CreateRepoOptions) (*Reposi
 
 // DeleteRepo deletes a repository
 func DeleteRepo(client *Client, owner, name string) error {
-	return client.Delete("/repos/" + owner + "/" + name)
+	return client.Delete(escapedRepoPath(owner, name))
 }
 
 // DeleteBranch deletes a branch from a repository.

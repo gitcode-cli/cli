@@ -2,6 +2,7 @@ package cmdutil
 
 import (
 	"errors"
+	"io"
 	"strings"
 	"testing"
 
@@ -105,5 +106,67 @@ func TestConfirmOrAbort_NilIOReturnsUsageError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "--yes") {
 		t.Fatalf("ConfirmOrAbort() error = %q, want mention of --yes", err.Error())
+	}
+}
+
+// failingReader returns partial data then an error, simulating a corrupt
+// terminal that yields some bytes before failing (#361).
+type failingReader struct {
+	data string
+	err  error
+	read int
+}
+
+func (r *failingReader) Read(p []byte) (int, error) {
+	if r.read >= len(r.data) {
+		return 0, r.err
+	}
+	n := copy(p, r.data[r.read:])
+	r.read += n
+	if r.read >= len(r.data) {
+		return n, r.err
+	}
+	return n, nil
+}
+
+// TestConfirmOrAbort_PartialInputWithReadErrorSurfacesReadError verifies that a
+// read error with partial input is surfaced as a read error, not silently
+// swallowed as "confirmation did not match" (#361).
+func TestConfirmOrAbort_PartialInputWithReadErrorSurfacesReadError(t *testing.T) {
+	streams, _, _, _ := iostreams.TestTTY()
+	streams.In = &failingReader{data: "12", err: errors.New("corrupt terminal")}
+	opts := ConfirmOptions{
+		IO:       streams,
+		Expected: "123",
+		Prompt:   "Type the number: ",
+	}
+	err := ConfirmOrAbort(opts)
+	if err == nil {
+		t.Fatal("ConfirmOrAbort() with partial input + read error = nil, want error")
+	}
+	if _, ok := err.(*CLIError); !ok {
+		t.Fatalf("ConfirmOrAbort() error type = %T, want *CLIError (read error, not 'did not match')", err)
+	}
+	if !strings.Contains(err.Error(), "failed to read confirmation") {
+		t.Fatalf("error = %q, want 'failed to read confirmation' (not 'did not match')", err.Error())
+	}
+}
+
+// TestConfirmOrAbort_EOFWithEmptyInputReturnsNonInteractive verifies that EOF
+// with empty input still returns the non-interactive usage error (#361).
+func TestConfirmOrAbort_EOFWithEmptyInputReturnsNonInteractive(t *testing.T) {
+	streams, _, _, _ := iostreams.TestTTY()
+	streams.In = &failingReader{data: "", err: io.EOF}
+	opts := ConfirmOptions{
+		IO:       streams,
+		Expected: "123",
+		Prompt:   "Type the number: ",
+	}
+	err := ConfirmOrAbort(opts)
+	if err == nil {
+		t.Fatal("ConfirmOrAbort() with EOF + empty input = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "--yes") {
+		t.Fatalf("error = %q, want mention of --yes (non-interactive)", err.Error())
 	}
 }

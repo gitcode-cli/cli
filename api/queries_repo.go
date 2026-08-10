@@ -227,15 +227,3 @@ func buildRepoListPath(base string, opts *RepoListOptions) string {
 		SetInt("page", opts.Page).
 		String()
 }
-
-func itoa(i int) string {
-	if i <= 0 {
-		return "30"
-	}
-	s := ""
-	for i > 0 {
-		s = string(rune('0'+i%10)) + s
-		i /= 10
-	}
-	return s
-}

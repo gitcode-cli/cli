@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/url"
+	"strconv"
 	"testing"
 )
 
@@ -68,10 +69,10 @@ func TestQueryBuilderBitIdenticalLegacy(t *testing.T) {
 		values.Set("status", s)
 	}
 	if pp := 50; pp > 0 {
-		values.Set("per_page", itoa(pp))
+		values.Set("per_page", strconv.Itoa(pp))
 	}
 	if p := 0; p > 0 {
-		values.Set("page", itoa(p))
+		values.Set("page", strconv.Itoa(p))
 	}
 	legacy := ""
 	if len(values) > 0 {

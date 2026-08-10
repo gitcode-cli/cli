@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 )
 
 // Discussion represents a GitCode organization discussion (discuss).
@@ -70,7 +71,7 @@ func ListOrgDiscussions(client *Client, org string, opts *ListOrgDiscussionsOpti
 //
 // It calls GET /api/v5/orgs/{org}/discuss/{number}.
 func GetOrgDiscussion(client *Client, org string, number int) (*Discussion, error) {
-	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss/" + itoa(number)
+	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss/" + strconv.Itoa(number)
 
 	var d Discussion
 	if err := client.Get(endpoint, &d); err != nil {
@@ -105,7 +106,7 @@ func ListRepoDiscussions(client *Client, owner, repo string, opts *ListOrgDiscus
 // GetRepoDiscussion fetches a single repository (project-level) discussion by
 // number. It calls GET /api/v5/repos/{owner}/{repo}/discuss/{number}.
 func GetRepoDiscussion(client *Client, owner, repo string, number int) (*Discussion, error) {
-	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + itoa(number)
+	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + strconv.Itoa(number)
 
 	var d Discussion
 	if err := client.Get(endpoint, &d); err != nil {
@@ -142,7 +143,7 @@ type ListDiscussionCommentsOptions struct {
 // ListOrgDiscussionComments lists comments on an organization discussion.
 // GET /api/v5/orgs/{org}/discuss/{number}/comment
 func ListOrgDiscussionComments(client *Client, org string, number int, opts *ListDiscussionCommentsOptions) ([]*DiscussionComment, error) {
-	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss/" + itoa(number) + "/comment"
+	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss/" + strconv.Itoa(number) + "/comment"
 	endpoint = appendDiscussionCommentParams(endpoint, opts)
 	var comments []*DiscussionComment
 	if err := client.Get(endpoint, &comments); err != nil {
@@ -155,7 +156,7 @@ func ListOrgDiscussionComments(client *Client, org string, number int, opts *Lis
 // organization discussion.
 // GET /api/v5/orgs/{org}/discuss/{number}/comment/{comment_id}/reply
 func ListOrgDiscussionCommentReplies(client *Client, org string, number int, commentID string, opts *ListDiscussionCommentsOptions) ([]*DiscussionComment, error) {
-	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss/" + itoa(number) + "/comment/" + url.PathEscape(commentID) + "/reply"
+	endpoint := "/orgs/" + url.PathEscape(org) + "/discuss/" + strconv.Itoa(number) + "/comment/" + url.PathEscape(commentID) + "/reply"
 	endpoint = appendDiscussionCommentParams(endpoint, opts)
 	var replies []*DiscussionComment
 	if err := client.Get(endpoint, &replies); err != nil {
@@ -167,7 +168,7 @@ func ListOrgDiscussionCommentReplies(client *Client, org string, number int, com
 // ListRepoDiscussionComments lists comments on a repository (project-level)
 // discussion. GET /api/v5/repos/{owner}/{repo}/discuss/{number}/comment
 func ListRepoDiscussionComments(client *Client, owner, repo string, number int, opts *ListDiscussionCommentsOptions) ([]*DiscussionComment, error) {
-	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + itoa(number) + "/comment"
+	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + strconv.Itoa(number) + "/comment"
 	endpoint = appendDiscussionCommentParams(endpoint, opts)
 	var comments []*DiscussionComment
 	if err := client.Get(endpoint, &comments); err != nil {
@@ -180,7 +181,7 @@ func ListRepoDiscussionComments(client *Client, owner, repo string, number int, 
 // (project-level) discussion.
 // GET /api/v5/repos/{owner}/{repo}/discuss/{number}/comment/{comment_id}/reply
 func ListRepoDiscussionCommentReplies(client *Client, owner, repo string, number int, commentID string, opts *ListDiscussionCommentsOptions) ([]*DiscussionComment, error) {
-	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + itoa(number) + "/comment/" + url.PathEscape(commentID) + "/reply"
+	endpoint := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/discuss/" + strconv.Itoa(number) + "/comment/" + url.PathEscape(commentID) + "/reply"
 	endpoint = appendDiscussionCommentParams(endpoint, opts)
 	var replies []*DiscussionComment
 	if err := client.Get(endpoint, &replies); err != nil {

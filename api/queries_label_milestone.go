@@ -1,8 +1,8 @@
 package api
 
 import (
-	"strconv"
 	"net/url"
+	"strconv"
 )
 
 // CreateLabelOptions represents options for creating a label

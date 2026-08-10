@@ -31,7 +31,7 @@ func NewFactory() *Factory {
 				return api.NewHTTPClientWithRetryAndLogger(
 					api.ParseTimeoutFromEnv(),
 					cfg,
-					func(msg string) { fmt.Fprintf(os.Stderr, "[api] %s\n", msg) },
+					func(msg string) { fmt.Fprintf(os.Stderr, "[api] %s\n", api.SanitizeLogMessage(msg)) },
 				), nil
 			}
 			return api.NewHTTPClientWithRetry(api.ParseTimeoutFromEnv(), cfg), nil

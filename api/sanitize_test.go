@@ -18,6 +18,10 @@ func TestSanitizeLogMessage(t *testing.T) {
 		{"token query", "token=secret123&foo=bar", "token=[REDACTED]&foo=bar"},
 		{"token colon", "token: mysecret", "token: [REDACTED]"},
 		{"multiple", "Authorization: Bearer gho_x token=y", "Authorization: Bearer [REDACTED] token=[REDACTED]"},
+		{"uppercase bearer", "AUTHORIZATION: BEARER gho_abc123", "Authorization: Bearer [REDACTED]"},
+		{"lowercase basic", "authorization: basic dXNlcjpwYXNz", "Authorization: Basic [REDACTED]"},
+		{"pattern overlap access_token", "access_token=secret123", "access_token=[REDACTED]"},
+		{"empty bearer no match", "Authorization: Bearer ", "Authorization: Bearer "},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

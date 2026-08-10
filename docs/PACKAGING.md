@@ -342,6 +342,10 @@ sudo rpm -i gc-0.10.3-1.x86_64.rpm
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 
+### 勿混用 pip wheel 与 DEB/RPM
+
+**勿同时使用 pip wheel 与 DEB/RPM 两种安装方式**：pip 装的 `~/.local/bin/gc` 入口 shim 会遮蔽 `/usr/bin/gc` 系统二进制，导致 `gc` 跑旧版本而无告警（见 #455）。如已混用，卸载旧 pip 包使 `gc` 回落到系统二进制：`pip3 uninstall gitcode-cli`（PEP 668 externally-managed 需加 `--break-system-packages`）；或用新版 wheel 覆盖：`pip3 install --force-reinstall --no-deps <新版 wheel URL>`。
+
 ### Linux 二进制
 
 ```bash

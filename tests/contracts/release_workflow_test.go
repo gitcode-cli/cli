@@ -27,6 +27,64 @@ func TestReleaseWorkflowOrdersTagBeforeGoReleaser(t *testing.T) {
 	}
 }
 
+func TestReleaseWorkflowSupportsVerifiedNPMRecovery(t *testing.T) {
+	workflow := readReleaseWorkflow(t)
+	for _, required := range []string{
+		`PACKAGE_FILE="$(realpath "$(find release-assets`,
+		`if: ${{ !inputs.npm_recovery }}`,
+		`if: ${{ inputs.npm_recovery }}`,
+		`test "$(tr -d '\r\n' < VERSION)" = "${VERSION_NUM}"`,
+		`docs/releases/${VERSION_INPUT}.npm-recovery.json`,
+		`test "${TAG_SHA}" = "${TAG_SHA_EXPECTED}"`,
+		`git merge-base --is-ancestor "${TAG_SHA}" origin/main`,
+		`test "$(git show "${VERSION_INPUT}:VERSION")" = "${VERSION_NUM}"`,
+		`gh release download "${VERSION_INPUT}"`,
+		`CHECKSUM_LINE="$(grep -F`,
+		`test "${ACTUAL_PACKAGE_SHA}" = "${PACKAGE_SHA_EXPECTED}"`,
+		`package/bin/platforms/gc-linux-amd64`,
+		`refusing to move npm dist-tag backwards`,
+		`npm publish "${PACKAGE_FILE}" --access public --tag "${PUBLISH_TAG}"`,
+	} {
+		if !strings.Contains(workflow, required) {
+			t.Errorf("release workflow missing npm recovery protection %q", required)
+		}
+	}
+}
+
+func TestReleaseWorkflowIsolatesNPMRecovery(t *testing.T) {
+	document := parseReleaseWorkflow(t)
+	dispatch := requireMapping(t, requireMapping(t, document, "on"), "workflow_dispatch")
+	recoveryInput := requireMapping(t, requireMapping(t, dispatch, "inputs"), "npm_recovery")
+	if got, ok := recoveryInput["default"].(bool); !ok || got {
+		t.Fatalf("npm_recovery default = %#v, want false", recoveryInput["default"])
+	}
+
+	jobs := requireMapping(t, document, "jobs")
+	preflight := requireMapping(t, jobs, "preflight")
+	if got := requireString(t, preflight, "if"); got != "${{ !inputs.npm_recovery }}" {
+		t.Fatalf("preflight recovery condition = %q", got)
+	}
+	recovery := requireMapping(t, jobs, "npm-recovery")
+	if got := requireString(t, recovery, "if"); got != "${{ inputs.npm_recovery }}" {
+		t.Fatalf("npm recovery condition = %q", got)
+	}
+	if _, found := recovery["needs"]; found {
+		t.Fatal("npm recovery must not depend on the intentionally skipped preflight job")
+	}
+	permissions := requireMapping(t, recovery, "permissions")
+	for key, want := range map[string]string{"contents": "read", "id-token": "write"} {
+		if got := requireString(t, permissions, key); got != want {
+			t.Fatalf("npm recovery permission %s = %q, want %q", key, got, want)
+		}
+	}
+	for _, jobName := range []string{"tag", "artifacts", "publish", "pypi", "brew", "npm"} {
+		job := requireMapping(t, jobs, jobName)
+		if !workflowJobNeeds(job, "preflight") {
+			t.Fatalf("job %s must depend on skipped preflight during npm recovery", jobName)
+		}
+	}
+}
+
 func TestReleaseWorkflowUsesTrackedNotesAndExactTag(t *testing.T) {
 	workflow := readReleaseWorkflow(t)
 	required := []string{
@@ -273,6 +331,20 @@ func containsString(values []string, target string) bool {
 	for _, value := range values {
 		if value == target {
 			return true
+		}
+	}
+	return false
+}
+
+func workflowJobNeeds(job map[string]any, target string) bool {
+	switch needs := job["needs"].(type) {
+	case string:
+		return needs == target
+	case []any:
+		for _, need := range needs {
+			if need == target {
+				return true
+			}
 		}
 	}
 	return false

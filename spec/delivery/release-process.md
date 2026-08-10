@@ -155,6 +155,16 @@ workflow 必须先在只读权限下校验 `docs/releases/vX.Y.Z.md`、执行 Go
 
 稳定版本发布到 npm `latest` dist-tag；带 prerelease 后缀的版本必须显式使用 `next`，不得污染自动更新读取的 stable `latest`。
 
+若正式 workflow 已创建 GitHub Release、但 npm job 在 registry 写入前单独失败，可在修复并合入 `main` 后使用同一个受信任的 `release.yml` 执行仅 npm 恢复：
+
+```bash
+gh workflow run release.yml -R gitcode-cli/cli \
+  -f version=vX.Y.Z \
+  -f npm_recovery=true
+```
+
+恢复 job 必须要求 `main` 中存在经 PR 评审的 `docs/releases/vX.Y.Z.npm-recovery.json`，以精确 tag commit 与 npm tarball SHA-256 把恢复目标绑定到受审事实。它还须验证当前根 `VERSION`、tag 内 `VERSION`、tag 位于当前 `main` 历史、GitHub Release 非草稿、Release tarball SHA-256、包内 name/version/repository，以及内置 Linux 二进制的 version/commit。它不得重建制品、移动 tag 或重发其他渠道；发布前必须拒绝对应 dist-tag 回退，目标 npm 版本已存在时仍须比较 registry tarball 与 Release tarball并校验 dist-tag。该恢复路径继续使用 `release.yml` 的 OIDC Trusted Publisher 身份，不使用长期 `NPM_TOKEN`。
+
 ### 6.6 同步 GitCode tag、Release 与正式制品
 
 GitHub workflow 全部成功后，通过 SSH 将同一 tag 推送到 GitCode，并下载 GitHub Release 的正式制品：

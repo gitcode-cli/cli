@@ -11,7 +11,6 @@ const ARCH_MAP = {
   x64: "amd64",
   amd64: "amd64", // defensive; Node does not emit amd64 today
   arm64: "arm64",
-  arm: "arm64", // best-effort for 32-bit ARM (not built as a shipped target)
 };
 
 // Node platform -> gc platform segment.
@@ -29,7 +28,7 @@ const PLATFORM_MAP = {
 function resolveBinaryName(platform, arch) {
   const p = PLATFORM_MAP[platform];
   const a = ARCH_MAP[arch];
-  if (!p || !a) {
+  if (!p || !a || (p === "windows" && a !== "amd64")) {
     throw new Error(
       `unsupported platform/arch: ${platform}/${arch}; ` +
         `supported: linux/x64, linux/arm64, darwin/x64, darwin/arm64, win32/x64`

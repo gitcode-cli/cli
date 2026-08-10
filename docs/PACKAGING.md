@@ -70,7 +70,7 @@
 
 | 步骤 | 说明 |
 |------|------|
-| 1. 版本同步 | 自动更新 4 个配置文件 + 3 个文档 |
+| 1. 版本同步 | 通过 `VERSION` + `scripts/sync-package-version.sh` 对齐 nFPM、Python 与 npm metadata，再同步版本化文档 |
 | 2. 构建 Linux 二进制 | amd64 + arm64 |
 | 3. 构建 DEB 包 | amd64 + arm64 |
 | 4. 构建 RPM 包 | x86_64 + aarch64 |
@@ -87,7 +87,8 @@ dist/
 ├── gc_linux_amd64                  # Linux 二进制 amd64
 ├── gc_linux_arm64                  # Linux 二进制 arm64
 ├── gitcode_cli-0.10.3-py3-none-any.whl  # PyPI wheel
-└── gitcode_cli-0.10.3.tar.gz        # PyPI sdist
+├── gitcode_cli-0.10.3.tar.gz        # PyPI sdist
+└── gitcode-cli-cli-0.10.3.tgz       # npm tarball（正式 release workflow）
 ```
 
 ---
@@ -208,7 +209,7 @@ GitCode 会错误渲染代码块内的 `#` 开头行为标题！
 
 ## 安装方式
 
-### Wheel 包（推荐，跨平台）
+### Wheel 包（跨平台、隔离安装）
 
 内置全平台二进制（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64），创建虚拟环境并安装：
 
@@ -275,7 +276,19 @@ shell 补全（bash/zsh/fish）随安装自动配置。formula 由 GoReleaser �
     npx @gitcode-cli/cli@latest install     # 一行 bootstrap：装二进制 + 补全
     npm install -g @gitcode-cli/cli          # 或全局安装
 
-npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/bin/platforms/`），Node wrapper 按平台选择并 exec。**npm 不由 `scripts/package.sh` 构建**——由 release workflow 的 `npm` job 交叉编译 5 个二进制 + 同步 `npm/package.json` 版本 + `npm publish --access public`。鉴权用 **OIDC Trusted Publishing**（`id-token: write`，npm CLI 自动短期令牌，**无 NPM_TOKEN**，自动 provenance）；前置：npm org `gitcode-cli` 已创建 + 在 npmjs.com 为 `@gitcode-cli/cli` 配置 Trusted Publisher（GitHub Actions，workflow `release.yml`）。`npm/package.json` 的 `repository.url` 须为 `https://github.com/gitcode-cli/cli.git`（OIDC 校验）。
+npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/bin/platforms/`），Node wrapper 按平台选择并 exec。Windows bootstrap 同时安装 `gc.exe` 与 `gitcode.exe`。
+
+正式 npm tarball 不再独立编译二进制：release workflow 的 `artifacts` job 调用 `scripts/prepare-npm-package.sh`，从同一批 GoReleaser 归档/裸二进制组装 npm 包，并将 `.tgz` 纳入 Release SHA-256 清单。`npm` job 只下载已验证的 Release artifact 并执行 OIDC Trusted Publishing；目标版本已存在时，必须下载 registry tarball 与 Release tarball 比对 SHA-256，内容一致才允许幂等跳过。
+
+npm global 与 bootstrap 默认 `notify` stable 新版本并提示显式运行 `gitcode update`；`auto` 仅在用户主动配置后自动应用，另提供 `off`。三种模式共享 24 小时 TTL，应用更新时使用跨进程锁、健康检查和回滚。安装/升级验证必须覆盖：
+
+npm 发布标签必须与版本类型一致：stable 发布到 `latest`，prerelease 发布到 `next`。发布重跑必须同时校验既有 tarball 内容与对应 dist-tag，不得让 prerelease 污染 stable 更新通道。
+
+    gitcode doctor install --json
+    gitcode update --check --json
+    gitcode config set update.mode off
+
+更新器只允许从官方 npm registry 操作 `@gitcode-cli/cli` 的精确 stable 版本，以 `--ignore-scripts` 安装并使用最小子进程环境；不得继承用户 registry/auth 配置，不得自动卸载 pip/Homebrew/DEB/RPM，不得提权或重写 PATH。发布鉴权使用 **OIDC Trusted Publishing**（`id-token: write`，无 `NPM_TOKEN`）；`npm/package.json` 的 `repository.url` 须保持为 `https://github.com/gitcode-cli/cli.git`。
 
 ## 验证安装
 
@@ -308,7 +321,7 @@ gc release download v0.10.3 -R gitcode-cli/cli
 
 ## 安装指南
 
-### Wheel 包（跨平台，推荐）
+### Wheel 包（跨平台、隔离安装）
 
 内置全平台二进制（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64）：
 
@@ -342,9 +355,16 @@ sudo rpm -i gc-0.10.3-1.x86_64.rpm
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 
-### 勿混用 pip wheel 与 DEB/RPM
+### 多渠道 PATH 冲突
 
-**勿同时使用 pip wheel 与 DEB/RPM 两种安装方式**：pip 装的 `~/.local/bin/gc` 入口 shim 会遮蔽 `/usr/bin/gc` 系统二进制，导致 `gc` 跑旧版本而无告警（见 #455）。如已混用，卸载旧 pip 包使 `gc` 回落到系统二进制：`pip3 uninstall gitcode-cli`（PEP 668 externally-managed 需加 `--break-system-packages`）；或用新版 wheel 覆盖：`pip3 install --force-reinstall --no-deps <新版 wheel URL>`。
+pip、npm、Homebrew、DEB/RPM 和手工 archive 都可能提供同名命令。安装器只诊断、不替用户卸载其他渠道或修改 PATH：
+
+```bash
+gitcode doctor install
+gitcode doctor install --json
+```
+
+先根据 `selected`、`candidates`、`distribution` 和 `recommendations` 确认实际命令，再由用户选择调整 PATH、升级原渠道或显式卸载旧渠道。Bash 更改 PATH 后运行 `hash -r`，Zsh 运行 `rehash`，PowerShell 重新打开终端；Windows 不应全局删除内置 `gc`/`Get-Content` alias，使用 `gitcode`。
 
 ### Linux 二进制
 
@@ -359,6 +379,7 @@ sudo mv gc_linux_amd64 /usr/local/bin/gc
 ```bash
 gc version
 gitcode version  # DEB/RPM packages
+gitcode doctor install
 ```
 
 ---
@@ -411,8 +432,7 @@ GOOS=linux GOARCH=arm64 go build -o dist/gc_linux_arm64 ./cmd/gc
 
 # 2. 更新版本号
 VERSION="0.10.3"
-sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-amd64.yaml
-sed -i "s/version: .*/version: \"$VERSION\"/" nfpm-arm64.yaml
+bash scripts/sync-package-version.sh "$VERSION"
 
 # 3. 构建 DEB
 ~/go/bin/nfpm package -f nfpm-amd64.yaml -p deb -t dist/
@@ -436,8 +456,7 @@ GOOS=windows GOARCH=amd64 go build -o gc_cli/bin/gc-windows-amd64.exe ./cmd/gc
 
 # 2. 更新版本号
 VERSION="0.10.3"
-sed -i "s/version = \".*/version = \"$VERSION\"/" pyproject.toml
-sed -i "s/__version__ = \".*/__version__ = \"$VERSION\"/" gc_cli/__init__.py
+bash scripts/sync-package-version.sh "$VERSION"
 
 # 3. 构建 wheel
 python3 -m build --wheel --sdist --outdir dist/

@@ -12,6 +12,9 @@ import sys
 from pathlib import Path
 
 COMMAND_NAME_ENV = "GITCODE_CLI_COMMAND_NAME"
+DISTRIBUTION_ENV = "GITCODE_CLI_DISTRIBUTION"
+ENTRYPOINT_ENV = "GITCODE_CLI_ENTRYPOINT"
+BINARY_ENV = "GITCODE_CLI_BINARY"
 
 
 def get_binary_name() -> str:
@@ -26,14 +29,16 @@ def get_binary_name() -> str:
         "aarch64": "arm64",
         "arm64": "arm64",
     }
-    arch = arch_map.get(machine, "amd64")
+    arch = arch_map.get(machine)
+    if arch is None:
+        raise RuntimeError(f"Unsupported platform: {system} {machine}")
 
     # Map system to binary name
     if system == "linux":
         return f"gc-linux-{arch}"
     elif system == "darwin":
         return f"gc-darwin-{arch}"
-    elif system == "windows":
+    elif system == "windows" and arch == "amd64":
         return "gc-windows-amd64.exe"
     else:
         raise RuntimeError(f"Unsupported platform: {system} {machine}")
@@ -80,6 +85,9 @@ def main() -> int:
         ensure_executable(binary_path)
         env = os.environ.copy()
         env.setdefault(COMMAND_NAME_ENV, get_command_name())
+        env.setdefault(DISTRIBUTION_ENV, "pypi")
+        env.setdefault(ENTRYPOINT_ENV, str(Path(sys.argv[0]).resolve()))
+        env.setdefault(BINARY_ENV, str(binary_path.resolve()))
 
         # Run the binary with all arguments
         result = subprocess.run(

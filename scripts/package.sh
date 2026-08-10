@@ -102,27 +102,8 @@ echo "============================================"
 echo ""
 info "Step 1: Syncing version to all config files..."
 
-# Update nfpm-amd64.yaml
-sed -i "s/version: \".*\"/version: \"${VERSION}\"/" nfpm-amd64.yaml
-success "Updated nfpm-amd64.yaml"
-
-# Update nfpm-arm64.yaml
-sed -i "s/version: \".*\"/version: \"${VERSION}\"/" nfpm-arm64.yaml
-success "Updated nfpm-arm64.yaml"
-
-# Update pyproject.toml
-sed -i "s/version = \".*\"/version = \"${VERSION}\"/" pyproject.toml
-success "Updated pyproject.toml"
-
-# Update gc_cli/__init__.py
-sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" gc_cli/__init__.py
-success "Updated gc_cli/__init__.py"
-
-# Update npm package version (if the npm package dir exists)
-if [ -f "npm/package.json" ]; then
-    sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" npm/package.json
-    success "Updated npm/package.json"
-fi
+bash scripts/sync-package-version.sh "${VERSION}"
+success "Aligned VERSION and all package-manager metadata"
 
 # Update README.md (download links; release badge is de-pinned to "latest")
 sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+\/gc_/v${VERSION}\/gc_/g" README.md

@@ -16,6 +16,14 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 const { resolveBinaryName } = require("../lib/platform");
+const { ensureInstallMetadata, readInstallMetadata } = require("../lib/install-metadata");
+const pkg = require("../package.json");
+const {
+  shouldSchedule,
+  showFirstRunNotice,
+  showPendingSummary,
+  updaterEnvironment,
+} = require("../lib/update");
 
 // PLATFORMS_DIR can be overridden (e.g. for deterministic unit tests that
 // point at an empty dir to exercise the ENOENT path). Defaults to the bundled
@@ -37,7 +45,16 @@ function runBinary(args) {
       /* best-effort; ENOENT handled below */
     }
   }
-  const child = spawn(p, args, { stdio: "inherit" });
+  const child = spawn(p, args, {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      GITCODE_CLI_DISTRIBUTION: "npm",
+      GITCODE_CLI_ENTRYPOINT: process.argv[1],
+      GITCODE_CLI_BINARY: p,
+      GITCODE_CLI_PACKAGE_ROOT: path.resolve(__dirname, ".."),
+    },
+  });
   child.on("error", (err) => {
     if (err.code === "ENOENT") {
       process.stderr.write(
@@ -59,22 +76,51 @@ function runBinary(args) {
       }
       return;
     }
+    finishUpdateLifecycle(args);
     process.exit(code == null ? 1 : code);
   });
 }
 
+function finishUpdateLifecycle(args) {
+  const packageRoot = path.resolve(__dirname, "..");
+  const metadata = readInstallMetadata(packageRoot);
+  if (!metadata || !metadata.global || metadata.distribution !== "npm") return;
+  try {
+    showPendingSummary();
+    showFirstRunNotice();
+    if (!shouldSchedule(args)) return;
+    const helper = path.join(packageRoot, "lib", "update-helper.js");
+    const child = spawn(process.execPath, [helper, "--background"], {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+      env: { ...updaterEnvironment(), GC_UPDATE_BACKGROUND: "1" },
+    });
+    child.unref();
+  } catch (error) {
+    process.stderr.write(`update check skipped: ${error.message}\n`);
+  }
+}
+
 function main() {
   const args = process.argv.slice(2);
+  ensureInstallMetadata(path.resolve(__dirname, ".."), pkg.version);
 
   // Intercept the install subcommand (lark-cli-style bootstrap). If the Go
   // CLI grows a real "gc install" later, prefer forwarding "--help"/unknown
   // flags through and reserve only the bare "install" first token.
   if (args[0] === "install") {
     const { runInstall } = require("../lib/install");
-    runInstall().catch((err) => {
+    runInstall(args.slice(1)).catch((err) => {
       process.stderr.write(`install failed: ${err && err.message ? err.message : err}\n`);
       process.exit(1);
     });
+    return;
+  }
+
+  if (args[0] === "update") {
+    const { main: runUpdate } = require("../lib/update-helper");
+    process.exitCode = runUpdate(args.slice(1));
     return;
   }
 

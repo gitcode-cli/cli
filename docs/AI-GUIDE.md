@@ -10,21 +10,43 @@
 
 ## 1. 安装 GitCode CLI
 
+主渠道建议：Windows/Node/AI 环境使用 npm，macOS 使用 Homebrew，Debian/Ubuntu 使用 DEB，RHEL/Fedora 使用 RPM；wheel 只放入 pipx/venv。不要让多个全局渠道同时争用 `gc` / `gitcode`。
+
+**npm（Windows 和跨平台 Node 环境推荐）:**
+
+```bash
+npm install -g @gitcode-cli/cli
+gitcode version
+gitcode doctor install --json
+```
+
+若裸 `gitcode` 仍被旧 pip 入口遮蔽，Windows 先运行 `& "$(npm prefix -g)\gitcode.cmd" doctor install --json`，Linux/macOS 运行 `"$(npm prefix -g)/bin/gitcode" doctor install --json`；确认候选路径后再由用户选择调整 PATH、升级或卸载旧渠道。
+
+npm 安装默认每天在命令结束后后台检查 stable 更新，发现新版本会在下一次启动提示 `gitcode update`，不会自动安装；需要自动应用时由用户执行 `gitcode config set update.mode auto`。CI、非交互或可复现任务应设置 `GC_NO_UPDATE_CHECK=1`，或执行 `gitcode config set update.mode off`。更新器不调用 pip/Homebrew/apt/dnf，也不修改 PATH。
+
+**macOS (Homebrew):**
+
+```bash
+brew install gitcode-cli/homebrew-tap/gc
+brew upgrade gc
+gitcode doctor install --json
+```
+
 **Linux (DEB/RPM):**
 
 ```bash
 # DEB (Debian/Ubuntu)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc_0.9.0_amd64.deb
-sudo dpkg -i gc_0.9.0_amd64.deb
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.10.3/gc_0.10.3_amd64.deb
+sudo dpkg -i gc_0.10.3_amd64.deb
 
 # RPM (RHEL/CentOS/Fedora)
-wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gc-0.9.0-1.x86_64.rpm
-sudo rpm -i gc-0.9.0-1.x86_64.rpm
+wget https://gitcode.com/gitcode-cli/cli/releases/download/v0.10.3/gc-0.10.3-1.x86_64.rpm
+sudo rpm -i gc-0.10.3-1.x86_64.rpm
 ```
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 
-**Wheel 包（跨平台，推荐）:**
+**Wheel 包（跨平台、隔离安装）:**
 
 从 Release 归档下载 wheel 包安装，**内置全平台二进制**（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64）：
 
@@ -35,7 +57,7 @@ source .venv/bin/activate  # Linux/macOS
 # .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 
 # 安装（一行命令）
-pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.9.0/gitcode_cli-0.9.0-py3-none-any.whl
+pip install https://gitcode.com/gitcode-cli/cli/releases/download/v0.10.3/gitcode_cli-0.10.3-py3-none-any.whl
 
 # Windows PowerShell 中推荐使用 gitcode，避免 gc 被内置 Get-Content 别名覆盖
 gitcode version
@@ -59,7 +81,7 @@ source .venv/bin/activate  # Linux/macOS
 # .\.venv\Scripts\Activate.ps1  # Windows PowerShell
 
 # 固定版本安装，避免 PyPI 尚未同步时安装旧版本
-python -m pip install -i https://pypi.org/simple/ gitcode-cli==0.9.0
+python -m pip install -i https://pypi.org/simple/ gitcode-cli==0.10.3
 
 # Windows PowerShell 中推荐使用 gitcode
 gitcode version
@@ -96,6 +118,7 @@ gitcode auth login
 
 ```bash
 gitcode version
+gitcode doctor install --json
 gitcode auth status
 ```
 

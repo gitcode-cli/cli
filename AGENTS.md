@@ -52,7 +52,7 @@
 | `docs/` | 用户文档 |
 | `issues-plan/` | 阶段说明（可能滞后，非事实源） |
 | `gc_cli/` | Python wheel 包装层，分发内置全平台二进制 |
-| `npm/` | npm 包包装层（`@gitcode-cli/cli`），Node wrapper + 内置多平台二进制 + `install` 引导 |
+| `npm/` | npm 包包装层（`@gitcode-cli/cli`），Node wrapper + 内置多平台二进制 + `install` / 自动更新 / PATH 诊断引导 |
 | `api-doc/` | gc-api-doc submodule 副本（GitCode API 端点/path/body 权威真相源，§5.9.B 查证用；锁定 commit，需定期 `git submodule update --remote api-doc` sync）|
 
 ### 2.2 命令结构约定
@@ -123,6 +123,8 @@ make completions       # 生成 shell 补全
 ```
 
 产物边界：`gc`、`bin/`、`dist/`、`build/`、`*.deb`、`*.rpm`、`*.whl`、`*.egg-info/` 均为本地产物，不得提交。版本号遵循语义化版本 `vMAJOR.MINOR.PATCH[-PRERELEASE]`。
+
+包版本以根 `VERSION` 为基线，通过 `scripts/sync-package-version.sh` 同步 nFPM、Python 与 npm metadata。正式 npm tarball 必须由 release `artifacts` job 从 GoReleaser 标准二进制组装并纳入统一 checksum，`npm` publish job 不得独立重编译。
 
 ### 3.4 Docker
 
@@ -270,7 +272,7 @@ gh run view <run-id> --log --job=<job-id>
 
 ### 7.2 CLI 配置
 
-`pkg/config/config.go` 定义配置接口，允许的 key：`browser`、`editor`、`pager`。配置按 host 维度存储，`ConfigEntry` 标注来源（`environment`/`config`/`default`）。
+`pkg/config/config.go` 定义配置接口，允许的 key：`browser`、`editor`、`pager`、`update.mode`。配置按 host 维度存储，`ConfigEntry` 标注来源（`environment`/`config`/`default`）。`update.mode` 仅控制 npm global / npm-bootstrap 的 `auto`、`notify`、`off` 更新策略；不得借此调用其他包管理器。
 
 ### 7.3 API 行为配置
 

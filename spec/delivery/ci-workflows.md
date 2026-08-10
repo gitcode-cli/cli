@@ -88,7 +88,7 @@ GitCode 原生工作流 `.gitcode/workflows/ci.yml` 对齐 GitHub CI 的 Linux �
 | Job | 运行环境 | 内容 | 对应质量门禁 |
 |-----|---------|------|-------------|
 | `lint` | codearts-hosted / ubuntu-latest / x64 / small | golangci-lint v2.12.2 | 代码规范检查（`coding-standards.md`） |
-| `test` | codearts-hosted / ubuntu-latest / x64 / small | release version 脚本校验 + `go test -v -race -coverprofile` + 覆盖率制品 | 发布输入脚本回归 + 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
+| `test` | codearts-hosted / ubuntu-latest / x64 / small | release / package 版本校验 + `go test -v -race -coverprofile` + npm wrapper 单测 + 覆盖率制品 | 发布输入脚本回归 + Go/Node 单元测试 + 竞态检测 + 覆盖率（`testing-guide.md`） |
 | `build` | codearts-hosted / ubuntu-latest / x64 / small | Linux `go build` + `gc version` + 二进制制品 | Linux 构建验证（`build-and-package.md`） |
 | `package` | codearts-hosted / ubuntu-latest / x64 / small | 补全生成 + Linux 二进制 + wheel 构建、三入口冒烟与制品上传 | 打包与 wheel 入口验证 |
 
@@ -97,7 +97,7 @@ GitHub 工作流 `.github/workflows/ci.yml` 保留原有跨平台覆盖：
 | Job | 运行环境 | 内容 |
 |-----|---------|------|
 | `lint` | ubuntu-latest | golangci-lint |
-| `test` | ubuntu-latest / macos-14 / windows-latest | release version 脚本校验 + 宿主机 setup 安装、幂等、隔离与防覆盖契约 + 单元测试 + 竞态检测 + 覆盖率 |
+| `test` | ubuntu-latest / macos-14 / windows-latest | release / package 版本校验 + 宿主机 setup 契约 + Go/Node 单元测试 + 竞态检测 + 真实旧 npm→本地新包升级、PATH 遮蔽与 bootstrap 烟测 + 覆盖率 |
 | `build` | ubuntu-latest / macos-14 / windows-latest | 跨平台 `go build` + `gc version` |
 | `docker` | ubuntu-latest | Docker 构建 + shell 补全 + wheel 入口冒烟 |
 
@@ -128,6 +128,7 @@ test ──┬──→ build
 | 格式/规范检查 | Linux `lint` | Linux `lint` |
 | Docker / wheel 入口 | Linux `package` 覆盖 wheel；不覆盖 Docker | Linux `docker` |
 | 跨平台兼容 | 不覆盖 | ubuntu / macOS / Windows |
+| npm 安装升级 | Linux wrapper 单测 | 三平台真实 global 升级 + bootstrap + doctor 冲突诊断 |
 
 CI **不覆盖**的质量门禁（仍需本地或人工执行）：
 
@@ -268,6 +269,7 @@ CI 是现有质量门禁的自动化实现，不得引入高于 `spec/foundation
 - 只包含 `lint`、`test`、`build`、`package` 四个 Job
 - `build` 和 `package` 依赖 `test`，且不依赖 Docker daemon
 - `package` 使用官方 `setup-python` 并覆盖 wheel 三入口冒烟
+- `test` 使用官方 `setup-node` 并执行 dependency-free npm wrapper 单测；GitHub 三平台额外安装已发布旧版本到隔离 prefix，再用本地 tarball 升级，不得污染 runner 全局 prefix
 - coverage、binary、wheel 制品通过运行时 `ATOMGIT_RUN_ID` 和 step output 唯一化
 
 该契约测试随 `go test ./...` 在本地和两个 CI 平台执行。修改 `.gitcode/workflows/ci.yml` 时必须同步更新契约测试；

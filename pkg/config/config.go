@@ -12,9 +12,10 @@ import (
 const configStateVersion = 1
 
 var allowedConfigKeys = map[string]struct{}{
-	"browser": {},
-	"editor":  {},
-	"pager":   {},
+	"browser":     {},
+	"editor":      {},
+	"pager":       {},
+	"update.mode": {},
 }
 
 // Config interface defines configuration operations
@@ -107,7 +108,7 @@ func (c *config) Get(host, key string) (string, error) {
 	}
 
 	// Check environment variable first
-	envKey := "GC_" + strings.ToUpper(normalizedKey)
+	envKey := "GC_" + strings.ToUpper(strings.ReplaceAll(normalizedKey, ".", "_"))
 	if val := os.Getenv(envKey); val != "" {
 		return val, nil
 	}

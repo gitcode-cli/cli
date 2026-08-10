@@ -38,6 +38,17 @@ GitCode CLI 把仓库、Issue、PR、Release 和 Actions 带回终端，让开�
 
 ## 安装
 
+推荐只让一个全局安装渠道拥有 `gc` / `gitcode`。Windows 普通用户和 Node/AI 环境优先使用 npm；macOS 优先 Homebrew；Debian/Ubuntu 优先 DEB；RHEL/Fedora 优先 RPM。Python wheel 建议放入 `pipx` 或虚拟环境，CI 建议固定版本并校验 checksum。
+
+安装或升级后可离线检查实际命令来源和全部 PATH 候选：
+
+```bash
+gitcode doctor install
+gitcode doctor install --json
+```
+
+诊断只读取公开的可执行文件、PATH 和本地安装 manifest，不读取认证配置或 Token，也不会卸载其他渠道或修改 PATH。
+
 ### 从源码构建
 
 **前置要求:**
@@ -54,11 +65,8 @@ go build -o gc ./cmd/gc
 mkdir -p ~/.local/bin
 mv gc ~/.local/bin/
 
-# 方式二：使用 make build（带完整版本标签）
-make build
-# 安装
-mkdir -p ~/.local/bin
-mv bin/gc ~/.local/bin/
+# 方式二：构建并安装 gc/gitcode（带完整版本标签）
+make install PREFIX="$HOME/.local"
 
 # 添加到 PATH
 export PATH="$HOME/.local/bin:$PATH"
@@ -94,7 +102,7 @@ sudo rpm -i gc-0.10.3-1.x86_64.rpm
 
 DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 
-### Wheel 包（跨平台，推荐）
+### Wheel 包（跨平台、隔离安装）
 
 从 Release 归档下载 wheel 包安装，**内置全平台二进制**（Linux x64/ARM、macOS Intel/Apple Silicon、Windows x64）：
 
@@ -114,7 +122,7 @@ gitcode version
 说明：
 - wheel 会同时安装 `gc` 和 `gitcode` 两个命令入口，功能相同。
 - DEB/RPM 包也会同时安装 `gc` 和 `gitcode`；Linux 上二者功能相同。
-- **勿混用 pip wheel 与 DEB/RPM 两种安装方式**：pip 装的 `~/.local/bin/gc` 入口 shim 会遮蔽 `/usr/bin/gc` 系统二进制，导致 `gc` 跑旧版本而无告警（见 #455）。如已混用，卸载旧 pip 包使 `gc` 回落到系统二进制：`pip3 uninstall gitcode-cli`（PEP 668 externally-managed 需加 `--break-system-packages`）；或用新版 wheel 覆盖：`pip3 install --force-reinstall --no-deps <新版 wheel URL>`。
+- 不建议让 pip user install 与 DEB/RPM/Homebrew/npm 同时提供全局命令。已混用时先运行 `gitcode doctor install` 确认实际选中路径，再由用户明确选择调整 PATH、升级原渠道或卸载旧渠道；CLI 不会代替用户调用其他包管理器。
 - Windows 使用 `py -m pip install --user ...` 时，脚本会安装到 Python user scheme 的 `Scripts` 目录。请运行 `py -c "import os, sysconfig; print(sysconfig.get_path('scripts', os.name + '_user'))"` 获取准确路径，将其加入用户 `PATH` 后重新打开终端；配置前可直接运行 `py -m gc_cli version`。
 - Windows PowerShell 预置 `gc` 作为 `Get-Content` 别名；如果 `gc version` 被解析为读取文件，请改用 `gitcode version`、`gc.exe version` 或 `py -m gc_cli version`。
 - Windows PowerShell 中通过 `--body-file -` / `--comment-file -` 管道传入中文或其他非 ASCII 正文时，推荐使用 UTF-8 文件；如果必须直接管道，先设置 `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`。CLI 会拦截疑似已被 PowerShell 损坏成 `???` 的输入并提示正确用法。
@@ -157,10 +165,11 @@ gitcode version
 ```bash
 chmod +x gc_linux_amd64
 mv gc_linux_amd64 ~/.local/bin/gc
+ln -s gc ~/.local/bin/gitcode
 gc version
 ```
 
-Windows 和 macOS 用户建议使用上方 wheel 包；wheel 内置 Linux、macOS 和 Windows 二进制，并同时提供 `gc` 与 `gitcode` 两个命令入口。
+需要与系统包管理器隔离时可使用上方 wheel；需要免安装直接部署时使用独立二进制。二者都应先确认平台架构受支持。
 
 ### Docker 镜像
 
@@ -201,6 +210,7 @@ brew upgrade gc
 ```
 
 shell 补全（bash/zsh/fish）随安装自动配置，无需额外操作。
+Homebrew 同时提供 `gc` 与 `gitcode`；升级后可运行 `gitcode doctor install` 检查是否仍被 pip/npm 旧入口遮蔽。
 
 ### npm (跨平台)
 
@@ -214,10 +224,39 @@ npx @gitcode-cli/cli@latest install
 
 ```bash
 npm install -g @gitcode-cli/cli
-gc version
+gitcode version
 ```
 
-包内置 Linux/macOS/Windows 多平台二进制；shell 补全（bash/zsh/fish）由 `install` 子命令自动配置。
+如果 `gitcode version` 仍显示旧的 pip/wheel 版本，先直接调用 npm 安装目录中的新入口诊断，不必先卸载 pip：
+
+```powershell
+# Windows PowerShell
+& "$(npm prefix -g)\gitcode.cmd" doctor install --json
+```
+
+```bash
+# Linux/macOS
+"$(npm prefix -g)/bin/gitcode" doctor install --json
+```
+
+包内置 Linux/macOS/Windows 多平台二进制。Windows bootstrap 同时安装 `gc.exe` 和 `gitcode.exe`，PowerShell 请使用 `gitcode`，避免内置 `gc`/`Get-Content` alias。
+
+npm global 与 npm bootstrap 默认使用 `notify` 模式：命令本身立即执行，24 小时 TTL 到期后在后台检查 stable `latest`，发现新版后在下一次启动提示 `gitcode update`，不会自动安装，也不会改变刚完成命令的退出码。需要自动应用的用户可明确启用 `auto`；该模式具有跨进程锁、版本健康检查和失败回滚。
+
+```bash
+gitcode update --check       # 只检查
+gitcode update               # 显式更新当前 npm 渠道
+gitcode update --json
+
+gitcode config set update.mode auto
+gitcode config set update.mode notify
+gitcode config set update.mode off
+
+gitcode --no-update-check version   # 单次禁用
+GC_NO_UPDATE_CHECK=1 gitcode version
+```
+
+`CI=true`、`--no-interactive`、`--no-update-check` 或 `GC_NO_UPDATE_CHECK=1` 会禁用后台检查。更新器仅从官方 `https://registry.npmjs.org` 获取精确 stable 版本，安装时禁用生命周期脚本，并以最小环境启动；它不会调用 pip、Homebrew、apt、dnf，也不会静默修改 PATH。npm 生命周期脚本被组织策略禁用时，可直接运行 npm prefix 中的 `gitcode` 再执行 `doctor install`；wrapper 会在首次直接运行时补建来源 metadata。
 
 ### 规划中的安装方式
 

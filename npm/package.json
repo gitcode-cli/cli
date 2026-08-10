@@ -1,6 +1,6 @@
 {
   "name": "@gitcode-cli/cli",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "GitCode CLI — the open-source command line tool for GitCode, distributed via npm with bundled multi-platform binaries.",
   "license": "MIT",
   "author": "GitCode CLI Contributors <support@gitcode.com>",
@@ -39,7 +39,8 @@
     "README.md"
   ],
   "scripts": {
-    "version": "0.10.2",
-    "test": "node --test"
+    "postinstall": "node lib/postinstall.js",
+    "test": "node --test",
+    "test:upgrade": "node ../scripts/test-npm-install-upgrade.js"
   }
 }

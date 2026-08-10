@@ -10,6 +10,7 @@ fi
 
 # Inform user about setup
 echo "GitCode CLI (gc/gitcode) has been installed successfully!"
+echo "Run 'gitcode doctor install' to inspect PATH conflicts with pip, npm, Homebrew, or archive installs."
 echo ""
 echo "To get started:"
 echo "  1. Run 'gitcode auth login' or 'gc auth login' to authenticate"

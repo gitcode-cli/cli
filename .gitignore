@@ -8,6 +8,7 @@ gc_cli/bin/*
 !npm/bin/
 npm/bin/*
 !npm/bin/gc.js
+npm/.gitcode-install.json
 /gc
 gc_linux_*
 gc-darwin-*
@@ -44,6 +45,7 @@ dist/
 *.deb
 *.rpm
 *.tar.gz
+*.tgz
 *.zip
 
 # Python packaging

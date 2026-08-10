@@ -10,16 +10,38 @@ GitCode CLI (`gc` / `gitcode`) is the community-developed, MIT-licensed command 
 
 ```bash
 npx @gitcode-cli/cli@latest install
+npx @gitcode-cli/cli@latest install --target-dir /custom/bin
 ```
 
-Copies the platform binary to a global bin dir (`/usr/local/bin` if writable, else `~/.local/bin`) and installs bash/zsh/fish completions.
+Copies the platform binary to a global bin dir (`/usr/local/bin` if writable, else `~/.local/bin`). On Linux/macOS it also installs bash/zsh/fish completions.
+On Windows it installs both `gc.exe` and `gitcode.exe`; use `gitcode` in PowerShell because `gc` is the built-in `Get-Content` alias.
 
 ### Global npm install
 
 ```bash
 npm install -g @gitcode-cli/cli
-gc version
+gitcode version
 ```
+
+## Installation diagnostics and updates
+
+```bash
+gitcode doctor install
+gitcode doctor install --json
+gitcode update --check
+gitcode update
+```
+
+Global npm and npm-bootstrap installations default to `notify`: after a normal command, a detached helper checks the stable `latest` tag from the official npm registry at most once every 24 hours, then prompts on the next launch without installing. Run `gitcode update` explicitly, or opt in to automatic application with `update.mode auto`. Updates use a minimal child environment, `--ignore-scripts`, a process lock, health check, and rollback. Registry, permission, or offline failures never change the completed command's exit code.
+
+```bash
+gitcode config set update.mode auto
+gitcode config set update.mode notify
+gitcode config set update.mode off
+GC_NO_UPDATE_CHECK=1 gitcode version
+```
+
+`CI=true` and `--no-interactive` disable background checks. The updater touches only `@gitcode-cli/cli`; it never invokes pip, Homebrew, apt, dnf, or rpm, and it never rewrites PATH. If another `gitcode` is earlier on PATH, npm's non-failing install check and `doctor install` report the exact candidates and remediation choices.
 
 ## Supported platforms
 
@@ -29,7 +51,7 @@ gc version
 | macOS | x64, arm64 |
 | Windows | x64 |
 
-Unsupported platforms fall back to PyPI/Homebrew/DEB/RPM/release binaries: https://gitcode.com/gitcode-cli/cli/releases
+Windows arm64 is not shipped by npm, wheel, or release archives yet; build from source with Go for that target. On other unsupported combinations, use only a channel that explicitly lists the OS/architecture: https://gitcode.com/gitcode-cli/cli/releases
 
 ## Links
 

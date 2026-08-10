@@ -562,17 +562,22 @@ jobs:
           MANIFEST="docs/releases/${VERSION_INPUT}.npm-recovery.json"
           test -f "${MANIFEST}"
           TAG_SHA_EXPECTED="$(node -e 'const m=require("./"+process.argv[1]); process.stdout.write(m.tagCommit)' "${MANIFEST}")"
+          TAG_TREE_EXPECTED="$(node -e 'const m=require("./"+process.argv[1]); process.stdout.write(m.tagTree)' "${MANIFEST}")"
           PACKAGE_SHA_EXPECTED="$(node -e 'const m=require("./"+process.argv[1]); process.stdout.write(m.sha256)' "${MANIFEST}")"
           PACKAGE_NAME="$(node -e 'const m=require("./"+process.argv[1]); process.stdout.write(m.package)' "${MANIFEST}")"
           test "$(node -e 'const m=require("./"+process.argv[1]); process.stdout.write(m.version)' "${MANIFEST}")" = "${VERSION_NUM}"
           test "$(node -e 'const m=require("./"+process.argv[1]); process.stdout.write(m.tag)' "${MANIFEST}")" = "${VERSION_INPUT}"
           [[ "${TAG_SHA_EXPECTED}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${TAG_TREE_EXPECTED}" =~ ^[0-9a-f]{40}$ ]]
           [[ "${PACKAGE_SHA_EXPECTED}" =~ ^[0-9a-f]{64}$ ]]
           test "${PACKAGE_NAME}" = "gitcode-cli-cli-${VERSION_NUM}.tgz"
           git fetch --force --tags origin
           TAG_SHA="$(git rev-parse "${VERSION_INPUT}^{commit}")"
           test "${TAG_SHA}" = "${TAG_SHA_EXPECTED}"
-          git merge-base --is-ancestor "${TAG_SHA}" origin/main
+          TAG_TREE="$(git rev-parse "${VERSION_INPUT}^{tree}")"
+          test "${TAG_TREE}" = "${TAG_TREE_EXPECTED}"
+          MAIN_TREES="$(git log --format=%T origin/main)"
+          grep -Fxq "${TAG_TREE}" <<< "${MAIN_TREES}"
           test "$(git show "${VERSION_INPUT}:VERSION")" = "${VERSION_NUM}"
           test "$(gh release view "${VERSION_INPUT}" --json isDraft --jq .isDraft)" = "false"
           mkdir release-assets

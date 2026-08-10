@@ -7,6 +7,7 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/run/list"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/run/view"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/run/watch"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -24,11 +25,15 @@ func NewCmdRun(f *cmdutil.Factory) *cobra.Command {
 
 			# View a pipeline run detail
 			$ gc actions run view <run-id> -R owner/repo
+
+			# Watch a run until completion
+			$ gc actions run watch <run-id> -R owner/repo
 		`),
 	}
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(view.NewCmdView(f, nil))
+	cmd.AddCommand(watch.NewCmdWatch(f, nil))
 
 	return cmd
 }

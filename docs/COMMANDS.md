@@ -2028,6 +2028,37 @@ gc actions run view <run-id> -R owner/repo --json
 - 时间字段（`started`/`ended`/`paused` 及 stage/job 时间）由 API 的毫秒时间戳格式化为 RFC3339（UTC）；`--json` 保留原始毫秒整数值。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<run-id>`）；`3` 资源不存在（HTTP 404，如 run 不存在或仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
+### actions run watch - 监控流水线运行直到完成
+
+轮询监控一条流水线运行（run）的状态，直到到达终态（`COMPLETED`/`FAILED`/`CANCELED`/`IGNORED`/`PAUSED`/`SUSPEND`）。`<run-id>` 取 `gc actions run list` 返回的 `workflow_run_id`。
+
+```bash
+# 监控 run 直到完成
+gc actions run watch <run-id> -R owner/repo
+
+# 指定轮询间隔（秒）
+gc actions run watch <run-id> -R owner/repo --interval 10
+
+# 紧凑模式（仅展示失败 step）
+gc actions run watch <run-id> -R owner/repo --compact
+
+# run 失败时返回非零退出码（CI 脚本用）
+gc actions run watch <run-id> -R owner/repo --exit-status
+
+# JSON 输出（单次快照）
+gc actions run watch <run-id> -R owner/repo --json
+```
+
+说明：
+
+- TTY 环境：按 `--interval`（默认 3 秒）定时刷新屏幕，展示 run 概要 + stages/jobs/steps 状态；到达终态后停止。
+- 非 TTY 环境（管道输出、`--no-interactive`）：输出单次快照后立即退出，不阻塞等待（符合 agent-friendly 契约）。
+- `--compact`：仅展示包含失败 job 的 stage 和失败 step。
+- `--exit-status`：run 终态为 `FAILED`/`CANCELED` 时返回退出码 `1`，用于 CI 自动化。
+- 支持 `--json`：输出写入 stdout，原样透传 API 响应（同 `run view --json`）。
+- 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功（含 `--exit-status` 时 run 成功完成）；`1` 通用错误或 `--exit-status` 时 run 失败；`2` 参数错误（如缺少 `<run-id>` 或 `--interval < 1`）；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误（HTTP 401/403）。
+
 ### actions job list - 列出工作流运行的 jobs
 
 列出一条流水线运行（run）下的工作流作业（jobs）。`<run-id>` 取 `gc actions run list` 返回的 `workflow_run_id`。

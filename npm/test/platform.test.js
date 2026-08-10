@@ -18,6 +18,8 @@ test("resolveBinaryName maps common combos", () => {
 test("resolveBinaryName throws on unsupported platform", () => {
   assert.throws(() => resolveBinaryName("aix", "x64"), /unsupported platform\/arch/);
   assert.throws(() => resolveBinaryName("linux", "ia32"), /unsupported platform\/arch/);
+  assert.throws(() => resolveBinaryName("linux", "arm"), /unsupported platform\/arch/);
+  assert.throws(() => resolveBinaryName("win32", "arm64"), /unsupported platform\/arch/);
 });
 
 test("isSupported returns true for shipped combos and false otherwise", () => {
@@ -32,6 +34,8 @@ test("isSupported returns true for shipped combos and false otherwise", () => {
   }
   assert.strictEqual(isSupported("aix", "x64"), false);
   assert.strictEqual(isSupported("linux", "ia32"), false);
+  assert.strictEqual(isSupported("linux", "arm"), false);
+  assert.strictEqual(isSupported("win32", "arm64"), false);
 });
 
 test("arch map normalizes x64 to amd64", () => {

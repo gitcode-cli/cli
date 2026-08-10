@@ -193,3 +193,11 @@ func TestNoInteractiveFlag(t *testing.T) {
 		}
 	})
 }
+
+func TestNoUpdateCheckFlagIsRegistered(t *testing.T) {
+	cmd := NewRootCmd("dev", "none", "unknown", cmdutil.TestFactory())
+	flag := cmd.PersistentFlags().Lookup("no-update-check")
+	if flag == nil || flag.DefValue != "false" {
+		t.Fatalf("--no-update-check flag = %#v", flag)
+	}
+}

@@ -39,6 +39,11 @@ jobs:
         with:
           python-version: '3.11.9'
 
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
       - name: Validate version input
         id: version
         env:
@@ -80,10 +85,7 @@ jobs:
           VERSION_NUM: ${{ steps.version.outputs.VERSION_NUM }}
         run: |
           set -euo pipefail
-          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-amd64.yaml
-          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-arm64.yaml
-          sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
-          sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
+          bash scripts/sync-package-version.sh "${VERSION_NUM}" --check
 
       - name: Install nfpm
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
@@ -128,6 +130,7 @@ jobs:
           /tmp/gc-release-venv/bin/gitcode version --json
           /tmp/gc-release-venv/bin/gc version --json
           /tmp/gc-release-venv/bin/python -m gc_cli version --json
+          bash scripts/prepare-npm-package.sh "${{ steps.version.outputs.VERSION_NUM }}" dist dist
 
   tag:
     name: Tag
@@ -180,6 +183,11 @@ jobs:
         with:
           python-version: '3.11.9'
 
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
       - name: Verify release tag
         env:
           EXPECTED_HEAD_SHA: ${{ needs.preflight.outputs.head_sha }}
@@ -211,10 +219,7 @@ jobs:
           VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
         run: |
           set -euo pipefail
-          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-amd64.yaml
-          sed -i "s/version: \".*\"/version: \"${VERSION_NUM}\"/" nfpm-arm64.yaml
-          sed -i "s/version = \".*\"/version = \"${VERSION_NUM}\"/" pyproject.toml
-          sed -i "s/__version__ = \".*\"/__version__ = \"${VERSION_NUM}\"/" gc_cli/__init__.py
+          bash scripts/sync-package-version.sh "${VERSION_NUM}" --check
 
       - name: Install nfpm
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.41.3
@@ -247,6 +252,7 @@ jobs:
           python -m venv /tmp/gc-build-venv
           /tmp/gc-build-venv/bin/pip install build==1.4.1
           /tmp/gc-build-venv/bin/python -m build --wheel --sdist --outdir dist
+          bash scripts/prepare-npm-package.sh "${{ needs.preflight.outputs.package_version }}" dist dist
 
       - name: Verify release entry points
         run: |
@@ -272,6 +278,7 @@ jobs:
           cp dist/*.deb dist/*.rpm release-assets/
           cp dist/gc_linux_amd64 dist/gc_linux_arm64 release-assets/
           cp dist/*.whl dist/gitcode_cli-*.tar.gz release-assets/
+          cp dist/*.tgz release-assets/
           cd release-assets
           find . -maxdepth 1 -type f ! -name "gc_${VERSION_NUM}_checksums.txt" -printf '%f\0' \
             | sort -z | xargs -0 sha256sum > "gc_${VERSION_NUM}_checksums.txt"
@@ -463,71 +470,45 @@ jobs:
       contents: read
       id-token: write  # OIDC trusted publishing; no NPM_TOKEN needed
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          ref: ${{ needs.preflight.outputs.head_sha }}
-          persist-credentials: false
-
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
-        with:
-          go-version: '1.22.12'
-
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           package-manager-cache: false  # never cache in release builds
 
-      - name: Sync npm package version
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-assets
+          path: release-assets
+
+      - name: Verify release package and checksums
         env:
           VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
         run: |
           set -euo pipefail
-          sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION_NUM}\"/" npm/package.json
-          grep -q "\"version\": \"${VERSION_NUM}\"" npm/package.json
-
-      - name: Build bundled multi-platform binaries
-        env:
-          VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
-          COMMIT: ${{ needs.preflight.outputs.head_sha }}
-        run: |
-          set -euo pipefail
-          mkdir -p npm/bin/platforms
-          DATE="$(date -u +%Y-%m-%d)"
-          LDFLAGS="-s -w -X main.version=${VERSION_NUM} -X main.commit=${COMMIT} -X main.date=${DATE}"
-          build() {
-            local goos="$1" goarch="$2" out="$3"
-            echo "building ${goos}/${goarch} -> ${out}"
-            GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "npm/bin/platforms/${out}" ./cmd/gc
-            test -f "npm/bin/platforms/${out}"
-          }
-          build linux  amd64 gc-linux-amd64
-          build linux  arm64 gc-linux-arm64
-          build darwin amd64 gc-darwin-amd64
-          build darwin arm64 gc-darwin-arm64
-          build windows amd64 gc-windows-amd64.exe
-          chmod +x npm/bin/platforms/gc-linux-*
-
-      - name: Verify package (npm pack + wrapper unit tests)
-        run: |
-          set -euo pipefail
-          cd npm
-          npm pack --dry-run
-          npm test
+          cd release-assets
+          sha256sum -c "gc_${VERSION_NUM}_checksums.txt"
+          test "$(find . -maxdepth 1 -name '*.tgz' -type f | wc -l)" -eq 1
 
       - name: Publish to npm (OIDC trusted publishing)
         env:
           VERSION_NUM: ${{ needs.preflight.outputs.package_version }}
         run: |
           set -euo pipefail
-          cd npm
-          # Idempotent rerun: a public package version is visible without
-          # auth; if it already exists, skip (mirrors PyPI verify-and-skip).
+          PACKAGE_FILE="$(find release-assets -maxdepth 1 -name '*.tgz' -type f -print -quit)"
           if npm view "@gitcode-cli/cli@${VERSION_NUM}" version >/dev/null 2>&1; then
-            echo "npm @gitcode-cli/cli@${VERSION_NUM} already published; skipping (idempotent)"
+            mkdir existing-npm
+            npm pack "@gitcode-cli/cli@${VERSION_NUM}" --pack-destination existing-npm >/dev/null
+            EXISTING_FILE="$(find existing-npm -maxdepth 1 -name '*.tgz' -type f -print -quit)"
+            test -n "${EXISTING_FILE}"
+            test "$(sha256sum "${PACKAGE_FILE}" | cut -d' ' -f1)" = "$(sha256sum "${EXISTING_FILE}" | cut -d' ' -f1)" || {
+              echo "::error::existing npm package content differs from the verified release asset"
+              exit 1
+            }
+            echo "npm @gitcode-cli/cli@${VERSION_NUM} already published with identical content; skipping"
             exit 0
           fi
           # OIDC: npm CLI auto-detects the id-token: write permission and the
           # trusted publisher configured on npmjs.com, exchanging a short-lived
           # token. No NPM_TOKEN secret is used; provenance is auto-generated.
-          npm publish --access public
+          npm publish "${PACKAGE_FILE}" --access public

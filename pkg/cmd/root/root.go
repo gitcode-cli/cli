@@ -14,7 +14,9 @@ import (
 	apicmd "gitcode.com/gitcode-cli/cli/pkg/cmd/api"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth"
 	commitcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/commit"
+	configcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/config"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/doctor"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/help"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/issue"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label"
@@ -25,8 +27,10 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/schema"
+	updatecmd "gitcode.com/gitcode-cli/cli/pkg/cmd/update"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/version"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
+	"gitcode.com/gitcode-cli/cli/pkg/installupdate"
 )
 
 const commandNameEnv = "GITCODE_CLI_COMMAND_NAME"
@@ -54,9 +58,16 @@ func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 			}
 			return nil
 		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			noUpdate, _ := cmd.Flags().GetBool("no-update-check")
+			noInteractive, _ := cmd.Flags().GetBool("no-interactive")
+			cfg, _ := f.Config()
+			installupdate.AfterCommand(cfg, f.IOStreams.ErrOut, noUpdate, noInteractive)
+		},
 	}
 
 	cmd.PersistentFlags().Bool("no-interactive", false, "Disable interactive prompts; forces --yes or fails on confirmations (for agents/scripts)")
+	cmd.PersistentFlags().Bool("no-update-check", false, "Disable the npm update check for this invocation")
 
 	// Add subcommands.
 	cmd.AddCommand(version.NewCmdVersion(ver, commit, date, commandName))
@@ -67,12 +78,15 @@ func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(issue.NewCmdIssue(f))
 	cmd.AddCommand(pr.NewCmdPR(f))
 	cmd.AddCommand(commitcmd.NewCmdCommit(f))
+	cmd.AddCommand(configcmd.NewCmdConfig(f))
 	cmd.AddCommand(discussions.NewCmdDiscussions(f))
+	cmd.AddCommand(doctor.NewCmdDoctor(f, ver, commit, date))
 	cmd.AddCommand(precommitcmd.NewCmdPrecommit(f))
 	cmd.AddCommand(label.NewCmdLabel(f))
 	cmd.AddCommand(milestone.NewCmdMilestone(f))
 	cmd.AddCommand(release.NewCmdRelease(f))
 	cmd.AddCommand(schema.NewCmdSchema(cmd))
+	cmd.AddCommand(updatecmd.NewCmdUpdate(f))
 	cmd.AddCommand(larkcmd.NewCmdLark(f))
 
 	rewriteExamples(cmd, commandName)

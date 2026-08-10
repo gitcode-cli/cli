@@ -81,6 +81,8 @@ docker compose up gc
 - `commit comments list-by-sha`
 - `commit comments view`
 - `commit view`
+- `config get`
+- `doctor install`
 - `help`
 - `issue comments`
 - `issue list`
@@ -104,6 +106,7 @@ docker compose up gc
 - `repo stats`
 - `repo view`
 - `version`
+- `update --check`
 
 当前已支持 `--json` 的写路径命令：
 
@@ -134,6 +137,8 @@ docker compose up gc
 - `repo delete`
 - `repo fork`
 - `repo sync`
+- `config set`
+- `update`
 
 其中 `issue list` 额外支持：
 
@@ -164,6 +169,7 @@ docker compose up gc
 | Flag | 说明 |
 |------|------|
 | `--no-interactive` | 禁用交互式提示（供 AI 代理/脚本/管道使用）。设置后所有确认提示立即失败并提示 `--yes`，等价于强制非 TTY 的确认行为。破坏性命令仍需显式传 `--yes` 才能执行。 |
+| `--no-update-check` | 仅本次调用禁用 npm 自动更新检查；不修改持久化配置。 |
 
 示例：
 ```bash
@@ -2533,6 +2539,57 @@ gc lark config get --json
 
 ---
 
+## 安装诊断、配置与更新
+
+### doctor install - 诊断安装来源和 PATH 冲突
+
+```bash
+gc doctor install
+gc doctor install --json
+```
+
+- 完全离线，无需认证；不读取或打印 Token。
+- 输出当前 `version` / `commit` / `built`、`distribution`、wrapper `entrypoint`、实际 `binary`，以及 `gc` / `gitcode` 在 PATH 中的全部 `candidates` 与 `selected`。
+- `distribution` 可为 `npm`、`npm-bootstrap`、`pypi`、`deb`、`rpm`、`homebrew`、`system-package` 或 `archive-or-source`。
+- Windows 会报告 PowerShell 内置 `gc`/`Get-Content` alias 风险，并建议使用 `gitcode`，不会建议全局删除系统 alias。
+- 只给出 `conflicts` 和 `recommendations`；不会修改 PATH、shell profile、认证配置，也不会调用其他包管理器卸载软件。
+- `--json` 只向 stdout 写一个稳定 JSON 对象，适合安装器、CI 与 AI 代理消费。
+
+### update - 检查或更新当前安装渠道
+
+```bash
+gc update --check
+gc update --check --json
+gc update
+gc update --json
+```
+
+- npm global wrapper 只更新精确包 `@gitcode-cli/cli@<stable latest>`；不会更新其他全局 npm 包。
+- npm bootstrap 使用安装 manifest 和独立 helper，在当前进程退出后原子替换 `gc` / `gitcode`，下一次启动生效。
+- stable 版本不会自动进入 prerelease，也不会降级。
+- 更新有 24 小时 TTL、跨进程锁、`version --json` 健康检查与失败回滚；后台失败不会改变刚完成业务命令的退出码，摘要在下次启动写入 stderr 一次。
+- `--check` 只查询 stable `latest`，不安装。
+- 非 npm 渠道只返回对应包管理器的手工升级说明，不会调用 pip、Homebrew、apt、dnf 或 rpm。
+- `--json` 字段为 `status`、`distribution`、`current`、`latest`、`message`；JSON 只写 stdout。
+
+### config get/set - 更新策略配置
+
+```bash
+gc config get update.mode
+gc config get update.mode --json
+gc config set update.mode auto
+gc config set update.mode notify
+gc config set update.mode off
+gc config set update.mode off --json
+```
+
+- `auto`：npm global 与 npm bootstrap 的默认值；后台检查并应用 stable 更新。
+- `notify`：后台检查，只提示可用版本。
+- `off`：不联网检查，不自动更新。
+- 配置保存在 `~/.config/gc/config.json` 的 `gitcode.com` host 下；`GC_UPDATE_MODE` 优先于文件配置。
+- 首次 npm 命令会在 stderr 说明默认策略和退出方式。
+- `CI=true`、`--no-interactive`、`--no-update-check`、`GC_NO_UPDATE_CHECK=1` 均禁用自动应用；显式 `update` / `update --check` 仍由用户主动控制。
+
 ## 其他命令
 
 ### version - 显示版本
@@ -2624,6 +2681,9 @@ gc schema "issue view"
 | `NO_COLOR` | 禁用颜色输出 |
 | `GC_LARK_CLI_BIN` | 覆盖 lark-cli 二进制路径，优先于 PATH 查找（用于安装后 PATH 未刷新的场景） |
 | `GC_LARK_DEFAULT_CHAT_ID` | 覆盖 `gc lark send` 的默认飞书群 id，优先于 `~/.config/gc/lark.json` |
+| `GC_UPDATE_MODE` | 覆盖 npm 更新模式：`auto`、`notify` 或 `off` |
+| `GC_NO_UPDATE_CHECK` | 设为 `1` / `true` 时禁用本次调用的 npm 自动更新检查 |
+| `GC_STATE_DIR` | 覆盖 npm 更新锁、TTL、日志摘要状态目录，主要用于测试或受控环境 |
 
 ---
 

@@ -141,6 +141,14 @@ TTY 场景下默认文本输出可保留既有体验。新增 JSON 输出视为�
 
 ## 9. 当前执行基线
 
+安装诊断与 npm 更新还必须满足：
+
+- `doctor install --json` 完全离线、无需认证，stdout 只包含稳定诊断对象；不得读取认证配置或 Token
+- `update --check --json` / `update --json` 字段固定为 `status`、`distribution`、`current`、`latest`、`message`
+- 后台更新摘要只写 stderr，不得污染业务命令 JSON stdout
+- `CI=true`、`--no-interactive`、`--no-update-check`、`GC_NO_UPDATE_CHECK=1` 禁用隐式自动应用；显式 `update` 仍按用户请求执行
+- registry 超时、离线、权限失败、锁冲突和回滚不得改变已经完成的业务命令退出码，也不得产生交互式提权提示
+
 当前阶段的最低基线是：
 
 1. 高频只读命令逐步补齐 `--json`

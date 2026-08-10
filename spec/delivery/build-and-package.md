@@ -47,6 +47,7 @@ go build -o ./gc ./cmd/gc
 make build
 make build-all
 make clean
+make install PREFIX="$HOME/.local"
 ```
 
 使用约束如下：
@@ -54,6 +55,7 @@ make clean
 - `make build` 用于当前平台构建
 - `make build-all` 用于多平台二进制构建
 - `make clean` 用于清理 `bin/`、`dist/` 和覆盖率产物
+- `make install` 同时安装 `gc` 和 `gitcode`；`PREFIX` 默认 `/usr/local`，可显式覆盖，`make uninstall` 只删除该 `PREFIX/bin` 下的两个入口
 
 ### 3.3 快照式发布构建
 
@@ -100,7 +102,15 @@ make release-snapshot
 - DEB 包：`gc_*.deb`
 - RPM 包：`gc-*.rpm`
 - PyPI 包：`gitcode_cli-*.whl`、`gitcode_cli-*.tar.gz`
-- npm 包：`@gitcode-cli/cli`（`npm/` 目录的 Node wrapper + 内置多平台二进制 `npm/bin/platforms/gc-{linux,darwin}-{amd64,arm64}` 与 `gc-windows-amd64.exe`，由 release workflow 的 `npm` job 构建发布）
+- npm 包：`@gitcode-cli/cli`（`npm/` 目录的 Node wrapper + 内置多平台二进制 `npm/bin/platforms/gc-{linux,darwin}-{amd64,arm64}` 与 `gc-windows-amd64.exe`，由 release `artifacts` job 组装、`npm` job 发布）
+- npm tarball：`gitcode-cli-cli-*.tgz`（由 release `artifacts` job 从 GoReleaser 标准二进制组装，纳入统一 SHA-256 清单）
+
+### 4.3 统一版本与二进制来源
+
+- 仓库根 `VERSION` 是 nFPM、Python 与 npm package metadata 的版本真相源；发布准备使用 `scripts/sync-package-version.sh <version>` 同步，CI / release preflight 使用 `--check` 阻止漂移。
+- GoReleaser 生成唯一标准二进制集合。DEB/RPM、wheel、Homebrew、npm 和 archive 必须消费该集合，禁止 npm publish job 再次独立交叉编译。
+- `scripts/prepare-npm-package.sh` 只接收已验证的 GoReleaser `dist/` 产物，运行 npm 单测并生成 `.tgz`。
+- npm tarball 和其中二进制随其他 Release 资产进入 checksum；registry 已存在同版本时必须比对 tarball SHA-256 才可幂等跳过。
 
 ## 5. 构建前置条件
 

@@ -8,6 +8,8 @@ LDFLAGS := -ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -
 # Binary name
 BINARY_NAME := gc
 BINARY := bin/$(BINARY_NAME)
+PREFIX ?= /usr/local
+BINDIR ?= $(PREFIX)/bin
 
 # Docker
 DOCKER_IMAGE := gitcode/$(BINARY_NAME)
@@ -26,7 +28,7 @@ GOMOD := $(GOCMD) mod
 .PHONY: release release-local release-snapshot
 .PHONY: completions validate-ai-template validate-ai-record validate-ai-templates
 .PHONY: classify-change-risk verify-remote-facts
-.PHONY: deps update-deps dev-setup dev-doctor
+.PHONY: deps update-deps dev-setup dev-doctor install uninstall
 
 all: build
 
@@ -69,10 +71,12 @@ clean:
 	rm -f coverage.out coverage.html
 
 install: build
-	cp $(BINARY) /usr/local/bin/$(BINARY_NAME)
+	install -d $(DESTDIR)$(BINDIR)
+	install -m 0755 $(BINARY) $(DESTDIR)$(BINDIR)/gc
+	ln -sf gc $(DESTDIR)$(BINDIR)/gitcode
 
 uninstall:
-	rm -f /usr/local/bin/$(BINARY_NAME)
+	rm -f $(DESTDIR)$(BINDIR)/gc $(DESTDIR)$(BINDIR)/gitcode
 
 fmt:
 	$(GOCMD) fmt ./...
@@ -189,8 +193,8 @@ help:
 	@echo "  make system-test-write Run opt-in write-path system tests"
 	@echo "  make test-coverage  Run tests with coverage report"
 	@echo "  make clean          Clean build artifacts"
-	@echo "  make install        Install to /usr/local/bin"
-	@echo "  make uninstall      Remove from /usr/local/bin"
+	@echo "  make install        Install gc/gitcode to PREFIX/bin (default /usr/local)"
+	@echo "  make uninstall      Remove gc/gitcode from PREFIX/bin"
 	@echo "  make fmt            Format code"
 	@echo "  make lint           Run linter"
 	@echo "  make completions    Generate shell completions"

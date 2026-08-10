@@ -10,10 +10,14 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 const { resolveBinaryName, isSupported } = require("./platform");
+const { normalizePath, writeInstallMetadata } = require("./install-metadata");
+const pkg = require("../package.json");
 
 const PLATFORMS_DIR = path.join(__dirname, "..", "bin", "platforms");
+const BOOTSTRAP_HELPER = path.join(__dirname, "bootstrap-update-helper.js");
 
 function bundledBinaryPath() {
   return path.join(PLATFORMS_DIR, resolveBinaryName(process.platform, process.arch));
@@ -69,8 +73,46 @@ function ensureExec(file) {
 }
 
 function copyFile(src, dst) {
-  fs.copyFileSync(src, dst);
-  ensureExec(dst);
+  const temp = `${dst}.tmp-${process.pid}`;
+  const backup = `${dst}.previous`;
+  fs.copyFileSync(src, temp);
+  ensureExec(temp);
+  try {
+    if (fs.existsSync(dst)) {
+      fs.copyFileSync(dst, backup);
+      fs.unlinkSync(dst);
+    }
+    fs.renameSync(temp, dst);
+  } catch (error) {
+    try {
+      fs.unlinkSync(temp);
+    } catch {
+      // Preserve the original error.
+    }
+    try {
+      if (!fs.existsSync(dst) && fs.existsSync(backup)) fs.copyFileSync(backup, dst);
+    } catch {
+      // Preserve the original error; the backup remains available.
+    }
+    throw error;
+  }
+}
+
+function rollbackFile(dst) {
+  const backup = `${dst}.previous`;
+  if (fs.existsSync(backup)) {
+    fs.copyFileSync(backup, dst);
+    return;
+  }
+  try {
+    fs.unlinkSync(dst);
+  } catch {
+    // No original file existed.
+  }
+}
+
+function sha256(file) {
+  return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 }
 
 function runGc(bin, args) {
@@ -96,11 +138,29 @@ function installCompletions(bin, home) {
 }
 
 // Whether the per-user fallback dir is on PATH (pure).
-function dirOnPath(dir) {
-  return (process.env.PATH || "").split(path.delimiter).includes(dir);
+function dirOnPath(dir, env = process.env, isWin = process.platform === "win32") {
+  const wanted = normalizePath(dir, isWin);
+  return (env.PATH || env.Path || "")
+    .split(path.delimiter)
+    .filter(Boolean)
+    .some((entry) => normalizePath(entry.replace(/^"|"$/g, ""), isWin) === wanted);
 }
 
-async function runInstall() {
+function parseInstallArgs(args) {
+  const options = { targetDir: "" };
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] === "--target-dir" && args[index + 1]) {
+      options.targetDir = path.resolve(args[index + 1]);
+      index += 1;
+      continue;
+    }
+    throw new Error(`unknown install argument: ${args[index]}`);
+  }
+  return options;
+}
+
+async function runInstall(args = []) {
+  const options = parseInstallArgs(args);
   const home = os.homedir();
   const isWin = process.platform === "win32";
 
@@ -120,35 +180,45 @@ async function runInstall() {
   }
   ensureExec(src);
 
-  const dir = chooseGlobalBinDir(home, isWin);
+  const dir = options.targetDir || chooseGlobalBinDir(home, isWin);
   fs.mkdirSync(dir, { recursive: true });
 
   const dst = path.join(dir, isWin ? "gc.exe" : "gc");
-  copyFile(src, dst);
+  const alias = path.join(dir, isWin ? "gitcode.exe" : "gitcode");
+  const helper = path.join(dir, "gitcode-update-helper.js");
+  const installedFiles = [dst, alias, helper];
+  let versionLine;
+  try {
+    copyFile(src, dst);
+    copyFile(src, alias);
+    copyFile(BOOTSTRAP_HELPER, helper);
+    if (sha256(src) !== sha256(dst) || sha256(src) !== sha256(alias)) {
+      throw new Error("installed binary checksum verification failed");
+    }
 
-  // gitcode alias (symlink on posix, copy on windows).
-  if (!isWin) {
-    const alias = path.join(dir, "gitcode");
-    try {
-      fs.unlinkSync(alias);
-    } catch {
-      /* fine */
+    const v = runGc(dst, ["version"]);
+    if (v.status !== 0) {
+      throw new Error(`installed binary health check failed: ${(v.stderr || "unknown error").trim()}`);
     }
-    try {
-      fs.symlinkSync("gc", alias, "file");
-    } catch {
-      copyFile(src, alias);
-    }
+    versionLine = (v.stdout || "").split("\n")[0] || "(gc version failed)";
+    writeInstallMetadata(dir, {
+      distribution: "npm-bootstrap",
+      version: pkg.version,
+      targetDir: dir,
+      node: process.execPath,
+      npm: process.env.npm_execpath || "",
+      helper,
+      sha256: sha256(src),
+    });
+  } catch (error) {
+    for (const file of installedFiles.reverse()) rollbackFile(file);
+    throw error;
   }
-
-  // Verify.
-  const v = runGc(dst, ["version"]);
-  const versionLine = (v.stdout || "").split("\n")[0] || "(gc version failed)";
 
   // Completions (posix only; Windows shell completion differs).
   const completions = isWin ? [] : installCompletions(dst, home);
 
-  process.stdout.write(`Installed gc to ${dir}\n`);
+  process.stdout.write(`Installed gc and gitcode to ${dir}\n`);
   process.stdout.write(`  ${versionLine}\n`);
   if (completions.length) {
     process.stdout.write(`Shell completions installed:\n`);
@@ -163,8 +233,10 @@ async function runInstall() {
   if (isWin) {
     if (!dirOnPath(dir)) {
       process.stdout.write(
-        `\nAdd ${dir} to your PATH (run in PowerShell, then reopen terminals):\n` +
-          `  setx PATH "${dir};%PATH%"\n`
+          `\nAdd ${dir} to your user PATH, then reopen terminals. PowerShell example:\n` +
+          `  $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')\n` +
+          `  [Environment]::SetEnvironmentVariable('Path', '${dir};' + $userPath, 'User')\n` +
+          `  $env:Path = '${dir};' + $env:Path\n`
       );
     }
   } else if (dir === path.join(home, ".local", "bin")) {
@@ -175,7 +247,7 @@ async function runInstall() {
       );
     }
   }
-  process.stdout.write(`\nRun "gc --help" to get started.\n`);
+  process.stdout.write(`\nRun "${isWin ? "gitcode" : "gc"} --help" to get started.\n`);
 }
 
-module.exports = { runInstall, chooseGlobalBinDir, completionTarget, dirOnPath };
+module.exports = { runInstall, chooseGlobalBinDir, completionTarget, dirOnPath, parseInstallArgs };

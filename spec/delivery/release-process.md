@@ -51,6 +51,7 @@ vMAJOR.MINOR.PATCH[-PRERELEASE]
 - git tag 与 release tag 一致
 - 产物文件名中的版本与 tag 一致
 - release notes 中的下载示例与实际版本一致
+- 根 `VERSION` 与 nFPM、Python、npm metadata 一致；通过 `scripts/sync-package-version.sh <version> --check`
 
 手动触发发布工作流时，`workflow_dispatch.inputs.version` 必须在第一阶段通过白名单校验后才能进入 tag、release、资产上传或配置替换步骤。允许的输入格式为：
 
@@ -63,7 +64,7 @@ vMAJOR.MINOR.PATCH-PRERELEASE
 
 工作流不得把未验证的 `${{ inputs.version }}` 直接拼接进 shell 脚本文本中。应通过 `env` 传入 shell，再调用仓库脚本 `scripts/validate-release-version.sh` 完成校验和归一化。校验脚本可接受可选前缀 `v`，便于本地复用；正式 release workflow 只接受带 `v` 前缀的规范版本输入，并必须校验输入与派生 tag 完全一致，不能用未规范化的原始输入创建 tag 或 release。
 
-正式 release workflow 必须串行执行。若目标 Release 或 PyPI 版本已存在，重跑前必须比较既有资产的文件清单和 SHA-256；只有完全一致的制品可按幂等方式跳过，禁止覆盖或忽略任何差异制品。
+正式 release workflow 必须串行执行。若目标 Release、PyPI 或 npm 版本已存在，重跑前必须比较既有资产的文件清单和 SHA-256；只有完全一致的制品可按幂等方式跳过，禁止覆盖或忽略任何差异制品。
 
 ## 5. 发布前置条件
 
@@ -91,7 +92,7 @@ vMAJOR.MINOR.PATCH-PRERELEASE
 1. 切换到最新 `main`
 2. 运行测试与本地构建验证
 3. 在 `docs/releases/vX.Y.Z.md` 准备并评审 release notes
-4. 同步文档版本号
+4. 运行 `scripts/sync-package-version.sh X.Y.Z` 同步根 `VERSION` 与所有 package metadata，并同步文档版本号
 5. 使用标准脚本在本地验证发布产物
 6. 将发布准备 PR 合入 GitCode 与 GitHub 的 `main`，确认 tree hash 一致
 7. 触发 GitHub release workflow，创建 tag、GitHub Release、正式产物并发布 PyPI，推送 Homebrew formula 到 `gitcode-cli/homebrew-tap`（brew job），并发布 npm 包 `@gitcode-cli/cli`（npm job，内置多平台二进制 + Node wrapper + `install` 子命令）
@@ -148,7 +149,9 @@ workflow 必须先在只读权限下校验 `docs/releases/vX.Y.Z.md`、执行 Go
 
 `brew` job 在 publish 后推送 Homebrew formula 到 tap 仓，是发布完整性的组成部分：失败即整个 release workflow 失败，阻断 §6.6 GitCode 同步，需人工修复（deploy key / secret / tap 仓）后重跑 workflow（publish 幂等跳过，brew 重新推送），或手动补推 formula 与 GitCode 同步。它使用 deploy key 而非 GITHUB_TOKEN，只读权限即可。
 
-`npm` job 在 publish 后交叉编译 5 个平台二进制（linux/darwin × amd64/arm64 + windows amd64）内置到 `npm/bin/platforms/`，同步 `npm/package.json` 版本，运行 wrapper 单测，然后 `npm publish --access public` 发布 `@gitcode-cli/cli`。它使用 **OIDC Trusted Publishing**（`permissions: id-token: write`，npm CLI 自动用短期令牌，**无 NPM_TOKEN**，自动生成 provenance）；需在 npmjs.com 为 `@gitcode-cli/cli` 配置 Trusted Publisher（GitHub Actions，workflow `release.yml`）。失败即整个 release workflow 失败。重跑时先 `npm view @gitcode-cli/cli@<version>` 校验：已存在则幂等跳过（与 PyPI 的 verify-and-skip 一致）。
+`artifacts` job 从同一批 GoReleaser 标准产物提取 5 个平台二进制（linux/darwin × amd64/arm64 + windows amd64），调用 `scripts/prepare-npm-package.sh` 组装 npm tarball、运行 wrapper 单测，并把 `.tgz` 纳入统一 Release SHA-256 清单。禁止 `npm` job 独立重编译。
+
+`npm` job 只下载并校验 `release-assets`，再用 **OIDC Trusted Publishing** 执行 `npm publish <verified.tgz> --access public`（`permissions: id-token: write`，无 `NPM_TOKEN`，自动 provenance）。目标版本已存在时，必须 `npm pack` 下载 registry tarball 并与 Release tarball 比较 SHA-256；只有完全一致才可跳过，差异必须阻断发布。
 
 ### 6.6 同步 GitCode tag、Release 与正式制品
 
@@ -205,7 +208,10 @@ release notes 必须满足：
 - GitCode 与 GitHub Release 的同名资产校验和一致
 - PyPI 返回目标版本，且 wheel 内置二进制的版本和 commit SHA 可追溯
 - Homebrew tap 仓 `gc.rb` 已更新到目标版本，`brew install gitcode-cli/homebrew-tap/gc` 可安装且 `gc version` 输出正确
-- npm `@gitcode-cli/cli` 返回目标版本（`npm view @gitcode-cli/cli version`），`npx @gitcode-cli/cli@latest install` 可装且 `gc version` 输出正确版本与 commit SHA
+- Homebrew 的 `gc` 与 `gitcode` 两个入口均解析到同一版本
+- npm `@gitcode-cli/cli` 返回目标版本（`npm view @gitcode-cli/cli version`），registry tarball 与 Release `.tgz` SHA-256 一致
+- `npm install -g` 与 `npx @gitcode-cli/cli@latest install` 均提供 `gc` / `gitcode`，`version --json` 的版本与 commit SHA 正确，`doctor install --json` 识别对应 distribution
+- Windows、Linux、macOS 至少执行旧 npm 版本到目标版本的真实升级烟测；Windows 同时覆盖旧 pip launcher 位于 PATH 前方的诊断
 
 若发布包含 DEB / RPM / wheel，建议至少各抽样验证一种常用安装路径。
 

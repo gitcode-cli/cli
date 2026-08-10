@@ -105,11 +105,13 @@ brews:
     license: MIT
     install: |
       bin.install "gc"
+      bin.install_symlink "gc" => "gitcode"
       bash_completion.install "completions/gc.bash" => "gc"
       zsh_completion.install "completions/gc.zsh" => "_gc"
       fish_completion.install "completions/gc.fish"
     test: |
       assert_match "gc version", shell_output("#{bin}/gc version")
+      assert_match "gitcode version", shell_output("#{bin}/gitcode version")
 
 release:
   draft: false

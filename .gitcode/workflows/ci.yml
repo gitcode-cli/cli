@@ -47,14 +47,24 @@ jobs:
         with:
           version: "1.22"
 
+      - name: Set up Node
+        uses: setup-node
+        with:
+          node-version: "22"
+
       - name: Validate release version script
-        run: bash scripts/test-release-version-validation.sh
+        run: |
+          bash scripts/test-release-version-validation.sh
+          bash scripts/sync-package-version.sh "$(cat VERSION)" --check
 
       - name: Download dependencies
         run: go mod download
 
       - name: Run tests
         run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Run npm wrapper tests
+        run: npm test --prefix npm
 
       - name: Resolve coverage artifact name
         id: coverage-artifact

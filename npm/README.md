@@ -13,13 +13,34 @@ npx @gitcode-cli/cli@latest install
 ```
 
 Copies the platform binary to a global bin dir (`/usr/local/bin` if writable, else `~/.local/bin`) and installs bash/zsh/fish completions.
+On Windows it installs both `gc.exe` and `gitcode.exe`; use `gitcode` in PowerShell because `gc` is the built-in `Get-Content` alias.
 
 ### Global npm install
 
 ```bash
 npm install -g @gitcode-cli/cli
-gc version
+gitcode version
 ```
+
+## Installation diagnostics and updates
+
+```bash
+gitcode doctor install
+gitcode doctor install --json
+gitcode update --check
+gitcode update
+```
+
+Global npm and npm-bootstrap installations default to `auto`: after a normal command, a detached helper checks the stable `latest` tag at most once every 24 hours and applies it for the next launch. Updates use a process lock, health check, and rollback. Registry, permission, or offline failures never change the completed command's exit code.
+
+```bash
+gitcode config set update.mode auto
+gitcode config set update.mode notify
+gitcode config set update.mode off
+GC_NO_UPDATE_CHECK=1 gitcode version
+```
+
+`CI=true` and `--no-interactive` disable automatic application. The updater touches only `@gitcode-cli/cli`; it never invokes pip, Homebrew, apt, dnf, or rpm, and it never rewrites PATH. If another `gitcode` is earlier on PATH, npm's non-failing install check and `doctor install` report the exact candidates and remediation choices.
 
 ## Supported platforms
 

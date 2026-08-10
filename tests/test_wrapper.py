@@ -15,6 +15,18 @@ class WrapperTests(unittest.TestCase):
             with mock.patch("platform.machine", return_value="AMD64"):
                 self.assertEqual(wrapper.get_binary_name(), "gc-windows-amd64.exe")
 
+    def test_unknown_architecture_is_rejected(self):
+        with mock.patch("platform.system", return_value="Linux"):
+            with mock.patch("platform.machine", return_value="riscv64"):
+                with self.assertRaisesRegex(RuntimeError, "Unsupported platform: linux riscv64"):
+                    wrapper.get_binary_name()
+
+    def test_windows_arm64_is_rejected_until_a_binary_is_shipped(self):
+        with mock.patch("platform.system", return_value="Windows"):
+            with mock.patch("platform.machine", return_value="ARM64"):
+                with self.assertRaisesRegex(RuntimeError, "Unsupported platform: windows arm64"):
+                    wrapper.get_binary_name()
+
     def test_ensure_executable_skips_windows_execute_bit_check(self):
         with tempfile.NamedTemporaryFile() as tmp:
             path = Path(tmp.name)
@@ -48,6 +60,8 @@ class WrapperTests(unittest.TestCase):
             self.assertEqual(args[0], [str(binary), "version"])
             self.assertEqual(kwargs["cwd"], os.getcwd())
             self.assertEqual(kwargs["env"][wrapper.COMMAND_NAME_ENV], "gitcode")
+            self.assertEqual(kwargs["env"][wrapper.DISTRIBUTION_ENV], "pypi")
+            self.assertEqual(kwargs["env"][wrapper.BINARY_ENV], str(binary.resolve()))
 
     def test_command_name_defaults_to_gitcode_for_python_module_on_windows(self):
         with mock.patch("platform.system", return_value="Windows"):

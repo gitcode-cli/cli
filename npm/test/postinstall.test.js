@@ -20,7 +20,7 @@ test("finds a command shadowing the npm global bin", () => {
   fs.mkdirSync(npmBin);
   fs.writeFileSync(path.join(oldBin, "gitcode.exe"), "");
   fs.writeFileSync(path.join(npmBin, "gitcode.cmd"), "");
-  const env = { PATH: `${oldBin}${path.delimiter}${npmBin}` };
+  const env = { PATH: `${oldBin};${npmBin}` };
 
   const report = pathConflict(npmBin, env, true);
   assert.strictEqual(report.shadowed, true);

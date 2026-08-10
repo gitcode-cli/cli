@@ -16,9 +16,10 @@ function normalizePath(value, isWin = process.platform === "win32") {
   return normalized;
 }
 
-function pathEntries(env = process.env) {
+function pathEntries(env = process.env, isWin = process.platform === "win32") {
+  const delimiter = isWin ? ";" : ":";
   return (env.PATH || env.Path || "")
-    .split(path.delimiter)
+    .split(delimiter)
     .map((entry) => entry.trim().replace(/^"|"$/g, ""))
     .filter(Boolean);
 }
@@ -27,7 +28,7 @@ function commandCandidates(name, env = process.env, isWin = process.platform ===
   const extensions = isWin ? [".exe", ".com", ".bat", ".cmd", ".ps1", ""] : [""];
   const candidates = [];
   const seen = new Set();
-  for (const dir of pathEntries(env)) {
+  for (const dir of pathEntries(env, isWin)) {
     for (const extension of extensions) {
       const candidate = path.join(dir, `${name}${extension}`);
       const key = normalizePath(candidate, isWin);

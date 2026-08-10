@@ -140,8 +140,9 @@ function installCompletions(bin, home) {
 // Whether the per-user fallback dir is on PATH (pure).
 function dirOnPath(dir, env = process.env, isWin = process.platform === "win32") {
   const wanted = normalizePath(dir, isWin);
+  const delimiter = isWin ? ";" : ":";
   return (env.PATH || env.Path || "")
-    .split(path.delimiter)
+    .split(delimiter)
     .filter(Boolean)
     .some((entry) => normalizePath(entry.replace(/^"|"$/g, ""), isWin) === wanted);
 }

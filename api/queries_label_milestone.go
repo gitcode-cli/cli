@@ -38,7 +38,7 @@ type UpdateMilestoneOptions struct {
 func CreateLabel(client *Client, owner, repo string, opts *CreateLabelOptions) (*Label, error) {
 	var label Label
 	// GitCode API requires query parameters, not JSON body
-	path := "/repos/" + owner + "/" + repo + "/labels?name=" + url.QueryEscape(opts.Name)
+	path := escapedRepoPath(owner, repo) + "/labels?name=" + url.QueryEscape(opts.Name)
 	if opts.Color != "" {
 		path += "&color=" + url.QueryEscape(opts.Color)
 	}

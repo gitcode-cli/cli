@@ -671,5 +671,5 @@ func AddLabelsToPR(client *Client, owner, repo string, number int, labels []stri
 //
 // It calls DELETE /repos/{owner}/{repo}/pulls/{number}/labels/{name}.
 func RemoveLabelFromPR(client *Client, owner, repo string, number int, label string) error {
-	return client.Delete("/repos/" + owner + "/" + repo + "/pulls/" + itoa(number) + "/labels/" + url.PathEscape(label))
+	return client.Delete(escapedRepoPath(owner, repo) + "/pulls/" + itoa(number) + "/labels/" + url.PathEscape(label))
 }

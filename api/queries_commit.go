@@ -132,7 +132,7 @@ func CreateCommitComment(client *Client, owner, repo, sha, body string) (*Commit
 
 // GetCommitComment fetches a single commit comment
 func GetCommitComment(client *Client, owner, repo, id string) (*CommitComment, error) {
-	path := fmt.Sprintf("/repos/%s/%s/comments/%s", owner, repo, id)
+	path := escapedRepoPath(owner, repo) + "/comments/" + id
 	body, err := client.GetText(path)
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ func GetCommitComment(client *Client, owner, repo, id string) (*CommitComment, e
 
 // UpdateCommitComment updates a commit comment
 func UpdateCommitComment(client *Client, owner, repo, id string, body string) (*CommitComment, error) {
-	path := fmt.Sprintf("/repos/%s/%s/comments/%s", owner, repo, id)
+	path := escapedRepoPath(owner, repo) + "/comments/" + id
 	payload := map[string]string{"body": body}
 
 	var comment CommitComment

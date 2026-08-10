@@ -268,7 +268,7 @@ func createIssueViaOwnerPath(client *Client, owner, repo string, opts *CreateIss
 	}
 
 	var issue Issue
-	err := client.Post("/repos/"+owner+"/issues", body, &issue)
+	err := client.Post("/repos/"+url.PathEscape(owner)+"/issues", body, &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func createIssueAssignees(opts *CreateIssueOptions) []string {
 // UpdateIssue updates an existing issue
 // GitCode API: PATCH /repos/:owner/issues/:number with repo param in body
 func UpdateIssue(client *Client, owner, repo string, number int, opts *UpdateIssueOptions) (*Issue, error) {
-	path := "/repos/" + owner + "/issues/" + itoa(number)
+	path := "/repos/" + url.PathEscape(owner) + "/issues/" + itoa(number)
 
 	// Ensure repo is set in opts
 	if opts.Repo == "" {

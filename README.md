@@ -164,6 +164,8 @@ Windows 和 macOS 用户建议使用上方 wheel 包；wheel 内置 Linux、macO
 
 ### Docker 镜像
 
+> **用途说明**：本仓库 Docker 配置面向开发/构建环境。`docker compose up gc` 默认执行 `gc --help` 展示用法后退出（CLI 工具非长期服务）。交互式使用 `docker run -it --entrypoint bash gitcode/gc:dev`（进入 shell）或 `docker run -it gitcode/gc:dev <子命令>`（如 `auth login`）。
+
 仓库已提供 `Dockerfile`、`docker-compose.yml` 和 Makefile 目标：
 
 ```bash

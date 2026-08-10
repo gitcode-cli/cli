@@ -19,6 +19,8 @@ services:
       - GC_TOKEN=${GC_TOKEN:-}
       - GITCODE_TOKEN=${GITCODE_TOKEN:-}
     entrypoint: ["gc"]
+    # Default: show help and exit (CLI tool, not a long-running service).
+    # For interactive use: docker run -it --entrypoint bash gitcode/gc:dev (#374)
     command: ["--help"]
 
   gc-test:

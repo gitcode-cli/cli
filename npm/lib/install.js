@@ -1,7 +1,7 @@
 // Bootstrap ("install" subcommand) for @gitcode-cli/cli.
 //
-// Copies the bundled platform binary to a global bin directory and installs
-// shell completions, so `npx @gitcode-cli/cli install` works without a prior
+// Copies the bundled platform binary to a global bin directory and, on
+// Linux/macOS, installs shell completions. The registry-isolated npx bootstrap works without a prior
 // `npm i -g`. Dependency-free (Node built-ins only). Pure helpers are
 // exported separately so they can be unit-tested without touching the FS.
 

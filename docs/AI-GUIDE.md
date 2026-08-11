@@ -10,15 +10,17 @@
 
 ## 1. 安装 GitCode CLI
 
-主渠道建议：Windows/Node/AI 环境使用 npm，macOS 使用 Homebrew，Debian/Ubuntu 使用 DEB，RHEL/Fedora 使用 RPM；wheel 只放入 pipx/venv。不要让多个全局渠道同时争用 `gc` / `gitcode`。
+主渠道建议：已安装 Node.js/npm 的 Windows、Linux、macOS 与 AI 环境优先使用 npm bootstrap；没有 Node.js 时再使用 Homebrew、DEB/RPM，wheel 只放入 pipx/venv。不要让多个全局渠道同时争用 `gc` / `gitcode`。
 
 **npm（Windows 和跨平台 Node 环境推荐）:**
 
 ```bash
-npm install -g @gitcode-cli/cli
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
 gitcode version
 gitcode doctor install --json
 ```
+
+不要使用 `npm i @gitcode-cli/cli` 安装全局 CLI；它只添加当前项目依赖，不会替换 PATH 中已有的 `gitcode`。需要 npm global prefix 管理入口时，同样固定官方 registry 并禁用 lifecycle scripts。
 
 若裸 `gitcode` 仍被旧 pip 入口遮蔽，Windows 先运行 `& "$(npm prefix -g)\gitcode.cmd" doctor install --json`，Linux/macOS 运行 `"$(npm prefix -g)/bin/gitcode" doctor install --json`；确认候选路径后再由用户选择调整 PATH、升级或卸载旧渠道。
 

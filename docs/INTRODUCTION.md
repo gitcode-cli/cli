@@ -12,13 +12,16 @@ GitCode CLI 把这些工作带回终端：仓库、Issue、Pull Request、Commit
 
 ### 1. 安装
 
-GitCode CLI 通过多个官方源分发：Linux/macOS 支持 x64/ARM64，Windows 当前支持 x64。Windows、Node/AI 环境可用 npm 作为通用快速入口；macOS 优先 Homebrew，Debian/Ubuntu 优先 DEB，RHEL/Fedora 优先 RPM。只让一个全局渠道拥有命令入口。
+GitCode CLI 通过多个官方源分发：Linux/macOS 支持 x64/ARM64，Windows 当前支持 x64。已安装 Node.js/npm 时优先使用 npm bootstrap 作为 Windows、Linux、macOS 与 AI 环境的通用入口；没有 Node.js 时再选择 Homebrew、DEB/RPM 或隔离的 Python wheel。只让一个全局渠道拥有命令入口。
 
 ```bash
-# 推荐：npm（https://www.npmjs.com/package/@gitcode-cli/cli）
-# 安装与升级到最新版本是同一条命令
-npm install -g @gitcode-cli/cli
+# 推荐：npm 一行 bootstrap（https://www.npmjs.com/package/@gitcode-cli/cli）
+# 安装与升级到最新稳定版是同一条命令
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
+gitcode version
 ```
+
+不要使用 `npm i @gitcode-cli/cli` 安装全局 CLI；它只会添加当前项目依赖，不会更新 PATH 中已有的 `gitcode`。需要 npm global prefix 管理入口时，同样固定官方 registry 并禁用 lifecycle scripts。
 
 npm 安装默认使用 `notify` 模式：普通命令最多每 24 小时在后台连接官方 npm registry 检查一次 stable 新版本，只提示、不自动安装。需要升级时显式运行 `gitcode update`；只有主动执行 `gitcode config set update.mode auto` 才会自动应用，也可用 `update.mode off` 禁用后台检查。详见[命令手册的更新策略](./COMMANDS.md#gitcode-update)。
 
@@ -26,13 +29,13 @@ npm 安装默认使用 `notify` 模式：普通命令最多每 24 小时在后�
 
 | 渠道 | 安装 / 升级 | 地址 |
 |------|-------------|------|
-| npm（Windows、Node/AI 环境） | `npm install -g @gitcode-cli/cli` | https://www.npmjs.com/package/@gitcode-cli/cli |
+| npm bootstrap（Windows、Node/AI 环境首选） | `npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install` | https://www.npmjs.com/package/@gitcode-cli/cli |
 | PyPI（隔离安装） | `pipx install gitcode-cli` / `pipx upgrade gitcode-cli`（或仅在已激活 venv 中使用 pip） | https://pypi.org/project/gitcode-cli/ |
 | Homebrew (macOS/Linux) | `brew install gitcode-cli/homebrew-tap/gc` / `brew upgrade gc` | [homebrew-tap](https://github.com/gitcode-cli/homebrew-tap) |
 | GitCode Release | 从归档下载 wheel/DEB/RPM/二进制 | https://gitcode.com/gitcode-cli/cli/releases |
 | GitHub Release | 同上制品镜像 | https://github.com/gitcode-cli/cli/releases |
 
-> 一行 bootstrap（无需全局 npm 安装，自动装二进制 + 补全）：`npx @gitcode-cli/cli@latest install`
+> npm 全局安装备选：`npm install -g --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest`
 
 安装后确认命令可用：
 

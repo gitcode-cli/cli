@@ -273,8 +273,15 @@ shell 补全（bash/zsh/fish）随安装自动配置。formula 由 GoReleaser �
 
 ### npm (跨平台)
 
-    npx @gitcode-cli/cli@latest install     # 一行 bootstrap：装二进制 + 补全
-    npm install -g @gitcode-cli/cli          # 或全局安装
+首选 bootstrap 安装二进制；Linux/macOS 同时配置补全，Windows 跳过补全：
+
+    npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
+
+备选方式由 npm global prefix 管理入口：
+
+    npm install -g --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest
+
+`npm i @gitcode-cli/cli` 与 `npm install @gitcode-cli/cli` 只添加当前项目依赖，不会更新 PATH 中已有的 CLI，不得作为用户安装命令或 Release note 的推荐入口。
 
 npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/bin/platforms/`），Node wrapper 按平台选择并 exec。Windows bootstrap 同时安装 `gc.exe` 与 `gitcode.exe`。Linux/macOS bootstrap 会自动把历史安装遗留的同目录 `gitcode -> gc` 别名安全迁移为当前二进制，无需用户先删除链接；指向其他位置的链接仍拒绝覆盖。
 

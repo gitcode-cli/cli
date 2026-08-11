@@ -38,7 +38,31 @@ GitCode CLI 把仓库、Issue、PR、Release 和 Actions 带回终端，让开�
 
 ## 安装
 
-推荐只让一个全局安装渠道拥有 `gc` / `gitcode`。Windows 普通用户和 Node/AI 环境优先使用 npm；macOS 优先 Homebrew；Debian/Ubuntu 优先 DEB；RHEL/Fedora 优先 RPM。Python wheel 建议放入 `pipx` 或虚拟环境，CI 建议固定版本并校验 checksum。
+推荐只让一个全局安装渠道拥有 `gc` / `gitcode`。已安装 Node.js/npm 的 Windows、Linux、macOS 与 AI 环境优先使用下方 npm bootstrap；没有 Node.js 时再选择 Homebrew、DEB/RPM 或隔离的 Python wheel。CI 建议固定版本并校验 checksum。
+
+### 推荐：npm 一行 bootstrap（跨平台）
+
+已安装 Node.js/npm 时，安装或升级 CLI 的首选入口是：
+
+```bash
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
+gitcode version
+```
+
+CI、审计或版本复现可固定版本：
+
+```bash
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@0.11.1 install
+```
+
+不要使用 `npm i @gitcode-cli/cli` 或 `npm install @gitcode-cli/cli` 安装全局 CLI；这两条命令只会把包加入当前项目的 `node_modules`，不会更新 PATH 中已有的 `gitcode`。需要由 npm global prefix 管理入口时，可改用：
+
+```bash
+npm install -g --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest
+gitcode version
+```
+
+一行 bootstrap 会把平台二进制安装到全局 bin 目录；Linux/macOS 同时配置 bash/zsh/fish 补全，Windows 跳过 shell 补全。Linux/macOS 上若存在历史同目录 `gitcode -> gc` 别名，会在安全校验和事务保护下自动迁移；无需先卸载 PyPI 包或手工删除链接。命令显式固定 generic 与 scoped 官方 registry，并禁用 npm lifecycle scripts，避免继承当前目录或用户 npm 配置中的非官方包来源。
 
 安装或升级后可离线检查实际命令来源和全部 PATH 候选：
 
@@ -212,20 +236,7 @@ brew upgrade gc
 shell 补全（bash/zsh/fish）随安装自动配置，无需额外操作。
 Homebrew 同时提供 `gc` 与 `gitcode`；升级后可运行 `gitcode doctor install` 检查是否仍被 pip/npm 旧入口遮蔽。
 
-### npm (跨平台)
-
-一行 bootstrap（无需全局 npm 安装，自动装二进制 + 补全）：
-
-```bash
-npx @gitcode-cli/cli@latest install
-```
-
-或全局安装：
-
-```bash
-npm install -g @gitcode-cli/cli
-gitcode version
-```
+### npm 更新与 PATH 诊断
 
 如果 `gitcode version` 仍显示旧版本，先直接调用 npm 安装目录中的新入口诊断，不必先卸载 pip 或手工删除旧入口：
 

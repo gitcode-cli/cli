@@ -1,6 +1,6 @@
 # @gitcode-cli/cli
 
-The open-source [GitCode CLI](https://gitcode.com/gitcode-cli/cli) distributed via npm with **bundled multi-platform binaries** (Linux x64/ARM64, macOS x64/ARM64, Windows x64). No separate download step; `gc` / `gitcode` works right after install.
+The open-source [GitCode CLI](https://gitcode.com/gitcode-cli/cli) distributed via npm with **bundled multi-platform binaries** (Linux x64/ARM64, macOS x64/ARM64, Windows x64). No separate binary download is needed after the bootstrap or global installation.
 
 GitCode CLI (`gc` / `gitcode`) is the community-developed, MIT-licensed command line tool for GitCode — bringing repositories, issues, pull requests, releases and Actions back to the terminal for developers, scripts, and AI agents. It is an independent open-source project, not published by the GitCode platform team.
 
@@ -9,18 +9,20 @@ GitCode CLI (`gc` / `gitcode`) is the community-developed, MIT-licensed command 
 ### One-line bootstrap (no global npm install)
 
 ```bash
-npx @gitcode-cli/cli@latest install
-npx @gitcode-cli/cli@latest install --target-dir /custom/bin
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install --target-dir /custom/bin
 ```
 
 Copies the platform binary to a global bin dir (`/usr/local/bin` if writable, else `~/.local/bin`). On Linux/macOS it also installs bash/zsh/fish completions.
 If an older installation left a same-directory `gitcode -> gc` alias, bootstrap migrates that verified alias transactionally; links to any other target are never overwritten.
 On Windows it installs both `gc.exe` and `gitcode.exe`; use `gitcode` in PowerShell because `gc` is the built-in `Get-Content` alias.
 
+Do not use `npm i @gitcode-cli/cli` as a CLI installation command. It only adds a dependency to the current project's `node_modules` and does not replace an existing `gitcode` earlier on PATH.
+
 ### Global npm install
 
 ```bash
-npm install -g @gitcode-cli/cli
+npm install -g --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest
 gitcode version
 ```
 

@@ -4,8 +4,8 @@
 // - Default: resolve the bundled platform binary and exec it with the
 //   remaining args (so `gc version`, `gc issue list`, ... all work).
 // - Special subcommand `install`: run the Node-side bootstrap (copy binary to
-//   a global bin dir, install shell completions) so `npx @gitcode-cli/cli
-//   install` works without `npm i -g`.
+//   a global bin dir, install shell completions on Linux/macOS) so an explicit,
+//   registry-isolated npx bootstrap works without a global npm install.
 //
 // This file must stay dependency-free (no require of external packages) so
 // the npm package needs no install step beyond shipping the binaries.
@@ -59,7 +59,8 @@ function runBinary(args) {
     if (err.code === "ENOENT") {
       process.stderr.write(
         `gc binary not found at ${p}. ` +
-          `Run "npm install -g @gitcode-cli/cli" or "npx @gitcode-cli/cli install" first.\n`
+          `Run "npx --yes --ignore-scripts --registry=https://registry.npmjs.org ` +
+          `--@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install" first.\n`
       );
       process.exit(127);
     }

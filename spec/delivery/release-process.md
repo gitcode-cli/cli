@@ -222,7 +222,7 @@ release notes 必须满足：
 - Homebrew tap 仓 `gc.rb` 已更新到目标版本，`brew install gitcode-cli/homebrew-tap/gc` 可安装且 `gc version` 输出正确
 - Homebrew 的 `gc` 与 `gitcode` 两个入口均解析到同一版本
 - npm `@gitcode-cli/cli` 返回目标版本（`npm view @gitcode-cli/cli version`），registry tarball 与 Release `.tgz` SHA-256 一致
-- `npm install -g` 与 `npx @gitcode-cli/cli@latest install` 均提供 `gc` / `gitcode`，`version --json` 的版本与 commit SHA 正确，`doctor install --json` 识别对应 distribution
+- 固定 generic/scoped 官方 registry 且使用 `--ignore-scripts` 的 `npm install -g` 与 `npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install` 均提供 `gc` / `gitcode`，`version --json` 的版本与 commit SHA 正确，`doctor install --json` 识别对应 distribution；不得把只添加当前项目依赖的裸 `npm i @gitcode-cli/cli` 写成 CLI 安装入口
 - Windows、Linux、macOS 至少执行旧 npm 版本到目标版本的真实升级烟测；Windows 同时覆盖旧 pip launcher 位于 PATH 前方的诊断
 
 若发布包含 DEB / RPM / wheel，建议至少各抽样验证一种常用安装路径。

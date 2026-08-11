@@ -14,6 +14,7 @@ npx @gitcode-cli/cli@latest install --target-dir /custom/bin
 ```
 
 Copies the platform binary to a global bin dir (`/usr/local/bin` if writable, else `~/.local/bin`). On Linux/macOS it also installs bash/zsh/fish completions.
+If an older installation left a same-directory `gitcode -> gc` alias, bootstrap migrates that verified alias transactionally; links to any other target are never overwritten.
 On Windows it installs both `gc.exe` and `gitcode.exe`; use `gitcode` in PowerShell because `gc` is the built-in `Get-Content` alias.
 
 ### Global npm install

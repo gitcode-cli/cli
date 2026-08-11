@@ -276,7 +276,7 @@ shell 补全（bash/zsh/fish）随安装自动配置。formula 由 GoReleaser �
     npx @gitcode-cli/cli@latest install     # 一行 bootstrap：装二进制 + 补全
     npm install -g @gitcode-cli/cli          # 或全局安装
 
-npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/bin/platforms/`），Node wrapper 按平台选择并 exec。Windows bootstrap 同时安装 `gc.exe` 与 `gitcode.exe`。
+npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/bin/platforms/`），Node wrapper 按平台选择并 exec。Windows bootstrap 同时安装 `gc.exe` 与 `gitcode.exe`。Linux/macOS bootstrap 会自动把历史安装遗留的同目录 `gitcode -> gc` 别名安全迁移为当前二进制，无需用户先删除链接；指向其他位置的链接仍拒绝覆盖。
 
 正式 npm tarball 不再独立编译二进制：release workflow 的 `artifacts` job 调用 `scripts/prepare-npm-package.sh`，从同一批 GoReleaser 归档/裸二进制组装 npm 包，并将 `.tgz` 纳入 Release SHA-256 清单。`npm` job 只下载已验证的 Release artifact 并执行 OIDC Trusted Publishing；目标版本已存在时，必须下载 registry tarball 与 Release tarball 比对 SHA-256，内容一致才允许幂等跳过。
 

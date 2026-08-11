@@ -72,7 +72,32 @@ function ensureExec(file) {
   }
 }
 
-function replacePath(src, dst, transactionID) {
+function pathExists(file) {
+  try {
+    fs.lstatSync(file);
+    return true;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+function isAllowedAliasSymlink(dst, allowedTarget) {
+  if (!allowedTarget) return false;
+  try {
+    const targetStat = fs.lstatSync(allowedTarget, { bigint: true });
+    if (!targetStat.isFile() || targetStat.isSymbolicLink()) return false;
+    const linkTargetStat = fs.statSync(dst, { bigint: true });
+    return linkTargetStat.isFile() &&
+      linkTargetStat.dev === targetStat.dev &&
+      linkTargetStat.ino === targetStat.ino;
+  } catch (error) {
+    if (["ENOENT", "EINVAL"].includes(error.code)) return false;
+    throw error;
+  }
+}
+
+function replacePath(src, dst, transactionID, options = {}) {
   const temp = `${dst}.tmp-${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
   const backup = `${dst}.backup-${transactionID}`;
   const sourceStat = fs.lstatSync(src);
@@ -80,9 +105,12 @@ function replacePath(src, dst, transactionID) {
     throw new Error(`refusing non-regular install source: ${src}`);
   }
   let hadOriginal = false;
+  let moveOriginal = false;
   try {
     const stat = fs.lstatSync(dst);
-    if (!stat.isFile() || stat.isSymbolicLink()) {
+    if (stat.isSymbolicLink() && isAllowedAliasSymlink(dst, options.allowedSymlinkTarget)) {
+      moveOriginal = true;
+    } else if (!stat.isFile() || stat.isSymbolicLink()) {
       throw new Error(`refusing non-regular install target: ${dst}`);
     }
     hadOriginal = true;
@@ -95,22 +123,50 @@ function replacePath(src, dst, transactionID) {
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
   }
-  if (hadOriginal) fs.copyFileSync(dst, backup, fs.constants.COPYFILE_EXCL);
   fs.copyFileSync(src, temp, fs.constants.COPYFILE_EXCL);
   ensureExec(temp);
+  let backupReady = false;
   try {
+    if (hadOriginal) {
+      if (moveOriginal) {
+        fs.renameSync(dst, backup);
+        backupReady = true;
+        if (!isAllowedAliasSymlink(backup, options.allowedSymlinkTarget)) {
+          throw new Error(`refusing non-regular install target: ${dst}`);
+        }
+      } else {
+        fs.copyFileSync(dst, backup, fs.constants.COPYFILE_EXCL);
+        backupReady = true;
+      }
+    }
     renameReplace(temp, dst);
     return { dst, backup, hadOriginal };
   } catch (error) {
+    let restoreError;
     try {
-      if (hadOriginal && fs.existsSync(backup)) renameReplace(backup, dst);
-    } catch {
+      if (backupReady) {
+        if (!pathExists(backup)) {
+          restoreError = new Error(`transaction backup missing: ${backup}`);
+          restoreError.code = "EROLLBACK";
+        } else {
+          renameReplace(backup, dst);
+        }
+      }
+    } catch (caught) {
       // Keep the transaction backup for manual recovery.
+      restoreError = caught;
     }
     try {
       fs.unlinkSync(temp);
     } catch {
       // Preserve the original error.
+    }
+    if (restoreError) {
+      throw new AggregateError(
+        [error, restoreError],
+        "path replacement failed and rollback was incomplete",
+        { cause: error }
+      );
     }
     throw error;
   }
@@ -129,12 +185,21 @@ function renameReplace(src, dst) {
 function rollbackTransaction(records) {
   const failures = [];
   for (const record of [...records].reverse()) {
-    try {
-      if (record.hadOriginal && fs.existsSync(record.backup)) {
+    if (record.hadOriginal) {
+      try {
+        if (!pathExists(record.backup)) {
+          const error = new Error(`transaction backup missing: ${record.backup}`);
+          error.code = "EROLLBACK";
+          throw error;
+        }
         renameReplace(record.backup, record.dst);
-      } else {
-        fs.unlinkSync(record.dst);
+      } catch (error) {
+        failures.push(error);
       }
+      continue;
+    }
+    try {
+      fs.unlinkSync(record.dst);
     } catch (error) {
       if (error.code !== "ENOENT") failures.push(error);
     }
@@ -256,12 +321,13 @@ async function runInstall(args = []) {
   const dst = path.join(dir, isWin ? "gc.exe" : "gc");
   const alias = path.join(dir, isWin ? "gitcode.exe" : "gitcode");
   const helper = path.join(dir, "gitcode-update-helper.js");
+  const aliasOptions = isWin ? {} : { allowedSymlinkTarget: dst };
   const transactionID = `${process.pid}-${crypto.randomBytes(8).toString("hex")}`;
   const transaction = [];
   let versionLine;
   try {
     transaction.push(replacePath(src, dst, transactionID));
-    transaction.push(replacePath(src, alias, transactionID));
+    transaction.push(replacePath(src, alias, transactionID, aliasOptions));
     transaction.push(replacePath(BOOTSTRAP_HELPER, helper, transactionID));
     if (sha256(src) !== sha256(dst) || sha256(src) !== sha256(alias)) {
       throw new Error("installed binary checksum verification failed");

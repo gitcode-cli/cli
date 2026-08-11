@@ -2588,6 +2588,10 @@ gc doctor install --json
 
 npm bootstrap 的 Node wrapper 另提供 `gitcode install [--target-dir <directory>]`；`--target-dir` 只在用户显式指定时覆盖默认的用户级安装目录，可用 `gitcode install --help` 查看。
 
+- Linux/macOS 安装时，如果历史版本留下的 `gitcode` 符号链接解析后精确指向同目录常规 `gc` 文件，bootstrap 会在同一安装事务中自动迁移该别名，无需用户先删除。
+- `gc` 主程序目标上的符号链接、指向其他位置的 `gitcode` 链接和其他非常规目标一律拒绝覆盖；Windows 不迁移符号链接。
+- 别名迁移保留事务唯一备份；后续二进制校验、健康检查或 metadata 写入失败时，旧 `gc` 与原始链接会按逆序原样回滚。
+
 <a id="gitcode-update"></a>
 
 ### update - 检查或更新当前安装渠道

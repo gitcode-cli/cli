@@ -187,6 +187,49 @@ type Branch struct {
 	DefaultBranch bool          `json:"default_branch"`
 }
 
+// BranchProtection represents a branch protection rule.
+type BranchProtection struct {
+	Name               string `json:"name"`
+	UpdatedAt          string `json:"updated_at"`
+	PushUsers          string `json:"push_users"`
+	MergeUsers         string `json:"merge_users"`
+	Merged             bool   `json:"merged"`
+	DevelopersCanPush  bool   `json:"developers_can_push"`
+	DevelopersCanMerge bool   `json:"developers_can_merge"`
+}
+
+// BranchProtectionRequest is the request body for creating/updating protection rules.
+type BranchProtectionRequest struct {
+	Wildcard string `json:"wildcard,omitempty"`
+	Pusher   string `json:"pusher,omitempty"`
+	Merger   string `json:"merger,omitempty"`
+}
+
+// ListBranchProtections lists all branch protection rules in a repository.
+func ListBranchProtections(client *Client, owner, repo string) ([]BranchProtection, error) {
+	var rules []BranchProtection
+	err := client.Get(escapedRepoPath(owner, repo)+"/protect_branches", &rules)
+	if err != nil {
+		return nil, err
+	}
+	return rules, nil
+}
+
+// CreateBranchProtection creates a new branch protection rule.
+func CreateBranchProtection(client *Client, owner, repo string, req *BranchProtectionRequest) error {
+	return client.Put(escapedRepoPath(owner, repo)+"/branches/setting/new", req, nil)
+}
+
+// UpdateBranchProtection updates an existing branch protection rule.
+func UpdateBranchProtection(client *Client, owner, repo, wildcard string, req *BranchProtectionRequest) error {
+	return client.Put(escapedRepoPath(owner, repo)+"/branches/"+url.PathEscape(wildcard)+"/setting", req, nil)
+}
+
+// DeleteBranchProtection deletes a branch protection rule.
+func DeleteBranchProtection(client *Client, owner, repo, wildcard string) error {
+	return client.Delete(escapedRepoPath(owner, repo) + "/branches/" + url.PathEscape(wildcard) + "/setting")
+}
+
 // BranchCommit represents the commit a branch points to
 type BranchCommit struct {
 	ID        string       `json:"id"`

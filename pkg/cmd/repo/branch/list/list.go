@@ -69,6 +69,13 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 }
 
 func listRun(opts *ListOptions) error {
+	if opts.Limit <= 0 {
+		return cmdutil.NewUsageError("--limit must be greater than 0")
+	}
+	if opts.Page < 0 {
+		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
+	}
+
 	format, err := resolveOutputFormat(opts.JSON, opts.Format)
 	if err != nil {
 		return err

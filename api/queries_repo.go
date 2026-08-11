@@ -142,7 +142,7 @@ func ListBranches(client *Client, owner, repo string, opts *BranchListOptions) (
 type CreateBranchRequest struct {
 	Refs        string `json:"refs"`
 	BranchName  string `json:"branch_name"`
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 }
 
 // CreateBranch creates a new branch in a repository.

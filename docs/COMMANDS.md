@@ -102,6 +102,7 @@ docker compose up gc
 - `release list`
 - `release view`
 - `repo branch view`
+- `repo branch list`
 - `repo list`
 - `repo log`
 - `repo stats`
@@ -134,6 +135,7 @@ docker compose up gc
 - `release create`
 - `release edit`
 - `release upload`
+- `repo branch create`
 - `repo create`
 - `repo delete`
 - `repo fork`

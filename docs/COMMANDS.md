@@ -103,6 +103,9 @@ docker compose up gc
 - `release view`
 - `repo branch view`
 - `repo branch list`
+- `search repos`
+- `search issues`
+- `search users`
 - `user view`
 - `repo list`
 - `repo log`
@@ -2780,6 +2783,61 @@ gc user edit --bio "New bio" --company "Acme Inc"
 - `--bio` 内容经 secret 扫描（防止误提交 token）。
 - `--json` 输出更新后的用户对象。
 - 退出码：`0` 成功；`1` 通用错误；`2` 参数错误（未提供任何字段）；`4` 认证/权限错误（HTTP 401/403）。
+
+## search 命令 (search)
+
+### search repos - 搜索仓库
+
+搜索 GitCode 仓库。
+
+```bash
+# 搜索仓库
+gc search repos "gitcode"
+
+# JSON 输出
+gc search repos "cli tool" --json
+```
+
+说明：
+- `--json` 输出结果数组到 stdout。
+- `--limit`/`--page` 分页。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证错误。
+
+### search issues - 搜索 Issues
+
+搜索 GitCode Issues。
+
+```bash
+# 搜索 Issues
+gc search issues "bug report"
+
+# 限定仓库 + 状态
+gc search issues "feature" --repo owner/repo --state open
+```
+
+说明：
+- `--repo` 限定搜索范围到指定仓库（owner/repo）。
+- `--state` 按状态过滤（open/closed）。
+- `--limit`/`--page` 分页。
+- `--json` 输出结果数组。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证错误。
+
+### search users - 搜索用户
+
+搜索 GitCode 用户。
+
+```bash
+# 搜索用户
+gc search users "developer"
+
+# JSON 输出
+gc search users "admin" --json
+```
+
+说明：
+- `--json` 输出用户对象数组。
+- `--limit`/`--page` 分页。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证错误。
 
 ## 其他命令
 

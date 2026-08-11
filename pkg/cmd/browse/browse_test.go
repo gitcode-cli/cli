@@ -1,6 +1,7 @@
 package browse
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -288,5 +289,71 @@ func TestResolveHostNil(t *testing.T) {
 	}
 	if host != "gitcode.com" {
 		t.Fatalf("resolveHost(nil) = %q, want %q", host, "gitcode.com")
+	}
+}
+
+func TestResolveHostAPIHostNormalization(t *testing.T) {
+	host, err := resolveHost(func() (config.Config, error) {
+		return config.New(), nil
+	})
+	if err != nil {
+		t.Fatalf("resolveHost() error = %v", err)
+	}
+	if host == "api.gitcode.com" {
+		t.Fatalf("resolveHost() = %q, should not be api host", host)
+	}
+}
+
+func TestResolveHostError(t *testing.T) {
+	_, err := resolveHost(func() (config.Config, error) {
+		return nil, fmt.Errorf("config error")
+	})
+	if err == nil {
+		t.Fatal("resolveHost() error = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "failed to read config") {
+		t.Fatalf("error = %q, want to wrap config read failure", err.Error())
+	}
+}
+
+func TestBrowseRunNoInteractiveSuppressesBrowser(t *testing.T) {
+	io, _, out, _ := iostreams.TestTTY()
+	io.SetNoInteractive(true)
+	browserCalled := false
+	opts := &BrowseOptions{
+		IO: io,
+		Config: func() (config.Config, error) {
+			return config.New(), nil
+		},
+		Repository: "owner/repo",
+		Browser: func(url string) error {
+			browserCalled = true
+			return nil
+		},
+	}
+
+	if err := browseRun(opts); err != nil {
+		t.Fatalf("browseRun() error = %v", err)
+	}
+	if browserCalled {
+		t.Fatal("browser should not be called with --no-interactive in TTY")
+	}
+	if !strings.Contains(out.String(), "https://gitcode.com/owner/repo") {
+		t.Fatalf("output should contain URL; got: %s", out.String())
+	}
+}
+
+func TestBrowseRunInvalidRepoFormat(t *testing.T) {
+	io, _, _, _ := iostreams.Test()
+	opts := &BrowseOptions{
+		IO:         io,
+		Config:     func() (config.Config, error) { return config.New(), nil },
+		Repository: "invalid-no-slash",
+		NoBrowser:  true,
+	}
+
+	err := browseRun(opts)
+	if err == nil {
+		t.Fatal("browseRun() error = nil, want error for invalid repo format")
 	}
 }

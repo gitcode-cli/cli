@@ -3,6 +3,7 @@ package browse
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -109,12 +110,12 @@ func browseRun(opts *BrowseOptions) error {
 
 	host, err := resolveHost(opts.Config)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to resolve host: %w", err)
 	}
 
 	webURL := buildURL(host, owner, repo, opts)
 
-	if opts.NoBrowser || !opts.IO.IsStdoutTTY() {
+	if opts.NoBrowser || !opts.IO.IsStdoutTTY() || opts.IO.NoInteractive() {
 		fmt.Fprintf(opts.IO.Out, "%s\n", webURL)
 		return nil
 	}
@@ -135,14 +136,18 @@ func resolveHost(configFn func() (config.Config, error)) (string, error) {
 	if host == "" {
 		host = "gitcode.com"
 	}
+	if host == "api.gitcode.com" {
+		host = "gitcode.com"
+	}
 	return host, nil
 }
 
 func buildURL(host, owner, repo string, opts *BrowseOptions) string {
-	base := fmt.Sprintf("https://%s/%s/%s", host, owner, repo)
+	base := fmt.Sprintf("https://%s/%s/%s",
+		host, url.PathEscape(owner), url.PathEscape(repo))
 
 	if opts.Commit != "" {
-		return base + "/commit/" + opts.Commit
+		return base + "/commit/" + url.PathEscape(opts.Commit)
 	}
 	if opts.Branch != "" {
 		return base + "/tree/" + opts.Branch

@@ -2586,7 +2586,12 @@ gc doctor install --json
 - 只给出 `conflicts` 和 `recommendations`；不会修改 PATH、shell profile、认证配置，也不会调用其他包管理器卸载软件。
 - `--json` 只向 stdout 写一个稳定 JSON 对象，适合安装器、CI 与 AI 代理消费。
 
-npm bootstrap 的 Node wrapper 另提供 `gitcode install [--target-dir <directory>]`；`--target-dir` 只在用户显式指定时覆盖默认的用户级安装目录，可用 `gitcode install --help` 查看。
+npm bootstrap 的 Node wrapper 另提供 `gitcode install [--target-dir <directory>] [--no-modify-path]`；`--target-dir` 只在用户显式指定时覆盖默认的用户级安装目录，可用 `gitcode install --help` 查看。
+
+- Windows 在用户显式执行 `install` 后，默认将安装目录置于持久 User PATH 前面并删除同目录重复项；只修改当前用户，不修改 Machine PATH、不提权、不卸载或覆盖其他渠道入口。
+- `--no-modify-path` 显式跳过 Windows 持久 PATH 修改，并输出中文手工配置命令；Linux/macOS 接受该参数但原有 PATH/profile 行为不变。
+- `npx` 子进程无法修改已经运行的父 PowerShell 环境。当前窗口尚未优先包含目标目录时，安装完成输出必须用中文显性给出 `$env:Path` 刷新命令、关闭全部 PowerShell/Windows Terminal 后重开的替代方式，以及 `gitcode version` 验证步骤。
+- Windows 持久化失败不会伪装为 PATH 配置成功；安装器保留已通过校验的二进制，输出中文失败原因、手工持久化命令和当前窗口刷新命令。
 
 - Linux/macOS 安装时，如果历史版本留下的 `gitcode` 符号链接解析后精确指向同目录常规 `gc` 文件，bootstrap 会在同一安装事务中自动迁移该别名，无需用户先删除。
 - `gc` 主程序目标上的符号链接、指向其他位置的 `gitcode` 链接和其他非常规目标一律拒绝覆盖；Windows 不迁移符号链接。

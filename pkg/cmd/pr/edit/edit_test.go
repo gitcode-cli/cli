@@ -147,7 +147,7 @@ func TestEditRunUpdatesLabels(t *testing.T) {
 				opts.Labels = []string{"risk/high", "status/approved"}
 			},
 			wantLabels:    "type/bug,risk/high,status/approved",
-			wantRequests:  2,
+			wantRequests:  3,
 			wantFirstVerb: http.MethodGet,
 		},
 		{
@@ -157,7 +157,7 @@ func TestEditRunUpdatesLabels(t *testing.T) {
 				opts.RemoveLabels = []string{"risk/high"}
 			},
 			wantLabels:    "type/bug,status/approved",
-			wantRequests:  2,
+			wantRequests:  3,
 			wantFirstVerb: http.MethodGet,
 		},
 		{
@@ -168,7 +168,7 @@ func TestEditRunUpdatesLabels(t *testing.T) {
 				opts.Yes = true
 			},
 			wantLabels:    "status/approved",
-			wantRequests:  1,
+			wantRequests:  2,
 			wantFirstVerb: http.MethodPatch,
 		},
 		{
@@ -178,7 +178,7 @@ func TestEditRunUpdatesLabels(t *testing.T) {
 				opts.Yes = true
 			},
 			wantLabels:    ",",
-			wantRequests:  1,
+			wantRequests:  2,
 			wantFirstVerb: http.MethodPatch,
 		},
 	}
@@ -501,5 +501,116 @@ func TestEditRunScansInlineBodyForSecrets(t *testing.T) {
 	err := editRun(opts)
 	if err == nil || !strings.Contains(err.Error(), "secret") {
 		t.Fatalf("editRun() error = %v, want secret detection error", err)
+	}
+}
+
+func TestEditRunAddAssignee(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	io, _, _, _ := iostreams.Test()
+	var methods []string
+	opts := &EditOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				methods = append(methods, req.Method)
+				return editTestResponse(`{"number":123,"title":"test"}`), nil
+			})}, nil
+		},
+		Repository:   "owner/repo",
+		Number:       123,
+		AddAssignees: []string{"user1", "user2"},
+	}
+	if err := editRun(opts); err != nil {
+		t.Fatalf("editRun() error = %v", err)
+	}
+	foundPost := false
+	for _, m := range methods {
+		if m == "POST" {
+			foundPost = true
+		}
+	}
+	if !foundPost {
+		t.Fatalf("expected POST request for add-assignee; methods: %v", methods)
+	}
+}
+
+func TestEditRunAddReviewerAndTester(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	io, _, _, _ := iostreams.Test()
+	var methods []string
+	opts := &EditOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				methods = append(methods, req.Method)
+				return editTestResponse(`{"number":123,"title":"test"}`), nil
+			})}, nil
+		},
+		Repository:   "owner/repo",
+		Number:       123,
+		AddReviewers: []string{"rev1"},
+		AddTesters:   []string{"test1"},
+	}
+	if err := editRun(opts); err != nil {
+		t.Fatalf("editRun() error = %v", err)
+	}
+	postCount := 0
+	for _, m := range methods {
+		if m == "POST" {
+			postCount++
+		}
+	}
+	if postCount < 2 {
+		t.Fatalf("expected at least 2 POST requests (reviewer + tester); methods: %v", methods)
+	}
+}
+
+func TestEditRunRemoveAssignee(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	io, _, _, _ := iostreams.Test()
+	var methods []string
+	opts := &EditOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				methods = append(methods, req.Method)
+				return editTestResponse(`{"number":123,"title":"test"}`), nil
+			})}, nil
+		},
+		Repository:      "owner/repo",
+		Number:          123,
+		RemoveAssignees: []string{"user1"},
+	}
+	if err := editRun(opts); err != nil {
+		t.Fatalf("editRun() error = %v", err)
+	}
+	foundDelete := false
+	for _, m := range methods {
+		if m == "DELETE" {
+			foundDelete = true
+		}
+	}
+	if !foundDelete {
+		t.Fatalf("expected DELETE request for remove-assignee; methods: %v", methods)
+	}
+}
+
+func TestHasAssigneeChanges(t *testing.T) {
+	tests := []struct {
+		name string
+		opts *EditOptions
+		want bool
+	}{
+		{name: "no changes", opts: &EditOptions{}, want: false},
+		{name: "add assignee", opts: &EditOptions{AddAssignees: []string{"u1"}}, want: true},
+		{name: "remove reviewer", opts: &EditOptions{RemoveReviewers: []string{"u1"}}, want: true},
+		{name: "add tester", opts: &EditOptions{AddTesters: []string{"u1"}}, want: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hasAssigneeChanges(tt.opts); got != tt.want {
+				t.Errorf("hasAssigneeChanges() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

@@ -1673,6 +1673,18 @@ gc pr edit 1 --milestone 5 -R infra-test/gctest1
 
 # JSON 输出
 gc pr edit 1 --title "新标题" -R infra-test/gctest1 --json
+
+# 添加评审人
+gc pr edit 1 --add-reviewer dev1,dev2 -R infra-test/gctest1
+
+# 移除评审人
+gc pr edit 1 --remove-reviewer dev1 -R infra-test/gctest1
+
+# 添加审查人
+gc pr edit 1 --add-assignee reviewer1 -R infra-test/gctest1
+
+# 添加测试人
+gc pr edit 1 --add-tester tester1 -R infra-test/gctest1
 ```
 
 说明：
@@ -1680,6 +1692,10 @@ gc pr edit 1 --title "新标题" -R infra-test/gctest1 --json
 - `--add-label` 和 `--remove-label` 可同时使用，均会保留未指定的现有标签，并对最终标签列表去重。
 - `--replace-labels` 会替换全部标签，不能与 `--labels`、`--add-label` 或 `--remove-label` 同时使用。
 - 全量替换默认要求输入 `replace-labels` 确认；非交互环境必须显式传入 `--yes`，空值可用于清空全部标签。
+- `--add-assignee`/`--remove-assignee`：添加/移除审查人（POST/DELETE /pulls/{number}/assignees）。
+- `--add-reviewer`/`--remove-reviewer`：添加/移除评审人（POST/DELETE /pulls/{number}/reviewers）。
+- `--add-tester`/`--remove-tester`：添加/移除测试人（POST/DELETE /pulls/{number}/testers）。
+- 以上 6 个 flag 可与 `--title`/`--body` 等基础编辑 flag 同时使用。
 - `--json` 会在更新成功后读取并输出完整的最终 PR 状态，`id`、`number`、`labels` 等字段可直接供脚本和 AI 代理判断结果。
 
 ### pr label - 管理 PR 标签

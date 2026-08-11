@@ -42,6 +42,14 @@ type EditOptions struct {
 	CloseRelatedIssue string // "true", "false", or "" (not specified)
 	Yes               bool
 	JSON              bool
+
+	// Assignee/Reviewer/Tester flags
+	AddAssignees    []string
+	RemoveAssignees []string
+	AddReviewers    []string
+	RemoveReviewers []string
+	AddTesters      []string
+	RemoveTesters   []string
 }
 
 // NewCmdEdit creates the edit command
@@ -125,6 +133,12 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.CloseRelatedIssue, "close-related-issue", "", "Close related issues when merged (true/false)")
 	cmdutil.SetFlagEnumOrWarn(cmd, "close-related-issue", "true", "false")
 	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation for replacing all labels")
+	cmd.Flags().StringSliceVar(&opts.AddAssignees, "add-assignee", nil, "Add assignees (comma-separated usernames)")
+	cmd.Flags().StringSliceVar(&opts.RemoveAssignees, "remove-assignee", nil, "Remove assignees (comma-separated usernames)")
+	cmd.Flags().StringSliceVar(&opts.AddReviewers, "add-reviewer", nil, "Add reviewers (comma-separated usernames)")
+	cmd.Flags().StringSliceVar(&opts.RemoveReviewers, "remove-reviewer", nil, "Remove reviewers (comma-separated usernames)")
+	cmd.Flags().StringSliceVar(&opts.AddTesters, "add-tester", nil, "Add testers (comma-separated usernames)")
+	cmd.Flags().StringSliceVar(&opts.RemoveTesters, "remove-tester", nil, "Remove testers (comma-separated usernames)")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
@@ -215,21 +229,32 @@ func editRun(opts *EditOptions) error {
 	if updateOpts.Title == "" && updateOpts.Body == "" && opts.BodyFile == "" &&
 		updateOpts.Base == "" && updateOpts.Draft == nil &&
 		!updateOpts.LabelsSet && updateOpts.MilestoneNumber == 0 &&
-		updateOpts.CloseRelatedIssue == nil {
+		updateOpts.CloseRelatedIssue == nil &&
+		!hasAssigneeChanges(opts) {
 		return cmdutil.NewUsageError("no changes specified. Use flags to specify what to edit")
 	}
 
-	// Edit PR
-	pr, err := api.EditPR(client, owner, repo, opts.Number, updateOpts)
+	// Edit PR (only if there are basic field changes)
+	if updateOpts.Title != "" || updateOpts.Body != "" || updateOpts.Base != "" ||
+		updateOpts.Draft != nil || updateOpts.LabelsSet ||
+		updateOpts.MilestoneNumber > 0 || updateOpts.CloseRelatedIssue != nil {
+		_, err = api.EditPR(client, owner, repo, opts.Number, updateOpts)
+		if err != nil {
+			return fmt.Errorf("failed to edit PR: %w", err)
+		}
+	}
+
+	// Assignee operations
+	if err := applyAssigneeChanges(client, owner, repo, opts); err != nil {
+		return err
+	}
+
+	pr, err := api.GetPullRequest(client, owner, repo, opts.Number)
 	if err != nil {
-		return fmt.Errorf("failed to edit PR: %w", err)
+		return fmt.Errorf("failed to fetch updated PR: %w", err)
 	}
 
 	if opts.JSON {
-		pr, err = api.GetPullRequest(client, owner, repo, opts.Number)
-		if err != nil {
-			return fmt.Errorf("failed to fetch updated PR: %w", err)
-		}
 		return cmdutil.WriteJSON(opts.IO.Out, pr)
 	}
 
@@ -317,4 +342,44 @@ func resolvePRLabels(client *api.Client, owner, repo string, opts *EditOptions) 
 
 func parseRepo(repo string) (string, string, error) {
 	return cmdutil.ParseRepo(repo)
+}
+
+func hasAssigneeChanges(opts *EditOptions) bool {
+	return len(opts.AddAssignees) > 0 || len(opts.RemoveAssignees) > 0 ||
+		len(opts.AddReviewers) > 0 || len(opts.RemoveReviewers) > 0 ||
+		len(opts.AddTesters) > 0 || len(opts.RemoveTesters) > 0
+}
+
+func applyAssigneeChanges(client *api.Client, owner, repo string, opts *EditOptions) error {
+	if len(opts.AddAssignees) > 0 {
+		if err := api.AddPRAssignees(client, owner, repo, opts.Number, opts.AddAssignees); err != nil {
+			return fmt.Errorf("failed to add assignees: %w", err)
+		}
+	}
+	if len(opts.RemoveAssignees) > 0 {
+		if err := api.RemovePRAssignees(client, owner, repo, opts.Number, opts.RemoveAssignees); err != nil {
+			return fmt.Errorf("failed to remove assignees: %w", err)
+		}
+	}
+	if len(opts.AddReviewers) > 0 {
+		if err := api.AddPRReviewers(client, owner, repo, opts.Number, opts.AddReviewers); err != nil {
+			return fmt.Errorf("failed to add reviewers: %w", err)
+		}
+	}
+	if len(opts.RemoveReviewers) > 0 {
+		if err := api.RemovePRReviewers(client, owner, repo, opts.Number, opts.RemoveReviewers); err != nil {
+			return fmt.Errorf("failed to remove reviewers: %w", err)
+		}
+	}
+	if len(opts.AddTesters) > 0 {
+		if err := api.AddPRTesters(client, owner, repo, opts.Number, opts.AddTesters); err != nil {
+			return fmt.Errorf("failed to add testers: %w", err)
+		}
+	}
+	if len(opts.RemoveTesters) > 0 {
+		if err := api.RemovePRTesters(client, owner, repo, opts.Number, opts.RemoveTesters); err != nil {
+			return fmt.Errorf("failed to remove testers: %w", err)
+		}
+	}
+	return nil
 }

@@ -103,6 +103,7 @@ docker compose up gc
 - `release view`
 - `repo branch view`
 - `repo branch list`
+- `user view`
 - `repo list`
 - `repo log`
 - `repo stats`
@@ -136,6 +137,7 @@ docker compose up gc
 - `release edit`
 - `release upload`
 - `repo branch create`
+- `user edit`
 - `repo create`
 - `repo delete`
 - `repo fork`
@@ -2757,7 +2759,7 @@ gc user view --json
 
 - 无参数时调用 GET /api/v5/user（当前认证用户），传 username 时调用 GET /api/v5/users/{username}。
 - `--json` 输出完整用户对象到 stdout。
-- 退出码：`0` 成功；`1` 通用错误；`3` 用户不存在（HTTP 404）。
+- 退出码：`0` 成功；`1` 通用错误；`3` 用户不存在（HTTP 404）；`4` 认证/权限错误（HTTP 401/403）。
 
 ### user edit - 编辑用户资料
 
@@ -2777,7 +2779,7 @@ gc user edit --bio "New bio" --company "Acme Inc"
 - 至少提供一个字段，否则报参数错误。
 - `--bio` 内容经 secret 扫描（防止误提交 token）。
 - `--json` 输出更新后的用户对象。
-- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误（未提供任何字段）。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误（未提供任何字段）；`4` 认证/权限错误（HTTP 401/403）。
 
 ## 其他命令
 

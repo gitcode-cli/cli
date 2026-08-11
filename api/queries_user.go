@@ -59,13 +59,14 @@ type UpdateUserRequest struct {
 }
 
 // UpdateUser updates the current authenticated user's profile.
+// After updating, it re-reads the full user profile via GET /user
+// to return a complete User object with all fields.
 func UpdateUser(client *Client, req *UpdateUserRequest) (*User, error) {
-	var user User
-	err := client.Patch("/user", req, &user)
+	err := client.Patch("/user", req, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return CurrentUser(client)
 }
 
 // VerifyToken verifies that a token is valid by fetching the current user

@@ -50,12 +50,17 @@ func TestEditRunSuccess(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	io, _, _, errOut := iostreams.Test()
 	var gotMethod string
+	callCount := 0
 	opts := &EditOptions{
 		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-					gotMethod = req.Method
+					callCount++
+					if callCount == 1 {
+						gotMethod = req.Method
+						return editTestResponse(http.StatusOK, `{}`), nil
+					}
 					return editTestResponse(http.StatusOK, `{"login":"dev","name":"New Name"}`), nil
 				}),
 			}, nil
@@ -77,11 +82,16 @@ func TestEditRunSuccess(t *testing.T) {
 func TestEditRunJSON(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	io, _, out, _ := iostreams.Test()
+	callCount := 0
 	opts := &EditOptions{
 		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					callCount++
+					if callCount == 1 {
+						return editTestResponse(http.StatusOK, `{}`), nil
+					}
 					return editTestResponse(http.StatusOK, `{"login":"dev","name":"Updated"}`), nil
 				}),
 			}, nil
@@ -150,5 +160,25 @@ func editTestResponse(status int, body string) *http.Response {
 		Status:     http.StatusText(status),
 		Header:     make(http.Header),
 		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}
+
+func TestEditRunSecretScanRejection(t *testing.T) {
+	t.Setenv("GC_TOKEN", "leaked-secret-token-xyz")
+	io, _, _, _ := iostreams.Test()
+	opts := &EditOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				t.Fatal("HTTP request should not be made when secret is detected")
+				return nil, nil
+			})}, nil
+		},
+		Bio: "my token is leaked-secret-token-xyz",
+	}
+
+	err := editRun(opts)
+	if err == nil {
+		t.Fatal("editRun() error = nil, want error for secret in bio")
 	}
 }

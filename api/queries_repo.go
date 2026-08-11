@@ -105,6 +105,27 @@ func DeleteRepo(client *Client, owner, name string) error {
 	return client.Delete(escapedRepoPath(owner, name))
 }
 
+// UpdateRepoRequest is the request body for updating a repository.
+type UpdateRepoRequest struct {
+	Name          string `json:"name,omitempty"`
+	Description   string `json:"description,omitempty"`
+	Homepage      string `json:"homepage,omitempty"`
+	Private       *bool  `json:"private,omitempty"`
+	DefaultBranch string `json:"default_branch,omitempty"`
+}
+
+// UpdateRepo updates a repository's settings.
+//
+// It calls PATCH /repos/{owner}/{repo}, then re-reads the full
+// repository via GET to return a complete object with all fields.
+func UpdateRepo(client *Client, owner, repo string, req *UpdateRepoRequest) (*Repository, error) {
+	err := client.Patch(escapedRepoPath(owner, repo), req, nil)
+	if err != nil {
+		return nil, err
+	}
+	return GetRepo(client, owner, repo)
+}
+
 // DeleteBranch deletes a branch from a repository.
 func DeleteBranch(client *Client, owner, name, branch string) error {
 	return client.Delete("/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(name) + "/branches/" + url.PathEscape(branch))

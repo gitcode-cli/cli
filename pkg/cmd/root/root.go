@@ -13,6 +13,7 @@ import (
 	actionscmd "gitcode.com/gitcode-cli/cli/pkg/cmd/actions"
 	apicmd "gitcode.com/gitcode-cli/cli/pkg/cmd/api"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth"
+	browsecmd "gitcode.com/gitcode-cli/cli/pkg/cmd/browse"
 	commitcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/commit"
 	configcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/config"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/discussions"
@@ -74,6 +75,7 @@ func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(actionscmd.NewCmdActions(f))
 	cmd.AddCommand(apicmd.NewCmdAPI(f, nil))
 	cmd.AddCommand(auth.NewCmdAuth(f))
+	cmd.AddCommand(browsecmd.NewCmdBrowse(f, nil))
 	cmd.AddCommand(repo.NewCmdRepo(f))
 	cmd.AddCommand(issue.NewCmdIssue(f))
 	cmd.AddCommand(pr.NewCmdPR(f))

@@ -2634,6 +2634,40 @@ gc config set update.mode off --json
 
 ## 其他命令
 
+### browse - 在浏览器中打开 GitCode 资源
+
+在默认浏览器中打开 GitCode 仓库页面。纯客户端实现，无需 API 调用。
+
+```bash
+# 打开仓库主页
+gc browse -R owner/repo
+
+# 打开 issue
+gc browse 42 -R owner/repo
+
+# 打开 pull request
+gc browse 42 --pr -R owner/repo
+
+# 打开指定页面（如 releases、issues、wiki）
+gc browse releases -R owner/repo
+
+# 打开分支页面
+gc browse --branch feature -R owner/repo
+
+# 打开 commit 页面
+gc browse --commit abc123 -R owner/repo
+
+# 仅打印 URL 不打开浏览器（脚本/AI 代理用）
+gc browse --no-browser -R owner/repo
+```
+
+说明：
+
+- 无参数时打开仓库主页；传数字时打开 issue/PR 页面（`--pr` 指定 PR）；传路径时打开对应页面。
+- `--branch` 和 `--commit` 优先级高于位置参数。
+- TTY 环境调用 `pkg/browser` 打开浏览器；非 TTY 环境（管道、`--no-interactive`）或 `--no-browser` 仅输出 URL 到 stdout，不阻塞。
+- 退出码：`0` 成功；`2` 参数错误；`1` 其他错误。
+
 ### version - 显示版本
 
 ```bash

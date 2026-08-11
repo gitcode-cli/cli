@@ -675,49 +675,51 @@ func RemoveLabelFromPR(client *Client, owner, repo string, number int, label str
 	return client.Delete(escapedRepoPath(owner, repo) + "/pulls/" + strconv.Itoa(number) + "/labels/" + url.PathEscape(label))
 }
 
-// AssigneeRequest is the body for add/remove assignee operations.
+// AssigneeRequest is the body for add assignee operations.
 type AssigneeRequest struct {
-	Assignees []string `json:"assignees"`
+	Assignees string `json:"assignees"`
 }
 
 // AddPRAssignees adds assignees to a pull request.
 func AddPRAssignees(client *Client, owner, repo string, number int, users []string) error {
-	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/assignees", &AssigneeRequest{Assignees: users}, nil)
+	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/assignees", &AssigneeRequest{Assignees: strings.Join(users, ",")}, nil)
 }
 
-// RemovePRAssignees removes assignees from a pull request.
+// RemovePRAssignees removes assignees from a pull request via query parameter.
 func RemovePRAssignees(client *Client, owner, repo string, number int, users []string) error {
-	return client.REST("DELETE", escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/assignees", &AssigneeRequest{Assignees: users}, nil)
+	path := escapedRepoPath(owner, repo) + "/pulls/" + strconv.Itoa(number) + "/assignees"
+	path += newQueryBuilder().Set("assignees", strings.Join(users, ",")).String()
+	return client.Delete(path)
 }
 
 // ReviewerRequest is the body for add/remove reviewer operations.
 type ReviewerRequest struct {
-	Reviewers []string `json:"reviewers"`
-	Add       bool     `json:"add"`
+	Reviewers string `json:"reviewers"`
+	Add       bool   `json:"add,omitempty"`
 }
 
 // AddPRReviewers adds reviewers to a pull request.
 func AddPRReviewers(client *Client, owner, repo string, number int, users []string) error {
-	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/reviewers", &ReviewerRequest{Reviewers: users, Add: true}, nil)
+	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/reviewers", &ReviewerRequest{Reviewers: strings.Join(users, ","), Add: true}, nil)
 }
 
 // RemovePRReviewers removes reviewers from a pull request.
 func RemovePRReviewers(client *Client, owner, repo string, number int, users []string) error {
-	return client.REST("DELETE", escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/reviewers", &ReviewerRequest{Reviewers: users}, nil)
+	return client.REST("DELETE", escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/reviewers", &ReviewerRequest{Reviewers: strings.Join(users, ",")}, nil)
 }
 
 // TesterRequest is the body for add/remove tester operations.
 type TesterRequest struct {
-	Testers []string `json:"testers"`
-	Add     bool     `json:"add"`
+	Testers string `json:"testers"`
+	Add     bool   `json:"add,omitempty"`
 }
 
 // AddPRTesters adds testers to a pull request.
 func AddPRTesters(client *Client, owner, repo string, number int, users []string) error {
-	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/testers", &TesterRequest{Testers: users, Add: true}, nil)
+	return client.Post(escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/testers", &TesterRequest{Testers: strings.Join(users, ","), Add: true}, nil)
 }
 
 // RemovePRTesters removes testers from a pull request.
 func RemovePRTesters(client *Client, owner, repo string, number int, users []string) error {
-	return client.REST("DELETE", escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/testers", &TesterRequest{Testers: users}, nil)
+	return client.REST("DELETE", escapedRepoPath(owner, repo)+"/pulls/"+strconv.Itoa(number)+"/testers", &TesterRequest{Testers: strings.Join(users, ",")}, nil)
 }

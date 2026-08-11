@@ -227,7 +227,7 @@ npm install -g @gitcode-cli/cli
 gitcode version
 ```
 
-如果 `gitcode version` 仍显示旧的 pip/wheel 版本，先直接调用 npm 安装目录中的新入口诊断，不必先卸载 pip：
+如果 `gitcode version` 仍显示旧版本，先直接调用 npm 安装目录中的新入口诊断，不必先卸载 pip 或手工删除旧入口：
 
 ```powershell
 # Windows PowerShell
@@ -240,6 +240,7 @@ gitcode version
 ```
 
 包内置 Linux/macOS/Windows 多平台二进制。Windows bootstrap 同时安装 `gc.exe` 和 `gitcode.exe`，PowerShell 请使用 `gitcode`，避免内置 `gc`/`Get-Content` alias。
+Linux/macOS bootstrap 会自动迁移历史安装遗留的同目录 `gitcode -> gc` 别名；该迁移参与安装事务，失败时恢复原链接，并继续拒绝指向其他位置的符号链接。
 
 npm global 与 npm bootstrap 默认使用 `notify` 模式：命令本身立即执行，24 小时 TTL 到期后在后台检查 stable `latest`，发现新版后在下一次启动提示 `gitcode update`，不会自动安装，也不会改变刚完成命令的退出码。需要自动应用的用户可明确启用 `auto`；该模式具有跨进程锁、版本健康检查和失败回滚。
 

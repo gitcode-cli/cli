@@ -207,7 +207,7 @@ env:
 - 自动更新只允许访问官方 npm registry，并以 `--ignore-scripts` 安装；updater 子进程必须使用最小环境白名单，不得继承 GitCode/npm/GitHub/云平台凭证或用户 `npm_config_*` registry/auth 配置
 - 默认更新模式必须为 `notify`，只检查并提示显式 `gitcode update`；无人值守自动应用仅在用户主动配置 `update.mode=auto` 后允许
 - updater 不读取 GitCode 认证配置或 Token，不上传命令、仓库或环境遥测，不调用 pip/Homebrew/apt/dnf/rpm，不提权，不静默修改 PATH
-- bootstrap 替换前校验 SHA-256，使用临时文件与上一版本备份；健康检查失败必须回滚
+- bootstrap 替换前校验 SHA-256，使用临时文件与上一版本备份；健康检查失败必须回滚。仅可迁移解析后精确指向同目录常规 `gc` 文件的历史 `gitcode` 符号链接，主程序目标、越界链接和未知链接必须拒绝；链接本身必须进入同一安装事务并可原样回滚
 - CI、非交互和显式 opt-out 环境默认禁用隐式后台检查、联网与自动应用
 
 ## 安全检查命令

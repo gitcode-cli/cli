@@ -207,7 +207,7 @@ env:
 - 自动更新只允许访问官方 npm registry，并以 `--ignore-scripts` 安装；updater 子进程必须使用最小环境白名单，不得继承 GitCode/npm/GitHub/云平台凭证或用户 `npm_config_*` registry/auth 配置
 - 默认更新模式必须为 `notify`，只检查并提示显式 `gitcode update`；无人值守自动应用仅在用户主动配置 `update.mode=auto` 后允许
 - updater 不读取 GitCode 认证配置或 Token，不上传命令、仓库或环境遥测，不调用 pip/Homebrew/apt/dnf/rpm，不提权，不静默修改 PATH
-- Windows npm bootstrap 仅在用户显式执行 `install` 时默认将已校验的目标目录置于当前 User PATH 前面并去重；必须提供 `--no-modify-path` 退出，不得修改 Machine PATH、请求提权、删除或重写其他 PATH 条目，也不得调用其他包管理器卸载软件。显式 `--target-dir` 的替换范围包含该目录内同名常规文件，文档必须警告不得指向其他包管理器持有的目录。PATH 持久化必须由单个固定 PowerShell 注册表事务完成：读取未展开原值、保留 `String`/`ExpandString` 类型、仅移除目标目录重复项、写入后广播环境变更；目标目录和既有 PATH 不得拼接进可执行脚本，子进程不得继承任何凭证或 npm registry/auth 配置
+- Windows npm bootstrap 仅在用户显式执行 `install` 时默认将已校验的目标目录置于当前 User PATH 前面并去重；必须提供 `--no-modify-path` 退出，不得修改 Machine PATH、请求提权、删除或重写其他 PATH 条目，也不得调用其他包管理器卸载软件。显式 `--target-dir` 的替换范围包含该目录内同名常规文件，文档必须警告不得指向其他包管理器持有的目录。PATH 持久化必须由单个固定 PowerShell 注册表操作完成，并使用按当前用户 SID 命名的 mutex 串行化本产品安装器：读取未展开原值、保留 `String`/`ExpandString` 类型、仅移除目标目录重复项、写入后广播环境变更；广播失败必须显式警告。目标目录和既有 PATH 不得拼接进可执行脚本，子进程不得继承任何凭证或 npm registry/auth 配置
 - Windows bootstrap 修改持久 User PATH 后必须用中文明确说明 npx 子进程无法刷新父 PowerShell，给出可复制的当前窗口 `$env:Path` 命令、关闭全部 PowerShell/Windows Terminal 后重开的替代方式和 `gitcode version` 验证步骤；持久化失败必须显式报告并提供手工命令，不得伪装成功。目标目录含分号、空字符或不是绝对 Windows 路径时不得生成任何 PATH 修改命令
 - bootstrap 替换前校验 SHA-256，使用临时文件与上一版本备份；健康检查失败必须回滚。仅可迁移解析后精确指向同目录常规 `gc` 文件的历史 `gitcode` 符号链接，主程序目标、越界链接和未知链接必须拒绝；链接本身必须进入同一安装事务并可原样回滚
 - CI、非交互和显式 opt-out 环境默认禁用隐式后台检查、联网与自动应用

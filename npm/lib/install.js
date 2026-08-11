@@ -23,32 +23,41 @@ const WINDOWS_UPDATE_USER_PATH = [
   "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)",
   "$target = $env:GITCODE_CLI_TARGET_DIR",
   "if ([string]::IsNullOrWhiteSpace($target) -or -not [IO.Path]::IsPathRooted($target) -or $target.Contains(';') -or $target.Contains([char]0)) { throw 'invalid Windows PATH directory' }",
-  "$key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)",
-  "if ($null -eq $key) { throw 'cannot open current user Environment registry key' }",
+  "$sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value",
+  "$mutex = [Threading.Mutex]::new($false, ('Local\\GitCodeCli.UserPath.' + $sid))",
+  "$mutexHeld = $false",
   "try {",
-  "  $hasPath = $key.GetValueNames() -contains 'Path'",
-  "  $kind = if ($hasPath) { $key.GetValueKind('Path') } else { [Microsoft.Win32.RegistryValueKind]::ExpandString }",
-  "  if ($kind -ne [Microsoft.Win32.RegistryValueKind]::String -and $kind -ne [Microsoft.Win32.RegistryValueKind]::ExpandString) { throw ('unsupported user PATH registry kind: ' + $kind) }",
-  "  $current = if ($hasPath) { [string]$key.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames) } else { '' }",
-  "  function Normalize-GitCodePathEntry([string]$value) {",
-  "    if ([string]::IsNullOrWhiteSpace($value)) { return $null }",
-  "    $candidate = [Environment]::ExpandEnvironmentVariables($value.Trim().Trim([char]34))",
-  "    try { return [IO.Path]::GetFullPath($candidate).TrimEnd([char]92).ToLowerInvariant() } catch { return $candidate.TrimEnd([char]92).ToLowerInvariant() }",
+  "  try { $mutexHeld = $mutex.WaitOne(30000) } catch [Threading.AbandonedMutexException] { $mutexHeld = $true }",
+  "  if (-not $mutexHeld) { throw 'timed out waiting for the user PATH update lock' }",
+  "  $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)",
+  "  if ($null -eq $key) { throw 'cannot open current user Environment registry key' }",
+  "  try {",
+  "    $hasPath = $key.GetValueNames() -contains 'Path'",
+  "    $kind = if ($hasPath) { $key.GetValueKind('Path') } else { [Microsoft.Win32.RegistryValueKind]::ExpandString }",
+  "    if ($kind -ne [Microsoft.Win32.RegistryValueKind]::String -and $kind -ne [Microsoft.Win32.RegistryValueKind]::ExpandString) { throw ('unsupported user PATH registry kind: ' + $kind) }",
+  "    $current = if ($hasPath) { [string]$key.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames) } else { '' }",
+  "    function Normalize-GitCodePathEntry([string]$value) {",
+  "      if ([string]::IsNullOrWhiteSpace($value)) { return $null }",
+  "      $candidate = [Environment]::ExpandEnvironmentVariables($value.Trim().Trim([char]34))",
+  "      try { return [IO.Path]::GetFullPath($candidate).TrimEnd([char]92).ToLowerInvariant() } catch { return $candidate.TrimEnd([char]92).ToLowerInvariant() }",
+  "    }",
+  "    $wanted = Normalize-GitCodePathEntry $target",
+  "    $kept = [System.Collections.Generic.List[string]]::new()",
+  "    if ($current.Length -gt 0) { foreach ($entry in $current.Split([char]59)) { if ((Normalize-GitCodePathEntry $entry) -ne $wanted) { $kept.Add($entry) } } }",
+  "    $suffix = [string]::Join(';', $kept)",
+  "    $next = if ($suffix.Length -gt 0) { $target + ';' + $suffix } else { $target }",
+  "    $changed = $next -cne $current",
+  "    if ($changed) { $key.SetValue('Path', $next, $kind) }",
+  "  } finally { $key.Dispose() }",
+  "  $broadcasted = $true",
+  "  if ($changed) {",
+  "    Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class GitCodeEnvironmentBroadcast { [DllImport(\"user32.dll\", CharSet=CharSet.Unicode, SetLastError=true)] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint flags, uint timeout, out UIntPtr result); }'",
+  "    $broadcastResult = [UIntPtr]::Zero",
+  "    $broadcastStatus = [GitCodeEnvironmentBroadcast]::SendMessageTimeout([IntPtr]0xffff, 0x1A, [UIntPtr]::Zero, 'Environment', 0x2, 5000, [ref]$broadcastResult)",
+  "    $broadcasted = $broadcastStatus -ne [IntPtr]::Zero",
   "  }",
-  "  $wanted = Normalize-GitCodePathEntry $target",
-  "  $kept = [System.Collections.Generic.List[string]]::new()",
-  "  if ($current.Length -gt 0) { foreach ($entry in $current.Split([char]59)) { if ((Normalize-GitCodePathEntry $entry) -ne $wanted) { $kept.Add($entry) } } }",
-  "  $suffix = [string]::Join(';', $kept)",
-  "  $next = if ($suffix.Length -gt 0) { $target + ';' + $suffix } else { $target }",
-  "  $changed = $next -cne $current",
-  "  if ($changed) { $key.SetValue('Path', $next, $kind) }",
-  "} finally { $key.Dispose() }",
-  "if ($changed) {",
-  "  Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class GitCodeEnvironmentBroadcast { [DllImport(\"user32.dll\", CharSet=CharSet.Unicode, SetLastError=true)] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint flags, uint timeout, out UIntPtr result); }'",
-  "  $broadcastResult = [UIntPtr]::Zero",
-  "  [void][GitCodeEnvironmentBroadcast]::SendMessageTimeout([IntPtr]0xffff, 0x1A, [UIntPtr]::Zero, 'Environment', 0x2, 5000, [ref]$broadcastResult)",
-  "}",
-  "@{ changed = [bool]$changed; kind = $kind.ToString() } | ConvertTo-Json -Compress",
+  "} finally { if ($mutexHeld) { $mutex.ReleaseMutex() }; $mutex.Dispose() }",
+  "@{ changed = [bool]$changed; kind = $kind.ToString(); broadcasted = [bool]$broadcasted } | ConvertTo-Json -Compress",
 ].join("; ");
 
 function bundledBinaryPath() {
@@ -384,10 +393,16 @@ function persistWindowsUserPath(dir, options = {}) {
   }
   try {
     const parsed = JSON.parse(String(result.stdout || "").trim());
-    if (typeof parsed.changed !== "boolean" || !["String", "ExpandString"].includes(parsed.kind)) {
+    if (typeof parsed.changed !== "boolean" || typeof parsed.broadcasted !== "boolean" ||
+        !["String", "ExpandString"].includes(parsed.kind)) {
       throw new Error("unexpected PowerShell result");
     }
-    return { ok: true, changed: parsed.changed, registryKind: parsed.kind };
+    return {
+      ok: true,
+      changed: parsed.changed,
+      registryKind: parsed.kind,
+      broadcasted: parsed.broadcasted,
+    };
   } catch (error) {
     return { ok: false, error: `解析 Windows PATH 更新结果失败：${error.message}` };
   }
@@ -454,9 +469,10 @@ function windowsPathGuidance(dir, options, result, env = process.env) {
   }
 
   if (!options.modifyPath || !result.ok) {
-    lines.push("  请在 PowerShell 中手工执行持久化配置：");
-    lines.push("    $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')");
-    lines.push(`    [Environment]::SetEnvironmentVariable('Path', ${quotePowerShell(`${dir};`)} + $userPath, 'User')`);
+    lines.push(`  如需持久生效，请在 Windows“编辑账户的环境变量”中将 ${dir} 移到用户 Path 第一位。`);
+  }
+  if (result.ok && result.changed && result.broadcasted === false) {
+    lines.push("  警告：持久 User PATH 已写入，但未能通知桌面环境；请注销并重新登录 Windows 后再验证。");
   }
   if (!dirFirstOnPath(dir, env, true)) {
     lines.push("  注意：当前 PowerShell/Windows Terminal 窗口无法由安装器自动刷新 PATH。");

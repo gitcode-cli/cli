@@ -102,7 +102,7 @@ test("persistWindowsUserPath uses one raw-registry PowerShell transaction and a 
   const calls = [];
   const runner = (executable, args, options) => {
     calls.push({ executable, args, options });
-    return { status: 0, stdout: '{"changed":true,"kind":"ExpandString"}', stderr: "" };
+    return { status: 0, stdout: '{"changed":true,"kind":"ExpandString","broadcasted":true}', stderr: "" };
   };
   const env = {
     SystemRoot: "C:\\Windows",
@@ -112,7 +112,9 @@ test("persistWindowsUserPath uses one raw-registry PowerShell transaction and a 
     npm_config_registry: "https://untrusted.invalid",
   };
   const result = persistWindowsUserPath(dir, { env, runner, fileExists: () => true });
-  assert.deepStrictEqual(result, { ok: true, changed: true, registryKind: "ExpandString" });
+  assert.deepStrictEqual(result, {
+    ok: true, changed: true, registryKind: "ExpandString", broadcasted: true,
+  });
   assert.strictEqual(calls.length, 1);
   assert.strictEqual(calls[0].executable, "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
   assert.ok(!calls[0].args.join(" ").includes(dir), "target path must not be interpolated into PowerShell code");
@@ -120,7 +122,11 @@ test("persistWindowsUserPath uses one raw-registry PowerShell transaction and a 
   assert.match(script, /DoNotExpandEnvironmentNames/);
   assert.match(script, /GetValueKind\('Path'\)/);
   assert.match(script, /SetValue\('Path', \$next, \$kind\)/);
+  assert.match(script, /Mutex.*GitCodeCli\.UserPath/);
+  assert.match(script, /WaitOne\(30000\)/);
+  assert.match(script, /ReleaseMutex/);
   assert.match(script, /SendMessageTimeout/);
+  assert.match(script, /broadcastStatus/);
   assert.strictEqual(calls[0].options.env.GITCODE_CLI_TARGET_DIR, dir);
   assert.strictEqual(calls[0].options.env.GC_TOKEN, undefined);
   assert.strictEqual(calls[0].options.env.npm_config_registry, undefined);
@@ -145,10 +151,12 @@ test("persistWindowsUserPath reports idempotence from the same registry transact
     fileExists: () => true,
     runner: () => {
       calls += 1;
-      return { status: 0, stdout: '{"changed":false,"kind":"String"}', stderr: "" };
+      return { status: 0, stdout: '{"changed":false,"kind":"String","broadcasted":true}', stderr: "" };
     },
   });
-  assert.deepStrictEqual(result, { ok: true, changed: false, registryKind: "String" });
+  assert.deepStrictEqual(result, {
+    ok: true, changed: false, registryKind: "String", broadcasted: true,
+  });
   assert.strictEqual(calls, 1);
 });
 
@@ -184,11 +192,26 @@ test("Windows PATH guidance explains opt-out and persistence failure in Chinese"
   const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
   const optOut = windowsPathGuidance(dir, { modifyPath: false }, { ok: true, changed: false }, { PATH: "" });
   assert.match(optOut, /已按 --no-modify-path 跳过持久 PATH 修改/);
-  assert.match(optOut, /请在 PowerShell 中手工执行持久化配置/);
+  assert.match(optOut, /编辑账户的环境变量/);
+  assert.doesNotMatch(optOut, /SetEnvironmentVariable/);
 
   const failure = windowsPathGuidance(dir, { modifyPath: true }, { ok: false, error: "拒绝访问" }, { PATH: "" });
   assert.match(failure, /警告：未能自动更新当前用户 PATH：拒绝访问/);
-  assert.match(failure, /请在 PowerShell 中手工执行持久化配置/);
+  assert.match(failure, /编辑账户的环境变量/);
+  assert.doesNotMatch(failure, /SetEnvironmentVariable/);
+});
+
+test("Windows PATH guidance reports broadcast failure without claiming full propagation", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  const guidance = windowsPathGuidance(
+    dir,
+    { modifyPath: true },
+    { ok: true, changed: true, broadcasted: false },
+    { PATH: "C:\\Old" }
+  );
+  assert.match(guidance, /持久 User PATH 已写入/);
+  assert.match(guidance, /未能通知桌面环境/);
+  assert.match(guidance, /注销并重新登录 Windows/);
 });
 
 test("Windows PATH guidance never emits PATH commands for an unsafe directory", () => {

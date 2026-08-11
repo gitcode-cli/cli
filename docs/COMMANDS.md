@@ -140,6 +140,7 @@ docker compose up gc
 - `release edit`
 - `release upload`
 - `repo branch create`
+- `repo edit`
 - `user edit`
 - `repo create`
 - `repo delete`
@@ -496,6 +497,39 @@ gc repo sync \
 - `repo sync` clones and pushes the target repository over SSH; ensure an SSH key with access to `git@gitcode.com` is configured.
 - 推送同步分支并创建目标 PR 前默认需要确认；非交互场景中显式传 `--yes`
 - 如果目标目录内容与源目录一致，命令会直接返回“无变更”
+
+### repo edit - 更新仓库设置
+
+更新 GitCode 仓库的设置。仅更新提供的字段。
+
+```bash
+# 更新描述
+gc repo edit --description "New description" -R owner/repo
+
+# 设为私有
+gc repo edit --private -R owner/repo
+
+# 设为公开
+gc repo edit --public -R owner/repo
+
+# 更新默认分支
+gc repo edit --default-branch main -R owner/repo
+
+# 重命名仓库
+gc repo edit --name new-name -R owner/repo
+
+# JSON 输出
+gc repo edit --description "test" -R owner/repo --json
+```
+
+说明：
+
+- 支持 flags：`--description`、`--homepage`、`--default-branch`、`--name`、`--private`、`--public`。
+- `--private` 和 `--public` 互斥，不能同时使用。
+- 至少提供一个字段，否则报参数错误。
+- `--description` 内容经 secret 扫描。
+- `--json` 输出更新后的仓库对象。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证/权限错误（HTTP 401/403）。
 
 ### repo create - 创建仓库
 

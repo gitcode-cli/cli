@@ -97,6 +97,123 @@ test("install commit removes transaction-scoped backups", () => {
   assert.strictEqual(fs.existsSync(record.backup), false);
 });
 
+function createFileSymlinkOrSkip(t, target, link) {
+  try {
+    fs.symlinkSync(target, link, "file");
+  } catch (error) {
+    if (process.platform === "win32" && ["EPERM", "EACCES"].includes(error.code)) {
+      t.skip("creating symlinks requires Windows Developer Mode or elevated privileges");
+      return false;
+    }
+    throw error;
+  }
+  return true;
+}
+
+test("install transaction migrates a same-directory gitcode alias and restores it on rollback", (t) => {
+  const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-alias-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "gc");
+  const alias = path.join(root, "gitcode");
+  fs.writeFileSync(source, "new");
+  fs.writeFileSync(target, "old");
+  if (!createFileSymlinkOrSkip(t, "gc", alias)) return;
+
+  const transaction = [
+    replacePath(source, target, "alias-rollback"),
+    replacePath(source, alias, "alias-rollback", { allowedSymlinkTarget: target }),
+  ];
+  assert.strictEqual(fs.lstatSync(alias).isSymbolicLink(), false);
+  assert.strictEqual(fs.readFileSync(alias, "utf8"), "new");
+
+  rollbackTransaction(transaction);
+  assert.strictEqual(fs.readFileSync(target, "utf8"), "old");
+  assert.strictEqual(fs.lstatSync(alias).isSymbolicLink(), true);
+  assert.strictEqual(fs.readlinkSync(alias), "gc");
+  assert.strictEqual(fs.readFileSync(alias, "utf8"), "old");
+  for (const record of transaction) assert.strictEqual(fs.existsSync(record.backup), false);
+});
+
+test("install commit removes the backup of a migrated same-directory alias", (t) => {
+  const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-alias-commit-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "gc");
+  const alias = path.join(root, "gitcode");
+  fs.writeFileSync(source, "new");
+  fs.writeFileSync(target, "old");
+  if (!createFileSymlinkOrSkip(t, "gc", alias)) return;
+
+  const record = replacePath(source, alias, "alias-commit", { allowedSymlinkTarget: target });
+  commitTransaction([record]);
+  assert.strictEqual(fs.lstatSync(alias).isSymbolicLink(), false);
+  assert.strictEqual(fs.readFileSync(alias, "utf8"), "new");
+  assert.strictEqual(fs.existsSync(record.backup), false);
+});
+
+test("install rejects aliases that point anywhere except the sibling gc binary", (t) => {
+  const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-alias-reject-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "gc");
+  const other = path.join(root, "other");
+  const alias = path.join(root, "gitcode");
+  fs.writeFileSync(source, "new");
+  fs.writeFileSync(target, "old");
+  fs.writeFileSync(other, "unrelated");
+  if (!createFileSymlinkOrSkip(t, "other", alias)) return;
+
+  assert.throws(
+    () => replacePath(source, alias, "alias-reject", { allowedSymlinkTarget: target }),
+    /refusing non-regular install target/
+  );
+  assert.strictEqual(fs.lstatSync(alias).isSymbolicLink(), true);
+  assert.strictEqual(fs.readlinkSync(alias), "other");
+  assert.strictEqual(fs.readFileSync(other, "utf8"), "unrelated");
+});
+
+test("install rejects a lexical sibling alias that resolves through an external directory symlink", (t) => {
+  if (process.platform === "win32") {
+    t.skip("nested symlink traversal is a POSIX migration boundary");
+    return;
+  }
+  const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-alias-traversal-"));
+  const external = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-alias-external-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "gc");
+  const hop = path.join(root, "hop");
+  const alias = path.join(root, "gitcode");
+  const externalInner = path.join(external, "inner");
+  const externalTarget = path.join(external, "gc");
+  fs.writeFileSync(source, "new");
+  fs.writeFileSync(target, "allowed");
+  fs.mkdirSync(externalInner);
+  fs.writeFileSync(externalTarget, "external");
+  fs.symlinkSync(externalInner, hop, "dir");
+  fs.symlinkSync("hop/../gc", alias, "file");
+  assert.strictEqual(fs.readFileSync(alias, "utf8"), "external");
+
+  assert.throws(
+    () => replacePath(source, alias, "alias-traversal", { allowedSymlinkTarget: target }),
+    /refusing non-regular install target/
+  );
+  assert.strictEqual(fs.readlinkSync(alias), "hop/../gc");
+  assert.strictEqual(fs.readFileSync(externalTarget, "utf8"), "external");
+  assert.strictEqual(fs.readFileSync(target, "utf8"), "allowed");
+});
+
+test("install still rejects a symlink at the primary gc target", (t) => {
+  const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-primary-reject-"));
+  const source = path.join(root, "source");
+  const other = path.join(root, "other");
+  const target = path.join(root, "gc");
+  fs.writeFileSync(source, "new");
+  fs.writeFileSync(other, "old");
+  if (!createFileSymlinkOrSkip(t, "other", target)) return;
+
+  assert.throws(() => replacePath(source, target, "primary-reject"), /refusing non-regular install target/);
+  assert.strictEqual(fs.lstatSync(target).isSymbolicLink(), true);
+  assert.strictEqual(fs.readFileSync(other, "utf8"), "old");
+});
+
 test("rollback continues restoring remaining paths after one restore fails", () => {
   const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-rollback-failure-"));
   const source = path.join(root, "source");
@@ -112,4 +229,84 @@ test("rollback continues restoring remaining paths after one restore fails", () 
     (error) => error instanceof AggregateError && error.errors.length === 1
   );
   assert.strictEqual(fs.readFileSync(target, "utf8"), "old");
+});
+
+test("rollback reports a missing backup and preserves the current target", () => {
+  const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-missing-backup-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "gc");
+  fs.writeFileSync(source, "new");
+  fs.writeFileSync(target, "old");
+  const record = replacePath(source, target, "missing-backup");
+  fs.unlinkSync(record.backup);
+
+  assert.throws(
+    () => rollbackTransaction([record]),
+    (error) => error instanceof AggregateError &&
+      error.errors.length === 1 &&
+      error.errors[0].code === "EROLLBACK"
+  );
+  assert.strictEqual(fs.readFileSync(target, "utf8"), "new");
+});
+
+test("replacePath reports both the replacement and internal restore failures", () => {
+  const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-internal-restore-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "gc");
+  const backup = `${target}.backup-internal-restore`;
+  fs.writeFileSync(source, "new");
+  fs.writeFileSync(target, "old");
+  const originalRenameSync = fs.renameSync;
+  fs.renameSync = (src, dst) => {
+    const error = new Error(src === backup ? "restore denied" : "replacement denied");
+    error.code = "EIO";
+    throw error;
+  };
+  try {
+    assert.throws(
+      () => replacePath(source, target, "internal-restore"),
+      (error) => error instanceof AggregateError &&
+        error.errors.length === 2 &&
+        error.errors[0].message === "replacement denied" &&
+        error.errors[1].message === "restore denied"
+    );
+  } finally {
+    fs.renameSync = originalRenameSync;
+  }
+  assert.strictEqual(fs.readFileSync(target, "utf8"), "old");
+  assert.strictEqual(fs.readFileSync(backup, "utf8"), "old");
+});
+
+test("replacePath reports a backup that disappears before internal restore", () => {
+  const root = fs.mkdtempSync(path.join(require("os").tmpdir(), "gc-install-lost-backup-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "gc");
+  const backup = `${target}.backup-lost-backup`;
+  fs.writeFileSync(source, "new");
+  fs.writeFileSync(target, "old");
+  const originalRenameSync = fs.renameSync;
+  let replacementAttempts = 0;
+  fs.renameSync = (src, dst) => {
+    if (src.startsWith(`${target}.tmp-`)) {
+      replacementAttempts += 1;
+      const error = new Error(replacementAttempts === 1 ? "replace collision" : "replacement failed");
+      error.code = replacementAttempts === 1 ? "EPERM" : "EIO";
+      if (replacementAttempts === 2) fs.unlinkSync(backup);
+      throw error;
+    }
+    return originalRenameSync(src, dst);
+  };
+  try {
+    assert.throws(
+      () => replacePath(source, target, "lost-backup"),
+      (error) => error instanceof AggregateError &&
+        error.errors.length === 2 &&
+        error.errors[0].message === "replacement failed" &&
+        error.errors[1].code === "EROLLBACK"
+    );
+  } finally {
+    fs.renameSync = originalRenameSync;
+  }
+  assert.strictEqual(fs.existsSync(target), false);
+  assert.strictEqual(fs.existsSync(backup), false);
 });

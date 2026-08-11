@@ -122,11 +122,12 @@ test("persistWindowsUserPath uses one raw-registry PowerShell transaction and a 
   assert.match(script, /DoNotExpandEnvironmentNames/);
   assert.match(script, /GetValueKind\('Path'\)/);
   assert.match(script, /SetValue\('Path', \$next, \$kind\)/);
-  assert.match(script, /Mutex.*GitCodeCli\.UserPath/);
+  assert.match(script, /Mutex.*Global\\GitCodeCli\.UserPath/);
   assert.match(script, /WaitOne\(30000\)/);
   assert.match(script, /ReleaseMutex/);
   assert.match(script, /SendMessageTimeout/);
   assert.match(script, /broadcastStatus/);
+  assert.match(script, /catch \{ \$broadcasted = \$false \}/);
   assert.strictEqual(calls[0].options.env.GITCODE_CLI_TARGET_DIR, dir);
   assert.strictEqual(calls[0].options.env.GC_TOKEN, undefined);
   assert.strictEqual(calls[0].options.env.npm_config_registry, undefined);

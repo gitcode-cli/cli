@@ -38,4 +38,10 @@ test("wrapper exits 127 with a clear message when the binary is missing (ENOENT)
   const r = runWrapper(["version"], { GC_PLATFORMS_DIR: empty });
   assert.strictEqual(r.status, 127);
   assert.match(r.stderr, /gc binary not found/);
+  assert.ok(
+    r.stderr.includes(
+      "npx --yes --ignore-scripts --registry=https://registry.npmjs.org " +
+        "--@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install"
+    )
+  );
 });

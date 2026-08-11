@@ -12,10 +12,11 @@ import (
 const configStateVersion = 1
 
 var allowedConfigKeys = map[string]struct{}{
-	"browser":     {},
-	"editor":      {},
-	"pager":       {},
-	"update.mode": {},
+	"browser":      {},
+	"editor":       {},
+	"pager":        {},
+	"update.mode":  {},
+	"default_repo": {},
 }
 
 // Config interface defines configuration operations

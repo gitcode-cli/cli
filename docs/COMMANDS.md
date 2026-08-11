@@ -559,6 +559,35 @@ gc repo stats --branch main --since 2024-01-01 --until 2024-12-31 -R infra-test/
 gc repo stats --branch main -R infra-test/gctest1 --json
 ```
 
+### repo set-default - 设置默认仓库
+
+设置或查看当前 host 的默认仓库。其他命令在未提供 `-R/--repo` 且不在 git 仓库目录中时使用此值。纯客户端配置，无需 API。
+
+```bash
+# 从当前 git remote 设置默认仓库
+gc repo set-default
+
+# 显式指定默认仓库
+gc repo set-default owner/repo
+
+# 查看当前默认仓库
+gc repo set-default --view
+
+# JSON 输出
+gc repo set-default --view --json
+
+# 清除默认仓库
+gc repo set-default --unset
+```
+
+说明：
+
+- 无参数时从 git remote 推断仓库；传 `<owner>/<repo>` 显式指定。
+- `--view` 显示当前默认仓库；`--json` 输出 `{"default_repo": "owner/repo"}`。
+- `--unset` 清除默认仓库。
+- 配置存储在 `~/.config/gc/config.json` 的 `default_repo` key（按 host 维度）。环境变量 `GC_DEFAULT_REPO` 覆盖配置。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误（如非法仓库格式或无 git 上下文）。
+
 ---
 
 ## Issue 命令 (issue)

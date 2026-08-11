@@ -9,6 +9,7 @@ import (
 )
 
 const npmSecurityFlags = "--yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org"
+const shortNPMBootstrap = "npx -y @gitcode-cli/cli@latest install"
 const canonicalNPMBootstrap = "npx " + npmSecurityFlags + " @gitcode-cli/cli@latest install"
 const canonicalNPMGlobal = "npm install -g --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest"
 
@@ -49,11 +50,22 @@ func TestREADMEPrioritizesBootstrapAndExplainsLocalInstall(t *testing.T) {
 	}
 }
 
-func TestCurrentReleaseNotesProvidePinnedBootstrap(t *testing.T) {
+func TestCurrentReleaseNotesProvideShortAndHardenedBootstrap(t *testing.T) {
 	version := strings.TrimSpace(readRepositoryFile(t, "VERSION"))
 	releasePath := filepath.Join("docs", "releases", "v"+version+".md")
 	content := readRepositoryFile(t, releasePath)
 	pinned := "npx " + npmSecurityFlags + " @gitcode-cli/cli@" + version + " install"
+	shortIndex := strings.Index(content, shortNPMBootstrap)
+	hardenedIndex := strings.Index(content, canonicalNPMBootstrap)
+	if shortIndex < 0 || hardenedIndex < 0 || shortIndex > hardenedIndex {
+		t.Fatalf("%s must show the short bootstrap before the hardened bootstrap", releasePath)
+	}
+	if strings.Count(content, shortNPMBootstrap) != 1 {
+		t.Fatalf("%s must contain the short bootstrap exactly once", releasePath)
+	}
+	if !strings.Contains(content, "包括 `.npmrc`）可信") {
+		t.Fatalf("%s must explain that the short bootstrap requires trusted npm configuration", releasePath)
+	}
 	if !strings.Contains(content, pinned) {
 		t.Fatalf("%s must provide pinned bootstrap command %q", releasePath, pinned)
 	}
@@ -62,9 +74,13 @@ func TestCurrentReleaseNotesProvidePinnedBootstrap(t *testing.T) {
 func assertNPMInstallLinesAreCanonical(t *testing.T, path, content string) {
 	t.Helper()
 	version := strings.TrimSpace(readRepositoryFile(t, "VERSION"))
+	currentReleasePath := filepath.Join("docs", "releases", "v"+version+".md")
 	pinned := "npx " + npmSecurityFlags + " @gitcode-cli/cli@" + version + " install"
 	for _, command := range npxInstallPattern.FindAllString(content, -1) {
 		if command == canonicalNPMBootstrap || command == pinned || strings.HasPrefix(command, canonicalNPMBootstrap+" --target-dir ") {
+			continue
+		}
+		if filepath.Clean(path) == filepath.Clean(currentReleasePath) && command == shortNPMBootstrap {
 			continue
 		}
 		t.Errorf("%s contains non-canonical npx install command %q", path, command)

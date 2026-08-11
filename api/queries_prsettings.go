@@ -1,9 +1,5 @@
 package api
 
-import (
-	"net/url"
-)
-
 // PRSettings represents the pull request settings for a repository.
 type PRSettings struct {
 	ApprovalRequiredReviewersEnable        bool   `json:"approval_required_reviewers_enable"`
@@ -74,7 +70,3 @@ func UpdatePRSettings(client *Client, owner, repo string, req *UpdatePRSettingsR
 	}
 	return GetPRSettings(client, owner, repo)
 }
-
-// escapedRepoPath is defined in repo_path.go.
-// This comment is a reference; the function is shared.
-var _ = url.PathEscape

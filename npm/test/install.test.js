@@ -12,7 +12,7 @@ const path = require("path");
 const {
   chooseGlobalBinDir, commitTransaction, completionTarget, dirFirstOnPath, dirOnPath,
   installHelp, parseInstallArgs, persistWindowsUserPath, prependWindowsUserPath,
-  quotePowerShell, replacePath, rollbackTransaction, windowsPathGuidance,
+  quotePowerShell, replacePath, rollbackTransaction, validateWindowsPathDirectory, windowsPathGuidance,
 } = require("../lib/install");
 
 test("chooseGlobalBinDir returns a writable, existing dir on posix (regardless of /usr/local/bin)", () => {
@@ -67,10 +67,24 @@ test("prependWindowsUserPath prepends, de-duplicates, and expands variables for 
   assert.throws(() => prependWindowsUserPath("C:\\bad;path", "", env), /invalid Windows PATH directory/);
 });
 
+test("prependWindowsUserPath preserves every non-target PATH segment verbatim", () => {
+  const dir = "C:\\GitCode\\bin";
+  const current = " C:\\Keep Spaces \\ ;;;C:\\Other\\;";
+  assert.strictEqual(prependWindowsUserPath(dir, current, {}), `${dir};${current}`);
+});
+
+test("validateWindowsPathDirectory rejects values that cannot be one PATH entry", () => {
+  assert.doesNotThrow(() => validateWindowsPathDirectory("C:\\GitCode\\bin"));
+  assert.throws(() => validateWindowsPathDirectory("C:\\safe;C:\\attacker"), /invalid Windows PATH directory/);
+  assert.throws(() => validateWindowsPathDirectory("C:\\safe\0attacker"), /invalid Windows PATH directory/);
+});
+
 test("parseInstallArgs supports target directory and Windows PATH opt-out", () => {
   assert.deepStrictEqual(parseInstallArgs([]), { targetDir: "", modifyPath: true });
   assert.strictEqual(parseInstallArgs(["--target-dir", "."]).targetDir, path.resolve("."));
   assert.deepStrictEqual(parseInstallArgs(["--no-modify-path"]), { targetDir: "", modifyPath: false });
+  assert.throws(() => parseInstallArgs(["--target-dir"]), /requires a directory value/);
+  assert.throws(() => parseInstallArgs(["--target-dir", "--no-modify-path"]), /requires a directory value/);
   assert.throws(() => parseInstallArgs(["--force"]), /unknown install argument/);
 });
 
@@ -83,15 +97,12 @@ test("PowerShell guidance escapes single quotes in target directories", () => {
   assert.strictEqual(quotePowerShell("C:\\Users\\O'Brien\\bin;"), "'C:\\Users\\O''Brien\\bin;'");
 });
 
-test("persistWindowsUserPath uses fixed PowerShell scripts and a minimal environment", () => {
+test("persistWindowsUserPath uses one raw-registry PowerShell transaction and a minimal environment", () => {
   const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
   const calls = [];
   const runner = (executable, args, options) => {
     calls.push({ executable, args, options });
-    if (calls.length === 1) {
-      return { status: 0, stdout: "C:\\Old;%LOCALAPPDATA%\\gitcode-cli\\bin", stderr: "" };
-    }
-    return { status: 0, stdout: "", stderr: "" };
+    return { status: 0, stdout: '{"changed":true,"kind":"ExpandString"}', stderr: "" };
   };
   const env = {
     SystemRoot: "C:\\Windows",
@@ -101,34 +112,55 @@ test("persistWindowsUserPath uses fixed PowerShell scripts and a minimal environ
     npm_config_registry: "https://untrusted.invalid",
   };
   const result = persistWindowsUserPath(dir, { env, runner, fileExists: () => true });
-  assert.deepStrictEqual(result, { ok: true, changed: true });
-  assert.strictEqual(calls.length, 2);
+  assert.deepStrictEqual(result, { ok: true, changed: true, registryKind: "ExpandString" });
+  assert.strictEqual(calls.length, 1);
   assert.strictEqual(calls[0].executable, "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
   assert.ok(!calls[0].args.join(" ").includes(dir), "target path must not be interpolated into PowerShell code");
-  assert.strictEqual(calls[1].options.env.GITCODE_CLI_USER_PATH, `${dir};C:\\Old`);
-  assert.strictEqual(calls[1].options.env.GC_TOKEN, undefined);
-  assert.strictEqual(calls[1].options.env.npm_config_registry, undefined);
+  const script = calls[0].args.at(-1);
+  assert.match(script, /DoNotExpandEnvironmentNames/);
+  assert.match(script, /GetValueKind\('Path'\)/);
+  assert.match(script, /SetValue\('Path', \$next, \$kind\)/);
+  assert.match(script, /SendMessageTimeout/);
+  assert.strictEqual(calls[0].options.env.GITCODE_CLI_TARGET_DIR, dir);
+  assert.strictEqual(calls[0].options.env.GC_TOKEN, undefined);
+  assert.strictEqual(calls[0].options.env.npm_config_registry, undefined);
 });
 
-test("persistWindowsUserPath reports read and write failures without claiming success", () => {
+test("persistWindowsUserPath reports transaction failures without claiming success", () => {
   const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
   const env = { SystemRoot: "C:\\Windows" };
-  const readFailure = persistWindowsUserPath(dir, {
+  const failure = persistWindowsUserPath(dir, {
     env,
     fileExists: () => true,
-    runner: () => ({ status: 1, stdout: "", stderr: "read denied\nextra" }),
+    runner: () => ({ status: 1, stdout: "", stderr: "registry denied\nextra" }),
   });
-  assert.deepStrictEqual(readFailure, { ok: false, error: "读取当前用户 PATH失败：read denied" });
+  assert.deepStrictEqual(failure, { ok: false, error: "更新当前用户 PATH失败：registry denied" });
+});
 
+test("persistWindowsUserPath reports idempotence from the same registry transaction", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
   let calls = 0;
-  const writeFailure = persistWindowsUserPath(dir, {
-    env,
+  const result = persistWindowsUserPath(dir, {
+    env: { SystemRoot: "C:\\Windows" },
     fileExists: () => true,
-    runner: () => (++calls === 1
-      ? { status: 0, stdout: "C:\\Old", stderr: "" }
-      : { status: 1, stdout: "", stderr: "write denied" }),
+    runner: () => {
+      calls += 1;
+      return { status: 0, stdout: '{"changed":false,"kind":"String"}', stderr: "" };
+    },
   });
-  assert.deepStrictEqual(writeFailure, { ok: false, error: "写入当前用户 PATH失败：write denied" });
+  assert.deepStrictEqual(result, { ok: true, changed: false, registryKind: "String" });
+  assert.strictEqual(calls, 1);
+});
+
+test("persistWindowsUserPath rejects unsafe directories before spawning PowerShell", () => {
+  let called = false;
+  const result = persistWindowsUserPath("C:\\safe;C:\\attacker", {
+    env: { SystemRoot: "C:\\Windows" },
+    runner: () => { called = true; },
+  });
+  assert.strictEqual(result.ok, false);
+  assert.strictEqual(result.invalidDirectory, true);
+  assert.strictEqual(called, false);
 });
 
 test("Windows PATH guidance is explicit and Chinese for current-shell refresh", () => {
@@ -157,6 +189,19 @@ test("Windows PATH guidance explains opt-out and persistence failure in Chinese"
   const failure = windowsPathGuidance(dir, { modifyPath: true }, { ok: false, error: "拒绝访问" }, { PATH: "" });
   assert.match(failure, /警告：未能自动更新当前用户 PATH：拒绝访问/);
   assert.match(failure, /请在 PowerShell 中手工执行持久化配置/);
+});
+
+test("Windows PATH guidance never emits PATH commands for an unsafe directory", () => {
+  const guidance = windowsPathGuidance(
+    "C:\\safe;C:\\attacker",
+    { modifyPath: true },
+    { ok: false, error: "invalid Windows PATH directory", invalidDirectory: true },
+    { PATH: "C:\\Old" }
+  );
+  assert.match(guidance, /未生成任何 PATH 修改命令/);
+  assert.doesNotMatch(guidance, /SetEnvironmentVariable/);
+  assert.doesNotMatch(guidance, /\$env:Path/);
+  assert.match(guidance, /gitcode\.exe' version/);
 });
 
 test("install rollback restores only files touched by the current transaction", () => {

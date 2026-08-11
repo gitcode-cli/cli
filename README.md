@@ -62,7 +62,7 @@ npm install -g --ignore-scripts --registry=https://registry.npmjs.org --@gitcode
 gitcode version
 ```
 
-一行 bootstrap 会把平台二进制安装到全局 bin 目录；Linux/macOS 同时配置 bash/zsh/fish 补全，Windows 跳过 shell 补全。Windows 会在用户显式执行 `install` 后把安装目录置于持久 User PATH 前面并去重；如不希望修改，传入 `--no-modify-path`。由于 `npx` 子进程无法刷新已经打开的 PowerShell，安装完成后会用中文给出当前窗口立即生效的 `$env:Path` 命令和重开终端说明。它不会修改 Machine PATH、卸载或覆盖其他渠道入口。
+一行 bootstrap 会把平台二进制安装到全局 bin 目录；Linux/macOS 同时配置 bash/zsh/fish 补全，Windows 跳过 shell 补全。Windows 会在用户显式执行 `install` 后把安装目录置于持久 User PATH 前面并去重；如不希望修改，传入 `--no-modify-path`。由于 `npx` 子进程无法刷新已经打开的 PowerShell，安装完成后会用中文给出当前窗口立即生效的 `$env:Path` 命令和重开终端说明。它不会修改 Machine PATH、删除或重写其他 PATH 条目，也不会调用其他包管理器卸载软件。显式 `--target-dir` 会替换该目录内的同名常规文件，不要将它指向 Python Scripts、npm prefix 等由其他包管理器持有的目录。
 
 Linux/macOS 上若存在历史同目录 `gitcode -> gc` 别名，会在安全校验和事务保护下自动迁移；无需先卸载 PyPI 包或手工删除链接。命令显式固定 generic 与 scoped 官方 registry，并禁用 npm lifecycle scripts，避免继承当前目录或用户 npm 配置中的非官方包来源。
 

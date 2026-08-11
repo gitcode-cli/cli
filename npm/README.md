@@ -17,6 +17,8 @@ Copies the platform binary to a global bin dir (`/usr/local/bin` if writable, el
 If an older installation left a same-directory `gitcode -> gc` alias, bootstrap migrates that verified alias transactionally; links to any other target are never overwritten.
 On Windows it installs both `gc.exe` and `gitcode.exe`, then prepends the install directory to the persistent user PATH. Pass `--no-modify-path` to opt out. An npx child process cannot refresh the already-running PowerShell process, so the installer prints explicit Chinese instructions for refreshing `$env:Path` immediately or closing all PowerShell/Windows Terminal windows before reopening. It never changes the machine PATH or removes another package manager's entry. Use `gitcode` in PowerShell because `gc` is the built-in `Get-Content` alias.
 
+An explicit `--target-dir` replaces regular `gc`/`gitcode` files inside that directory. Do not point it at Python Scripts, an npm prefix, or another package manager-owned directory.
+
 Do not use `npm i @gitcode-cli/cli` as a CLI installation command. It only adds a dependency to the current project's `node_modules` and does not replace an existing `gitcode` earlier on PATH.
 
 ### Global npm install

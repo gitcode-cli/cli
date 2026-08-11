@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/api"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/branch/create"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/branch/list"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 )
@@ -36,6 +38,8 @@ func NewCmdBranch(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdView(f, nil))
+	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(create.NewCmdCreate(f, nil))
 
 	return cmd
 }

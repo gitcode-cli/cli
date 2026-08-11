@@ -102,6 +102,7 @@ docker compose up gc
 - `release list`
 - `release view`
 - `repo branch view`
+- `repo branch list`
 - `repo list`
 - `repo log`
 - `repo stats`
@@ -134,6 +135,7 @@ docker compose up gc
 - `release create`
 - `release edit`
 - `release upload`
+- `repo branch create`
 - `repo create`
 - `repo delete`
 - `repo fork`
@@ -362,6 +364,44 @@ gc repo branch view main -R owner/repo --json
 - `repo branch view` 显示指定分支的名称、保护状态和最新 commit 信息（ID、短 ID、标题、作者）。
 - `--json` 输出分支对象，包含 `name`、`protected`、`commit.id`、`commit.short_id`、`commit.title`、`commit.message`、`commit.author.login`、`commit.committer.login`、`commit.created_at` 等字段。
 - 分支不存在时返回明确错误。
+
+### repo branch list - 列出分支
+
+列出仓库中的所有分支。
+
+```bash
+# 列出分支
+gc repo branch list -R owner/repo
+
+# JSON 输出
+gc repo branch list -R owner/repo --json
+```
+
+说明：
+- `--json` 输出分支数组到 stdout。
+- 默认分支标记 `(default)`。
+- 退出码：`0` 成功；`1` 通用错误；`3` 仓库不存在（HTTP 404）。
+
+### repo branch create - 创建分支
+
+从指定引用（分支或 tag）创建新分支。默认从仓库默认分支创建。
+
+```bash
+# 从默认分支创建
+gc repo branch create feature -R owner/repo
+
+# 从指定 ref 创建
+gc repo branch create feature --ref develop -R owner/repo
+
+# 带描述
+gc repo branch create feature --description "feature branch" -R owner/repo
+```
+
+说明：
+- `--ref` 指定起点（分支名或 tag 名），默认为仓库默认分支。
+- `--description` 设置分支描述。
+- `--json` 输出创建后的分支对象。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 仓库不存在。
 
 ### repo list - 列出仓库
 

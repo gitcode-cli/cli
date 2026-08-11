@@ -3,7 +3,6 @@ package setdefault
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -100,12 +99,12 @@ func viewDefault(cfg config.Config, opts *SetDefaultOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to read default repo: %w", err)
 	}
+	if opts.JSON {
+		return cmdutil.WriteJSON(opts.IO.Out, map[string]string{"default_repo": value})
+	}
 	if value == "" {
 		fmt.Fprintln(opts.IO.Out, "No default repository is set.")
 		return nil
-	}
-	if opts.JSON {
-		return cmdutil.WriteJSON(opts.IO.Out, map[string]string{"default_repo": value})
 	}
 	fmt.Fprintf(opts.IO.Out, "%s\n", value)
 	return nil
@@ -123,20 +122,12 @@ func unsetDefault(cfg config.Config, opts *SetDefaultOptions) error {
 }
 
 func setDefault(cfg config.Config, opts *SetDefaultOptions) error {
-	repo := opts.Repository
-	if repo == "" {
-		inferred, err := opts.BaseRepo()
-		if err != nil {
-			return cmdutil.NewUsageError("no repository specified and not in a git repository; pass <owner>/<repo> explicitly")
-		}
-		repo = inferred
+	repo, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
+	if err != nil {
+		return err
 	}
-	repo = strings.TrimSpace(repo)
-	if repo == "" {
-		return cmdutil.NewUsageError("repository cannot be empty")
-	}
-	if _, _, err := cmdutil.ParseRepo(repo); err != nil {
-		return cmdutil.NewUsageError(fmt.Sprintf("invalid repository format: %s", repo))
+	if _, _, perr := cmdutil.ParseRepo(repo); perr != nil {
+		return perr
 	}
 	if err := cfg.Set(defaultHost, "default_repo", repo); err != nil {
 		return fmt.Errorf("failed to set default repo: %w", err)

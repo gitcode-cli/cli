@@ -1,6 +1,8 @@
 package setdefault
 
 import (
+	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -101,34 +103,6 @@ func TestSetDefaultFromGitContext(t *testing.T) {
 	}
 }
 
-func TestSetDefaultNoRepoNoGit(t *testing.T) {
-	io, _, _, _ := iostreams.Test()
-	opts := &SetDefaultOptions{
-		IO:       io,
-		Config:   func() (config.Config, error) { return testConfig(t), nil },
-		BaseRepo: func() (string, error) { return "", cmdutil.NewUsageError("not in a git repository") },
-	}
-
-	err := setDefaultRun(opts)
-	if err == nil {
-		t.Fatal("setDefaultRun() error = nil, want usage error")
-	}
-}
-
-func TestSetDefaultInvalidRepoFormat(t *testing.T) {
-	io, _, _, _ := iostreams.Test()
-	opts := &SetDefaultOptions{
-		IO:         io,
-		Config:     func() (config.Config, error) { return testConfig(t), nil },
-		Repository: "invalid-no-slash",
-	}
-
-	err := setDefaultRun(opts)
-	if err == nil {
-		t.Fatal("setDefaultRun() error = nil, want usage error for invalid format")
-	}
-}
-
 func TestViewDefaultEmpty(t *testing.T) {
 	io, _, out, _ := iostreams.Test()
 	cfg := testConfig(t)
@@ -178,8 +152,70 @@ func TestViewDefaultJSON(t *testing.T) {
 	if err := setDefaultRun(opts); err != nil {
 		t.Fatalf("setDefaultRun() error = %v", err)
 	}
-	if !strings.Contains(out.String(), "default_repo") {
-		t.Fatalf("JSON output should contain default_repo key; got: %s", out.String())
+	var got map[string]string
+	if err := json.Unmarshal([]byte(out.String()), &got); err != nil {
+		t.Fatalf("output is not valid JSON: %s; raw: %s", err, out.String())
+	}
+	if got["default_repo"] != "owner/repo" {
+		t.Fatalf("default_repo = %q, want %q", got["default_repo"], "owner/repo")
+	}
+}
+
+func TestViewDefaultJSONEmpty(t *testing.T) {
+	io, _, out, _ := iostreams.Test()
+	cfg := testConfig(t)
+	opts := &SetDefaultOptions{
+		IO:     io,
+		Config: func() (config.Config, error) { return cfg, nil },
+		View:   true,
+		JSON:   true,
+	}
+
+	if err := setDefaultRun(opts); err != nil {
+		t.Fatalf("setDefaultRun() error = %v", err)
+	}
+	var got map[string]string
+	if err := json.Unmarshal([]byte(out.String()), &got); err != nil {
+		t.Fatalf("output must be valid JSON when --json is set, even if empty; got: %s", out.String())
+	}
+	if got["default_repo"] != "" {
+		t.Fatalf("default_repo = %q, want empty string", got["default_repo"])
+	}
+}
+
+func TestSetDefaultNoRepoNoGit(t *testing.T) {
+	io, _, _, _ := iostreams.Test()
+	opts := &SetDefaultOptions{
+		IO:       io,
+		Config:   func() (config.Config, error) { return testConfig(t), nil },
+		BaseRepo: func() (string, error) { return "", cmdutil.NewUsageError("not in a git repository") },
+	}
+
+	err := setDefaultRun(opts)
+	if err == nil {
+		t.Fatal("setDefaultRun() error = nil, want usage error")
+	}
+	var cliErr *cmdutil.CLIError
+	if !errors.As(err, &cliErr) || cliErr.Code != cmdutil.ExitUsage {
+		t.Fatalf("want ExitUsage(2), got %v", err)
+	}
+}
+
+func TestSetDefaultInvalidRepoFormat(t *testing.T) {
+	io, _, _, _ := iostreams.Test()
+	opts := &SetDefaultOptions{
+		IO:         io,
+		Config:     func() (config.Config, error) { return testConfig(t), nil },
+		Repository: "invalid-no-slash",
+	}
+
+	err := setDefaultRun(opts)
+	if err == nil {
+		t.Fatal("setDefaultRun() error = nil, want usage error for invalid format")
+	}
+	var cliErr *cmdutil.CLIError
+	if !errors.As(err, &cliErr) || cliErr.Code != cmdutil.ExitUsage {
+		t.Fatalf("want ExitUsage(2), got %v", err)
 	}
 }
 

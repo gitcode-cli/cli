@@ -51,13 +51,18 @@ func TestEditRunSuccess(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	io, _, _, errOut := iostreams.Test()
 	var gotMethod string
+	callCount := 0
 	opts := &EditOptions{
 		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-					gotMethod = req.Method
-					return editTestResponse(http.StatusOK, `{"name":"repo","full_name":"owner/repo"}`), nil
+					callCount++
+					if callCount == 1 {
+						gotMethod = req.Method
+						return editTestResponse(http.StatusOK, `{}`), nil
+					}
+					return editTestResponse(http.StatusOK, `{"name":"repo","full_name":"owner/repo","description":"New description"}`), nil
 				}),
 			}, nil
 		},
@@ -79,12 +84,17 @@ func TestEditRunSuccess(t *testing.T) {
 func TestEditRunJSON(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	io, _, out, _ := iostreams.Test()
+	callCount := 0
 	opts := &EditOptions{
 		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-					return editTestResponse(http.StatusOK, `{"name":"repo","description":"updated"}`), nil
+					callCount++
+					if callCount == 1 {
+						return editTestResponse(http.StatusOK, `{}`), nil
+					}
+					return editTestResponse(http.StatusOK, `{"name":"repo","full_name":"owner/repo","description":"updated","default_branch":"main"}`), nil
 				}),
 			}, nil
 		},
@@ -102,6 +112,9 @@ func TestEditRunJSON(t *testing.T) {
 	}
 	if result["name"] != "repo" {
 		t.Fatalf("name = %v, want repo", result["name"])
+	}
+	if result["default_branch"] != "main" {
+		t.Fatalf("default_branch = %v, want main", result["default_branch"])
 	}
 }
 
@@ -137,17 +150,21 @@ func TestEditRunNoFields(t *testing.T) {
 
 func TestEditRunPrivate(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
-	io, _, _, _ := iostreams.Test()
+	stream, _, _, _ := iostreams.Test()
 	var gotBody string
+	callCount := 0
 	opts := &EditOptions{
-		IO: io,
+		IO: stream,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-					buf := make([]byte, 1024)
-					n, _ := req.Body.Read(buf)
-					gotBody = string(buf[:n])
-					return editTestResponse(http.StatusOK, `{"name":"repo","private":true}`), nil
+					callCount++
+					if callCount == 1 {
+						body, _ := io.ReadAll(req.Body)
+						gotBody = string(body)
+						return editTestResponse(http.StatusOK, `{}`), nil
+					}
+					return editTestResponse(http.StatusOK, `{"name":"repo","private":true,"full_name":"owner/repo"}`), nil
 				}),
 			}, nil
 		},
@@ -216,4 +233,96 @@ func editTestResponse(status int, body string) *http.Response {
 		Header:     make(http.Header),
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
+}
+
+func TestEditRunPublic(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	stream, _, _, _ := iostreams.Test()
+	var gotBody string
+	callCount := 0
+	opts := &EditOptions{
+		IO: stream,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					callCount++
+					if callCount == 1 {
+						body, _ := io.ReadAll(req.Body)
+						gotBody = string(body)
+						return editTestResponse(http.StatusOK, `{}`), nil
+					}
+					return editTestResponse(http.StatusOK, `{"name":"repo","private":false,"full_name":"owner/repo"}`), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Public:     true,
+	}
+
+	if err := editRun(opts); err != nil {
+		t.Fatalf("editRun() error = %v", err)
+	}
+	if !strings.Contains(gotBody, `"private":false`) {
+		t.Fatalf("request body should contain private:false; got: %s", gotBody)
+	}
+}
+
+func TestEditRunExitCodes(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	tests := []struct {
+		name     string
+		opts     *EditOptions
+		wantCode int
+	}{
+		{
+			name: "private public conflict",
+			opts: &EditOptions{
+				IO:         testIO(),
+				Repository: "owner/repo",
+				Private:    true,
+				Public:     true,
+			},
+			wantCode: cmdutil.ExitUsage,
+		},
+		{
+			name: "no fields",
+			opts: &EditOptions{
+				IO:         testIO(),
+				Repository: "owner/repo",
+			},
+			wantCode: cmdutil.ExitUsage,
+		},
+		{
+			name: "unauthorized",
+			opts: &EditOptions{
+				IO:         testIO(),
+				Repository: "owner/repo",
+				Private:    true,
+				HttpClient: func() (*http.Client, error) {
+					return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+						return editTestResponse(http.StatusUnauthorized, `{"message":"unauthorized"}`), nil
+					})}, nil
+				},
+			},
+			wantCode: cmdutil.ExitAuth,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := editRun(tt.opts)
+			if err == nil {
+				t.Fatal("editRun() error = nil, want error")
+			}
+			if got := cmdutil.ExitCode(err); got != tt.wantCode {
+				t.Fatalf("ExitCode = %d, want %d", got, tt.wantCode)
+			}
+		})
+	}
+}
+
+func testIO() *iostreams.IOStreams {
+	io, _, _, _ := iostreams.Test()
+	return io
 }

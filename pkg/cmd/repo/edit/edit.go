@@ -27,7 +27,6 @@ type EditOptions struct {
 	Private       bool
 	Public        bool
 	JSON          bool
-	privateSet    bool
 }
 
 // NewCmdEdit creates the repo edit command.
@@ -135,6 +134,6 @@ func editRun(opts *EditOptions) error {
 		return cmdutil.WriteJSON(opts.IO.Out, result)
 	}
 
-	fmt.Fprintf(opts.IO.ErrOut, "Updated repository %s/%s.\n", owner, repo)
+	fmt.Fprintf(opts.IO.ErrOut, "Updated repository %s.\n", result.FullName)
 	return nil
 }

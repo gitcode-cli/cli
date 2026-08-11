@@ -116,14 +116,14 @@ type UpdateRepoRequest struct {
 
 // UpdateRepo updates a repository's settings.
 //
-// It calls PATCH /repos/{owner}/{repo}.
+// It calls PATCH /repos/{owner}/{repo}, then re-reads the full
+// repository via GET to return a complete object with all fields.
 func UpdateRepo(client *Client, owner, repo string, req *UpdateRepoRequest) (*Repository, error) {
-	var result Repository
-	err := client.Patch("/repos/"+url.PathEscape(owner)+"/"+url.PathEscape(repo), req, &result)
+	err := client.Patch(escapedRepoPath(owner, repo), req, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &result, nil
+	return GetRepo(client, owner, repo)
 }
 
 // DeleteBranch deletes a branch from a repository.

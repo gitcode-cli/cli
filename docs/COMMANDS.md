@@ -2661,6 +2661,40 @@ gc config set update.mode off --json
 - 首次 npm 命令会在 stderr 说明默认策略和退出方式。
 - `CI=true`、`--no-interactive`、`--no-update-check`、`GC_NO_UPDATE_CHECK=1` 均禁用隐式后台检查、联网与自动应用；显式 `update` / `update --check` 仍由用户主动控制。
 
+### config list - 列出所有配置
+
+列出全部配置项的当前值及来源（environment/config/default）。纯客户端实现。
+
+```bash
+# 列出所有配置
+gc config list
+
+# JSON 输出
+gc config list --json
+```
+
+说明：
+
+- 支持的 key：`browser`、`default_repo`、`editor`、`pager`、`update.mode`。
+- 来源标注：`(environment)` = 环境变量覆盖；`(config)` = 配置文件设置；`(default)` = 默认值或未设置。
+- `update.mode` 默认值为 `notify`。
+- `--json` 输出 `[{key, value, source}]` 数组到 stdout。
+- 配置目录：`~/.config/gc/`，环境变量 `GC_CONFIG_DIR` 可覆盖。
+
+### config clear-cache - 清除缓存
+
+清除 CLI 缓存目录中的临时文件（API 缓存、补全脚本等），不影响认证和配置文件。
+
+```bash
+gc config clear-cache
+```
+
+说明：
+
+- 缓存目录：`~/.config/gc/cache/`（如存在）。
+- 无缓存时输出 "No cache to clear."。
+- `auth.json`、`config.json`、`lark.json` 不受影响。
+
 ## 其他命令
 
 ### browse - 在浏览器中打开 GitCode 资源

@@ -123,6 +123,11 @@ test("persistWindowsUserPath uses one raw-registry PowerShell transaction and a 
   assert.match(script, /GetValueKind\('Path'\)/);
   assert.match(script, /SetValue\('Path', \$next, \$kind\)/);
   assert.match(script, /Mutex.*Global\\GitCodeCli\.UserPath/);
+  assert.match(script, /path-mutex-id/);
+  assert.match(script, /File\]::Move\(\$candidatePath, \$mutexIdPath\)/);
+  assert.match(script, /MutexSecurity/);
+  assert.match(script, /SetAccessRuleProtection\(\$true, \$false\)/);
+  assert.match(script, /LocalSystemSid/);
   assert.match(script, /WaitOne\(30000\)/);
   assert.match(script, /ReleaseMutex/);
   assert.match(script, /SendMessageTimeout/);

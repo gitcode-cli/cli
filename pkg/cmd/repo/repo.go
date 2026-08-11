@@ -13,6 +13,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/fork"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/list"
 	logcmd "gitcode.com/gitcode-cli/cli/pkg/cmd/repo/log"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/prsettings"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/setdefault"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/stats"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/sync"
@@ -33,6 +34,7 @@ func NewCmdRepo(f *cmdutil.Factory) *cobra.Command {
 
 	cmd.AddCommand(branch.NewCmdBranch(f))
 	cmd.AddCommand(branchprotection.NewCmdBranchProtection(f))
+	cmd.AddCommand(prsettings.NewCmdPRSettings(f))
 	cmd.AddCommand(clone.NewCmdClone(f, nil))
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
 	cmd.AddCommand(edit.NewCmdEdit(f, nil))

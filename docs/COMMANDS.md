@@ -103,6 +103,7 @@ docker compose up gc
 - `release view`
 - `repo branch view`
 - `repo branch list`
+- `repo branch-protection list`
 - `search repos`
 - `search issues`
 - `search users`
@@ -408,6 +409,62 @@ gc repo branch create feature --description "feature branch" -R owner/repo
 - `--description` 设置分支描述。
 - `--json` 输出创建后的分支对象。
 - 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 仓库不存在。
+
+### repo branch-protection list - 列出保护分支规则
+
+列出仓库的全部分支保护规则。
+
+```bash
+gc repo branch-protection list -R owner/repo
+
+# JSON 输出
+gc repo branch-protection list -R owner/repo --json
+```
+
+说明：
+- `--json` 输出保护规则数组到 stdout。
+- 退出码：`0` 成功；`1` 通用错误；`3` 仓库不存在（HTTP 404）；`4` 认证错误。
+
+### repo branch-protection create - 创建保护分支规则
+
+为分支或分支通配符创建保护规则。
+
+```bash
+gc repo branch-protection create --wildcard "main" --pusher admin --merger admin -R owner/repo
+gc repo branch-protection create --wildcard "release/*" --pusher "admin;user1" -R owner/repo
+```
+
+说明：
+- `--wildcard`（必填）：分支名或通配符（如 `main`、`release/*`）。
+- `--pusher`：可推送角色/用户名（分号分隔）。角色：admin/develop/maintainer。
+- `--merger`：可合并角色/用户名（同上）。
+- `--pusher`/`--merger` 内容经 secret 扫描。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误（缺 wildcard）；`3` 仓库不存在；`4` 认证错误。
+
+### repo branch-protection update - 更新保护分支规则
+
+更新已存在的分支保护规则。
+
+```bash
+gc repo branch-protection update "main" --pusher develop -R owner/repo
+```
+
+说明：
+- `<wildcard>`（必填位置参数）：要更新的分支通配符。
+- `--pusher`/`--merger`：至少提供一个。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 仓库不存在；`4` 认证错误。
+
+### repo branch-protection delete - 删除保护分支规则
+
+删除已存在的分支保护规则。
+
+```bash
+gc repo branch-protection delete "main" -R owner/repo
+```
+
+说明：
+- `<wildcard>`（必填位置参数）：要删除的分支通配符。
+- 退出码：`0` 成功；`1` 通用错误；`3` 规则不存在（HTTP 404）；`4` 认证错误。
 
 ### repo list - 列出仓库
 

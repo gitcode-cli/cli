@@ -57,6 +57,13 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
 }
 
 func reposRun(opts *ReposOptions) error {
+	if opts.Limit <= 0 {
+		return cmdutil.NewUsageError("--limit must be greater than 0")
+	}
+	if opts.Page < 0 {
+		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
+	}
+
 	client, err := cmdutil.AuthenticatedClientFromFactory(opts.HttpClient)
 	if err != nil {
 		return err

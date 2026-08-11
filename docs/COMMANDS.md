@@ -2801,7 +2801,7 @@ gc search repos "cli tool" --json
 说明：
 - `--json` 输出结果数组到 stdout。
 - `--limit`/`--page` 分页。
-- 退出码：`0` 成功；`1` 通用错误；`4` 认证错误。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证错误。
 
 ### search issues - 搜索 Issues
 
@@ -2818,8 +2818,9 @@ gc search issues "feature" --repo owner/repo --state open
 说明：
 - `--repo` 限定搜索范围到指定仓库（owner/repo）。
 - `--state` 按状态过滤（open/closed）。
+- `--limit`/`--page` 分页。
 - `--json` 输出结果数组。
-- 退出码：`0` 成功；`1` 通用错误；`4` 认证错误。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证错误。
 
 ### search users - 搜索用户
 
@@ -2836,7 +2837,7 @@ gc search users "admin" --json
 说明：
 - `--json` 输出用户对象数组。
 - `--limit`/`--page` 分页。
-- 退出码：`0` 成功；`1` 通用错误；`4` 认证错误。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证错误。
 
 ## 其他命令
 

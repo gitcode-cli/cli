@@ -61,6 +61,13 @@ func NewCmdIssues(f *cmdutil.Factory, runF func(*IssuesOptions) error) *cobra.Co
 }
 
 func issuesRun(opts *IssuesOptions) error {
+	if opts.Limit <= 0 {
+		return cmdutil.NewUsageError("--limit must be greater than 0")
+	}
+	if opts.Page < 0 {
+		return cmdutil.NewUsageError("--page must be greater than or equal to 0")
+	}
+
 	client, err := cmdutil.AuthenticatedClientFromFactory(opts.HttpClient)
 	if err != nil {
 		return err
@@ -70,7 +77,9 @@ func issuesRun(opts *IssuesOptions) error {
 		Q:       opts.Query,
 		PerPage: opts.Limit,
 		Page:    opts.Page,
-	}, opts.Repo, opts.State)
+		Repo:    opts.Repo,
+		State:   opts.State,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to search issues: %w", err)
 	}
@@ -85,7 +94,7 @@ func issuesRun(opts *IssuesOptions) error {
 	}
 
 	for _, r := range results {
-		fmt.Fprintf(opts.IO.Out, "#%s\t%s\t%s\n", r.Number, r.State, r.Title)
+		fmt.Fprintf(opts.IO.Out, "#%s\t%s\t%s\n", r.Number.String(), r.State, r.Title)
 	}
 	return nil
 }

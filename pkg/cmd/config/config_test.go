@@ -199,7 +199,7 @@ func TestResolveConfigValueConfig(t *testing.T) {
 func TestResolveConfigValueDefault(t *testing.T) {
 	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	cfg := config.New()
-	value, source := resolveConfigValue(cfg, "pager")
+	value, source := resolveConfigValue(cfg, "default_repo")
 	if value != "" || source != "default" {
 		t.Fatalf("value=%q source=%q, want empty/default", value, source)
 	}

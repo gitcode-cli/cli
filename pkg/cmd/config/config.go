@@ -145,10 +145,9 @@ func newCmdClearCache(f *cmdutil.Factory) *cobra.Command {
 		Use:   "clear-cache",
 		Short: "Clear CLI cache",
 		Long: heredoc.Doc(`
-			Clear cached data such as API responses, completion scripts,
-			and update check timestamps from the CLI cache directory.
-
-			This does not affect authentication or configuration files.
+			Clear files from the CLI cache directory (~/.config/gc/cache/)
+			if present. This does not affect authentication or configuration
+			files (auth.json, config.json, lark.json).
 		`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -183,6 +182,12 @@ func resolveConfigValue(cfg config.Config, key string) (string, string) {
 	}
 	if key == "update.mode" {
 		return "notify", "default"
+	}
+	if key == "editor" {
+		return "vim", "default"
+	}
+	if key == "pager" {
+		return "less", "default"
 	}
 	return "", "default"
 }

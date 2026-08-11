@@ -82,6 +82,7 @@ docker compose up gc
 - `commit comments view`
 - `commit view`
 - `config get`
+- `config list`
 - `doctor install`
 - `help`
 - `issue comments`
@@ -2652,7 +2653,7 @@ gc config set update.mode off
 gc config set update.mode off --json
 ```
 
-支持的 key：`browser`、`editor`、`pager`、`update.mode`。前三项保存普通字符串；`update.mode` 仅接受以下枚举值：
+支持的 key：`browser`、`editor`、`pager`、`update.mode`、`default_repo`。前三项保存普通字符串；`update.mode` 仅接受以下枚举值：
 
 - `notify`：默认值；后台检查 stable 新版本，在下一次启动提示 `gitcode update`，不自动安装。
 - `auto`：用户明确启用后，后台检查并应用 stable 更新。
@@ -2691,7 +2692,7 @@ gc config clear-cache
 
 说明：
 
-- 缓存目录：`~/.config/gc/cache/`（如存在）。
+- 缓存目录：`~/.config/gc/cache/`（如存在）。受 `GC_CONFIG_DIR` 环境变量影响，与 `config list` 一致。
 - 无缓存时输出 "No cache to clear."。
 - `auth.json`、`config.json`、`lark.json` 不受影响。
 

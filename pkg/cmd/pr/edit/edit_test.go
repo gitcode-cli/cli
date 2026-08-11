@@ -147,7 +147,7 @@ func TestEditRunUpdatesLabels(t *testing.T) {
 				opts.Labels = []string{"risk/high", "status/approved"}
 			},
 			wantLabels:    "type/bug,risk/high,status/approved",
-			wantRequests:  2,
+			wantRequests:  3,
 			wantFirstVerb: http.MethodGet,
 		},
 		{
@@ -157,7 +157,7 @@ func TestEditRunUpdatesLabels(t *testing.T) {
 				opts.RemoveLabels = []string{"risk/high"}
 			},
 			wantLabels:    "type/bug,status/approved",
-			wantRequests:  2,
+			wantRequests:  3,
 			wantFirstVerb: http.MethodGet,
 		},
 		{
@@ -168,7 +168,7 @@ func TestEditRunUpdatesLabels(t *testing.T) {
 				opts.Yes = true
 			},
 			wantLabels:    "status/approved",
-			wantRequests:  1,
+			wantRequests:  2,
 			wantFirstVerb: http.MethodPatch,
 		},
 		{
@@ -178,7 +178,7 @@ func TestEditRunUpdatesLabels(t *testing.T) {
 				opts.Yes = true
 			},
 			wantLabels:    ",",
-			wantRequests:  1,
+			wantRequests:  2,
 			wantFirstVerb: http.MethodPatch,
 		},
 	}

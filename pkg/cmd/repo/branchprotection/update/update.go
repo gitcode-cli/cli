@@ -23,7 +23,6 @@ type UpdateOptions struct {
 	Wildcard   string
 	Pusher     string
 	Merger     string
-	JSON       bool
 }
 
 func NewCmdUpdate(f *cmdutil.Factory, runF func(*UpdateOptions) error) *cobra.Command {
@@ -54,7 +53,6 @@ func NewCmdUpdate(f *cmdutil.Factory, runF func(*UpdateOptions) error) *cobra.Co
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
 	cmd.Flags().StringVar(&opts.Pusher, "pusher", "", "Who can push (roles/usernames)")
 	cmd.Flags().StringVar(&opts.Merger, "merger", "", "Who can merge (roles/usernames)")
-	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }

@@ -32,6 +32,7 @@ func TestDeleteRunSuccess(t *testing.T) {
 		},
 		Repository: "owner/repo",
 		Wildcard:   "main",
+		Yes:        true,
 	}
 	if err := deleteRun(opts); err != nil {
 		t.Fatalf("deleteRun() error = %v", err)
@@ -56,6 +57,7 @@ func TestDeleteRunError(t *testing.T) {
 		},
 		Repository: "owner/repo",
 		Wildcard:   "main",
+		Yes:        true,
 	}
 	err := deleteRun(opts)
 	if err == nil || !strings.Contains(err.Error(), "failed to delete branch protection") {

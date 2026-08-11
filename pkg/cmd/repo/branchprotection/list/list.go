@@ -70,6 +70,9 @@ func listRun(opts *ListOptions) error {
 	}
 
 	if len(rules) == 0 {
+		if opts.JSON {
+			return cmdutil.WriteJSON(opts.IO.Out, rules)
+		}
 		fmt.Fprintln(opts.IO.Out, "No branch protection rules found.")
 		return nil
 	}

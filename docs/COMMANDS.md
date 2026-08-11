@@ -464,7 +464,8 @@ gc repo branch-protection delete "main" -R owner/repo
 
 说明：
 - `<wildcard>`（必填位置参数）：要删除的分支通配符。
-- 退出码：`0` 成功；`1` 通用错误；`3` 规则不存在（HTTP 404）；`4` 认证错误。
+- `--yes`/`-y` 跳过确认（非 TTY 环境必须传 `--yes`）。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 规则不存在（HTTP 404）；`4` 认证错误。
 
 ### repo list - 列出仓库
 

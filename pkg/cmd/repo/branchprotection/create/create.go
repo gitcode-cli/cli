@@ -23,7 +23,6 @@ type CreateOptions struct {
 	Wildcard   string
 	Pusher     string
 	Merger     string
-	JSON       bool
 }
 
 func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Command {
@@ -59,7 +58,6 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmd.Flags().StringVar(&opts.Wildcard, "wildcard", "", "Branch name or wildcard pattern (e.g. main, release/*)")
 	cmd.Flags().StringVar(&opts.Pusher, "pusher", "", "Who can push (roles/usernames, semicolon-separated)")
 	cmd.Flags().StringVar(&opts.Merger, "merger", "", "Who can merge (roles/usernames, semicolon-separated)")
-	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 
 	return cmd
 }

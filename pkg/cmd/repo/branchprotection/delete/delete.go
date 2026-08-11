@@ -21,6 +21,7 @@ type DeleteOptions struct {
 
 	Repository string
 	Wildcard   string
+	Yes        bool
 }
 
 func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Command {
@@ -49,11 +50,21 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
+	cmd.Flags().BoolVarP(&opts.Yes, "yes", "y", false, "Skip confirmation")
 
 	return cmd
 }
 
 func deleteRun(opts *DeleteOptions) error {
+	if err := cmdutil.ConfirmOrAbort(cmdutil.ConfirmOptions{
+		IO:       opts.IO,
+		Yes:      opts.Yes,
+		Expected: opts.Wildcard,
+		Prompt:   fmt.Sprintf("Type the wildcard to confirm deletion: %s\n", opts.Wildcard),
+	}); err != nil {
+		return err
+	}
+
 	client, err := cmdutil.AuthenticatedClientFromFactory(opts.HttpClient)
 	if err != nil {
 		return err

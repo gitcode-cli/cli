@@ -110,11 +110,60 @@ func DeleteBranch(client *Client, owner, name, branch string) error {
 	return client.Delete("/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(name) + "/branches/" + url.PathEscape(branch))
 }
 
+// BranchListOptions represents the query parameters for listing branches.
+type BranchListOptions struct {
+	Sort      string
+	Direction string
+	PerPage   int
+	Page      int
+}
+
+// ListBranches lists all branches in a repository.
+//
+// It calls GET /repos/{owner}/{repo}/branches.
+func ListBranches(client *Client, owner, repo string, opts *BranchListOptions) ([]Branch, error) {
+	path := "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/branches"
+	if opts != nil {
+		path += newQueryBuilder().
+			Set("sort", opts.Sort).
+			Set("direction", opts.Direction).
+			SetInt("per_page", opts.PerPage).
+			SetInt("page", opts.Page).
+			String()
+	}
+	var branches []Branch
+	if err := client.Get(path, &branches); err != nil {
+		return nil, err
+	}
+	return branches, nil
+}
+
+// CreateBranchRequest is the request body for creating a branch.
+type CreateBranchRequest struct {
+	Refs        string `json:"refs"`
+	BranchName  string `json:"branch_name"`
+	Description string `json:"description"`
+}
+
+// CreateBranch creates a new branch in a repository.
+//
+// It calls POST /repos/{owner}/{repo}/branches.
+func CreateBranch(client *Client, owner, repo string, req *CreateBranchRequest) (*Branch, error) {
+	var branch Branch
+	err := client.Post("/repos/"+url.PathEscape(owner)+"/"+url.PathEscape(repo)+"/branches", req, &branch)
+	if err != nil {
+		return nil, err
+	}
+	return &branch, nil
+}
+
 // Branch represents a repository branch
 type Branch struct {
-	Name      string        `json:"name"`
-	Protected bool          `json:"protected"`
-	Commit    *BranchCommit `json:"commit"`
+	Name          string        `json:"name"`
+	Protected     bool          `json:"protected"`
+	Commit        *BranchCommit `json:"commit"`
+	Description   string        `json:"description"`
+	DefaultBranch bool          `json:"default_branch"`
 }
 
 // BranchCommit represents the commit a branch points to

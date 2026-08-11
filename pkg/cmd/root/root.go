@@ -29,6 +29,7 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/schema"
 	updatecmd "gitcode.com/gitcode-cli/cli/pkg/cmd/update"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/user"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/version"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/installupdate"
@@ -88,6 +89,7 @@ func NewRootCmd(ver, commit, date string, f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(milestone.NewCmdMilestone(f))
 	cmd.AddCommand(release.NewCmdRelease(f))
 	cmd.AddCommand(schema.NewCmdSchema(cmd))
+	cmd.AddCommand(user.NewCmdUser(f))
 	cmd.AddCommand(updatecmd.NewCmdUpdate(f))
 	cmd.AddCommand(larkcmd.NewCmdLark(f))
 

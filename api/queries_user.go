@@ -14,6 +14,12 @@ type User struct {
 	AvatarURL string      `json:"avatar_url"`
 	HTMLURL   string      `json:"html_url"`
 	CreatedAt string      `json:"created_at"`
+	Bio       string      `json:"bio"`
+	Blog      string      `json:"blog"`
+	Company   string      `json:"company"`
+	Followers int         `json:"followers"`
+	Following int         `json:"following"`
+	Type      string      `json:"type"`
 }
 
 // Username returns the user's login name
@@ -35,6 +41,27 @@ func CurrentUser(client *Client) (*User, error) {
 func GetUser(client *Client, username string) (*User, error) {
 	var user User
 	err := client.Get(fmt.Sprintf("/users/%s", username), &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// UpdateUserRequest is the request body for updating the current user.
+type UpdateUserRequest struct {
+	Nickname      string `json:"nickname,omitempty"`
+	Company       string `json:"company,omitempty"`
+	Description   string `json:"description,omitempty"`
+	Email         string `json:"email,omitempty"`
+	GithubAccount string `json:"github_account,omitempty"`
+	Website       string `json:"website,omitempty"`
+	Location      string `json:"location,omitempty"`
+}
+
+// UpdateUser updates the current authenticated user's profile.
+func UpdateUser(client *Client, req *UpdateUserRequest) (*User, error) {
+	var user User
+	err := client.Patch("/user", req, &user)
 	if err != nil {
 		return nil, err
 	}

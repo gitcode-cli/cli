@@ -2736,6 +2736,49 @@ gc config clear-cache
 - 无缓存时输出 "No cache to clear."。
 - `auth.json`、`config.json`、`lark.json` 不受影响。
 
+## user 命令 (user)
+
+### user view - 查看用户资料
+
+查看 GitCode 用户资料。无参数时查看当前认证用户，传 `<username>` 查看指定用户。
+
+```bash
+# 查看当前用户
+gc user view
+
+# 查看指定用户
+gc user view <username>
+
+# JSON 输出
+gc user view --json
+```
+
+说明：
+
+- 无参数时调用 GET /api/v5/user（当前认证用户），传 username 时调用 GET /api/v5/users/{username}。
+- `--json` 输出完整用户对象到 stdout。
+- 退出码：`0` 成功；`1` 通用错误；`3` 用户不存在（HTTP 404）。
+
+### user edit - 编辑用户资料
+
+更新当前认证用户的资料。仅更新提供的字段。
+
+```bash
+# 更新名称
+gc user edit --name "New Name"
+
+# 更新简介和公司
+gc user edit --bio "New bio" --company "Acme Inc"
+```
+
+说明：
+
+- 支持 flags：`--name`、`--bio`、`--email`、`--company`、`--location`、`--website`。
+- 至少提供一个字段，否则报参数错误。
+- `--bio` 内容经 secret 扫描（防止误提交 token）。
+- `--json` 输出更新后的用户对象。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误（未提供任何字段）。
+
 ## 其他命令
 
 ### browse - 在浏览器中打开 GitCode 资源

@@ -104,6 +104,7 @@ docker compose up gc
 - `repo branch view`
 - `repo branch list`
 - `repo branch-protection list`
+- `repo pr-settings view`
 - `search repos`
 - `search issues`
 - `search users`
@@ -142,6 +143,7 @@ docker compose up gc
 - `release upload`
 - `repo branch create`
 - `repo edit`
+- `repo pr-settings update`
 - `user edit`
 - `repo create`
 - `repo delete`
@@ -466,6 +468,49 @@ gc repo branch-protection delete "main" -R owner/repo
 - `<wildcard>`（必填位置参数）：要删除的分支通配符。
 - `--yes`/`-y` 跳过确认（非 TTY 环境必须传 `--yes`）。
 - 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 规则不存在（HTTP 404）；`4` 认证错误。
+
+### repo pr-settings view - 查看 PR 门禁设置
+
+查看仓库的 Pull Request 合并门禁规则设置。
+
+```bash
+gc repo pr-settings view -R owner/repo
+
+# JSON 输出
+gc repo pr-settings view -R owner/repo --json
+```
+
+说明：
+- 显示合并门禁（流水线必过/禁止自合入/强制合入/合并模式/删除源分支）、评审人（最小评审数/批准者/测试人）、Squash 设置、CLA 校验、轻量级 PR 等全部 24 项设置。
+- `--json` 输出完整设置对象到 stdout。
+- 退出码：`0` 成功；`1` 通用错误；`3` 仓库不存在（HTTP 404）；`4` 认证错误。
+
+### repo pr-settings update - 更新 PR 门禁设置
+
+更新仓库的 PR 合并门禁规则。仅更新提供的字段。
+
+```bash
+# 要求流水线成功才能合并
+gc repo pr-settings update --pipeline-required -R owner/repo
+
+# 设置最小评审人数为 2
+gc repo pr-settings update --reviewers 2 -R owner/repo
+
+# 禁止合入自己的 PR
+gc repo pr-settings update --no-self-merge -R owner/repo
+
+# 设置合并模式为 fast-forward
+gc repo pr-settings update --merge-method ff -R owner/repo
+
+# JSON 输出
+gc repo pr-settings update --pipeline-required -R owner/repo --json
+```
+
+说明：
+- 支持 flags：`--reviewers`（最小评审人数，0 禁用）、`--pipeline-required`、`--no-self-merge`、`--force-merge`、`--delete-source-branch`、`--merge-method`（merge/rebase_merge/ff）。
+- 至少提供一个字段。
+- `--json` 输出更新后的完整设置对象。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 仓库不存在；`4` 认证错误。
 
 ### repo list - 列出仓库
 

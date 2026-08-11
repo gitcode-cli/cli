@@ -283,7 +283,7 @@ shell 补全（bash/zsh/fish）随安装自动配置。formula 由 GoReleaser �
 
 `npm i @gitcode-cli/cli` 与 `npm install @gitcode-cli/cli` 只添加当前项目依赖，不会更新 PATH 中已有的 CLI，不得作为用户安装命令或 Release note 的推荐入口。
 
-npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/bin/platforms/`），Node wrapper 按平台选择并 exec。Windows bootstrap 同时安装 `gc.exe` 与 `gitcode.exe`。Linux/macOS bootstrap 会自动把历史安装遗留的同目录 `gitcode -> gc` 别名安全迁移为当前二进制，无需用户先删除链接；指向其他位置的链接仍拒绝覆盖。
+npm 包 `@gitcode-cli/cli` 内置 Linux/macOS/Windows 多平台二进制（`npm/bin/platforms/`），Node wrapper 按平台选择并 exec。Windows bootstrap 同时安装 `gc.exe` 与 `gitcode.exe`，并在显式 `install` 后默认把目标目录置于持久 User PATH 前面；`--no-modify-path` 可退出。它不修改 Machine PATH、不删除或重写其他 PATH 条目，也不调用其他包管理器卸载软件。显式 `--target-dir` 会替换该目录内同名常规文件，因此不得指向 Python Scripts、npm prefix 等其他包管理器目录。当前 PowerShell 无法由 npx 子进程刷新，安装器会使用中文输出可复制的 `$env:Path` 命令、完全重开终端的替代方式和 `gitcode version` 验证步骤。Linux/macOS bootstrap 会自动把历史安装遗留的同目录 `gitcode -> gc` 别名安全迁移为当前二进制，无需用户先删除链接；指向其他位置的链接仍拒绝覆盖。
 
 正式 npm tarball 不再独立编译二进制：release workflow 的 `artifacts` job 调用 `scripts/prepare-npm-package.sh`，从同一批 GoReleaser 归档/裸二进制组装 npm 包，并将 `.tgz` 纳入 Release SHA-256 清单。`npm` job 只下载已验证的 Release artifact 并执行 OIDC Trusted Publishing；目标版本已存在时，必须下载 registry tarball 与 Release tarball 比对 SHA-256，内容一致才允许幂等跳过。
 
@@ -364,14 +364,14 @@ DEB/RPM packages install both `gc` and `gitcode`; on Linux they are equivalent.
 
 ### 多渠道 PATH 冲突
 
-pip、npm、Homebrew、DEB/RPM 和手工 archive 都可能提供同名命令。安装器只诊断、不替用户卸载其他渠道或修改 PATH：
+pip、npm、Homebrew、DEB/RPM 和手工 archive 都可能提供同名命令。`doctor install` 只诊断、不替用户卸载其他渠道或修改 PATH。唯一的自动 PATH 注册是用户显式运行 Windows npm bootstrap `install` 后修改当前 User PATH；可用 `--no-modify-path` 退出，且绝不修改 Machine PATH：
 
 ```bash
 gitcode doctor install
 gitcode doctor install --json
 ```
 
-先根据 `selected`、`candidates`、`distribution` 和 `recommendations` 确认实际命令，再由用户选择调整 PATH、升级原渠道或显式卸载旧渠道。Bash 更改 PATH 后运行 `hash -r`，Zsh 运行 `rehash`，PowerShell 重新打开终端；Windows 不应全局删除内置 `gc`/`Get-Content` alias，使用 `gitcode`。
+先根据 `selected`、`candidates`、`distribution` 和 `recommendations` 确认实际命令，再由用户选择升级原渠道或显式卸载旧渠道。Bash 更改 PATH 后运行 `hash -r`，Zsh 运行 `rehash`。Windows bootstrap 完成后按中文提示刷新当前 `$env:Path`，或关闭全部 PowerShell/Windows Terminal 后重新打开；Windows 不应全局删除内置 `gc`/`Get-Content` alias，使用 `gitcode`。
 
 ### Linux 二进制
 

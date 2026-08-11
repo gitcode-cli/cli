@@ -10,8 +10,9 @@ const assert = require("node:assert");
 const fs = require("fs");
 const path = require("path");
 const {
-  chooseGlobalBinDir, commitTransaction, completionTarget, dirOnPath, parseInstallArgs,
-  installHelp, quotePowerShell, replacePath, rollbackTransaction,
+  chooseGlobalBinDir, commitTransaction, completionTarget, dirFirstOnPath, dirOnPath,
+  installHelp, parseInstallArgs, persistWindowsUserPath, prependWindowsUserPath,
+  quotePowerShell, replacePath, rollbackTransaction, validateWindowsPathDirectory, windowsPathGuidance,
 } = require("../lib/install");
 
 test("chooseGlobalBinDir returns a writable, existing dir on posix (regardless of /usr/local/bin)", () => {
@@ -51,18 +52,185 @@ test("dirOnPath is case-insensitive and separator-insensitive on Windows", () =>
   assert.strictEqual(dirOnPath("c:\\tools\\gitcode", env, true), true);
 });
 
-test("parseInstallArgs accepts only an explicit target directory", () => {
-  assert.deepStrictEqual(parseInstallArgs([]), { targetDir: "" });
+test("dirFirstOnPath requires the Windows install directory to have priority", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  assert.strictEqual(dirFirstOnPath(dir, { PATH: `${dir};C:\\Old` }, true), true);
+  assert.strictEqual(dirFirstOnPath(dir, { PATH: `C:\\Old;${dir}` }, true), false);
+});
+
+test("prependWindowsUserPath prepends, de-duplicates, and expands variables for comparison", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  const env = { LOCALAPPDATA: "C:\\Users\\u\\AppData\\Local" };
+  const current = `C:\\Old;%LOCALAPPDATA%\\gitcode-cli\\bin\\;${dir.toUpperCase()};C:\\Other`;
+  assert.strictEqual(prependWindowsUserPath(dir, current, env), `${dir};C:\\Old;C:\\Other`);
+  assert.strictEqual(prependWindowsUserPath(dir, "", env), dir);
+  assert.throws(() => prependWindowsUserPath("C:\\bad;path", "", env), /invalid Windows PATH directory/);
+});
+
+test("prependWindowsUserPath preserves every non-target PATH segment verbatim", () => {
+  const dir = "C:\\GitCode\\bin";
+  const current = " C:\\Keep Spaces \\ ;;;C:\\Other\\;";
+  assert.strictEqual(prependWindowsUserPath(dir, current, {}), `${dir};${current}`);
+});
+
+test("validateWindowsPathDirectory rejects values that cannot be one PATH entry", () => {
+  assert.doesNotThrow(() => validateWindowsPathDirectory("C:\\GitCode\\bin"));
+  assert.throws(() => validateWindowsPathDirectory("C:\\safe;C:\\attacker"), /invalid Windows PATH directory/);
+  assert.throws(() => validateWindowsPathDirectory("C:\\safe\0attacker"), /invalid Windows PATH directory/);
+});
+
+test("parseInstallArgs supports target directory and Windows PATH opt-out", () => {
+  assert.deepStrictEqual(parseInstallArgs([]), { targetDir: "", modifyPath: true });
   assert.strictEqual(parseInstallArgs(["--target-dir", "."]).targetDir, path.resolve("."));
+  assert.deepStrictEqual(parseInstallArgs(["--no-modify-path"]), { targetDir: "", modifyPath: false });
+  assert.throws(() => parseInstallArgs(["--target-dir"]), /requires a directory value/);
+  assert.throws(() => parseInstallArgs(["--target-dir", "--no-modify-path"]), /requires a directory value/);
   assert.throws(() => parseInstallArgs(["--force"]), /unknown install argument/);
 });
 
-test("install help documents the explicit target directory", () => {
+test("install help documents target directory and Windows PATH opt-out", () => {
   assert.match(installHelp(), /--target-dir <directory>/);
+  assert.match(installHelp(), /--no-modify-path/);
 });
 
 test("PowerShell guidance escapes single quotes in target directories", () => {
   assert.strictEqual(quotePowerShell("C:\\Users\\O'Brien\\bin;"), "'C:\\Users\\O''Brien\\bin;'");
+});
+
+test("persistWindowsUserPath uses one raw-registry PowerShell transaction and a minimal environment", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  const calls = [];
+  const runner = (executable, args, options) => {
+    calls.push({ executable, args, options });
+    return { status: 0, stdout: '{"changed":true,"kind":"ExpandString","broadcasted":true}', stderr: "" };
+  };
+  const env = {
+    SystemRoot: "C:\\Windows",
+    LOCALAPPDATA: "C:\\Users\\u\\AppData\\Local",
+    TEMP: "C:\\Temp",
+    GC_TOKEN: "must-not-leak",
+    npm_config_registry: "https://untrusted.invalid",
+  };
+  const result = persistWindowsUserPath(dir, { env, runner, fileExists: () => true });
+  assert.deepStrictEqual(result, {
+    ok: true, changed: true, registryKind: "ExpandString", broadcasted: true,
+  });
+  assert.strictEqual(calls.length, 1);
+  assert.strictEqual(calls[0].executable, "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+  assert.ok(!calls[0].args.join(" ").includes(dir), "target path must not be interpolated into PowerShell code");
+  const script = calls[0].args.at(-1);
+  assert.match(script, /DoNotExpandEnvironmentNames/);
+  assert.match(script, /GetValueKind\('Path'\)/);
+  assert.match(script, /SetValue\('Path', \$next, \$kind\)/);
+  assert.match(script, /Mutex.*Global\\GitCodeCli\.UserPath/);
+  assert.match(script, /path-mutex-id/);
+  assert.match(script, /File\]::Move\(\$candidatePath, \$mutexIdPath\)/);
+  assert.match(script, /MutexSecurity/);
+  assert.match(script, /SetAccessRuleProtection\(\$true, \$false\)/);
+  assert.match(script, /LocalSystemSid/);
+  assert.match(script, /WaitOne\(30000\)/);
+  assert.match(script, /ReleaseMutex/);
+  assert.match(script, /SendMessageTimeout/);
+  assert.match(script, /broadcastStatus/);
+  assert.match(script, /catch \{ \$broadcasted = \$false \}/);
+  assert.strictEqual(calls[0].options.env.GITCODE_CLI_TARGET_DIR, dir);
+  assert.strictEqual(calls[0].options.env.GC_TOKEN, undefined);
+  assert.strictEqual(calls[0].options.env.npm_config_registry, undefined);
+});
+
+test("persistWindowsUserPath reports transaction failures without claiming success", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  const env = { SystemRoot: "C:\\Windows" };
+  const failure = persistWindowsUserPath(dir, {
+    env,
+    fileExists: () => true,
+    runner: () => ({ status: 1, stdout: "", stderr: "registry denied\nextra" }),
+  });
+  assert.deepStrictEqual(failure, { ok: false, error: "更新当前用户 PATH失败：registry denied" });
+});
+
+test("persistWindowsUserPath reports idempotence from the same registry transaction", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  let calls = 0;
+  const result = persistWindowsUserPath(dir, {
+    env: { SystemRoot: "C:\\Windows" },
+    fileExists: () => true,
+    runner: () => {
+      calls += 1;
+      return { status: 0, stdout: '{"changed":false,"kind":"String","broadcasted":true}', stderr: "" };
+    },
+  });
+  assert.deepStrictEqual(result, {
+    ok: true, changed: false, registryKind: "String", broadcasted: true,
+  });
+  assert.strictEqual(calls, 1);
+});
+
+test("persistWindowsUserPath rejects unsafe directories before spawning PowerShell", () => {
+  let called = false;
+  const result = persistWindowsUserPath("C:\\safe;C:\\attacker", {
+    env: { SystemRoot: "C:\\Windows" },
+    runner: () => { called = true; },
+  });
+  assert.strictEqual(result.ok, false);
+  assert.strictEqual(result.invalidDirectory, true);
+  assert.strictEqual(called, false);
+});
+
+test("Windows PATH guidance is explicit and Chinese for current-shell refresh", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  const guidance = windowsPathGuidance(
+    dir,
+    { modifyPath: true },
+    { ok: true, changed: true },
+    { PATH: "C:\\Old" }
+  );
+  assert.match(guidance, /已自动将 .* 置于当前用户 PATH 前面/);
+  assert.match(guidance, /当前 PowerShell\/Windows Terminal 窗口无法由安装器自动刷新 PATH/);
+  assert.match(guidance, /\$env:Path = 'C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin;' \+ \$env:Path/);
+  assert.match(guidance, /关闭全部 PowerShell\/Windows Terminal 窗口后重新打开/);
+  assert.match(guidance, /gitcode version/);
+  assert.match(guidance, /其他 pip\/npm 安装入口不会被自动删除/);
+  assert.match(guidance, /gitcode doctor install/);
+});
+
+test("Windows PATH guidance explains opt-out and persistence failure in Chinese", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  const optOut = windowsPathGuidance(dir, { modifyPath: false }, { ok: true, changed: false }, { PATH: "" });
+  assert.match(optOut, /已按 --no-modify-path 跳过持久 PATH 修改/);
+  assert.match(optOut, /编辑账户的环境变量/);
+  assert.doesNotMatch(optOut, /SetEnvironmentVariable/);
+
+  const failure = windowsPathGuidance(dir, { modifyPath: true }, { ok: false, error: "拒绝访问" }, { PATH: "" });
+  assert.match(failure, /警告：未能自动更新当前用户 PATH：拒绝访问/);
+  assert.match(failure, /编辑账户的环境变量/);
+  assert.doesNotMatch(failure, /SetEnvironmentVariable/);
+});
+
+test("Windows PATH guidance reports broadcast failure without claiming full propagation", () => {
+  const dir = "C:\\Users\\u\\AppData\\Local\\gitcode-cli\\bin";
+  const guidance = windowsPathGuidance(
+    dir,
+    { modifyPath: true },
+    { ok: true, changed: true, broadcasted: false },
+    { PATH: "C:\\Old" }
+  );
+  assert.match(guidance, /持久 User PATH 已写入/);
+  assert.match(guidance, /未能通知桌面环境/);
+  assert.match(guidance, /注销并重新登录 Windows/);
+});
+
+test("Windows PATH guidance never emits PATH commands for an unsafe directory", () => {
+  const guidance = windowsPathGuidance(
+    "C:\\safe;C:\\attacker",
+    { modifyPath: true },
+    { ok: false, error: "invalid Windows PATH directory", invalidDirectory: true },
+    { PATH: "C:\\Old" }
+  );
+  assert.match(guidance, /未生成任何 PATH 修改命令/);
+  assert.doesNotMatch(guidance, /SetEnvironmentVariable/);
+  assert.doesNotMatch(guidance, /\$env:Path/);
+  assert.match(guidance, /gitcode\.exe' version/);
 });
 
 test("install rollback restores only files touched by the current transaction", () => {

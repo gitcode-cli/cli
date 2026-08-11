@@ -18,6 +18,67 @@ const pkg = require("../package.json");
 
 const PLATFORMS_DIR = path.join(__dirname, "..", "bin", "platforms");
 const BOOTSTRAP_HELPER = path.join(__dirname, "bootstrap-update-helper.js");
+const WINDOWS_UPDATE_USER_PATH = [
+  "$ErrorActionPreference = 'Stop'",
+  "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)",
+  "$target = $env:GITCODE_CLI_TARGET_DIR",
+  "if ([string]::IsNullOrWhiteSpace($target) -or -not [IO.Path]::IsPathRooted($target) -or $target.Contains(';') -or $target.Contains([char]0)) { throw 'invalid Windows PATH directory' }",
+  "$sidObject = [Security.Principal.WindowsIdentity]::GetCurrent().User",
+  "$sid = $sidObject.Value",
+  "$stateDir = [IO.Path]::Combine($env:LOCALAPPDATA, 'gitcode-cli')",
+  "[IO.Directory]::CreateDirectory($stateDir) | Out-Null",
+  "$mutexIdPath = [IO.Path]::Combine($stateDir, 'path-mutex-id')",
+  "if (-not [IO.File]::Exists($mutexIdPath)) {",
+  "  $candidate = [Guid]::NewGuid().ToString('N')",
+  "  $candidatePath = $mutexIdPath + '.' + [Guid]::NewGuid().ToString('N') + '.tmp'",
+  "  [IO.File]::WriteAllText($candidatePath, $candidate, [Text.UTF8Encoding]::new($false))",
+  "  try { [IO.File]::Move($candidatePath, $mutexIdPath) } catch [IO.IOException] { if (-not [IO.File]::Exists($mutexIdPath)) { throw } } finally { if ([IO.File]::Exists($candidatePath)) { [IO.File]::Delete($candidatePath) } }",
+  "}",
+  "$mutexId = [IO.File]::ReadAllText($mutexIdPath).Trim()",
+  "if ($mutexId -notmatch '^[0-9a-f]{32}$') { throw 'invalid Windows PATH mutex identifier' }",
+  "$mutexSecurity = [Security.AccessControl.MutexSecurity]::new()",
+  "$mutexSecurity.SetAccessRuleProtection($true, $false)",
+  "$mutexSecurity.AddAccessRule([Security.AccessControl.MutexAccessRule]::new($sidObject, [Security.AccessControl.MutexRights]::FullControl, [Security.AccessControl.AccessControlType]::Allow))",
+  "$systemSid = [Security.Principal.SecurityIdentifier]::new([Security.Principal.WellKnownSidType]::LocalSystemSid, $null)",
+  "$mutexSecurity.AddAccessRule([Security.AccessControl.MutexAccessRule]::new($systemSid, [Security.AccessControl.MutexRights]::FullControl, [Security.AccessControl.AccessControlType]::Allow))",
+  "$createdNew = $false",
+  "$mutex = [Threading.Mutex]::new($false, ('Global\\GitCodeCli.UserPath.' + $sid + '.' + $mutexId), [ref]$createdNew, $mutexSecurity)",
+  "$mutexHeld = $false",
+  "try {",
+  "  try { $mutexHeld = $mutex.WaitOne(30000) } catch [Threading.AbandonedMutexException] { $mutexHeld = $true }",
+  "  if (-not $mutexHeld) { throw 'timed out waiting for the user PATH update lock' }",
+  "  $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)",
+  "  if ($null -eq $key) { throw 'cannot open current user Environment registry key' }",
+  "  try {",
+  "    $hasPath = $key.GetValueNames() -contains 'Path'",
+  "    $kind = if ($hasPath) { $key.GetValueKind('Path') } else { [Microsoft.Win32.RegistryValueKind]::ExpandString }",
+  "    if ($kind -ne [Microsoft.Win32.RegistryValueKind]::String -and $kind -ne [Microsoft.Win32.RegistryValueKind]::ExpandString) { throw ('unsupported user PATH registry kind: ' + $kind) }",
+  "    $current = if ($hasPath) { [string]$key.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames) } else { '' }",
+  "    function Normalize-GitCodePathEntry([string]$value) {",
+  "      if ([string]::IsNullOrWhiteSpace($value)) { return $null }",
+  "      $candidate = [Environment]::ExpandEnvironmentVariables($value.Trim().Trim([char]34))",
+  "      try { return [IO.Path]::GetFullPath($candidate).TrimEnd([char]92).ToLowerInvariant() } catch { return $candidate.TrimEnd([char]92).ToLowerInvariant() }",
+  "    }",
+  "    $wanted = Normalize-GitCodePathEntry $target",
+  "    $kept = [System.Collections.Generic.List[string]]::new()",
+  "    if ($current.Length -gt 0) { foreach ($entry in $current.Split([char]59)) { if ((Normalize-GitCodePathEntry $entry) -ne $wanted) { $kept.Add($entry) } } }",
+  "    $suffix = [string]::Join(';', $kept)",
+  "    $next = if ($suffix.Length -gt 0) { $target + ';' + $suffix } else { $target }",
+  "    $changed = $next -cne $current",
+  "    if ($changed) { $key.SetValue('Path', $next, $kind) }",
+  "  } finally { $key.Dispose() }",
+  "  $broadcasted = $true",
+  "  if ($changed) {",
+  "    try {",
+  "      Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class GitCodeEnvironmentBroadcast { [DllImport(\"user32.dll\", CharSet=CharSet.Unicode, SetLastError=true)] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint flags, uint timeout, out UIntPtr result); }'",
+  "      $broadcastResult = [UIntPtr]::Zero",
+  "      $broadcastStatus = [GitCodeEnvironmentBroadcast]::SendMessageTimeout([IntPtr]0xffff, 0x1A, [UIntPtr]::Zero, 'Environment', 0x2, 5000, [ref]$broadcastResult)",
+  "      $broadcasted = $broadcastStatus -ne [IntPtr]::Zero",
+  "    } catch { $broadcasted = $false }",
+  "  }",
+  "} finally { if ($mutexHeld) { $mutex.ReleaseMutex() }; $mutex.Dispose() }",
+  "@{ changed = [bool]$changed; kind = $kind.ToString(); broadcasted = [bool]$broadcasted } | ConvertTo-Json -Compress",
+].join("; ");
 
 function bundledBinaryPath() {
   return path.join(PLATFORMS_DIR, resolveBinaryName(process.platform, process.arch));
@@ -256,12 +317,130 @@ function dirOnPath(dir, env = process.env, isWin = process.platform === "win32")
     .some((entry) => normalizePath(entry.replace(/^"|"$/g, ""), isWin) === wanted);
 }
 
+function dirFirstOnPath(dir, env = process.env, isWin = process.platform === "win32") {
+  const delimiter = isWin ? ";" : ":";
+  const first = (env.PATH || env.Path || "")
+    .split(delimiter)
+    .map((entry) => entry.trim().replace(/^"|"$/g, ""))
+    .find(Boolean);
+  return Boolean(first && normalizePath(first, isWin) === normalizePath(dir, isWin));
+}
+
+function environmentValue(env, name) {
+  const wanted = name.toLowerCase();
+  const key = Object.keys(env).find((candidate) => candidate.toLowerCase() === wanted);
+  return key ? env[key] : "";
+}
+
+function expandWindowsEnvironment(value, env) {
+  return value.replace(/%([^%]+)%/g, (match, name) => environmentValue(env, name) || match);
+}
+
+function validateWindowsPathDirectory(dir) {
+  if (!path.win32.isAbsolute(dir) || dir.includes(";") || dir.includes("\0")) {
+    throw new Error(`invalid Windows PATH directory: ${dir}`);
+  }
+}
+
+function prependWindowsUserPath(dir, current = "", env = process.env) {
+  validateWindowsPathDirectory(dir);
+  const wanted = normalizePath(dir, true);
+  const raw = String(current);
+  const entries = raw
+    .split(";")
+    .filter((entry) => {
+      const unquoted = entry.trim().replace(/^"|"$/g, "");
+      if (!unquoted) return true;
+      return normalizePath(expandWindowsEnvironment(unquoted, env), true) !== wanted;
+    });
+  if (!raw || entries.length === 0) return dir;
+  return `${dir};${entries.join(";")}`;
+}
+
+function windowsPowerShellExecutable(env) {
+  const systemRoot = environmentValue(env, "SystemRoot") || environmentValue(env, "WINDIR");
+  if (!systemRoot || !path.win32.isAbsolute(systemRoot)) {
+    throw new Error("Windows SystemRoot is unavailable");
+  }
+  return path.win32.join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+}
+
+function windowsPowerShellEnv(env, extra = {}) {
+  const allowed = [
+    "SystemRoot", "WINDIR", "SystemDrive", "TEMP", "TMP", "USERPROFILE",
+    "HOMEDRIVE", "HOMEPATH", "LOCALAPPDATA", "APPDATA", "ProgramData", "ProgramFiles",
+  ];
+  const childEnv = {};
+  for (const name of allowed) {
+    const value = environmentValue(env, name);
+    if (value) childEnv[name] = value;
+  }
+  return { ...childEnv, ...extra };
+}
+
+function powerShellFailure(action, result) {
+  const detail = String(result.error?.message || result.stderr || `exit code ${result.status}`)
+    .trim()
+    .split(/\r?\n/, 1)[0];
+  return `${action}失败${detail ? `：${detail}` : ""}`;
+}
+
+function persistWindowsUserPath(dir, options = {}) {
+  const env = options.env || process.env;
+  const runner = options.runner || spawnSync;
+  const fileExists = options.fileExists || fs.existsSync;
+  try {
+    validateWindowsPathDirectory(dir);
+  } catch (error) {
+    return { ok: false, error: error.message, invalidDirectory: true };
+  }
+  let executable;
+  try {
+    executable = windowsPowerShellExecutable(env);
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+  if (!fileExists(executable)) {
+    return { ok: false, error: `找不到 Windows PowerShell：${executable}` };
+  }
+  const result = runner(executable, ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", WINDOWS_UPDATE_USER_PATH], {
+    encoding: "utf8",
+    windowsHide: true,
+    env: windowsPowerShellEnv(env, { GITCODE_CLI_TARGET_DIR: dir }),
+  });
+  if (result.error || result.status !== 0) {
+    return { ok: false, error: powerShellFailure("更新当前用户 PATH", result) };
+  }
+  try {
+    const parsed = JSON.parse(String(result.stdout || "").trim());
+    if (typeof parsed.changed !== "boolean" || typeof parsed.broadcasted !== "boolean" ||
+        !["String", "ExpandString"].includes(parsed.kind)) {
+      throw new Error("unexpected PowerShell result");
+    }
+    return {
+      ok: true,
+      changed: parsed.changed,
+      registryKind: parsed.kind,
+      broadcasted: parsed.broadcasted,
+    };
+  } catch (error) {
+    return { ok: false, error: `解析 Windows PATH 更新结果失败：${error.message}` };
+  }
+}
+
 function parseInstallArgs(args) {
-  const options = { targetDir: "" };
+  const options = { targetDir: "", modifyPath: true };
   for (let index = 0; index < args.length; index += 1) {
-    if (args[index] === "--target-dir" && args[index + 1]) {
+    if (args[index] === "--target-dir") {
+      if (!args[index + 1] || args[index + 1].startsWith("-")) {
+        throw new Error("--target-dir requires a directory value");
+      }
       options.targetDir = path.resolve(args[index + 1]);
       index += 1;
+      continue;
+    }
+    if (args[index] === "--no-modify-path") {
+      options.modifyPath = false;
       continue;
     }
     throw new Error(`unknown install argument: ${args[index]}`);
@@ -278,13 +457,55 @@ function installHelp() {
     "Install bundled gc and gitcode binaries outside the npm package directory.",
     "",
     "Usage:",
-    "  gitcode install [--target-dir <directory>]",
+    "  gitcode install [--target-dir <directory>] [--no-modify-path]",
     "",
     "Flags:",
     "  --target-dir <directory>  Install into an explicit directory",
+    "  --no-modify-path           Do not update the Windows user PATH",
     "  -h, --help                Show this help",
     "",
   ].join("\n");
+}
+
+function windowsPathGuidance(dir, options, result, env = process.env) {
+  const lines = ["", "Windows PATH 配置："];
+  try {
+    validateWindowsPathDirectory(dir);
+  } catch {
+    lines.push("  警告：目标目录包含不能安全加入 Windows PATH 的字符，未生成任何 PATH 修改命令。");
+    lines.push("  请重新安装到不含分号或空字符的绝对目录，或直接使用已安装程序：");
+    lines.push(`    & ${quotePowerShell(path.join(dir, "gitcode.exe"))} version`);
+    lines.push("  其他 pip/npm 安装入口不会被自动删除；如需清理，请先运行 gitcode doctor install 确认来源。");
+    return `${lines.join("\n")}\n`;
+  }
+  if (!options.modifyPath) {
+    lines.push("  已按 --no-modify-path 跳过持久 PATH 修改。");
+  } else if (result.ok && result.changed) {
+    lines.push(`  已自动将 ${dir} 置于当前用户 PATH 前面。`);
+  } else if (result.ok) {
+    lines.push(`  ${dir} 已位于当前用户 PATH 前面。`);
+  } else {
+    lines.push(`  警告：未能自动更新当前用户 PATH：${result.error}`);
+  }
+
+  if (!options.modifyPath || !result.ok) {
+    lines.push(`  如需持久生效，请在 Windows“编辑账户的环境变量”中将 ${dir} 移到用户 Path 第一位。`);
+  }
+  if (result.ok && result.changed && result.broadcasted === false) {
+    lines.push("  警告：持久 User PATH 已写入，但未能通知桌面环境；请注销并重新登录 Windows 后再验证。");
+  }
+  if (!dirFirstOnPath(dir, env, true)) {
+    lines.push("  注意：当前 PowerShell/Windows Terminal 窗口无法由安装器自动刷新 PATH。");
+    lines.push("  请复制执行下面的命令，让当前窗口立即使用新版本：");
+    lines.push(`    $env:Path = ${quotePowerShell(`${dir};`)} + $env:Path`);
+    lines.push("  然后验证：");
+    lines.push("    gitcode version");
+    lines.push("  或者关闭全部 PowerShell/Windows Terminal 窗口后重新打开，再运行 gitcode version。");
+  } else {
+    lines.push("  请运行 gitcode version 验证当前版本。");
+  }
+  lines.push("  其他 pip/npm 安装入口不会被自动删除；如需清理，请先运行 gitcode doctor install 确认来源。");
+  return `${lines.join("\n")}\n`;
 }
 
 async function runInstall(args = []) {
@@ -363,6 +584,9 @@ async function runInstall(args = []) {
 
   // Completions (posix only; Windows shell completion differs).
   const completions = isWin ? [] : installCompletions(dst, home);
+  const windowsPathResult = isWin && options.modifyPath
+    ? persistWindowsUserPath(dir)
+    : { ok: true, changed: false };
 
   process.stdout.write(`Installed gc and gitcode to ${dir}\n`);
   process.stdout.write(`  ${versionLine}\n`);
@@ -375,16 +599,9 @@ async function runInstall(args = []) {
     process.stdout.write(`Shell completions: skipped (none writable). Run "gc completion bash|zsh|fish" manually.\n`);
   }
 
-  // PATH hint.
+  // PATH registration and guidance.
   if (isWin) {
-    if (!dirOnPath(dir)) {
-      process.stdout.write(
-          `\nAdd ${dir} to your user PATH, then reopen terminals. PowerShell example:\n` +
-          `  $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')\n` +
-          `  [Environment]::SetEnvironmentVariable('Path', ${quotePowerShell(`${dir};`)} + $userPath, 'User')\n` +
-          `  $env:Path = ${quotePowerShell(`${dir};`)} + $env:Path\n`
-      );
-    }
+    process.stdout.write(windowsPathGuidance(dir, options, windowsPathResult));
   } else if (dir === path.join(home, ".local", "bin")) {
     if (!dirOnPath(dir)) {
       process.stdout.write(
@@ -397,6 +614,7 @@ async function runInstall(args = []) {
 }
 
 module.exports = {
-  runInstall, chooseGlobalBinDir, commitTransaction, completionTarget, dirOnPath,
-  installHelp, parseInstallArgs, quotePowerShell, replacePath, rollbackTransaction,
+  runInstall, chooseGlobalBinDir, commitTransaction, completionTarget, dirFirstOnPath, dirOnPath,
+  installHelp, parseInstallArgs, persistWindowsUserPath, prependWindowsUserPath,
+  quotePowerShell, replacePath, rollbackTransaction, validateWindowsPathDirectory, windowsPathGuidance,
 };

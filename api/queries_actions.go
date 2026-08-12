@@ -834,7 +834,7 @@ func DispatchActionsWorkflow(client *Client, owner, repo, workflowID string, req
 		return nil, fmt.Errorf("failed to marshal dispatch request: %w", err)
 	}
 
-	resp, err := client.RawREST("POST", endpoint, bytes.NewReader(body), map[string]string{"Content-Type": "application/json"})
+	resp, err := client.RawREST("POST", endpoint, bytes.NewReader(body), nil)
 	if err != nil {
 		return nil, err
 	}

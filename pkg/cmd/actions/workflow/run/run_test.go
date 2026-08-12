@@ -139,36 +139,13 @@ func TestRunRunError(t *testing.T) {
 
 func TestRunRunSecretScan(t *testing.T) {
 	t.Setenv("GC_TOKEN", "leaked-secret-xyz")
-	io, _, _, _ := iostreams.Test()
-	opts := &RunOptions{
-		IO: io,
-		HttpClient: func() (*http.Client, error) {
-			return &http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
-				t.Fatal("HTTP request should not be made when secret is detected")
-				return nil, nil
-			})}, nil
-		},
-		Repository: "owner/repo",
-		WorkflowID: "wf-1",
-		Ref:        "main",
-		RawFields:  []string{"token=leaked-secret-xyz"},
-	}
+	f := cmdutil.TestFactory()
+	cmd := NewCmdRun(f, nil)
+	cmd.SetArgs([]string{"wf-1", "--ref", "main", "-f", "token=leaked-secret-xyz", "-R", "owner/repo"})
 
-	opts.Fields = make(map[string]string)
-	for _, f := range opts.RawFields {
-		parts := strings.SplitN(f, "=", 2)
-		if len(parts) == 2 && parts[0] != "" {
-			if err := cmdutil.ScanContentForSecrets(parts[1]); err != nil {
-				// Expected: secret detected
-				return
-			}
-			opts.Fields[parts[0]] = parts[1]
-		}
-	}
-
-	err := runRun(opts)
+	err := cmd.Execute()
 	if err == nil {
-		t.Fatal("error = nil, want error for secret in field value")
+		t.Fatal("Execute() error = nil, want error for secret in field value")
 	}
 }
 

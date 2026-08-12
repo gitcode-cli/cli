@@ -113,7 +113,6 @@ docker compose up gc
 - `actions artifact list`
 - `actions artifact view`
 - `actions workflow list`
-- `actions workflow run`
 - `search repos`
 - `search issues`
 - `search users`
@@ -150,6 +149,7 @@ docker compose up gc
 - `release create`
 - `release edit`
 - `release upload`
+- `actions workflow run`
 - `repo branch create`
 - `repo edit`
 - `repo pr-settings update`

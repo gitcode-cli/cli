@@ -1026,3 +1026,107 @@ func validateResponseJSON() string {
 		]
 	}`
 }
+
+func TestListActionsWorkflowsBuildsV8Path(t *testing.T) {
+	var gotPath string
+	var gotAuth string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		if req.URL.RawQuery != "" {
+			gotPath += "?" + req.URL.RawQuery
+		}
+		gotAuth = req.Header.Get("Authorization")
+		return authTestResponse(http.StatusOK, `{"total_count":0,"workflows":[]}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	resp, err := ListActionsWorkflows(client, "owner", "repo", 2, 50)
+	if err != nil {
+		t.Fatalf("ListActionsWorkflows() error = %v", err)
+	}
+	if resp.TotalCount != 0 {
+		t.Fatalf("TotalCount = %d, want 0", resp.TotalCount)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+
+	wantPrefix := "/api/v8/repos/owner/repo/actions/workflows?"
+	if !strings.HasPrefix(gotPath, wantPrefix) {
+		t.Fatalf("path = %q, want prefix %q", gotPath, wantPrefix)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Fatalf("Authorization = %q, want Bearer test-token", gotAuth)
+	}
+
+	parsed, err := url.Parse(gotPath)
+	if err != nil {
+		t.Fatalf("url.Parse() error = %v", err)
+	}
+	q := parsed.Query()
+	if q.Get("per_page") != "50" {
+		t.Fatalf("per_page = %q, want 50", q.Get("per_page"))
+	}
+	if q.Get("page") != "2" {
+		t.Fatalf("page = %q, want 2", q.Get("page"))
+	}
+}
+
+func TestListActionsWorkflowsParsesResponse(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `{
+			"total_count": 2,
+			"workflows": [
+				{"workflow_id":"wf-1","name":"CI","file_path":".gitcode/workflows/ci.yml","state":"active"},
+				{"workflow_id":"wf-2","name":"Release","file_path":".gitcode/workflows/release.yml","state":"disabled"}
+			]
+		}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	resp, err := ListActionsWorkflows(client, "owner", "repo", 0, 20)
+	if err != nil {
+		t.Fatalf("ListActionsWorkflows() error = %v", err)
+	}
+	if resp.TotalCount != 2 {
+		t.Fatalf("TotalCount = %d, want 2", resp.TotalCount)
+	}
+	if len(resp.Workflows) != 2 {
+		t.Fatalf("len(Workflows) = %d, want 2", len(resp.Workflows))
+	}
+	if resp.Workflows[0].Name != "CI" {
+		t.Fatalf("Workflows[0].Name = %q, want CI", resp.Workflows[0].Name)
+	}
+	if resp.Workflows[1].State != "disabled" {
+		t.Fatalf("Workflows[1].State = %q, want disabled", resp.Workflows[1].State)
+	}
+}
+
+func TestListActionsWorkflowsNullWorkflows(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusOK, `{"total_count":0,"workflows":null}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	resp, err := ListActionsWorkflows(client, "owner", "repo", 0, 20)
+	if err != nil {
+		t.Fatalf("ListActionsWorkflows() error = %v", err)
+	}
+	if resp.TotalCount != 0 {
+		t.Fatalf("TotalCount = %d, want 0", resp.TotalCount)
+	}
+	if len(resp.Workflows) != 0 {
+		t.Fatalf("len(Workflows) = %d, want 0", len(resp.Workflows))
+	}
+}
+
+func TestListActionsWorkflowsError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"not found"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := ListActionsWorkflows(client, "owner", "repo", 0, 20)
+	if err == nil {
+		t.Fatal("ListActionsWorkflows() error = nil, want error")
+	}
+}

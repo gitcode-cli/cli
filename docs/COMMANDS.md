@@ -105,6 +105,14 @@ docker compose up gc
 - `repo branch list`
 - `repo branch-protection list`
 - `repo pr-settings view`
+- `actions run list`
+- `actions run view`
+- `actions run watch`
+- `actions job list`
+- `actions job view`
+- `actions artifact list`
+- `actions artifact view`
+- `actions workflow list`
 - `search repos`
 - `search issues`
 - `search users`
@@ -2445,6 +2453,24 @@ gc actions artifact delete <artifact-id> -R owner/repo --yes --json
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如缺少 `<artifact-id>`，或非 TTY 未给 `--yes`，或 artifact_id 格式不合法 → HTTP 400）；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。
 
 ---
+
+### actions workflow list - 列举仓库流水线
+
+列出仓库中的 Actions 流水线（workflow）文件。
+
+```bash
+gc actions workflow list -R owner/repo
+
+# JSON 输出
+gc actions workflow list -R owner/repo --json
+```
+
+说明：
+- 调用 GET /api/v8/repos/{owner}/{repo}/actions/workflows。
+- 响应含 `workflow_id`、`file_path`、`name`、`state` 字段。
+- `--json` 输出 workflow 数组到 stdout。
+- `--limit`/`--page` 分页。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 仓库不存在；`4` 认证错误。
 
 ### actions yaml validate - 校验 Workflow YAML
 

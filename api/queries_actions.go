@@ -773,3 +773,39 @@ func ListRepoSharedRunnerSets(client *Client, owner, repo string, opts *ListRunn
 	}
 	return &result, nil
 }
+
+// Workflow represents a GitCode Actions workflow.
+type Workflow struct {
+	WorkflowID string `json:"workflow_id"`
+	FilePath   string `json:"file_path"`
+	Name       string `json:"name"`
+	State      string `json:"state"`
+}
+
+// WorkflowsResponse represents the response from listing workflows.
+type WorkflowsResponse struct {
+	TotalCount int        `json:"total_count"`
+	Workflows  []Workflow `json:"workflows"`
+}
+
+// ListActionsWorkflows lists all workflows in a repository.
+//
+// It calls GET /api/v8/repos/{owner}/{repo}/actions/workflows.
+func ListActionsWorkflows(client *Client, owner, repo string, page, perPage int) (*WorkflowsResponse, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/actions/workflows"
+	endpoint += newQueryBuilder().
+		SetInt("per_page", perPage).
+		SetInt("page", page).
+		String()
+
+	resp, err := client.RawREST("GET", endpoint, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result WorkflowsResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse workflows response: %w", err)
+	}
+	return &result, nil
+}

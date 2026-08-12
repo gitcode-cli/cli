@@ -19,31 +19,38 @@ var npmGlobalPattern = regexp.MustCompile(`npm install -g[^` + "`\"\r\n" + `]*@g
 func TestInstallDocsUseCanonicalNPMBootstrap(t *testing.T) {
 	version := strings.TrimSpace(readRepositoryFile(t, "VERSION"))
 	currentReleasePath := filepath.Join("docs", "releases", "v"+version+".md")
-	paths := []string{
+	userPaths := []string{
 		"README.md",
 		filepath.Join("npm", "README.md"),
 		filepath.Join("docs", "INTRODUCTION.md"),
 		filepath.Join("docs", "PACKAGING.md"),
 		filepath.Join("docs", "AI-GUIDE.md"),
 		currentReleasePath,
-		filepath.Join("spec", "delivery", "release-process.md"),
 	}
-	for _, relativePath := range paths {
+	for _, relativePath := range userPaths {
 		content := readRepositoryFile(t, relativePath)
-		if !strings.Contains(content, canonicalNPMBootstrap) {
-			t.Errorf("%s does not contain canonical npm bootstrap %q", relativePath, canonicalNPMBootstrap)
+		shortIndex := strings.Index(content, shortNPMBootstrap)
+		hardenedIndex := strings.Index(content, canonicalNPMBootstrap)
+		if shortIndex < 0 || hardenedIndex < 0 || shortIndex > hardenedIndex {
+			t.Errorf("%s must show the short npm bootstrap before the hardened form", relativePath)
 		}
-		assertNPMInstallLinesAreCanonical(t, relativePath, content)
+		assertNPMInstallLinesAreCanonical(t, relativePath, content, true)
 	}
-	assertNPMInstallLinesAreCanonical(t, filepath.Join("npm", "bin", "gc.js"), readRepositoryFile(t, filepath.Join("npm", "bin", "gc.js")))
+	securityPath := filepath.Join("spec", "delivery", "release-process.md")
+	content := readRepositoryFile(t, securityPath)
+	if !strings.Contains(content, canonicalNPMBootstrap) {
+		t.Errorf("%s does not contain canonical npm bootstrap %q", securityPath, canonicalNPMBootstrap)
+	}
+	assertNPMInstallLinesAreCanonical(t, securityPath, content, false)
+	assertNPMInstallLinesAreCanonical(t, filepath.Join("npm", "bin", "gc.js"), readRepositoryFile(t, filepath.Join("npm", "bin", "gc.js")), false)
 }
 
 func TestREADMEPrioritizesBootstrapAndExplainsLocalInstall(t *testing.T) {
 	content := readRepositoryFile(t, "README.md")
-	bootstrap := strings.Index(content, canonicalNPMBootstrap)
+	bootstrap := strings.Index(content, shortNPMBootstrap)
 	sourceBuild := strings.Index(content, "### 从源码构建")
 	if bootstrap < 0 || sourceBuild < 0 || bootstrap > sourceBuild {
-		t.Fatal("README must show the canonical npm bootstrap before source installation")
+		t.Fatal("README must show the short npm bootstrap before source installation")
 	}
 	if !strings.Contains(content, "`npm i @gitcode-cli/cli` 或 `npm install @gitcode-cli/cli`") {
 		t.Fatal("README must distinguish project-local npm dependencies from CLI installation")
@@ -71,16 +78,15 @@ func TestCurrentReleaseNotesProvideShortAndHardenedBootstrap(t *testing.T) {
 	}
 }
 
-func assertNPMInstallLinesAreCanonical(t *testing.T, path, content string) {
+func assertNPMInstallLinesAreCanonical(t *testing.T, path, content string, allowShort bool) {
 	t.Helper()
 	version := strings.TrimSpace(readRepositoryFile(t, "VERSION"))
-	currentReleasePath := filepath.Join("docs", "releases", "v"+version+".md")
 	pinned := "npx " + npmSecurityFlags + " @gitcode-cli/cli@" + version + " install"
 	for _, command := range npxInstallPattern.FindAllString(content, -1) {
 		if command == canonicalNPMBootstrap || command == pinned || strings.HasPrefix(command, canonicalNPMBootstrap+" --target-dir ") {
 			continue
 		}
-		if filepath.Clean(path) == filepath.Clean(currentReleasePath) && command == shortNPMBootstrap {
+		if allowShort && command == shortNPMBootstrap {
 			continue
 		}
 		t.Errorf("%s contains non-canonical npx install command %q", path, command)

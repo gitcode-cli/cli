@@ -17,8 +17,14 @@ GitCode CLI 通过多个官方源分发：Linux/macOS 支持 x64/ARM64，Windows
 ```bash
 # 推荐：npm 一行 bootstrap（https://www.npmjs.com/package/@gitcode-cli/cli）
 # 安装与升级到最新稳定版是同一条命令
-npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
+npx -y @gitcode-cli/cli@latest install
 gitcode version
+```
+
+短命令适合用户主目录等可信环境，会继承当前目录与用户的 npm 配置。CI、审计、不可信项目目录或自定义 npm registry 环境请使用完整加固命令：
+
+```bash
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
 ```
 
 不要使用 `npm i @gitcode-cli/cli` 安装全局 CLI；它只会添加当前项目依赖，不会更新 PATH 中已有的 `gitcode`。需要 npm global prefix 管理入口时，同样固定官方 registry 并禁用 lifecycle scripts。
@@ -33,7 +39,7 @@ npm 安装默认使用 `notify` 模式：普通命令最多每 24 小时在后�
 
 | 渠道 | 安装 / 升级 | 地址 |
 |------|-------------|------|
-| npm bootstrap（Windows、Node/AI 环境首选） | `npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install` | https://www.npmjs.com/package/@gitcode-cli/cli |
+| npm bootstrap（Windows、Node/AI 环境首选） | `npx -y @gitcode-cli/cli@latest install` | https://www.npmjs.com/package/@gitcode-cli/cli |
 | PyPI（隔离安装） | `pipx install gitcode-cli` / `pipx upgrade gitcode-cli`（或仅在已激活 venv 中使用 pip） | https://pypi.org/project/gitcode-cli/ |
 | Homebrew (macOS/Linux) | `brew install gitcode-cli/homebrew-tap/gc` / `brew upgrade gc` | [homebrew-tap](https://github.com/gitcode-cli/homebrew-tap) |
 | GitCode Release | 从归档下载 wheel/DEB/RPM/二进制 | https://gitcode.com/gitcode-cli/cli/releases |

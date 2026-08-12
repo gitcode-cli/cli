@@ -45,8 +45,14 @@ GitCode CLI 把仓库、Issue、PR、Release 和 Actions 带回终端，让开�
 已安装 Node.js/npm 时，安装或升级 CLI 的首选入口是：
 
 ```bash
-npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
+npx -y @gitcode-cli/cli@latest install
 gitcode version
+```
+
+短命令适合用户主目录等可信环境，会继承当前目录与用户的 npm 配置。CI、审计、不可信项目目录或自定义 npm registry 环境请使用完整加固命令：
+
+```bash
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
 ```
 
 CI、审计或版本复现可固定版本：

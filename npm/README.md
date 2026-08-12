@@ -9,6 +9,12 @@ GitCode CLI (`gc` / `gitcode`) is the community-developed, MIT-licensed command 
 ### One-line bootstrap (no global npm install)
 
 ```bash
+npx -y @gitcode-cli/cli@latest install
+```
+
+The short command is intended for trusted user environments and inherits the current npm configuration. For CI, audits, untrusted project directories, custom registries, or a custom target directory, use the hardened form:
+
+```bash
 npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
 npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install --target-dir /custom/bin
 ```

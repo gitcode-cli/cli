@@ -15,9 +15,15 @@
 **npm（Windows 和跨平台 Node 环境推荐）:**
 
 ```bash
-npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
+npx -y @gitcode-cli/cli@latest install
 gitcode version
 gitcode doctor install --json
+```
+
+上面的短命令适合可信的用户环境。CI、不可信项目目录或自定义 npm registry 环境请固定官方源并禁用 lifecycle scripts：
+
+```bash
+npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
 ```
 
 不要使用 `npm i @gitcode-cli/cli` 安装全局 CLI；它只添加当前项目依赖，不会替换 PATH 中已有的 `gitcode`。需要 npm global prefix 管理入口时，同样固定官方 registry 并禁用 lifecycle scripts。

@@ -275,6 +275,10 @@ shell 补全（bash/zsh/fish）随安装自动配置。formula 由 GoReleaser �
 
 首选 bootstrap 安装二进制；Linux/macOS 同时配置补全，Windows 跳过补全：
 
+    npx -y @gitcode-cli/cli@latest install
+
+CI、审计、不可信项目目录或自定义 npm registry 环境使用完整加固命令：
+
     npx --yes --ignore-scripts --registry=https://registry.npmjs.org --@gitcode-cli:registry=https://registry.npmjs.org @gitcode-cli/cli@latest install
 
 备选方式由 npm global prefix 管理入口：

@@ -23,7 +23,7 @@ gitcode version
 
 不要使用 `npm i @gitcode-cli/cli` 安装全局 CLI；它只会添加当前项目依赖，不会更新 PATH 中已有的 `gitcode`。需要 npm global prefix 管理入口时，同样固定官方 registry 并禁用 lifecycle scripts。
 
-Windows 上，npm bootstrap 会在用户显式执行 `install` 后，将默认安装目录 `%LOCALAPPDATA%\gitcode-cli\bin` 置于持久 User PATH 前面并去重；不修改 Machine PATH，也不会删除 pip、旧 npm 等其他渠道的入口。如不希望安装器修改 User PATH，可追加 `--no-modify-path`。`npx` 子进程无法刷新已经打开的 PowerShell，安装完成后请按中文提示执行当前窗口的 `$env:Path` 刷新命令，或关闭全部 PowerShell/Windows Terminal 后重新打开，再运行 `gitcode version`。
+Windows 上，npm bootstrap 会在用户显式执行 `install` 后，将安装器输出的默认用户级安装目录置于持久 User PATH 前面并去重；不修改 Machine PATH，也不会删除 pip、旧 npm 等其他渠道的入口。如不希望安装器修改 User PATH，可追加 `--no-modify-path`。`npx` 子进程无法刷新已经打开的 PowerShell，安装完成后请按中文提示中的绝对路径执行当前窗口 `$env:Path` 刷新命令，或关闭全部 PowerShell/Windows Terminal 后重新打开，再运行 `gitcode version`。
 
 若仍显示旧版本，先运行 `gitcode doctor install` 检查实际命中的入口与 PATH 候选，再由你决定调整 PATH、升级原渠道或卸载旧渠道；CLI 不会代替用户调用其他包管理器。显式使用 `--target-dir` 会替换该目录内同名的常规 `gc` / `gitcode` 文件，不要将它指向 Python Scripts、npm prefix 等由其他包管理器持有的目录。完整行为见[命令手册的安装诊断、配置与更新章节](./COMMANDS.md#安装诊断配置与更新)。
 

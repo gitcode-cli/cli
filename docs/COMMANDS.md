@@ -113,6 +113,7 @@ docker compose up gc
 - `actions artifact list`
 - `actions artifact view`
 - `actions workflow list`
+- `actions workflow run`
 - `search repos`
 - `search issues`
 - `search users`
@@ -2471,6 +2472,31 @@ gc actions workflow list -R owner/repo --json
 - `--json` 输出 workflow 数组到 stdout。
 - `--limit`/`--page` 分页。
 - 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 仓库不存在；`4` 认证错误。
+
+### actions workflow run - 手动触发流水线
+
+手动触发 workflow_dispatch 运行。workflow_id 可为 ID 或带 yml/yaml 后缀的文件名。
+
+```bash
+# 通过 ID 触发
+gc actions workflow run wf-1 -R owner/repo --ref main
+
+# 通过文件名触发
+gc actions workflow run ci.yml -R owner/repo --ref main
+
+# 带自定义参数
+gc actions workflow run ci.yml -R owner/repo --ref main -f key1=value1 -f key2=value2
+
+# JSON 输出（返回 workflow_run_id）
+gc actions workflow run ci.yml -R owner/repo --ref main --json
+```
+
+说明：
+- 调用 POST /api/v8/repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches。
+- `--ref`（必填）：分支名或 tag 名。
+- `-f`/`--field`：自定义参数 key=value，可多次传入。值经 secret 扫描。
+- `--json` 输出 `{workflow_id, workflow_run_id}`。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误（缺 --ref）；`3` 仓库/workflow 不存在；`4` 认证错误。
 
 ### actions yaml validate - 校验 Workflow YAML
 

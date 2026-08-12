@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/workflow/list"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/actions/workflow/run"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
 
@@ -24,6 +25,7 @@ func NewCmdWorkflow(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(list.NewCmdList(f, nil))
+	cmd.AddCommand(run.NewCmdRun(f, nil))
 
 	return cmd
 }

@@ -809,3 +809,39 @@ func ListActionsWorkflows(client *Client, owner, repo string, page, perPage int)
 	}
 	return &result, nil
 }
+
+// DispatchWorkflowRequest is the request body for triggering a workflow run.
+type DispatchWorkflowRequest struct {
+	Ref    string            `json:"ref"`
+	Inputs map[string]string `json:"inputs"`
+}
+
+// DispatchWorkflowResponse represents the response from triggering a workflow run.
+type DispatchWorkflowResponse struct {
+	WorkflowID    string `json:"workflow_id"`
+	WorkflowRunID string `json:"workflow_run_id"`
+}
+
+// DispatchActionsWorkflow triggers a workflow_dispatch run for a workflow.
+//
+// It calls POST /api/v8/repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches.
+func DispatchActionsWorkflow(client *Client, owner, repo, workflowID string, req *DispatchWorkflowRequest) (*DispatchWorkflowResponse, error) {
+	endpoint := "/api/v8/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) +
+		"/actions/workflows/" + url.PathEscape(workflowID) + "/dispatches"
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal dispatch request: %w", err)
+	}
+
+	resp, err := client.RawREST("POST", endpoint, bytes.NewReader(body), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var result DispatchWorkflowResponse
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse dispatch response: %w", err)
+	}
+	return &result, nil
+}

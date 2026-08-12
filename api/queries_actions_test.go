@@ -1130,3 +1130,47 @@ func TestListActionsWorkflowsError(t *testing.T) {
 		t.Fatal("ListActionsWorkflows() error = nil, want error")
 	}
 }
+
+func TestDispatchActionsWorkflowBuildsPath(t *testing.T) {
+	var gotPath string
+	var gotMethod string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotMethod = req.Method
+		return authTestResponse(http.StatusOK, `{"workflow_id":"wf-1","workflow_run_id":"run-1"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	result, err := DispatchActionsWorkflow(client, "owner", "repo", "ci.yml", &DispatchWorkflowRequest{
+		Ref:    "main",
+		Inputs: map[string]string{"key": "value"},
+	})
+	if err != nil {
+		t.Fatalf("DispatchActionsWorkflow() error = %v", err)
+	}
+	if result.WorkflowID != "wf-1" || result.WorkflowRunID != "run-1" {
+		t.Fatalf("result = %+v, want {wf-1 run-1}", result)
+	}
+
+	assertNoAccessTokenQuery(t, gotPath)
+
+	wantPath := "/api/v8/repos/owner/repo/actions/workflows/ci.yml/dispatches"
+	if gotPath != wantPath {
+		t.Fatalf("path = %q, want %q", gotPath, wantPath)
+	}
+	if gotMethod != "POST" {
+		t.Fatalf("method = %q, want POST", gotMethod)
+	}
+}
+
+func TestDispatchActionsWorkflowError(t *testing.T) {
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		return authTestResponse(http.StatusNotFound, `{"message":"workflow not found"}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := DispatchActionsWorkflow(client, "owner", "repo", "missing", &DispatchWorkflowRequest{Ref: "main"})
+	if err == nil {
+		t.Fatal("DispatchActionsWorkflow() error = nil, want error")
+	}
+}

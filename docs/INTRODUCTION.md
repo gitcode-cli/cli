@@ -23,6 +23,10 @@ gitcode version
 
 不要使用 `npm i @gitcode-cli/cli` 安装全局 CLI；它只会添加当前项目依赖，不会更新 PATH 中已有的 `gitcode`。需要 npm global prefix 管理入口时，同样固定官方 registry 并禁用 lifecycle scripts。
 
+Windows 上，npm bootstrap 会在用户显式执行 `install` 后，将默认安装目录 `%LOCALAPPDATA%\gitcode-cli\bin` 置于持久 User PATH 前面并去重；不修改 Machine PATH，也不会删除 pip、旧 npm 等其他渠道的入口。如不希望安装器修改 User PATH，可追加 `--no-modify-path`。`npx` 子进程无法刷新已经打开的 PowerShell，安装完成后请按中文提示执行当前窗口的 `$env:Path` 刷新命令，或关闭全部 PowerShell/Windows Terminal 后重新打开，再运行 `gitcode version`。
+
+若仍显示旧版本，先运行 `gitcode doctor install` 检查实际命中的入口与 PATH 候选，再由你决定调整 PATH、升级原渠道或卸载旧渠道；CLI 不会代替用户调用其他包管理器。显式使用 `--target-dir` 会替换该目录内同名的常规 `gc` / `gitcode` 文件，不要将它指向 Python Scripts、npm prefix 等由其他包管理器持有的目录。完整行为见[命令手册的安装诊断、配置与更新章节](./COMMANDS.md#安装诊断配置与更新)。
+
 npm 安装默认使用 `notify` 模式：普通命令最多每 24 小时在后台连接官方 npm registry 检查一次 stable 新版本，只提示、不自动安装。需要升级时显式运行 `gitcode update`；只有主动执行 `gitcode config set update.mode auto` 才会自动应用，也可用 `update.mode off` 禁用后台检查。详见[命令手册的更新策略](./COMMANDS.md#gitcode-update)。
 
 其他官方渠道：
@@ -91,7 +95,7 @@ cp -R skills/gitcode-issue-triage ~/.claude/skills/
 
 > 「把这个仓库的 open issue 分诊一遍：打标签、标重复、给结论」
 > 「评审 PR #N：读 diff、按项目规范做工程评审、提行内意见」
-> 「准备并发布 v0.10.4：核 tag、生成 release notes、走发布流程」
+> 「准备并发布 vX.Y.Z：核 tag、生成 release notes、走发布流程」
 
 AI 自动调用 `gitcode issue list/label`、`gitcode pr view/diff`、`gitcode release create/upload` 等，把结构化结果与证据回给你。你审结论，不用逐页点 GitCode。
 
@@ -166,7 +170,7 @@ AI 跑 `gitcode issue list --json --paginate`，分类统计，按影响/紧迫�
 AI 跑 `gitcode pr view/diff`，读 `spec/foundations/*`，跨代码/安全/测试/文档四角色出结构化评审，直接发到 PR 评论。
 
 **样例 5 — 端到端发布**
-> 「准备并发布 v0.10.4：写 release notes、核 tag、走 issue→PR→CI→merge→release 全流程」
+> 「准备并发布 vX.Y.Z：写 release notes、核 tag、走 issue→PR→CI→merge→release 全流程」
 
 AI 创建发布准备 PR → CI 通过 → 合入 → 触发 release workflow → 同步 GitCode Release，全程你只在危险动作处 `--yes` 确认，最后它把各平台验证结果汇总给你。
 

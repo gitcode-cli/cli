@@ -103,7 +103,9 @@ func setupGitRun(opts *SetupGitOptions) error {
 		runGitConfig = defaultRunGitConfig
 	}
 
-	// Idempotent: skip if the helper entry already exists.
+	// Idempotent: skip if the helper entry already exists. `git config
+	// --get-all` exits 1 when the key is absent (expected on first run);
+	// real exec errors surface at the --add call below.
 	existing, _ := runGitConfig("--global", "--get-all", configKey)
 	if hasHelperValue(existing, helperValue) {
 		fmt.Fprintf(opts.IO.Out, "%s Credential helper already configured for %s\n", opts.IO.ColorScheme().SuccessIcon(), opts.Hostname)

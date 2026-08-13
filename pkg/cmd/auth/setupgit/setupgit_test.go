@@ -1,6 +1,7 @@
 package setupgit
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -154,6 +155,61 @@ func TestSetupGitRunAppendsWhenDifferentHelperExists(t *testing.T) {
 	}
 	if len(calls) != 2 {
 		t.Fatalf("expected get-all + --add, got %d calls", len(calls))
+	}
+}
+
+func TestSetupGitRunConfigErrorReturnsError(t *testing.T) {
+	f := cmdutil.TestFactory()
+	f.IOStreams.Out = &strings.Builder{}
+	opts := &SetupGitOptions{
+		IO: f.IOStreams,
+		Config: func() (config.Config, error) {
+			return nil, errors.New("config boom")
+		},
+	}
+	err := setupGitRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "failed to read config") {
+		t.Fatalf("err = %v, want failed to read config", err)
+	}
+}
+
+func TestSetupGitRunResolveExecutableErrorReturnsError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	f := cmdutil.TestFactory()
+	f.IOStreams.Out = &strings.Builder{}
+	opts := &SetupGitOptions{
+		IO:       f.IOStreams,
+		Hostname: "gitcode.com",
+		Config:   func() (config.Config, error) { return config.New(), nil },
+		resolveExecutable: func() (string, error) {
+			return "", errors.New("exec boom")
+		},
+	}
+	err := setupGitRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "failed to resolve gc executable path") {
+		t.Fatalf("err = %v, want resolve error", err)
+	}
+}
+
+func TestSetupGitRunAddFailsReturnsError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
+	f := cmdutil.TestFactory()
+	f.IOStreams.Out = &strings.Builder{}
+	opts := &SetupGitOptions{
+		IO:       f.IOStreams,
+		Hostname: "gitcode.com",
+		Config:   func() (config.Config, error) { return config.New(), nil },
+		runGitConfig: func(args ...string) (string, error) {
+			if args[1] == "--get-all" {
+				return "", nil
+			}
+			return "", errors.New("add boom")
+		},
+		resolveExecutable: func() (string, error) { return "/usr/local/bin/gc", nil },
+	}
+	err := setupGitRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "failed to configure git credential helper") {
+		t.Fatalf("err = %v, want configure error", err)
 	}
 }
 

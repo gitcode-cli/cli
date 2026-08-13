@@ -35,6 +35,8 @@ func TestNewCmdEdit(t *testing.T) {
 }
 
 func TestEditRunUpdatesNameAndColor(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GITCODE_TOKEN", "")
 	f := cmdutil.TestFactory()
 	out := &strings.Builder{}
 	f.IOStreams.Out = out
@@ -83,7 +85,52 @@ func TestEditRunUpdatesNameAndColor(t *testing.T) {
 	}
 }
 
+func TestEditRunColorOnly(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GITCODE_TOKEN", "")
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+
+	var capturedQuery string
+	opts := &EditOptions{
+		IO:         f.IOStreams,
+		Repository: "owner/repo",
+		Name:       "bug",
+		Color:      "#00ff00",
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					capturedQuery = req.URL.RawQuery
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Header:     make(http.Header),
+						Body:       ioNopCloser(`{"id":12738100,"name":"bug","color":"#00ff00"}`),
+					}, nil
+				}),
+			}, nil
+		},
+	}
+
+	if err := editRun(opts); err != nil {
+		t.Fatalf("editRun() error = %v", err)
+	}
+	q, _ := url.ParseQuery(capturedQuery)
+	if _, ok := q["name"]; ok {
+		t.Errorf("query should not contain name when only --color is set, got %q", capturedQuery)
+	}
+	if q.Get("color") != "#00ff00" {
+		t.Errorf("query color = %q, want #00ff00", q.Get("color"))
+	}
+	// output uses API-returned label.Name when --new-name is not set
+	if !strings.Contains(out.String(), "Updated label bug") {
+		t.Fatalf("output = %q, want label.Name 'bug'", out.String())
+	}
+}
+
 func TestEditRunJSONOutput(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GITCODE_TOKEN", "")
 	f := cmdutil.TestFactory()
 	out := &strings.Builder{}
 	f.IOStreams.Out = out
@@ -154,6 +201,8 @@ func TestEditRunInvalidColorFormat(t *testing.T) {
 }
 
 func TestEditRunAPIErrorReturnsError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GITCODE_TOKEN", "")
 	f := cmdutil.TestFactory()
 	f.IOStreams.Out = &strings.Builder{}
 	opts := &EditOptions{

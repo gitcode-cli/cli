@@ -156,7 +156,9 @@ docker compose up gc
 - `repo pr-settings update`
 - `user edit`
 - `repo create`
+- `repo archive`
 - `repo delete`
+- `repo unarchive`
 - `repo fork`
 - `repo sync`
 - `config set`
@@ -750,6 +752,43 @@ gc repo delete owner/repo --yes --json
 说明：
 - 默认会要求输入仓库名确认。
 - 在非交互环境中，未显式传 `--yes` 会直接失败。
+
+### repo archive - 归档仓库
+
+```bash
+# 归档仓库（危险操作，需确认）
+gc repo archive owner/repo
+
+# 非交互执行
+gc repo archive owner/repo --yes
+
+# 预演归档
+gc repo archive owner/repo --dry-run
+
+# 输出 JSON
+gc repo archive owner/repo --yes --json
+```
+
+说明：
+- 归档后仓库变为只读；可用 `gc repo unarchive` 恢复。
+- 默认要求输入仓库名确认；非交互环境需 `--yes`。
+
+### repo unarchive - 取消归档仓库
+
+```bash
+# 取消归档
+gc repo unarchive owner/repo --yes
+
+# 预演
+gc repo unarchive owner/repo --dry-run
+
+# 输出 JSON
+gc repo unarchive owner/repo --yes --json
+```
+
+说明：
+- 恢复归档仓库的写权限。
+- 默认要求输入仓库名确认；非交互环境需 `--yes`。
 
 ### repo stats - 代码贡献统计
 

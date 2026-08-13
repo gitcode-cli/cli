@@ -4,6 +4,7 @@ package repo
 import (
 	"github.com/spf13/cobra"
 
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/archive"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/branch"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/branchprotection"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/repo/clone"
@@ -32,6 +33,8 @@ func NewCmdRepo(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 
+	cmd.AddCommand(archive.NewCmdArchive(f, nil))
+	cmd.AddCommand(archive.NewCmdUnarchive(f, nil))
 	cmd.AddCommand(branch.NewCmdBranch(f))
 	cmd.AddCommand(branchprotection.NewCmdBranchProtection(f))
 	cmd.AddCommand(prsettings.NewCmdPRSettings(f))

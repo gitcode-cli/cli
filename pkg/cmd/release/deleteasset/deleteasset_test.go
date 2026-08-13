@@ -1,6 +1,7 @@
 package deleteasset
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -161,6 +162,59 @@ func TestDeleteAssetRunAPIErrorReturnsError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "failed to delete release asset") {
 		t.Fatalf("error = %q, want failed to delete release asset", err.Error())
+	}
+}
+
+func TestDeleteAssetRunParseRepoError(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &DeleteAssetOptions{
+		IO:           f.IOStreams,
+		Repository:   "invalid-no-slash",
+		TagName:      "v1.0.0",
+		AttachFileID: "12345",
+		Yes:          true,
+		HttpClient:   func() (*http.Client, error) { return &http.Client{}, nil },
+	}
+	err := deleteAssetRun(opts)
+	if err == nil {
+		t.Fatal("deleteAssetRun() error = nil, want parse repo error")
+	}
+}
+
+func TestDeleteAssetRunHttpClientError(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &DeleteAssetOptions{
+		IO:           f.IOStreams,
+		Repository:   "owner/repo",
+		TagName:      "v1.0.0",
+		AttachFileID: "12345",
+		Yes:          true,
+		HttpClient:   func() (*http.Client, error) { return nil, errors.New("dial fail") },
+	}
+	err := deleteAssetRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "failed to create HTTP client") {
+		t.Fatalf("err = %v, want failed to create HTTP client", err)
+	}
+}
+
+func TestDeleteAssetRunNoTokenReturnsAuthError(t *testing.T) {
+	t.Setenv("GC_TOKEN", "")
+	t.Setenv("GITCODE_TOKEN", "")
+	f := cmdutil.TestFactory()
+	opts := &DeleteAssetOptions{
+		IO:           f.IOStreams,
+		Repository:   "owner/repo",
+		TagName:      "v1.0.0",
+		AttachFileID: "12345",
+		Yes:          true,
+		HttpClient:   func() (*http.Client, error) { return &http.Client{}, nil },
+	}
+	err := deleteAssetRun(opts)
+	if err == nil {
+		t.Fatal("deleteAssetRun() error = nil, want auth error")
+	}
+	if got := cmdutil.ExitCode(err); got != cmdutil.ExitAuth {
+		t.Fatalf("ExitCode = %d, want %d (ExitAuth)", got, cmdutil.ExitAuth)
 	}
 }
 

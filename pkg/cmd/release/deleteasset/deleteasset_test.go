@@ -160,8 +160,8 @@ func TestDeleteAssetRunAPIErrorReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("deleteAssetRun() error = nil, want error")
 	}
-	if !strings.Contains(err.Error(), "failed to delete release asset") {
-		t.Fatalf("error = %q, want failed to delete release asset", err.Error())
+	if !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("error = %q, want not found", err.Error())
 	}
 }
 

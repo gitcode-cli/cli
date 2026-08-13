@@ -42,6 +42,9 @@ func NewCmdDeleteAsset(f *cmdutil.Factory, runF func(*DeleteAssetOptions) error)
 		Long: heredoc.Doc(`
 			Delete an attached file (asset) from a release.
 
+			The asset-id can be obtained from "gc release view <tag> --json"
+			(the id field of each asset).
+
 			Non-interactive mode: requires --yes to skip confirmation.
 		`),
 		Example: heredoc.Doc(`
@@ -108,7 +111,7 @@ func deleteAssetRun(opts *DeleteAssetOptions) error {
 	}
 
 	if err := api.DeleteReleaseAssetByTag(client, owner, repo, opts.TagName, opts.AttachFileID); err != nil {
-		return fmt.Errorf("failed to delete release asset: %w", err)
+		return cmdutil.WrapNotFound(err, "asset %s not found in release %s in %s/%s", opts.AttachFileID, opts.TagName, owner, repo)
 	}
 
 	fmt.Fprintf(opts.IO.Out, "%s Deleted asset %s from release %s\n", cs.Red("✓"), opts.AttachFileID, opts.TagName)

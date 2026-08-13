@@ -311,6 +311,14 @@ func DeleteReleaseAsset(client *Client, owner, repo string, assetID int64) error
 	return client.Delete(escapedRepoPath(owner, repo) + "/releases/assets/" + strconv.FormatInt(assetID, 10))
 }
 
+// DeleteReleaseAssetByTag deletes a release asset by tag and attach file id.
+//
+// Per api-doc: DELETE /repos/{owner}/{repo}/releases/{tag}/attach_files/{attach_file_id}
+func DeleteReleaseAssetByTag(client *Client, owner, repo, tag, attachFileID string) error {
+	escapedTag := url.PathEscape(tag)
+	return client.Delete(escapedRepoPath(owner, repo) + "/releases/" + escapedTag + "/attach_files/" + url.PathEscape(attachFileID))
+}
+
 // GetReleaseUploadURL fetches the upload URL for a release asset
 func GetReleaseUploadURL(client *Client, owner, repo, tag, filename string) (*AssetUploadURL, error) {
 	escapedTag := url.PathEscape(tag)

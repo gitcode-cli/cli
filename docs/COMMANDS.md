@@ -1935,6 +1935,25 @@ gc release delete v1.0.0 -R infra-test/gctest1 --dry-run
 - GitCode 官方 OpenAPI 当前没有 Release 删除接口，实际删除请求会返回 `405 Method Not Allowed`。
 - `--dry-run` 仅预览目标和参数，不执行删除；需要删除时请使用仓库 Release 页面。
 
+### release delete-asset - 删除 Release 附件
+
+```bash
+# 删除指定 release 的附件
+gc release delete-asset v1.0.0 12345 -R infra-test/gctest1
+
+# 跳过确认
+gc release delete-asset v1.0.0 12345 -R infra-test/gctest1 --yes
+
+# 预演删除
+gc release delete-asset v1.0.0 12345 -R infra-test/gctest1 --dry-run
+```
+
+说明：
+- 删除指定 release 的附件（asset），参数为 `<tag> <asset-id>`。
+- `asset-id` 可从 `gc release view <tag> --json` 的 `assets[].id` 获取。
+- 破坏性操作：非交互环境需 `--yes` 跳过确认，否则要求输入 asset-id 确认。
+- `--dry-run` 仅预览，不执行删除。
+
 ---
 
 ## Commit 命令 (commit)

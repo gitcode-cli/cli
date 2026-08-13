@@ -7,6 +7,7 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/create"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/delete"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/edit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/label/list"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 )
@@ -37,6 +38,7 @@ func NewCmdLabel(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
+	cmd.AddCommand(edit.NewCmdEdit(f, nil))
 	cmd.AddCommand(list.NewCmdList(f, nil))
 	cmd.AddCommand(delete.NewCmdDelete(f, nil))
 

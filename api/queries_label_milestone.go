@@ -64,11 +64,26 @@ func GetLabel(client *Client, owner, repo, name string) (*Label, error) {
 	return &label, nil
 }
 
-// UpdateLabel updates an existing label
+// UpdateLabel updates an existing label.
+//
+// Per api-doc/openapi.json, PATCH /repos/{owner}/{repo}/labels/{original_name}
+// takes name and color as query parameters with no request body; the endpoint
+// does not support updating description.
 func UpdateLabel(client *Client, owner, repo, name string, opts *UpdateLabelOptions) (*Label, error) {
 	escapedName := url.PathEscape(name)
+	path := escapedRepoPath(owner, repo) + "/labels/" + escapedName
+	q := url.Values{}
+	if opts.NewName != "" {
+		q.Set("name", opts.NewName)
+	}
+	if opts.Color != "" {
+		q.Set("color", opts.Color)
+	}
+	if encoded := q.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
 	var label Label
-	err := client.Patch(escapedRepoPath(owner, repo)+"/labels/"+escapedName, opts, &label)
+	err := client.Patch(path, nil, &label)
 	if err != nil {
 		return nil, err
 	}

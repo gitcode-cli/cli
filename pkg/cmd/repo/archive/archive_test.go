@@ -2,6 +2,7 @@ package archive
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -195,5 +196,74 @@ func TestRunArchiveParseRepoError(t *testing.T) {
 	err := run(opts, statusArchived, "archive", "archived")
 	if err == nil {
 		t.Fatal("err = nil, want parse repo error")
+	}
+}
+
+func TestNewCmdUnarchive(t *testing.T) {
+	f := cmdutil.TestFactory()
+	cmd := NewCmdUnarchive(f, func(opts *Options) error { return nil })
+	cmd.SetArgs([]string{"owner/repo", "--yes"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+}
+
+func TestRunArchiveJSON(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	t.Setenv("GITCODE_TOKEN", "")
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+	opts := &Options{
+		IO:         f.IOStreams,
+		Repository: "owner/repo",
+		Yes:        true,
+		JSON:       true,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"code":1,"msg":"success"}`))}, nil
+				}),
+			}, nil
+		},
+	}
+	if err := run(opts, statusArchived, "archive", "archived"); err != nil {
+		t.Fatalf("run() error = %v", err)
+	}
+	if !strings.Contains(out.String(), `"action": "archived"`) || !strings.Contains(out.String(), `"repository": "owner/repo"`) {
+		t.Fatalf("json output = %q", out.String())
+	}
+}
+
+func TestRunArchiveDryRunJSON(t *testing.T) {
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+	opts := &Options{
+		IO:         f.IOStreams,
+		Repository: "owner/repo",
+		DryRun:     true,
+		JSON:       true,
+		HttpClient: func() (*http.Client, error) { return &http.Client{}, nil },
+	}
+	if err := run(opts, statusArchived, "archive", "archived"); err != nil {
+		t.Fatalf("run() error = %v", err)
+	}
+	if !strings.Contains(out.String(), `"action": "dry_run"`) {
+		t.Fatalf("json output = %q", out.String())
+	}
+}
+
+func TestRunArchiveHttpClientError(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &Options{
+		IO:         f.IOStreams,
+		Repository: "owner/repo",
+		Yes:        true,
+		HttpClient: func() (*http.Client, error) { return nil, errors.New("dial fail") },
+	}
+	err := run(opts, statusArchived, "archive", "archived")
+	if err == nil || !strings.Contains(err.Error(), "failed to create HTTP client") {
+		t.Fatalf("err = %v, want failed to create HTTP client", err)
 	}
 }

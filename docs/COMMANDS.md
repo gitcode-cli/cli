@@ -156,7 +156,9 @@ docker compose up gc
 - `repo pr-settings update`
 - `user edit`
 - `repo create`
+- `repo archive`
 - `repo delete`
+- `repo unarchive`
 - `repo fork`
 - `repo sync`
 - `config set`
@@ -776,10 +778,17 @@ gc repo archive owner/repo --yes --json
 ```bash
 # 取消归档
 gc repo unarchive owner/repo --yes
+
+# 预演
+gc repo unarchive owner/repo --dry-run
+
+# 输出 JSON
+gc repo unarchive owner/repo --yes --json
 ```
 
 说明：
-- 恢复归档仓库的写权限；非交互环境需 `--yes`。
+- 恢复归档仓库的写权限。
+- 默认要求输入仓库名确认；非交互环境需 `--yes`。
 
 ### repo stats - 代码贡献统计
 

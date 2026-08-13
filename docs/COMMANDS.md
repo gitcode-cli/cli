@@ -90,6 +90,7 @@ docker compose up gc
 - `issue prs`
 - `issue relations`
 - `issue view`
+- `label edit`
 - `label list`
 - `milestone list`
 - `milestone view`
@@ -2047,6 +2048,25 @@ gc label create "bug" -R infra-test/gctest1 --color "#ff0000" --description "Bug
 # 输出 JSON
 gc label create "bug" -R infra-test/gctest1 --color "#ff0000" --description "Bug report" --json
 ```
+
+### label edit - 更新标签
+
+```bash
+# 重命名标签
+gc label edit bug --new-name "bug-fix" -R infra-test/gctest1
+
+# 更新标签颜色
+gc label edit bug --color "#ff0000" -R infra-test/gctest1
+
+# 输出 JSON
+gc label edit bug --color "#ff0000" -R infra-test/gctest1 --json
+```
+
+说明：
+- `label edit` 更新标签的名称和/或颜色；至少需要 `--new-name` 或 `--color` 之一。
+- `--new-name` 更新标签名称，`--color` 更新颜色（hex 格式，如 `#ff0000`）。
+- GitCode API 的 PATCH 端点不支持更新标签 description，故本命令不提供 `--description`。
+- 支持 `--json` 输出更新后的标签。
 
 ### label delete - 删除标签
 

@@ -6,6 +6,7 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/login"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/logout"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/setupgit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/status"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/auth/token"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -24,6 +25,7 @@ func NewCmdAuth(f *cmdutil.Factory) *cobra.Command {
 
 	cmd.AddCommand(login.NewCmdLogin(f, nil))
 	cmd.AddCommand(logout.NewCmdLogout(f, nil))
+	cmd.AddCommand(setupgit.NewCmdSetupGit(f, nil))
 	cmd.AddCommand(status.NewCmdStatus(f, nil))
 	cmd.AddCommand(token.NewCmdToken(f, nil))
 

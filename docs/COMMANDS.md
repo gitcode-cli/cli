@@ -312,6 +312,24 @@ gc auth logout --yes
 - 若当前认证来自 `GC_TOKEN` 或 `GITCODE_TOKEN`，命令会提示你手动 `unset` 环境变量。
 - 非交互场景中显式传 `--yes`。
 
+### auth setup-git - 配置 git credential helper
+
+```bash
+# 为默认主机配置 git credential helper
+gc auth setup-git
+
+# 为指定主机配置
+gc auth setup-git --hostname gitcode.com
+```
+
+说明：
+- `auth setup-git` 将 gc 配置为 git 的 credential helper，使 git 操作（clone/pull/push）自动携带 GitCode 认证。
+- 以 `--add` 追加方式写入 `git config --global credential."https://<host>".helper`，不覆盖已有 credential helper 配置。
+- 幂等：重复运行不产生重复条目，已配置相同 helper 时直接跳过。
+- 配置的 helper 指向 `gc auth git-credential`（credential 协议响应子命令，后续交付）；当前 setup-git 仅完成配置写入。
+- `--hostname` 支持自定义主机，默认使用配置的默认主机（`gitcode.com`）。
+- 纯客户端命令，不调用 GitCode API，不读取或输出 token。
+
 ---
 
 ## API 命令 (api)

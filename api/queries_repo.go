@@ -105,6 +105,15 @@ func DeleteRepo(client *Client, owner, name string) error {
 	return client.Delete(escapedRepoPath(owner, name))
 }
 
+// SetRepoStatus sets a repository's status via PUT /org/{org}/repo/{repo}/status.
+// status: 0 = active (unarchive), 2 = archived. Per api-doc, the endpoint takes
+// a JSON body {"status": int}; the optional password field is not sent.
+func SetRepoStatus(client *Client, org, repo string, status int) error {
+	path := "/org/" + url.PathEscape(org) + "/repo/" + url.PathEscape(repo) + "/status"
+	body := map[string]int{"status": status}
+	return client.Put(path, body, nil)
+}
+
 // UpdateRepoRequest is the request body for updating a repository.
 type UpdateRepoRequest struct {
 	Name          string `json:"name,omitempty"`

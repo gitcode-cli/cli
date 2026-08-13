@@ -47,7 +47,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 CLI 只会在显式 stdin 文本 flag（当前包括 `--body-file -` 和 `--comment-file -`）上拦截疑似已被 Windows PowerShell 损坏成 `???` 的输入，并在 stderr 提示正确用法；如果确实需要原样传入连续问号，可设置 `GITCODE_CLI_ALLOW_LOSSY_STDIN=1`。
 
 当前自动推断边界：
-- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，主要覆盖 `issue` 相关命令、`repo view/log/branch view/stats`，`pr list/view/issues/comments/checkout/create/merge/reply/test`、`pr label/edit/close/ready`、`release list/view/create/delete/upload`、`commit view`、`commit comments (create/edit/list/list-by-sha/view)`、`commit diff/patch`、`label list/create/delete/edit`、`milestone list/view/create/delete`、`actions` 相关命令等。注意：自动推断现已覆盖写/破坏性命令（如 `pr merge`、`release delete`），缺省 `-R` 即作用于当前 Git 仓库。
+- 仅显式接入 `cmdutil.ResolveRepo(...)` 的命令支持缺省 `-R` 时从当前 Git 仓库推断目标仓库，主要覆盖 `issue` 相关命令、`repo view/log/branch view/stats`，`pr list/view/issues/comments/checkout/create/merge/reply/test`、`pr label/edit/close/ready`、`release list/view/create/delete/delete-asset/upload`、`commit view`、`commit comments (create/edit/list/list-by-sha/view)`、`commit diff/patch`、`label list/create/delete/edit`、`milestone list/view/create/delete`、`actions` 相关命令等。注意：自动推断现已覆盖写/破坏性命令（如 `pr merge`、`release delete`），缺省 `-R` 即作用于当前 Git 仓库。
 - 仍需显式传目标仓库参数的命令，通常是语义上操作“另一个仓库”的命令，例如 `repo sync --target-repo` 这类显式目标仓库场景。
 
 
@@ -1934,6 +1934,25 @@ gc release delete v1.0.0 -R infra-test/gctest1 --dry-run
 说明：
 - GitCode 官方 OpenAPI 当前没有 Release 删除接口，实际删除请求会返回 `405 Method Not Allowed`。
 - `--dry-run` 仅预览目标和参数，不执行删除；需要删除时请使用仓库 Release 页面。
+
+### release delete-asset - 删除 Release 附件
+
+```bash
+# 删除指定 release 的附件
+gc release delete-asset v1.0.0 12345 -R infra-test/gctest1
+
+# 跳过确认
+gc release delete-asset v1.0.0 12345 -R infra-test/gctest1 --yes
+
+# 预演删除
+gc release delete-asset v1.0.0 12345 -R infra-test/gctest1 --dry-run
+```
+
+说明：
+- 删除指定 release 的附件（asset），参数为 `<tag> <asset-id>`。
+- `asset-id` 可从 `gc release view <tag> --json` 的 `assets[].id` 获取。
+- 破坏性操作：非交互环境需 `--yes` 跳过确认，否则要求输入 asset-id 确认。
+- `--dry-run` 仅预览，不执行删除。
 
 ---
 

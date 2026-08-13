@@ -7,6 +7,7 @@ import (
 
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/create"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/delete"
+	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/deleteasset"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/download"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/edit"
 	"gitcode.com/gitcode-cli/cli/pkg/cmd/release/list"
@@ -47,6 +48,7 @@ func NewCmdRelease(f *cmdutil.Factory) *cobra.Command {
 
 	cmd.AddCommand(create.NewCmdCreate(f, nil))
 	cmd.AddCommand(delete.NewCmdDelete(f, nil))
+	cmd.AddCommand(deleteasset.NewCmdDeleteAsset(f, nil))
 	cmd.AddCommand(download.NewCmdDownload(f, nil))
 	cmd.AddCommand(edit.NewCmdEdit(f, nil))
 	cmd.AddCommand(list.NewCmdList(f, nil))

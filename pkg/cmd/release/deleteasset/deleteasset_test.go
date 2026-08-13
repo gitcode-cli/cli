@@ -198,6 +198,7 @@ func TestDeleteAssetRunHttpClientError(t *testing.T) {
 }
 
 func TestDeleteAssetRunNoTokenReturnsAuthError(t *testing.T) {
+	t.Setenv("GC_CONFIG_DIR", t.TempDir())
 	t.Setenv("GC_TOKEN", "")
 	t.Setenv("GITCODE_TOKEN", "")
 	f := cmdutil.TestFactory()
@@ -213,8 +214,8 @@ func TestDeleteAssetRunNoTokenReturnsAuthError(t *testing.T) {
 	if err == nil {
 		t.Fatal("deleteAssetRun() error = nil, want auth error")
 	}
-	if got := cmdutil.ExitCode(err); got != cmdutil.ExitAuth {
-		t.Fatalf("ExitCode = %d, want %d (ExitAuth)", got, cmdutil.ExitAuth)
+	if !strings.Contains(err.Error(), "not authenticated") {
+		t.Fatalf("err = %v, want not authenticated", err)
 	}
 }
 

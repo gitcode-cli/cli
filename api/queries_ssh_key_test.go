@@ -125,3 +125,46 @@ func TestGetSSHKeyRejectsEmptyArray(t *testing.T) {
 		t.Fatalf("error = %v, want empty response", err)
 	}
 }
+
+func TestSSHKeyQueriesPropagateHTTPError(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		run    func(*Client) error
+	}{
+		{name: "list", method: http.MethodGet, run: func(client *Client) error {
+			_, err := ListSSHKeys(client, 1, 30)
+			return err
+		}},
+		{name: "create", method: http.MethodPost, run: func(client *Client) error {
+			_, err := CreateSSHKey(client, &CreateSSHKeyOptions{Title: "work", Key: "ssh-ed25519 QUFBQQ=="})
+			return err
+		}},
+		{name: "view", method: http.MethodGet, run: func(client *Client) error {
+			_, err := GetSSHKey(client, 42)
+			return err
+		}},
+		{name: "delete", method: http.MethodDelete, run: func(client *Client) error {
+			return DeleteSSHKey(client, 42)
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := NewClientFromHTTP(&http.Client{Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				if req.Method != tt.method {
+					t.Fatalf("method = %s, want %s", req.Method, tt.method)
+				}
+				return &http.Response{
+					StatusCode: http.StatusForbidden,
+					Status:     http.StatusText(http.StatusForbidden),
+					Header:     make(http.Header),
+					Body:       io.NopCloser(strings.NewReader("{\"message\":\"forbidden\"}")),
+				}, nil
+			})})
+			if err := tt.run(client); err == nil || !strings.Contains(err.Error(), "forbidden") {
+				t.Fatalf("error = %v", err)
+			}
+		})
+	}
+}

@@ -201,3 +201,12 @@ func TestNoUpdateCheckFlagIsRegistered(t *testing.T) {
 		t.Fatalf("--no-update-check flag = %#v", flag)
 	}
 }
+
+func TestRootRegistersSSHKeyCommand(t *testing.T) {
+	t.Setenv(commandNameEnv, "gc")
+	cmd := NewRootCmd("dev", "none", "unknown", cmdutil.TestFactory())
+	sshKey, _, err := cmd.Find([]string{"ssh-key", "list"})
+	if err != nil || sshKey.CommandPath() != "gc ssh-key list" {
+		t.Fatalf("ssh-key command = %v, error = %v", sshKey, err)
+	}
+}

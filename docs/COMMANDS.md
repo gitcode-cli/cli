@@ -3155,6 +3155,7 @@ gc search users "admin" --json
 
 `ssh-key` 管理当前认证用户在 GitCode 注册的 SSH 公钥。所有子命令均要求认证，不读取默认
 `~/.ssh` 路径；添加公钥时必须显式传入文件。
+文本模式会移除服务端字段中的终端控制字符；`--json` 保留字段值，并由 JSON 编码器转义控制字符。
 
 ### ssh-key list - 列出公钥
 

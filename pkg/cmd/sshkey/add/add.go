@@ -72,7 +72,7 @@ func addRun(opts *AddOptions) error {
 	if opts.JSON {
 		return cmdutil.WriteJSON(opts.IO.Out, key)
 	}
-	fmt.Fprintf(opts.IO.Out, "Added SSH key %s (ID: %d).\n", key.Title, key.ID)
+	fmt.Fprintf(opts.IO.Out, "Added SSH key %s (ID: %d).\n", cmdutil.SanitizeTerminalText(key.Title), key.ID)
 	return nil
 }
 

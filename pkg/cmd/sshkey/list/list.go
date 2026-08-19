@@ -72,7 +72,8 @@ func listRun(opts *ListOptions) error {
 		return cmdutil.WriteJSON(opts.IO.Out, keys)
 	}
 	for _, key := range keys {
-		fmt.Fprintf(opts.IO.Out, "%d\t%s\t%s\n", key.ID, key.Title, key.CreatedAt)
+		fmt.Fprintf(opts.IO.Out, "%d\t%s\t%s\n", key.ID, cmdutil.SanitizeTerminalText(key.Title),
+			cmdutil.SanitizeTerminalText(key.CreatedAt))
 	}
 	return nil
 }

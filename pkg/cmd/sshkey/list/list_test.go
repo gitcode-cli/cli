@@ -44,6 +44,24 @@ func TestListRunJSON(t *testing.T) {
 	}
 }
 
+func TestListRunSanitizesTextOutput(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+	opts := &ListOptions{IO: f.IOStreams, Limit: 30, Page: 1, HttpClient: func() (*http.Client, error) {
+		return &http.Client{Transport: testutil.NewRoundTripFunc(func(*http.Request) (*http.Response, error) {
+			return listResponse(http.StatusOK, `[{"id":7,"title":"lap\u001b[31mtop","created_at":"today\nnow"}]`), nil
+		})}, nil
+	}}
+	if err := listRun(opts); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), "\x1b") || out.String() != "7\tlap[31mtop\ttodaynow\n" {
+		t.Fatalf("output = %q", out)
+	}
+}
+
 func TestListRunValidatesPagination(t *testing.T) {
 	f := cmdutil.TestFactory()
 	err := listRun(&ListOptions{IO: f.IOStreams, Limit: 30, Page: 1, PerPage: 101})

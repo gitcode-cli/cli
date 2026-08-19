@@ -49,6 +49,25 @@ func TestViewRunJSON(t *testing.T) {
 	}
 }
 
+func TestViewRunSanitizesTextOutput(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+	opts := &ViewOptions{IO: f.IOStreams, ID: 42, HttpClient: func() (*http.Client, error) {
+		return &http.Client{Transport: testutil.NewRoundTripFunc(func(*http.Request) (*http.Response, error) {
+			return viewResponse(http.StatusOK, `{"id":42,"title":"work\u001b[31m","key":"ssh-ed25519 AAAA comment\u0007","created_at":"today\nnow"}`), nil
+		})}, nil
+	}}
+	if err := viewRun(opts); err != nil {
+		t.Fatal(err)
+	}
+	want := "work[31m\n  ID:      42\n  Key:     ssh-ed25519 AAAA comment\n  Created: todaynow\n"
+	if strings.Contains(out.String(), "\x1b") || out.String() != want {
+		t.Fatalf("output = %q, want %q", out, want)
+	}
+}
+
 func TestViewRunWrapsNotFound(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	f := cmdutil.TestFactory()

@@ -50,6 +50,28 @@ func TestAddRunReadsFileAndWritesJSON(t *testing.T) {
 	}
 }
 
+func TestAddRunSanitizesTextOutput(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+	file := t.TempDir() + "/key.pub"
+	if err := os.WriteFile(file, []byte("ssh-ed25519 QUFBQQ== comment"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	f := cmdutil.TestFactory()
+	out := &strings.Builder{}
+	f.IOStreams.Out = out
+	opts := &AddOptions{IO: f.IOStreams, Title: "laptop", KeyFile: file, HttpClient: func() (*http.Client, error) {
+		return &http.Client{Transport: testutil.NewRoundTripFunc(func(*http.Request) (*http.Response, error) {
+			return addResponse(http.StatusOK, `{"id":8,"title":"lap\u001b[31mtop"}`), nil
+		})}, nil
+	}}
+	if err := addRun(opts); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), "\x1b") || out.String() != "Added SSH key lap[31mtop (ID: 8).\n" {
+		t.Fatalf("output = %q", out)
+	}
+}
+
 func TestValidatePublicKey(t *testing.T) {
 	privateKeyMarker := strings.Join([]string{"-----BEGIN OPENSSH PRIVATE", "KEY-----"}, " ")
 	tests := []struct {

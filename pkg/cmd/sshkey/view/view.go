@@ -59,9 +59,10 @@ func viewRun(opts *ViewOptions) error {
 	if opts.JSON {
 		return cmdutil.WriteJSON(opts.IO.Out, key)
 	}
-	fmt.Fprintf(opts.IO.Out, "%s\n  ID:      %d\n  Key:     %s\n", key.Title, key.ID, key.Key)
+	fmt.Fprintf(opts.IO.Out, "%s\n  ID:      %d\n  Key:     %s\n", cmdutil.SanitizeTerminalText(key.Title), key.ID,
+		cmdutil.SanitizeTerminalText(key.Key))
 	if key.CreatedAt != "" {
-		fmt.Fprintf(opts.IO.Out, "  Created: %s\n", key.CreatedAt)
+		fmt.Fprintf(opts.IO.Out, "  Created: %s\n", cmdutil.SanitizeTerminalText(key.CreatedAt))
 	}
 	return nil
 }

@@ -12,6 +12,8 @@ import (
 	"gitcode.com/gitcode-cli/cli/pkg/testutil"
 )
 
+const validED25519PublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
 func TestNewCmdAddRequiresFlags(t *testing.T) {
 	cmd := NewCmdAdd(cmdutil.TestFactory(), func(*AddOptions) error { return nil })
 	cmd.SetArgs(nil)
@@ -23,7 +25,7 @@ func TestNewCmdAddRequiresFlags(t *testing.T) {
 func TestAddRunReadsFileAndWritesJSON(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	file := t.TempDir() + "/key.pub"
-	if err := os.WriteFile(file, []byte("ssh-ed25519 QUFBQQ== test@example\n"), 0o600); err != nil {
+	if err := os.WriteFile(file, []byte(validED25519PublicKey+" test@example\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	f := cmdutil.TestFactory()
@@ -36,7 +38,7 @@ func TestAddRunReadsFileAndWritesJSON(t *testing.T) {
 			if err := json.Unmarshal(body, &got); err != nil {
 				t.Fatal(err)
 			}
-			if got["title"] != "laptop" || got["key"] != "ssh-ed25519 QUFBQQ== test@example" {
+			if got["title"] != "laptop" || got["key"] != validED25519PublicKey+" test@example" {
 				t.Fatalf("body = %s", body)
 			}
 			return addResponse(http.StatusOK, "{\"id\":8,\"title\":\"laptop\",\"key\":\"ssh-ed25519 QUFBQQ== test@example\"}"), nil
@@ -53,7 +55,7 @@ func TestAddRunReadsFileAndWritesJSON(t *testing.T) {
 func TestAddRunSanitizesTextOutput(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 	file := t.TempDir() + "/key.pub"
-	if err := os.WriteFile(file, []byte("ssh-ed25519 QUFBQQ== comment"), 0o600); err != nil {
+	if err := os.WriteFile(file, []byte(validED25519PublicKey+" comment"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	f := cmdutil.TestFactory()
@@ -79,10 +81,12 @@ func TestValidatePublicKey(t *testing.T) {
 		key     string
 		wantErr string
 	}{
-		{name: "ed25519", key: "ssh-ed25519 QUFBQQ== comment"},
-		{name: "ecdsa", key: "ecdsa-sha2-nistp256 QUFBQQ=="},
+		{name: "ed25519", key: validED25519PublicKey + " comment"},
 		{name: "private", key: privateKeyMarker, wantErr: "not a private key"},
 		{name: "multiline", key: "ssh-ed25519 QUFBQQ==\nsecond", wantErr: "single OpenSSH"},
+		{name: "invalid wire format", key: "ssh-ed25519 QUFBQQ==", wantErr: "single OpenSSH"},
+		{name: "algorithm mismatch", key: strings.Replace(validED25519PublicKey, "ssh-ed25519", "ssh-rsa", 1), wantErr: "single OpenSSH"},
+		{name: "authorized key options", key: "no-port-forwarding " + validED25519PublicKey, wantErr: "single OpenSSH"},
 		{name: "arbitrary", key: "not-a-key", wantErr: "single OpenSSH"},
 	}
 	for _, tt := range tests {
@@ -124,7 +128,7 @@ func TestAddRunRejectsPrivateKey(t *testing.T) {
 
 func TestAddRunRejectsMultipleLines(t *testing.T) {
 	file := t.TempDir() + "/keys.pub"
-	content := "ssh-ed25519 AAAA first\nssh-ed25519 BBBB second"
+	content := validED25519PublicKey + " first\n" + validED25519PublicKey + " second"
 	if err := os.WriteFile(file, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}

@@ -3179,7 +3179,7 @@ gc ssh-key add --title laptop --key key.pub --json
 
 说明：
 
-- `--title` 与 `--key` 必填；`--key` 是公钥文件路径，不接受私钥或隐式默认路径。发送前会校验为单行 OpenSSH 公钥格式。
+- `--title` 与 `--key` 必填；`--key` 是公钥文件路径，不接受私钥或隐式默认路径。发送前会完整解析单行 OpenSSH 公钥，校验其 wire-format 与声明算法一致，且不接受 authorized_keys 选项。
 - 文件按用户文本编码读取并去除首尾空白；空文件返回参数错误。
 - `--json` 输出服务端返回的公钥对象。
 

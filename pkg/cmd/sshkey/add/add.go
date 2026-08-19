@@ -4,11 +4,11 @@ package add
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh"
 
 	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
@@ -86,22 +86,10 @@ func validatePublicKey(keyText string) error {
 	if strings.ContainsAny(keyText, "\r\n") {
 		return cmdutil.NewUsageError("SSH public key must contain exactly one line; expected a single OpenSSH public key")
 	}
-	key, _, options, rest, err := ssh.ParseAuthorizedKey([]byte(keyText))
-	fields := strings.Fields(keyText)
-	if err != nil || len(fields) < 2 || fields[0] != key.Type() || len(options) != 0 ||
-		len(strings.TrimSpace(string(rest))) != 0 || !supportedKeyType(key.Type()) {
+	if !publicKeyPattern.MatchString(keyText) {
 		return cmdutil.NewUsageError("SSH public key must be a single OpenSSH public key line")
 	}
 	return nil
 }
 
-func supportedKeyType(keyType string) bool {
-	switch keyType {
-	case ssh.KeyAlgoRSA, ssh.KeyAlgoDSA, ssh.KeyAlgoED25519,
-		ssh.KeyAlgoECDSA256, ssh.KeyAlgoECDSA384, ssh.KeyAlgoECDSA521,
-		ssh.KeyAlgoSKED25519, ssh.KeyAlgoSKECDSA256:
-		return true
-	default:
-		return false
-	}
-}
+var publicKeyPattern = regexp.MustCompile(`^(ssh-(rsa|dss|ed25519)|ecdsa-sha2-[^\s]+|sk-(ssh-ed25519|ecdsa-sha2-[^\s]+)@openssh\.com)\s+[A-Za-z0-9+/]+={0,3}(\s+.*)?$`)

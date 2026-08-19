@@ -116,6 +116,8 @@ docker compose up gc
 - `search repos`
 - `search issues`
 - `search users`
+- `ssh-key list`
+- `ssh-key view`
 - `user view`
 - `repo list`
 - `repo log`
@@ -154,6 +156,8 @@ docker compose up gc
 - `repo branch create`
 - `repo edit`
 - `repo pr-settings update`
+- `ssh-key add`
+- `ssh-key delete`
 - `user edit`
 - `repo create`
 - `repo archive`
@@ -3146,6 +3150,63 @@ gc search users "admin" --json
 - `--json` 输出用户对象数组。
 - `--limit`/`--page` 分页。
 - 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`4` 认证错误。
+
+## SSH 公钥命令 (ssh-key)
+
+`ssh-key` 管理当前认证用户在 GitCode 注册的 SSH 公钥。所有子命令均要求认证，不读取默认
+`~/.ssh` 路径；添加公钥时必须显式传入文件。
+文本模式会移除服务端字段中的终端控制字符；`--json` 保留字段值，并由 JSON 编码器转义控制字符。
+
+### ssh-key list - 列出公钥
+
+```bash
+gc ssh-key list
+gc ssh-key list --limit 50 --page 2
+gc ssh-key list --json
+```
+
+说明：
+
+- `--limit` 默认 30；`--per-page` 控制 API page size，最大 100；`--page` 从 1 开始。
+- 文本输出字段为 ID、标题和创建时间；`--json` 输出完整公钥对象数组。
+
+### ssh-key add - 添加公钥
+
+```bash
+gc ssh-key add --title laptop --key ~/.ssh/id_ed25519.pub
+gc ssh-key add --title laptop --key key.pub --json
+```
+
+说明：
+
+- `--title` 与 `--key` 必填；`--key` 是公钥文件路径，不接受私钥或隐式默认路径。发送前会校验为单行 OpenSSH 公钥格式。
+- 文件按用户文本编码读取并去除首尾空白；空文件返回参数错误。
+- `--json` 输出服务端返回的公钥对象。
+
+### ssh-key view - 查看公钥
+
+```bash
+gc ssh-key view 123
+gc ssh-key view 123 --json
+```
+
+说明：公钥 ID 必须为正整数。客户端兼容 GitCode 详情接口返回单对象或单元素数组两种响应形状。
+
+### ssh-key delete - 删除公钥
+
+```bash
+gc ssh-key delete 123
+gc ssh-key delete 123 --dry-run
+gc ssh-key delete 123 --dry-run --json
+gc ssh-key delete 123 --yes --json
+```
+
+说明：
+
+- 删除操作默认要求输入公钥 ID 确认；非 TTY 或 `--no-interactive` 环境必须显式传 `--yes`。
+- `--dry-run` 只预览目标，不调用删除 API，也不要求确认。
+- `--json` 输出 `{id, action}`；实际删除时 `action` 为 `deleted`，与 `--dry-run` 组合时为 `would-delete`。
+- 退出码：`0` 成功；`2` 参数或确认错误；`3` 公钥不存在；`4` 认证/权限错误。
 
 ## 其他命令
 

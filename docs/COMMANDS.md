@@ -3196,6 +3196,7 @@ gc ssh-key view 123 --json
 ```bash
 gc ssh-key delete 123
 gc ssh-key delete 123 --dry-run
+gc ssh-key delete 123 --dry-run --json
 gc ssh-key delete 123 --yes --json
 ```
 
@@ -3203,7 +3204,7 @@ gc ssh-key delete 123 --yes --json
 
 - 删除操作默认要求输入公钥 ID 确认；非 TTY 或 `--no-interactive` 环境必须显式传 `--yes`。
 - `--dry-run` 只预览目标，不调用删除 API，也不要求确认。
-- `--json` 成功输出 `{id, action}`，其中 `action` 为 `deleted`。
+- `--json` 输出 `{id, action}`；实际删除时 `action` 为 `deleted`，与 `--dry-run` 组合时为 `would-delete`。
 - 退出码：`0` 成功；`2` 参数或确认错误；`3` 公钥不存在；`4` 认证/权限错误。
 
 ## 其他命令

@@ -2306,7 +2306,8 @@ gc precommit check --json
 
 ### actions run list - 列出流水线运行记录
 
-列出仓库的流水线运行记录，支持按状态、事件、分支、触发人、流水线等过滤。过滤在服务端应用。
+列出仓库的流水线运行记录，支持按状态、事件、分支、触发人、流水线、创建日期和提交 SHA 等过滤。
+除提交 SHA 外的过滤在服务端应用；提交 SHA 在客户端按每条记录的 `head_sha` 过滤。
 
 ```bash
 # 列出最近的运行记录
@@ -2328,6 +2329,13 @@ gc actions run list -R owner/repo --workflow-id wf-1
 # 按 PR 编号过滤
 gc actions run list -R owner/repo --pr 42
 
+# 按创建日期过滤（UTC 当日 00:00:00 起）
+gc actions run list -R owner/repo --created 2026-08-01
+
+# 按完整 commit SHA 过滤，可与其他过滤项组合
+gc actions run list -R owner/repo \
+  --commit 0123456789abcdef0123456789abcdef01234567 --status FAILED --branch main
+
 # 抓取全部分页
 gc actions run list -R owner/repo --paginate --per-page 100
 
@@ -2342,6 +2350,8 @@ gc actions run list -R owner/repo --json
 
 - 支持 `--json`：输出写入 stdout，字段直接映射 Actions v8 API 响应（`workflow_runs` 数组，每项含 `workflow_run_id`、`workflow_id`、`workflow_name`、`file_path`、`title`、`status`、`event`、`run_number`、`head_branch`、`head_sha`、`actor`、`start_time`、`end_time`、`pause_time`）；空结果输出 `[]`。
 - `--status` 取值：`COMPLETED`/`RUNNING`/`FAILED`/`CANCELED`/`IGNORED`/`PAUSED`/`SUSPEND`；`--event` 取值：`MR`/`Push`/`Manual`。枚举为元数据（schema/help 发现用），不在本地强制校验，非法值原样透传给 API。
+- `--created` 仅接受 `YYYY-MM-DD`，转换为 UTC 当日 00:00:00 的 Unix 秒并通过 Actions v8 API 的 `startTime` 参数过滤。
+- `--commit` 在客户端对 API 返回记录的完整 `head_sha` 做不区分大小写的精确匹配；它可与服务端过滤项组合。
 - 认证复用标准 Bearer header（`GC_TOKEN`/`GITCODE_TOKEN` 或本地配置），不通过 `access_token` query 参数暴露 token。
 - 分页：`--limit`/`-L`（默认 30，映射为 `per_page`）、`--page`、`--paginate`（抓取全部分页至 `--limit`）、`--per-page`（API 页大小）。`--paginate` 与 `--page` 互斥。
 - 退出码：`0` 成功；`1` 通用错误（其它 API 错误）；`2` 参数错误（如 `--paginate` 与 `--page` 同用、`--limit`/`--per-page` 为负）；`3` 资源不存在（HTTP 404，如仓库不存在）；`4` 认证/权限错误（HTTP 401/403）；`5` 资源冲突（HTTP 409）。

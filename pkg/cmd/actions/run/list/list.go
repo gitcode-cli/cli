@@ -74,7 +74,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 			$ gc actions run list -R owner/repo --branch main --executor dev
 
 			# Filter by creation date and commit SHA
-			$ gc actions run list -R owner/repo --created 2026-08-01 --commit abc123
+			$ gc actions run list -R owner/repo --created 2026-08-01 \
+			  --commit 0123456789abcdef0123456789abcdef01234567
 
 			# Filter by workflow name or id
 			$ gc actions run list -R owner/repo --workflow "CI"
@@ -110,7 +111,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.WorkflowName, "workflow", "", "Filter by workflow name")
 	cmd.Flags().StringVar(&opts.PullRequestID, "pr", "", "Filter by PR number")
 	cmd.Flags().StringVar(&opts.Created, "created", "", "Filter runs created on or after date (YYYY-MM-DD)")
-	cmd.Flags().StringVar(&opts.Commit, "commit", "", "Filter by commit SHA")
+	cmd.Flags().StringVar(&opts.Commit, "commit", "", "Filter by exact full commit SHA")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of runs to list")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number to fetch")
 	cmd.Flags().BoolVar(&opts.Paginate, "paginate", false, "Fetch all pages")

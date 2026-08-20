@@ -2333,7 +2333,8 @@ gc actions run list -R owner/repo --pr 42
 gc actions run list -R owner/repo --created 2026-08-01
 
 # 按完整 commit SHA 过滤，可与其他过滤项组合
-gc actions run list -R owner/repo --commit abc123 --status FAILED --branch main
+gc actions run list -R owner/repo \
+  --commit 0123456789abcdef0123456789abcdef01234567 --status FAILED --branch main
 
 # 抓取全部分页
 gc actions run list -R owner/repo --paginate --per-page 100

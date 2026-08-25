@@ -2,8 +2,11 @@
 package list
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -29,6 +32,8 @@ type ListOptions struct {
 	WorkflowID    string
 	WorkflowName  string
 	PullRequestID string
+	Created       string
+	Commit        string
 
 	Limit      int
 	Page       int
@@ -55,8 +60,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 		Long: heredoc.Doc(`
 			List pipeline (workflow) run records for a GitCode repository.
 
-			Filters are applied server-side via the Actions v8 API. Use --json for
-			machine-readable output.
+			Filters are applied via the Actions v8 API, except --commit, which is
+			applied client-side to each returned run. Use --json for machine-readable output.
 		`),
 		Example: heredoc.Doc(`
 			# List recent pipeline runs
@@ -67,6 +72,10 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# Filter by branch and executor
 			$ gc actions run list -R owner/repo --branch main --executor dev
+
+			# Filter by creation date and commit SHA
+			$ gc actions run list -R owner/repo --created 2026-08-01 \
+			  --commit 0123456789abcdef0123456789abcdef01234567
 
 			# Filter by workflow name or id
 			$ gc actions run list -R owner/repo --workflow "CI"
@@ -101,6 +110,8 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVar(&opts.WorkflowID, "workflow-id", "", "Filter by workflow id")
 	cmd.Flags().StringVar(&opts.WorkflowName, "workflow", "", "Filter by workflow name")
 	cmd.Flags().StringVar(&opts.PullRequestID, "pr", "", "Filter by PR number")
+	cmd.Flags().StringVar(&opts.Created, "created", "", "Filter runs created on or after date (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&opts.Commit, "commit", "", "Filter by exact full commit SHA")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 30, "Maximum number of runs to list")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number to fetch")
 	cmd.Flags().BoolVar(&opts.Paginate, "paginate", false, "Fetch all pages")
@@ -115,6 +126,10 @@ func listRun(opts *ListOptions) error {
 	format, err := resolveOutputFormat(opts.JSON, opts.Format)
 	if err != nil {
 		return err
+	}
+	startTime, err := parseCreatedDate(opts.Created)
+	if err != nil {
+		return cmdutil.NewUsageError(fmt.Sprintf("invalid --created: %v", err))
 	}
 
 	client, err := cmdutil.AuthenticatedClientFromFactory(opts.HttpClient)
@@ -144,7 +159,7 @@ func listRun(opts *ListOptions) error {
 		return cmdutil.NewUsageError("--paginate cannot be combined with --page")
 	}
 
-	runs, err := listRuns(client, owner, repo, opts)
+	runs, err := listRuns(client, owner, repo, opts, startTime)
 	if err != nil {
 		return fmt.Errorf("failed to list pipeline runs: %w", err)
 	}
@@ -171,43 +186,23 @@ func listRun(opts *ListOptions) error {
 	return printer.Print(opts.IO.Out, runs)
 }
 
-func listRuns(client *api.Client, owner, repo string, opts *ListOptions) ([]api.WorkflowRun, error) {
+func listRuns(client *api.Client, owner, repo string, opts *ListOptions, startTime int64) ([]api.WorkflowRun, error) {
 	perPage := resolvePerPage(opts)
 	if !opts.Paginate {
-		resp, err := api.ListActionsRuns(client, owner, repo, &api.ActionsListRunsOptions{
-			Status:        opts.Status,
-			Event:         opts.Event,
-			Branch:        opts.Branch,
-			Executor:      opts.Executor,
-			PullRequestID: opts.PullRequestID,
-			WorkflowID:    opts.WorkflowID,
-			WorkflowName:  opts.WorkflowName,
-			PerPage:       perPage,
-			Page:          opts.Page,
-		})
+		resp, err := api.ListActionsRuns(client, owner, repo, actionsListOptions(opts, perPage, opts.Page, startTime))
 		if err != nil {
 			return nil, err
 		}
-		return trimRuns(resp.WorkflowRuns, opts), nil
+		return trimRuns(filterRunsByCommit(resp.WorkflowRuns, opts.Commit), opts), nil
 	}
 
 	var all []api.WorkflowRun
 	for page := 1; ; page++ {
-		resp, err := api.ListActionsRuns(client, owner, repo, &api.ActionsListRunsOptions{
-			Status:        opts.Status,
-			Event:         opts.Event,
-			Branch:        opts.Branch,
-			Executor:      opts.Executor,
-			PullRequestID: opts.PullRequestID,
-			WorkflowID:    opts.WorkflowID,
-			WorkflowName:  opts.WorkflowName,
-			PerPage:       perPage,
-			Page:          page,
-		})
+		resp, err := api.ListActionsRuns(client, owner, repo, actionsListOptions(opts, perPage, page, startTime))
 		if err != nil {
 			return nil, err
 		}
-		all = append(all, resp.WorkflowRuns...)
+		all = append(all, filterRunsByCommit(resp.WorkflowRuns, opts.Commit)...)
 		if opts.LimitSet && len(all) >= opts.Limit {
 			return all[:opts.Limit], nil
 		}
@@ -215,7 +210,49 @@ func listRuns(client *api.Client, owner, repo string, opts *ListOptions) ([]api.
 			break
 		}
 	}
-	return all, nil
+	return trimRuns(all, opts), nil
+}
+
+func actionsListOptions(opts *ListOptions, perPage, page int, startTime int64) *api.ActionsListRunsOptions {
+	return &api.ActionsListRunsOptions{
+		Status:        opts.Status,
+		Event:         opts.Event,
+		Branch:        opts.Branch,
+		Executor:      opts.Executor,
+		PullRequestID: opts.PullRequestID,
+		WorkflowID:    opts.WorkflowID,
+		WorkflowName:  opts.WorkflowName,
+		PerPage:       perPage,
+		Page:          page,
+		StartTime:     startTime,
+	}
+}
+
+func parseCreatedDate(value string) (int64, error) {
+	if value == "" {
+		return 0, nil
+	}
+	created, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		return 0, errors.New("expected YYYY-MM-DD")
+	}
+	return created.Unix(), nil
+}
+
+func filterRunsByCommit(runs []api.WorkflowRun, commit string) []api.WorkflowRun {
+	if commit == "" {
+		if runs == nil {
+			return []api.WorkflowRun{}
+		}
+		return runs
+	}
+	filtered := make([]api.WorkflowRun, 0)
+	for _, run := range runs {
+		if strings.EqualFold(run.HeadSHA, commit) {
+			filtered = append(filtered, run)
+		}
+	}
+	return filtered
 }
 
 func resolvePerPage(opts *ListOptions) int {

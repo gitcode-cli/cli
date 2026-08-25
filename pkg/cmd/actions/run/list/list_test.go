@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"gitcode.com/gitcode-cli/cli/api"
 	cmdutil "gitcode.com/gitcode-cli/cli/pkg/cmdutil"
 	"gitcode.com/gitcode-cli/cli/pkg/iostreams"
 	"gitcode.com/gitcode-cli/cli/pkg/output"
@@ -30,6 +31,8 @@ func TestNewCmdList(t *testing.T) {
 		{name: "list with workflow", args: []string{"--workflow", "CI"}, wantErr: false},
 		{name: "list with workflow-id", args: []string{"--workflow-id", "wf-1"}, wantErr: false},
 		{name: "list with pr", args: []string{"--pr", "42"}, wantErr: false},
+		{name: "list with created", args: []string{"--created", "2026-08-01"}, wantErr: false},
+		{name: "list with commit", args: []string{"--commit", "abc123"}, wantErr: false},
 		{name: "list with paginate", args: []string{"--paginate", "--per-page", "100"}, wantErr: false},
 		{name: "list with page", args: []string{"--page", "2"}, wantErr: false},
 		{name: "list with table format", args: []string{"--format", "table"}, wantErr: false},
@@ -89,10 +92,10 @@ func TestNewCmdListEventEnum(t *testing.T) {
 func TestListRunBuildsV8Query(t *testing.T) {
 	t.Setenv("GC_TOKEN", "test-token")
 
-	f := cmdutil.TestFactory()
+	io, _, out, _ := iostreams.Test()
 	var gotPath string
 	opts := &ListOptions{
-		IO: f.IOStreams,
+		IO: io,
 		HttpClient: func() (*http.Client, error) {
 			return &http.Client{
 				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -100,7 +103,7 @@ func TestListRunBuildsV8Query(t *testing.T) {
 					if req.URL.RawQuery != "" {
 						gotPath += "?" + req.URL.RawQuery
 					}
-					return listTestResponse(http.StatusOK, `{"total_count":0,"workflow_runs":[]}`), nil
+					return listTestResponse(http.StatusOK, `{"total_count":2,"workflow_runs":[{"workflow_run_id":"r1","head_sha":"abc123"},{"workflow_run_id":"r2","head_sha":"def456"}]}`), nil
 				}),
 			}, nil
 		},
@@ -112,8 +115,11 @@ func TestListRunBuildsV8Query(t *testing.T) {
 		WorkflowID:    "wf-1",
 		WorkflowName:  "ci",
 		PullRequestID: "42",
+		Created:       "2026-08-01",
+		Commit:        "ABC123",
 		Limit:         25,
 		Page:          2,
+		JSON:          true,
 	}
 
 	if err := listRun(opts); err != nil {
@@ -130,7 +136,10 @@ func TestListRunBuildsV8Query(t *testing.T) {
 		t.Fatalf("url.Parse() error = %v", err)
 	}
 	q := parsed.Query()
-	for _, key := range []string{"status", "event", "branch", "executor", "workflow_id", "workflow_name", "pull_request_id", "per_page", "page"} {
+	for _, key := range []string{
+		"status", "event", "branch", "executor", "workflow_id", "workflow_name", "pull_request_id",
+		"per_page", "page", "startTime",
+	} {
 		if _, ok := q[key]; !ok {
 			t.Fatalf("query missing %s in %s", key, q.Encode())
 		}
@@ -143,6 +152,66 @@ func TestListRunBuildsV8Query(t *testing.T) {
 	}
 	if q.Get("page") != "2" {
 		t.Fatalf("page = %q, want 2", q.Get("page"))
+	}
+	if q.Get("startTime") != "1785542400" {
+		t.Fatalf("startTime = %q, want UTC start of 2026-08-01", q.Get("startTime"))
+	}
+	if strings.Contains(out.String(), "def456") || !strings.Contains(out.String(), "abc123") {
+		t.Fatalf("commit-filtered output = %q, want only abc123", out.String())
+	}
+}
+
+func TestParseCreatedDate(t *testing.T) {
+	tests := []struct {
+		name    string
+		value   string
+		want    int64
+		wantErr bool
+	}{
+		{name: "empty", value: "", want: 0},
+		{name: "valid date", value: "2026-08-01", want: 1785542400},
+		{name: "invalid calendar date", value: "2026-02-30", wantErr: true},
+		{name: "datetime rejected", value: "2026-08-01T00:00:00Z", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseCreatedDate(tt.value)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("parseCreatedDate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Fatalf("parseCreatedDate() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFilterRunsByCommit(t *testing.T) {
+	runs := []api.WorkflowRun{
+		{WorkflowRunID: "r1", HeadSHA: "abc123"},
+		{WorkflowRunID: "r2", HeadSHA: "def456"},
+	}
+
+	got := filterRunsByCommit(runs, "ABC123")
+	if len(got) != 1 || got[0].WorkflowRunID != "r1" {
+		t.Fatalf("filterRunsByCommit() = %+v, want only r1", got)
+	}
+	if got := filterRunsByCommit(runs, "missing"); len(got) != 0 || got == nil {
+		t.Fatalf("missing commit result = %#v, want non-nil empty slice", got)
+	}
+	if got := filterRunsByCommit(runs, "abc"); len(got) != 0 {
+		t.Fatalf("abbreviated commit result = %#v, want exact SHA matching", got)
+	}
+}
+
+func TestListRunInvalidCreatedDate(t *testing.T) {
+	f := cmdutil.TestFactory()
+	opts := &ListOptions{IO: f.IOStreams, Created: "08/01/2026"}
+
+	err := listRun(opts)
+	if err == nil || !strings.Contains(err.Error(), "invalid --created: expected YYYY-MM-DD") {
+		t.Fatalf("listRun() error = %v, want invalid --created usage error", err)
 	}
 }
 
@@ -264,9 +333,9 @@ func TestListRunPaginatesUntilLimit(t *testing.T) {
 					gotPaths = append(gotPaths, gotPath)
 					switch req.URL.Query().Get("page") {
 					case "1":
-						return listTestResponse(http.StatusOK, `{"total_count":4,"workflow_runs":[{"workflow_run_id":"r1","run_number":1,"status":"FAILED"},{"workflow_run_id":"r2","run_number":2,"status":"COMPLETED"}]}`), nil
+						return listTestResponse(http.StatusOK, `{"total_count":4,"workflow_runs":[{"workflow_run_id":"r1","run_number":1,"status":"FAILED","head_sha":"abc"},{"workflow_run_id":"r2","run_number":2,"status":"COMPLETED","head_sha":"other"}]}`), nil
 					case "2":
-						return listTestResponse(http.StatusOK, `{"total_count":4,"workflow_runs":[{"workflow_run_id":"r3","run_number":3,"status":"RUNNING"},{"workflow_run_id":"r4","run_number":4,"status":"CANCELED"}]}`), nil
+						return listTestResponse(http.StatusOK, `{"total_count":4,"workflow_runs":[{"workflow_run_id":"r3","run_number":3,"status":"RUNNING","head_sha":"ABC"},{"workflow_run_id":"r4","run_number":4,"status":"CANCELED","head_sha":"abc"}]}`), nil
 					default:
 						t.Fatalf("unexpected page %q", req.URL.Query().Get("page"))
 						return nil, nil
@@ -280,6 +349,7 @@ func TestListRunPaginatesUntilLimit(t *testing.T) {
 		Paginate:   true,
 		PerPage:    2,
 		PerPageSet: true,
+		Commit:     "abc",
 		JSON:       true,
 	}
 

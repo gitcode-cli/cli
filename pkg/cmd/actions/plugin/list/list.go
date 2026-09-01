@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -246,8 +247,9 @@ func truncateDescription(desc string) string {
 	if desc == "" {
 		return "-"
 	}
-	if len(desc) > 60 {
-		return desc[:57] + "..."
+	if utf8.RuneCountInString(desc) > 60 {
+		runes := []rune(desc)
+		return string(runes[:57]) + "..."
 	}
 	return desc
 }

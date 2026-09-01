@@ -54,7 +54,10 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.PluginName = args[0]
+			opts.PluginName = strings.TrimSpace(args[0])
+			if opts.PluginName == "" {
+				return cmdutil.NewUsageError("plugin name cannot be empty")
+			}
 			if runF != nil {
 				return runF(opts)
 			}

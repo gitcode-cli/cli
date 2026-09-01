@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -259,6 +260,45 @@ func TestResolveOutputFormat(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestListRunWritesToFile(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := iostreams.Test()
+	pluginsJSON := `[{"name":"checkout","display_name":"Checkout","description":"checkout repo","version":"v1.0"}]`
+	tmpFile := "/tmp/test-plugins-output.json"
+	opts := &ListOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return listTestResponse(http.StatusOK, pluginsJSON), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		Limit:      0,
+		JSON:       true,
+		Files:      tmpFile,
+	}
+
+	if err := listRun(opts); err != nil {
+		t.Fatalf("listRun() error = %v", err)
+	}
+
+	content, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+	var result []map[string]interface{}
+	if err := json.Unmarshal(content, &result); err != nil {
+		t.Fatalf("file content is not valid JSON: %v", err)
+	}
+	if len(result) != 1 || result[0]["name"] != "checkout" {
+		t.Fatalf("file content = %s, want 1 plugin named checkout", string(content))
+	}
+	os.Remove(tmpFile)
 }
 
 func TestListRunSinglePage(t *testing.T) {

@@ -56,6 +56,40 @@ func TestListActionsPluginsBuildsV2Query(t *testing.T) {
 	assertNoAccessTokenQuery(t, gotEscapedPath)
 }
 
+func TestListActionsPluginsSendsRefererHeader(t *testing.T) {
+	var gotReferer string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotReferer = req.Header.Get("Referer")
+		return authTestResponse(http.StatusOK, `[]`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := ListActionsPlugins(client, "owner/repo", nil)
+	if err != nil {
+		t.Fatalf("ListActionsPlugins() error = %v", err)
+	}
+	if gotReferer != "https://gitcode.com/" {
+		t.Fatalf("Referer = %q, want https://gitcode.com/", gotReferer)
+	}
+}
+
+func TestViewActionsPluginSendsRefererHeader(t *testing.T) {
+	var gotReferer string
+	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {
+		gotReferer = req.Header.Get("Referer")
+		return authTestResponse(http.StatusOK, `{}`), nil
+	})
+	client.SetToken("test-token", "test")
+
+	_, err := ViewActionsPlugin(client, "owner/repo", "checkout")
+	if err != nil {
+		t.Fatalf("ViewActionsPlugin() error = %v", err)
+	}
+	if gotReferer != "https://gitcode.com/" {
+		t.Fatalf("Referer = %q, want https://gitcode.com/", gotReferer)
+	}
+}
+
 func TestListActionsPluginsNoOptions(t *testing.T) {
 	var gotEscapedPath string
 	client := newAuthTestClient(func(req *http.Request) (*http.Response, error) {

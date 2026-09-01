@@ -35,6 +35,14 @@ type ActionsListPluginsOptions struct {
 	Page    int
 }
 
+// webAPIHeaders returns headers required by the web-api.gitcode.com plugin
+// directory endpoints, including a Referer for same-site request validation.
+func webAPIHeaders() map[string]string {
+	return map[string]string{
+		"Referer": "https://gitcode.com/",
+	}
+}
+
 // ListActionsPlugins lists official Actions plugins for a project.
 //
 // It calls GET https://web-api.gitcode.com/api/v2/projects/{project}/actions/plugins/all.
@@ -49,7 +57,7 @@ func ListActionsPlugins(client *Client, project string, opts *ActionsListPlugins
 			String()
 	}
 
-	resp, err := client.RawRESTToHost("GET", WebAPIHost, endpoint, nil, nil)
+	resp, err := client.RawRESTToHost("GET", WebAPIHost, endpoint, nil, webAPIHeaders())
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +74,7 @@ func ViewActionsPlugin(client *Client, project, name string) ([]byte, error) {
 	endpoint := "/api/v2/projects/" + url.PathEscape(project) + "/actions/plugins/detail" +
 		newQueryBuilder().Set("name", name).String()
 
-	resp, err := client.RawRESTToHost("GET", WebAPIHost, endpoint, nil, nil)
+	resp, err := client.RawRESTToHost("GET", WebAPIHost, endpoint, nil, webAPIHeaders())
 	if err != nil {
 		return nil, err
 	}

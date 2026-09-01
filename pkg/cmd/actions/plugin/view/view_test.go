@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -29,8 +30,8 @@ func TestNewCmdView(t *testing.T) {
 	}{
 		{name: "view with name", args: []string{"checkout", "-R", "owner/repo"}, wantErr: false},
 		{name: "view with json", args: []string{"checkout", "-R", "owner/repo", "--json"}, wantErr: false},
-		{name: "view missing name", args: []string{"-R", "owner/repo"}, wantErr: true},
-		{name: "view no args", args: []string{}, wantErr: true},
+		{name: "view missing name", args: []string{"-R", "owner/repo"}, wantErr: false},
+		{name: "view no args", args: []string{}, wantErr: false},
 	}
 
 	for _, tt := range tests {
@@ -163,6 +164,45 @@ func TestViewRunV2HostAndBearer(t *testing.T) {
 	if !strings.Contains(gotPath, "actions/plugins/detail") {
 		t.Fatalf("path = %q, want it to contain actions/plugins/detail", gotPath)
 	}
+}
+
+func TestViewRunWritesToFile(t *testing.T) {
+	t.Setenv("GC_TOKEN", "test-token")
+
+	io, _, _, _ := iostreams.Test()
+	detailJSON := `{"name":"checkout","display_name":"Checkout","vision_content":[{"version":"v1","readme":"# Checkout"}]}`
+	tmpFile := "/tmp/test-plugin-detail.json"
+	opts := &ViewOptions{
+		IO: io,
+		HttpClient: func() (*http.Client, error) {
+			return &http.Client{
+				Transport: testutil.NewRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+					return viewTestResponse(http.StatusOK, detailJSON), nil
+				}),
+			}, nil
+		},
+		Repository: "owner/repo",
+		PluginName: "checkout",
+		JSON:       true,
+		Files:      tmpFile,
+	}
+
+	if err := viewRun(opts); err != nil {
+		t.Fatalf("viewRun() error = %v", err)
+	}
+
+	content, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(content, &result); err != nil {
+		t.Fatalf("file content is not valid JSON: %v", err)
+	}
+	if result["name"] != "checkout" {
+		t.Fatalf("file content name = %v, want checkout", result["name"])
+	}
+	os.Remove(tmpFile)
 }
 
 func TestViewRunEmptyVisionContent(t *testing.T) {

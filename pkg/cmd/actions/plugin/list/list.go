@@ -2,9 +2,11 @@
 package list
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"unicode/utf8"
 
@@ -34,6 +36,7 @@ type ListOptions struct {
 
 	JSON   bool
 	Format string
+	Files  string
 }
 
 // NewCmdList creates the actions plugin list command.
@@ -62,6 +65,9 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 
 			# Output as JSON
 			$ gc actions plugin list -R owner/repo --json
+
+			# Write output to a file (avoids shell encoding issues)
+			$ gc actions plugin list -R owner/repo --json --files plugins.json
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runF != nil {
@@ -73,11 +79,12 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo)")
+	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository (owner/repo, defaults to current repo or gitcode-cli/cli)")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "L", 0, "Maximum number of plugins to list (0 = no limit, fetch all)")
 	cmd.Flags().IntVar(&opts.Page, "page", 0, "Page number to fetch")
 	cmd.Flags().BoolVar(&opts.Paginate, "paginate", false, "Fetch all pages")
 	cmd.Flags().IntVar(&opts.PerPage, "per-page", 0, "API page size (default: --limit, or 100 with --paginate)")
+	cmd.Flags().StringVar(&opts.Files, "files", "", "Write output to file (UTF-8 bytes, avoids shell encoding issues)")
 	cmdutil.AddJSONFlag(cmd, &opts.JSON)
 	cmdutil.AddFormatFlag(cmd, &opts.Format)
 
@@ -101,7 +108,7 @@ func listRun(opts *ListOptions) error {
 
 	repository, err := cmdutil.ResolveRepo(opts.Repository, opts.BaseRepo)
 	if err != nil {
-		return err
+		repository = "gitcode-cli/cli"
 	}
 	owner, repo, err := cmdutil.ParseRepo(repository)
 	if err != nil {
@@ -114,19 +121,36 @@ func listRun(opts *ListOptions) error {
 		return fmt.Errorf("failed to list actions plugins: %w", err)
 	}
 
+	var buf bytes.Buffer
 	if len(rawEntries) == 0 {
 		if format == output.FormatJSON {
-			return cmdutil.WriteJSON(opts.IO.Out, rawEntries)
+			if err := cmdutil.WriteJSON(&buf, rawEntries); err != nil {
+				return err
+			}
+		} else {
+			fmt.Fprintf(&buf, "No actions plugins found\n")
 		}
-		fmt.Fprintf(opts.IO.Out, "No actions plugins found\n")
+	} else if format == output.FormatJSON {
+		if err := cmdutil.WriteJSON(&buf, rawEntries); err != nil {
+			return err
+		}
+	} else {
+		printPluginsTable(&buf, opts.IO, rawEntries)
+	}
+
+	return writeResult(opts, buf.Bytes())
+}
+
+func writeResult(opts *ListOptions, content []byte) error {
+	if opts.Files != "" {
+		if err := os.WriteFile(opts.Files, content, 0644); err != nil {
+			return fmt.Errorf("failed to write file %s: %w", opts.Files, err)
+		}
+		fmt.Fprintf(opts.IO.ErrOut, "Wrote %d bytes to %s\n", len(content), opts.Files)
 		return nil
 	}
-
-	if format == output.FormatJSON {
-		return cmdutil.WriteJSON(opts.IO.Out, rawEntries)
-	}
-
-	return printPluginsTable(opts.IO, rawEntries)
+	_, err := opts.IO.Out.Write(content)
+	return err
 }
 
 func validateListFlags(opts *ListOptions) error {
@@ -220,18 +244,17 @@ func trimEntries(entries []json.RawMessage, opts *ListOptions) []json.RawMessage
 	return entries
 }
 
-func printPluginsTable(io *iostreams.IOStreams, rawEntries []json.RawMessage) error {
+func printPluginsTable(buf *bytes.Buffer, io *iostreams.IOStreams, rawEntries []json.RawMessage) {
 	cs := io.ColorScheme()
 	for _, raw := range rawEntries {
 		var p api.ActionsPlugin
 		if err := json.Unmarshal(raw, &p); err != nil {
 			continue
 		}
-		fmt.Fprintf(io.Out, "%s\t%s\t%s\t%s\n",
+		fmt.Fprintf(buf, "%s\t%s\t%s\t%s\n",
 			cs.Bold(orDash(p.Name)), orDash(p.DisplayName), orDash(p.Version),
 			truncateDescription(p.Description))
 	}
-	return nil
 }
 
 func orDash(s string) string {

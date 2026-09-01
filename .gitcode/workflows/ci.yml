@@ -150,12 +150,12 @@ jobs:
       - name: Wheel entrypoint smoke test
         run: |
           set -euo pipefail
-          python -m pip install build
-          python -m build --wheel --outdir dist/
-          python -m pip install dist/*.whl
+          python3 -m pip install build
+          python3 -m build --wheel --outdir dist/
+          python3 -m pip install dist/*.whl
           echo "=== gc version ===" && gc version
           echo "=== gitcode version ===" && gitcode version
-          echo "=== python -m gc_cli version ===" && python -m gc_cli version
+          echo "=== python3 -m gc_cli version ===" && python3 -m gc_cli version
 
       - name: Resolve wheel artifact name
         id: wheel-artifact

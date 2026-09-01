@@ -85,6 +85,10 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 }
 
 func listRun(opts *ListOptions) error {
+	if err := validateListFlags(opts); err != nil {
+		return err
+	}
+
 	format, err := resolveOutputFormat(opts.JSON, opts.Format)
 	if err != nil {
 		return err
@@ -101,10 +105,6 @@ func listRun(opts *ListOptions) error {
 	}
 	owner, repo, err := cmdutil.ParseRepo(repository)
 	if err != nil {
-		return err
-	}
-
-	if err := validateListFlags(opts); err != nil {
 		return err
 	}
 

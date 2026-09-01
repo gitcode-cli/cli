@@ -129,6 +129,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Ensure python symlink
+        run: command -v python || ln -sf "$(which python3)" /usr/local/bin/python
+
       - name: Generate completions
         run: |
           go build -o /tmp/gc ./cmd/gc
@@ -150,12 +153,12 @@ jobs:
       - name: Wheel entrypoint smoke test
         run: |
           set -euo pipefail
-          python3 -m pip install build
-          python3 -m build --wheel --outdir dist/
-          python3 -m pip install dist/*.whl
+          python -m pip install build
+          python -m build --wheel --outdir dist/
+          python -m pip install dist/*.whl
           echo "=== gc version ===" && gc version
           echo "=== gitcode version ===" && gitcode version
-          echo "=== python3 -m gc_cli version ===" && python3 -m gc_cli version
+          echo "=== python -m gc_cli version ===" && python -m gc_cli version
 
       - name: Resolve wheel artifact name
         id: wheel-artifact

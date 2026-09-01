@@ -150,7 +150,8 @@ jobs:
       - name: Wheel entrypoint smoke test
         run: |
           set -euo pipefail
-          command -v python || python() { python3 "$@"; }
+          python3 -m venv /tmp/wheel-venv
+          source /tmp/wheel-venv/bin/activate
           python -m pip install build
           python -m build --wheel --outdir dist/
           python -m pip install dist/*.whl

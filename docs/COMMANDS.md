@@ -112,6 +112,8 @@ docker compose up gc
 - `actions job view`
 - `actions artifact list`
 - `actions artifact view`
+- `actions plugin list`
+- `actions plugin view`
 - `actions workflow list`
 - `search repos`
 - `search issues`
@@ -2871,6 +2873,67 @@ gc actions runner-set shared-runner-sets -R owner/repo --json
 - `--keyword`：关键字过滤（服务端过滤）。
 - 分页：`--page`/`--paginate`/`--per-page`/`--limit`。
 - 空结果输出 `[]`（JSON）或 `No shared runner sets found`（文本）。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误；`5` 资源冲突。
+
+---
+
+### actions plugin list - 列出官方 Actions 插件
+
+列出指定仓库可用的官方 GitCode Actions 插件。
+
+```bash
+# 列出插件
+gc actions plugin list -R owner/repo
+
+# 获取单页
+gc actions plugin list -R owner/repo --page 1 --per-page 20
+
+# 输出为 JSON
+gc actions plugin list -R owner/repo --json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，原样保留完整 API 字段。
+- `-R`：仓库（owner/repo，可选，缺省时从当前 git 仓库解析，推断失败回退 gitcode-cli/cli）。
+- `--files <path>`：将输出写入文件（UTF-8 字节，避免 PowerShell 重定向乱码）。
+- 默认自动获取全部分页（`--limit 0` = 不限制）；`--limit N` 限制总数，`--page N` 指定单页，`--paginate` 显式全量。
+- 端点：`GET https://web-api.gitcode.com/api/v2/projects/{project}/actions/plugins/all`。
+- 请求头含 `Referer: https://gitcode.com/`，满足 Web API 同站校验。
+- 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
+- 空结果输出 `[]`（JSON）或 `No actions plugins found`（文本）。
+- 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误；`5` 资源冲突。
+
+---
+
+### actions plugin view - 查看插件详情和 README
+
+查看指定官方 GitCode Actions 插件的元信息、版本及 Markdown 使用说明。`view` 有别名 `show`。
+
+```bash
+# 查看插件 README
+gc actions plugin view checkout -R owner/repo
+
+# 使用 show 别名
+gc actions plugin show checkout -R owner/repo
+
+# 输出为 JSON（保留完整 API 字段）
+gc actions plugin view checkout -R owner/repo --json
+
+# 写入文件（避免 shell 编码问题）
+gc actions plugin view checkout -R owner/repo --json --files detail.json
+```
+
+说明：
+
+- 支持 `--json`：输出写入 stdout，原样输出完整 API 响应。
+- `-R`：仓库（owner/repo，可选，缺省时从当前 git 仓库解析，推断失败回退 gitcode-cli/cli）。
+- `--files <path>`：将输出写入文件（UTF-8 字节，避免 PowerShell 重定向乱码）。
+- 位置参数：插件名称（省略时打印 help）。
+- 文本模式默认输出 `vision_content[]` 中各版本的 README。
+- 端点：`GET https://web-api.gitcode.com/api/v2/projects/{project}/actions/plugins/detail?name={plugin_name}`。
+- 请求头含 `Referer: https://gitcode.com/`，满足 Web API 同站校验。
 - 认证复用标准 Bearer header，不通过 `access_token` query 参数暴露 token。
 - 退出码：`0` 成功；`1` 通用错误；`2` 参数错误；`3` 资源不存在（HTTP 404）；`4` 认证/权限错误；`5` 资源冲突。
 

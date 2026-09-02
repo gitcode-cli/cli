@@ -17,7 +17,19 @@ const (
 	DefaultHost = "api.gitcode.com"
 	// DefaultAPIVersion is the default API version
 	DefaultAPIVersion = "v5"
+	// WebAPIHost is the host for GitCode web API (v2) endpoints such as the
+	// Actions plugin directory. It is separate from the default REST host and
+	// is whitelisted so that RawRESTToHost can target it safely.
+	WebAPIHost = "web-api.gitcode.com"
 )
+
+// allowedGitCodeHosts is the whitelist of GitCode API hosts that may be
+// targeted explicitly via RawRESTToHost. This preserves SSRF protection for
+// arbitrary hosts while enabling access to known GitCode API surfaces.
+var allowedGitCodeHosts = map[string]bool{
+	DefaultHost: true,
+	WebAPIHost:  true,
+}
 
 // Client is a GitCode API client
 type Client struct {
@@ -144,6 +156,58 @@ func (c *Client) RawREST(method, endpoint string, body io.Reader, headers map[st
 	if err != nil {
 		return nil, err
 	}
+	req, err := http.NewRequest(strings.ToUpper(method), reqURL, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	for key, value := range headers {
+		if strings.TrimSpace(key) != "" {
+			req.Header.Set(strings.TrimSpace(key), value)
+		}
+	}
+	if c.token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+	if resp.StatusCode >= 400 {
+		return nil, decodeAPIError(respBody, resp.StatusCode, resp.Status)
+	}
+
+	return &RawResponse{
+		StatusCode: resp.StatusCode,
+		Header:     resp.Header.Clone(),
+		Body:       respBody,
+	}, nil
+}
+
+// RawRESTToHost performs a REST request to a specific GitCode API host.
+// The host must be in the allowedGitCodeHosts whitelist, which preserves
+// SSRF protection for arbitrary hosts while enabling access to known GitCode
+// API surfaces that live on separate hosts (e.g. web-api.gitcode.com).
+// The endpoint should be a relative path beginning with "/".
+func (c *Client) RawRESTToHost(method, host, endpoint string, body io.Reader, headers map[string]string) (*RawResponse, error) {
+	if !allowedGitCodeHosts[host] {
+		return nil, fmt.Errorf("host %s is not a known GitCode API host", host)
+	}
+	if !strings.HasPrefix(endpoint, "/") {
+		endpoint = "/" + endpoint
+	}
+	reqURL := fmt.Sprintf("https://%s%s", host, endpoint)
 	req, err := http.NewRequest(strings.ToUpper(method), reqURL, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
